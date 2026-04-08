@@ -218,11 +218,13 @@ if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.proto
 function _initCanvas(canvasId,h){
   var c=document.getElementById(canvasId);if(!c)return null;
   var ct=c.parentElement;
-  var dpr=window.devicePixelRatio||1;
+  var dpr=Math.max(window.devicePixelRatio||1,3);
   var cssW=ct.clientWidth;var cssH=h||200;
-  c.width=cssW*dpr;c.height=cssH*dpr;
+  c.width=Math.round(cssW*dpr);c.height=Math.round(cssH*dpr);
   c.style.width=cssW+'px';c.style.height=cssH+'px';
   var x=c.getContext('2d');x.scale(dpr,dpr);
+  x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+  x.textRendering='geometricPrecision';
   x.clearRect(0,0,cssW,cssH);
   return{c:c,x:x,w:cssW,h:cssH}
 }
@@ -339,12 +341,14 @@ function drawGaugeChart(canvasId, percentage, label, color) {
   var canvas = document.getElementById(canvasId);
   if(!canvas) return;
   var container = canvas.parentElement;
-  var dpr=window.devicePixelRatio||1;
+  var dpr=Math.max(window.devicePixelRatio||1,3);
   var cssW=container.clientWidth;var cssH=210;
-  canvas.width=cssW*dpr;canvas.height=cssH*dpr;
+  canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);
   canvas.style.width=cssW+'px';canvas.style.height=cssH+'px';
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr,dpr);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.textRendering='geometricPrecision';
   var cx = cssW / 2;
   var cy = cssH * 0.55;
   var radius = Math.max(Math.min(cx, cy) - 20, 1);
@@ -383,7 +387,7 @@ function drawHBarChart(canvasId, labels, data, colors) {
   var canvas = document.getElementById(canvasId);
   if(!canvas) return;
   var container = canvas.parentElement;
-  var dpr = window.devicePixelRatio || 1;
+  var dpr = Math.max(window.devicePixelRatio || 1, 3);
   var maxVal = Math.max.apply(null, data) || 1;
   var barH = 22;
   var gap = 10;
@@ -391,12 +395,14 @@ function drawHBarChart(canvasId, labels, data, colors) {
   var itemCount = labels.length;
   var cssH = Math.max(180, startY + itemCount * (barH + gap) + 12);
   var cssW = container.clientWidth || 200;
-  canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.textRendering = 'geometricPrecision';
   ctx.clearRect(0, 0, cssW, cssH);
   // 동적 leftPad: 가장 긴 레이블 너비 측정
   ctx.font = '11px -apple-system, sans-serif';

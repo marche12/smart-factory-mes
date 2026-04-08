@@ -584,29 +584,36 @@ function renderReceivables(){
   var recv=calcReceivables(),pay=calcPayables();
   var totalRecv=recv.reduce(function(s,r){return s+r.remain},0);
   var totalPay=pay.reduce(function(s,r){return s+r.remain},0);
-  var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
-  h+='<div class="kpi-card" style="border-left:4px solid #EF4444"><div class="kpi-label">총 미수금</div><div class="kpi-value" style="color:#EF4444">'+fmt(totalRecv)+'원</div><div class="kpi-sub">'+recv.length+'개 거래처</div></div>';
-  h+='<div class="kpi-card" style="border-left:4px solid #F59E0B"><div class="kpi-label">총 미지급금</div><div class="kpi-value" style="color:#F59E0B">'+fmt(totalPay)+'원</div><div class="kpi-sub">'+pay.length+'개 거래처</div></div></div>';
-  // 미수금 테이블
-  h+='<div class="card-t">미수금 (받을 돈)</div>';
+  var net=totalRecv-totalPay;
+  var h='<div class="sg">';
+  h+='<div class="sb red"><div class="l">총 미수금</div><div class="v">'+fmt(totalRecv)+'원</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+recv.length+'개 거래처</div></div>';
+  h+='<div class="sb orange"><div class="l">총 미지급금</div><div class="v">'+fmt(totalPay)+'원</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+pay.length+'개 거래처</div></div>';
+  h+='<div class="sb '+(net>=0?'green':'red')+'"><div class="l">순 채권</div><div class="v">'+fmt(net)+'원</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+(net>=0?'▲ 받을 돈 우세':'▼ 줄 돈 우세')+'</div></div>';
+  h+='</div>';
+  // 미수금 카드
+  h+='<div class="card"><div class="card-t">미수금 (받을 돈)</div>';
   if(recv.length){
-    h+='<table class="dt"><thead><tr><th>거래처</th><th>매출액</th><th>수금액</th><th>미수잔액</th><th>관리</th></tr></thead><tbody>';
-    recv.forEach(function(r){
-      h+='<tr><td><strong>'+r.cnm+'</strong></td><td>'+fmt(r.sales)+'</td><td>'+fmt(r.paid)+'</td><td style="color:#EF4444;font-weight:700">'+fmt(r.remain)+'</td>';
-      h+='<td><button class="btn btn-sm btn-p" onclick="addPayment(\'income\',\''+r.cnm+'\','+r.remain+')">입금 처리</button></td></tr>';
+    h+='<table class="dt"><thead><tr><th>거래처</th><th style="text-align:right">매출액</th><th style="text-align:right">수금액</th><th style="text-align:right">미수잔액</th><th style="text-align:right">수금률</th><th>관리</th></tr></thead><tbody>';
+    recv.sort(function(a,b){return b.remain-a.remain}).forEach(function(r){
+      var pct=r.sales>0?Math.round(r.paid/r.sales*100):0;
+      h+='<tr class="row-warn"><td style="font-weight:700">'+r.cnm+'</td><td style="text-align:right">'+fmt(r.sales)+'</td><td style="text-align:right;color:var(--suc)">'+fmt(r.paid)+'</td><td style="text-align:right;color:var(--dan);font-weight:800">'+fmt(r.remain)+'</td><td style="text-align:right"><div class="prog-bar" style="display:inline-block;width:80px;vertical-align:middle"><div class="fill" style="width:'+pct+'%;background:var(--suc)"></div></div> <span style="font-weight:700">'+pct+'%</span></td>';
+      h+='<td><button class="btn btn-sm btn-s" onclick="addPayment(\'income\',\''+r.cnm+'\','+r.remain+')">입금 처리</button></td></tr>';
     });
     h+='</tbody></table>';
-  }else h+='<div style="text-align:center;padding:16px;color:var(--txt3)">미수금 없음</div>';
-  // 미지급금 테이블
-  h+='<div class="card-t" style="margin-top:16px">미지급금 (줄 돈)</div>';
+  }else h+='<div class="empty-state"><div class="msg">미수금 없음</div><div class="sub">모든 거래처가 완납 상태</div></div>';
+  h+='</div>';
+  // 미지급금 카드
+  h+='<div class="card" style="margin-top:14px"><div class="card-t">미지급금 (줄 돈)</div>';
   if(pay.length){
-    h+='<table class="dt"><thead><tr><th>거래처</th><th>매입액</th><th>지급액</th><th>미지급잔액</th><th>관리</th></tr></thead><tbody>';
-    pay.forEach(function(r){
-      h+='<tr><td><strong>'+r.vnm+'</strong></td><td>'+fmt(r.purch)+'</td><td>'+fmt(r.paid)+'</td><td style="color:#F59E0B;font-weight:700">'+fmt(r.remain)+'</td>';
+    h+='<table class="dt"><thead><tr><th>거래처</th><th style="text-align:right">매입액</th><th style="text-align:right">지급액</th><th style="text-align:right">미지급잔액</th><th style="text-align:right">지급률</th><th>관리</th></tr></thead><tbody>';
+    pay.sort(function(a,b){return b.remain-a.remain}).forEach(function(r){
+      var pct=r.purch>0?Math.round(r.paid/r.purch*100):0;
+      h+='<tr class="row-warn"><td style="font-weight:700">'+r.vnm+'</td><td style="text-align:right">'+fmt(r.purch)+'</td><td style="text-align:right;color:var(--suc)">'+fmt(r.paid)+'</td><td style="text-align:right;color:var(--wrn);font-weight:800">'+fmt(r.remain)+'</td><td style="text-align:right"><div class="prog-bar" style="display:inline-block;width:80px;vertical-align:middle"><div class="fill" style="width:'+pct+'%;background:var(--gold)"></div></div> <span style="font-weight:700">'+pct+'%</span></td>';
       h+='<td><button class="btn btn-sm btn-o" onclick="addPayment(\'expense\',\''+r.vnm+'\','+r.remain+')">지급 처리</button></td></tr>';
     });
     h+='</tbody></table>';
-  }else h+='<div style="text-align:center;padding:16px;color:var(--txt3)">미지급금 없음</div>';
+  }else h+='<div class="empty-state"><div class="msg">미지급금 없음</div><div class="sub">모든 매입처 정산 완료</div></div>';
+  h+='</div>';
   return h;
 }
 
@@ -630,17 +637,32 @@ function renderPayments(){
   var expense=payments.filter(function(p){return p.type==='expense'});
   var totalIn=income.reduce(function(s,p){return s+(+p.amt||0)},0);
   var totalOut=expense.reduce(function(s,p){return s+(+p.amt||0)},0);
-  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">';
-  h+='<div class="kpi-card" style="border-left:4px solid #10B981"><div class="kpi-label">총 입금</div><div class="kpi-value" style="color:#10B981">'+fmt(totalIn)+'</div></div>';
-  h+='<div class="kpi-card" style="border-left:4px solid #EF4444"><div class="kpi-label">총 출금</div><div class="kpi-value" style="color:#EF4444">'+fmt(totalOut)+'</div></div>';
-  h+='<div class="kpi-card" style="border-left:4px solid #3182F6"><div class="kpi-label">잔액</div><div class="kpi-value" style="color:#3182F6">'+fmt(totalIn-totalOut)+'</div></div></div>';
-  h+='<table class="dt"><thead><tr><th>일자</th><th>구분</th><th>거래처</th><th>금액</th><th>비고</th></tr></thead><tbody>';
-  payments.sort(function(a,b){return b.date>a.date?1:-1}).forEach(function(p){
-    var isIn=p.type==='income';
-    h+='<tr><td>'+p.date+'</td><td><span class="bd '+(isIn?'bd-d':'bd-x')+'">'+(isIn?'입금':'출금')+'</span></td>';
-    h+='<td>'+(p.cnm||p.vnm||'-')+'</td><td style="color:'+(isIn?'#10B981':'#EF4444')+';font-weight:700">'+(isIn?'+':'-')+fmt(p.amt)+'</td><td>'+(p.note||'-')+'</td></tr>';
-  });
-  h+='</tbody></table>';
+  var bal=totalIn-totalOut;
+  // 7일 cashflow sparkline
+  var days=[];
+  for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var ds=d.toISOString().slice(0,10);
+    var din=income.filter(function(p){return p.date===ds}).reduce(function(s,p){return s+(+p.amt||0)},0);
+    var dout=expense.filter(function(p){return p.date===ds}).reduce(function(s,p){return s+(+p.amt||0)},0);
+    days.push({d:ds,in:din,out:dout,net:din-dout});
+  }
+  var maxNet=Math.max.apply(null,days.map(function(x){return Math.max(Math.abs(x.in),Math.abs(x.out))}))||1;
+  var spk='<svg width="100%" height="40" viewBox="0 0 140 40" preserveAspectRatio="none" style="display:block;margin-top:8px"><polyline fill="rgba(14,140,87,.08)" stroke="none" points="0,40 '+days.map(function(x,i){return(i*140/6)+','+(35-(x.in/maxNet)*30)}).join(' ')+' 140,40"/><polyline fill="none" stroke="var(--suc)" stroke-width="1.5" points="'+days.map(function(x,i){return(i*140/6)+','+(35-(x.in/maxNet)*30)}).join(' ')+'"/><polyline fill="none" stroke="var(--dan)" stroke-width="1.5" stroke-dasharray="2,2" points="'+days.map(function(x,i){return(i*140/6)+','+(35-(x.out/maxNet)*30)}).join(' ')+'"/></svg>';
+  var h='<div class="sg">';
+  h+='<div class="sb green"><div class="l">총 입금</div><div class="v">'+fmt(totalIn)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+income.length+'건</div></div>';
+  h+='<div class="sb red"><div class="l">총 출금</div><div class="v">'+fmt(totalOut)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+expense.length+'건</div></div>';
+  h+='<div class="sb '+(bal>=0?'blue':'red')+'"><div class="l">잔액</div><div class="v">'+fmt(bal)+'</div>'+spk+'<div style="font-size:10px;color:var(--txt3);font-weight:600;display:flex;justify-content:space-between;margin-top:2px"><span style="color:var(--suc)">입금</span><span style="color:var(--dan)">출금</span></div></div>';
+  h+='</div>';
+  h+='<div class="card"><div class="card-t">입출금 이력</div>';
+  if(payments.length){
+    h+='<table class="dt"><thead><tr><th>일자</th><th>구분</th><th>거래처</th><th style="text-align:right">금액</th><th>비고</th></tr></thead><tbody>';
+    payments.sort(function(a,b){return b.date>a.date?1:-1}).forEach(function(p){
+      var isIn=p.type==='income';
+      h+='<tr><td>'+p.date+'</td><td>'+(isIn?'<span class="bd bd-s">입금</span>':'<span class="bd bd-x">출금</span>')+'</td>';
+      h+='<td style="font-weight:600">'+(p.cnm||p.vnm||'-')+'</td><td style="text-align:right;color:'+(isIn?'var(--suc)':'var(--dan)')+';font-weight:800">'+(isIn?'+':'-')+fmt(p.amt)+'</td><td style="color:var(--txt2)">'+(p.note||'-')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }else h+='<div class="empty-state"><div class="msg">입출금 기록 없음</div></div>';
+  h+='</div>';
   return h;
 }
 
@@ -998,19 +1020,22 @@ function renderClosing(){
   var recv=calcReceivables(),pay=calcPayables();
   var totalRecv=recv.reduce(function(s,r){return s+r.remain},0);
   var totalPay=pay.reduce(function(s,r){return s+r.remain},0);
-  var h='<div class="card-t" style="margin-bottom:12px">외상 마감 ('+thisMonth+')</div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">';
-  h+='<div class="kpi-card" style="border-left:4px solid #EF4444"><div class="kpi-label">미수금 잔액</div><div class="kpi-value" style="color:#EF4444">'+fmt(totalRecv)+'</div><div class="kpi-sub">'+recv.length+'건</div></div>';
-  h+='<div class="kpi-card" style="border-left:4px solid #F59E0B"><div class="kpi-label">미지급 잔액</div><div class="kpi-value" style="color:#F59E0B">'+fmt(totalPay)+'</div><div class="kpi-sub">'+pay.length+'건</div></div>';
-  h+='<div class="kpi-card" style="border-left:4px solid '+(closed?'#10B981':'#9CA3AF')+'"><div class="kpi-label">마감 상태</div><div class="kpi-value" style="color:'+(closed?'#10B981':'#9CA3AF')+'">'+(closed?'마감':'미마감')+'</div><div class="kpi-sub">'+(closed?closed.date:'')+'</div></div></div>';
+  var h='<div class="sg">';
+  h+='<div class="sb red"><div class="l">미수금 잔액</div><div class="v">'+fmt(totalRecv)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+recv.length+'건</div></div>';
+  h+='<div class="sb orange"><div class="l">미지급 잔액</div><div class="v">'+fmt(totalPay)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+pay.length+'건</div></div>';
+  h+='<div class="sb '+(closed?'green':'purple')+'"><div class="l">마감 상태</div><div class="v">'+(closed?'✓ 마감':'미마감')+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+(closed?closed.date:thisMonth)+'</div></div>';
+  h+='</div>';
   if(!closed){
-    h+='<div style="text-align:center;margin:16px 0"><button class="btn btn-p" onclick="doClosing(\''+thisMonth+'\')">'+thisMonth+' 마감 처리</button></div>';
+    h+='<div class="fbar"><div class="fbar-row"><span class="fbar-label">'+thisMonth+' 마감</span><div class="fbar-spacer"></div><button class="btn btn-p btn-sm" onclick="doClosing(\''+thisMonth+'\')">마감 처리</button></div></div>';
   }
-  // 미수금 상세
-  h+='<table class="dt"><thead><tr><th>구분</th><th>거래처</th><th>금액</th><th>잔액</th></tr></thead><tbody>';
-  recv.forEach(function(r){h+='<tr><td><span class="bd bd-x">미수</span></td><td>'+r.cnm+'</td><td>'+fmt(r.sales)+'</td><td style="color:#EF4444;font-weight:700">'+fmt(r.remain)+'</td></tr>'});
-  pay.forEach(function(r){h+='<tr><td><span class="bd bd-o">미지급</span></td><td>'+r.vnm+'</td><td>'+fmt(r.purch)+'</td><td style="color:#F59E0B;font-weight:700">'+fmt(r.remain)+'</td></tr>'});
-  h+='</tbody></table>';
+  h+='<div class="card"><div class="card-t">마감 대상 상세</div>';
+  if(recv.length+pay.length){
+    h+='<table class="dt"><thead><tr><th>구분</th><th>거래처</th><th style="text-align:right">총액</th><th style="text-align:right">잔액</th></tr></thead><tbody>';
+    recv.forEach(function(r){h+='<tr class="row-warn"><td><span class="bd bd-x">미수</span></td><td style="font-weight:700">'+r.cnm+'</td><td style="text-align:right">'+fmt(r.sales)+'</td><td style="text-align:right;color:var(--dan);font-weight:800">'+fmt(r.remain)+'</td></tr>'});
+    pay.forEach(function(r){h+='<tr class="row-warn"><td><span class="bd bd-o">미지급</span></td><td style="font-weight:700">'+r.vnm+'</td><td style="text-align:right">'+fmt(r.purch)+'</td><td style="text-align:right;color:var(--wrn);font-weight:800">'+fmt(r.remain)+'</td></tr>'});
+    h+='</tbody></table>';
+  }else h+='<div class="empty-state"><div class="msg">마감할 항목 없음</div></div>';
+  h+='</div>';
   return h;
 }
 function doClosing(month){

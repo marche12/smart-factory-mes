@@ -1667,15 +1667,30 @@ function showLotDetail(woId){
     ?'<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--dan);margin-bottom:6px">⚠ 관련 클레임 '+claims.length+'건</div>'
       +claims.map(function(c){return'<div style="font-size:12px;padding:5px 10px;background:#FEF2F2;border-radius:8px;margin-bottom:4px;color:#DC2626">'+c.dt+' · '+c.type+' · '+fmt(c.qty)+'매 · '+c.reason+'</div>'}).join('')+'</div>'
     :'';
+  // ===== Timeline view =====
+  var totalPaper=0;
+  if(o.papers&&o.papers.length){o.papers.forEach(function(p){totalPaper+=(p.qm||0)+(p.qe||0)})}
+  else{totalPaper=(o.qm||0)+(o.qe||0)}
+  var paperLines=(o.papers&&o.papers.length?o.papers:[{paper:o.paper,spec:o.spec,qm:o.qm,qe:o.qe}]).map(function(p){
+    return '<div style="padding:4px 0">'+(p.paper||'미기재')+(p.spec?' <span style="color:var(--txt3)">('+p.spec+')</span>':'')+' — 정매 <strong>'+fmt(p.qm||0)+'</strong> + 여분 <strong>'+fmt(p.qe||0)+'</strong></div>';
+  }).join('');
+  var orderStep='<div class="lot-step done"><div class="lot-step-hd">📋 작업 지시 <span class="lot-step-date">'+(o.cat||o.dt||'-')+'</span></div><div class="lot-step-body"><strong>'+o.wn+'</strong> · '+o.cnm+' · 완제품 <strong>'+fmt(o.fq||0)+'</strong>매<div style="margin-top:6px;color:var(--txt3);font-size:11px">납기 '+(o.sd||'미정')+'</div></div></div>';
+  var paperStep=totalPaper>0?'<div class="lot-step done"><div class="lot-step-hd">📦 종이 발주 <span class="lot-step-date">총 '+fmt(totalPaper)+'매</span></div><div class="lot-step-body">'+paperLines+'</div></div>':'';
+  var procStep=procs.length?'<div class="lot-step done"><div class="lot-step-hd">⚙️ 공정 진행 <span class="lot-step-date">'+procs.length+'개 공정</span></div><div class="lot-step-body">'+procs.map(function(p){return'<div style="padding:3px 0"><strong>'+p.nm+'</strong>'+(p.mt?' · '+p.mt:'')+' → '+p.vd+'</div>'}).join('')+'</div></div>':'';
+  var shipSteps=sortedLogs.length?sortedLogs.slice().reverse().map(function(s){
+    var cls=s.defect>0?'warn':'done';
+    return '<div class="lot-step '+cls+'"><div class="lot-step-hd">🚚 출고 <span class="lot-step-date">'+s.dt+'</span></div><div class="lot-step-body"><strong>'+fmt(s.qty)+'</strong>매 출고 · 양품 <strong style="color:var(--suc)">'+fmt(s.good||s.qty)+'</strong>'+(s.defect?' · 불량 <strong style="color:var(--dan)">'+fmt(s.defect)+'</strong>':'')+(s.dlv?'<div style="margin-top:4px;color:var(--txt3);font-size:11px">→ '+s.dlv+'</div>':'')+'</div></div>';
+  }).join(''):'<div class="lot-step"><div class="lot-step-hd">🚚 출고 대기</div><div class="lot-step-body" style="color:var(--txt3)">아직 출고 이력 없음</div></div>';
+  var claimSteps=claims.length?claims.map(function(c){
+    return '<div class="lot-step danger"><div class="lot-step-hd">⚠ '+c.type+' <span class="lot-step-date">'+c.dt+'</span></div><div class="lot-step-body"><strong>'+fmt(c.qty)+'</strong>매 · '+c.reason+'<div style="margin-top:4px;color:var(--txt3);font-size:11px">상태: '+c.st+'</div></div></div>';
+  }).join(''):'';
   var h='<div class="fr">'
-    +'<div class="fg"><label>지시번호</label><div style="font-weight:700;color:var(--pri)">'+o.wn+'</div></div>'
+    +'<div class="fg"><label>지시번호</label><div style="font-weight:800;color:var(--pri);font-size:15px">'+o.wn+'</div></div>'
     +'<div class="fg"><label>거래처</label><div style="font-weight:700">'+o.cnm+'</div></div>'
     +'<div class="fg"><label>완제품 수량</label><div style="font-weight:700">'+fmt(o.fq||0)+'매</div></div>'
     +'</div>'
-    +'<div style="margin-top:8px"><label style="font-size:12px;color:var(--txt3)">제품명</label><div style="font-weight:700;font-size:17px;margin-top:2px">'+o.pnm+'</div></div>'
-    +procsHtml+papersHtml
-    +'<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px">출고 이력</div>'+shipHtml+'</div>'
-    +claimHtml;
+    +'<div style="margin-top:10px;margin-bottom:18px;padding:14px 16px;background:var(--pri-l);border-radius:var(--r-sm);border-left:3px solid var(--pri)"><div style="font-size:11px;color:var(--pri);font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px">제품명</div><div style="font-weight:800;font-size:18px;color:var(--txt)">'+o.pnm+'</div></div>'
+    +'<div class="lot-tl">'+orderStep+paperStep+procStep+shipSteps+claimSteps+'</div>';
   $('lotDetC').innerHTML=h;
   $('lotDetTitle').textContent=o.pnm+' — 생산 이력';
   oMo('lotDetMo');

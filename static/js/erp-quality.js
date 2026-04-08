@@ -1,0 +1,306 @@
+/* ===== ERP:quality ===== */
+
+/* 품질검사 — defectLog 기반 자동 분석 */
+function rQc(){
+  var mo=$('qcMonthSel')?$('qcMonthSel').value:td().slice(0,7);
+  if(!mo)mo=td().slice(0,7);
+  var all=DB.g('defectLog');
+  var mLogs=all.filter(function(d){return d.dt&&d.dt.startsWith(mo)});
+  var totalDf=mLogs.reduce(function(s,d){return s+(d.defect||0)},0);
+
+  // KPI
+  if($('qcDfTotal'))$('qcDfTotal').textContent=fmt(totalDf);
+  if($('qcDfCnt'))$('qcDfCnt').textContent=mLogs.length+'건';
+
+  // 공정별 불량
+  var byProc={};
+  mLogs.forEach(function(d){if(!byProc[d.proc])byProc[d.proc]=0;byProc[d.proc]+=d.defect||0});
+  var procEntries=Object.entries(byProc).sort(function(a,b){return b[1]-a[1]});
+  if($('qcByProc'))$('qcByProc').innerHTML=procEntries.length
+    ?procEntries.map(function(e){
+      var pct=totalDf>0?Math.round(e[1]/totalDf*100):0;
+      return'<div style="margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><b>'+e[0]+'</b><span style="color:var(--dan);font-weight:700">'+fmt(e[1])+'매 ('+pct+'%)</span></div>'
+        +'<div style="background:var(--bg2);border-radius:4px;height:8px"><div style="background:var(--dan);width:'+pct+'%;height:8px;border-radius:4px;transition:.3s"></div></div>'
+        +'</div>';
+    }).join('')
+    :'<div class="empty-state"><div class="msg">불량 없음</div></div>';
+
+  // 불량 사유 순위
+  var byReason={};
+  mLogs.forEach(function(d){var r=d.reason||'사유없음';if(!byReason[r])byReason[r]=0;byReason[r]+=d.defect||0});
+  var reasonEntries=Object.entries(byReason).sort(function(a,b){return b[1]-a[1]});
+  if($('qcByReason'))$('qcByReason').innerHTML=reasonEntries.length
+    ?reasonEntries.map(function(e,i){
+      var pct=totalDf>0?Math.round(e[1]/totalDf*100):0;
+      return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px">'
+        +'<span style="min-width:18px;height:18px;background:'+(i===0?'#EF4444':i===1?'#F59E0B':'#94A3B8')+';color:#fff;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
+        +'<span style="flex:1">'+e[0]+'</span>'
+        +'<span style="font-weight:700;color:var(--dan)">'+fmt(e[1])+'매</span>'
+        +'<span style="color:var(--txt3);min-width:32px;text-align:right">'+pct+'%</span>'
+        +'</div>';
+    }).join('')
+    :'<div class="empty-state"><div class="msg">불량 없음</div></div>';
+
+  // 상세 목록
+  var sorted=mLogs.slice().sort(function(a,b){return b.dt>a.dt?1:-1});
+  if($('qcDfTbl'))$('qcDfTbl').querySelector('tbody').innerHTML=sorted.length
+    ?sorted.map(function(d){
+      return'<tr>'
+        +'<td>'+d.dt+'</td>'
+        +'<td style="font-weight:700">'+d.pnm+'</td>'
+        +'<td>'+d.cnm+'</td>'
+        +'<td><span class="bd bd-o">'+d.proc+'</span></td>'
+        +'<td style="text-align:right;color:var(--dan);font-weight:700">'+fmt(d.defect||0)+'</td>'
+        +'<td>'+( d.reason||'-')+'</td>'
+        +'<td style="color:var(--txt3)">'+( d.worker||'-')+'</td>'
+        +'</tr>';
+    }).join('')
+    :'<tr><td colspan="7" class="empty-cell">이번 달 불량 없음</td></tr>';
+}
+function expQcCSV(){
+  var all=DB.g('defectLog');
+  var csv='\uFEFF날짜,제품,거래처,공정,불량수량,사유,작업자\n';
+  all.forEach(function(d){csv+=d.dt+','+d.pnm+','+d.cnm+','+d.proc+','+(d.defect||0)+','+(d.reason||'')+','+(d.worker||'')+'\n'});
+  var b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='불량이력_'+td()+'.csv';a.click();toast('내보내기','ok');
+}
+
+/* 설비관리 */
+function rEq(){const all=DB.g('equip');$('eqCnt').textContent=all.length;$('eqOk').textContent=all.filter(e=>e.st==='정상').length;$('eqWarn').textContent=all.filter(e=>e.st==='점검필요').length;$('eqDown').textContent=all.filter(e=>e.st==='수리중').length;$('eqTbl').querySelector('tbody').innerHTML=all.map(e=>{const stBd=e.st==='정상'?'bd-s':e.st==='점검필요'?'bd-o':'bd-d';return '<tr><td style="font-weight:700">'+e.nm+'</td><td>'+(e.model||'-')+'</td><td>'+e.proc+'</td><td>'+(e.install||'-')+'</td><td>'+(e.lastCheck||'-')+'</td><td>'+(e.nextCheck||'-')+'</td><td><span class="bd '+stBd+'">'+e.st+'</span></td><td><button class="btn btn-sm btn-o" onclick="editEq(\''+e.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="dEq(\''+e.id+'\')">삭제</button></td></tr>'}).join('')||'<tr><td colspan="8" class="empty-cell">설비 없음</td></tr>'}
+function openEqM(){['eqId','eqNm','eqModel','eqNote'].forEach(x=>$(x).value='');$('eqProc').value='코팅';$('eqInstall').value='';$('eqCycle').value=90;$('eqSt').value='정상';$('eqMoT').textContent='설비 등록';oMo('eqMo')}
+function editEq(id){const e=DB.g('equip').find(x=>x.id===id);if(!e)return;$('eqId').value=e.id;$('eqNm').value=e.nm;$('eqModel').value=e.model||'';$('eqProc').value=e.proc;$('eqInstall').value=e.install||'';$('eqCycle').value=e.cycle||90;$('eqSt').value=e.st;$('eqNote').value=e.note||'';$('eqMoT').textContent='수정';oMo('eqMo')}
+function saveEq(){const nm=$('eqNm').value.trim();if(!nm){toast('설비명','err');return}const id=$('eqId').value||gid();const cycle=+$('eqCycle').value||90;const rec={id,nm,model:$('eqModel').value,proc:$('eqProc').value,install:$('eqInstall').value,cycle,st:$('eqSt').value,note:$('eqNote').value,lastCheck:'',nextCheck:''};if(rec.install){const d=new Date();rec.nextCheck=new Date(d.getTime()+cycle*864e5).toISOString().slice(0,10)}const ls=DB.g('equip');const idx=ls.findIndex(x=>x.id===id);if(idx>=0){rec.lastCheck=ls[idx].lastCheck;rec.nextCheck=ls[idx].nextCheck;ls[idx]=rec}else ls.push(rec);DB.s('equip',ls);cMo('eqMo');rEq();toast('저장','ok')}
+function dEq(id){if(!confirm('삭제?'))return;DB.s('equip',DB.g('equip').filter(x=>x.id!==id));rEq();toast('삭제','ok')}
+function openEqLog(){const eqs=DB.g('equip');$('elEq').innerHTML=eqs.map(e=>'<option value="'+e.id+'">'+e.nm+'</option>').join('');$('elDt').value=td();$('elContent').value='';$('elResult').value='정상';oMo('eqLogMo')}
+function saveEqLog(){const eqId=$('elEq').value;if(!eqId){toast('설비 선택','err');return}const ls=DB.g('equip');const idx=ls.findIndex(x=>x.id===eqId);if(idx>=0){ls[idx].lastCheck=$('elDt').value;const cycle=ls[idx].cycle||90;ls[idx].nextCheck=new Date(new Date($('elDt').value).getTime()+cycle*864e5).toISOString().slice(0,10);if($('elResult').value==='수리필요')ls[idx].st='수리중';else ls[idx].st='정상';DB.s('equip',ls)}const logs=DB.g('eqLogs');logs.push({id:gid(),eqId,dt:$('elDt').value,content:$('elContent').value,result:$('elResult').value});DB.s('eqLogs',logs);cMo('eqLogMo');rEq();toast('점검 기록','ok')}
+
+/* 견적서 */
+let qtItemList=[];
+function rQt(){const mo=$('qtMo').value||td().slice(0,7);if(!$('qtMo').value)$('qtMo').value=mo;const all=DB.g('quotes');const fl=all.filter(r=>r.dt&&r.dt.startsWith(mo)).sort((a,b)=>b.dt>a.dt?1:-1);const ma=all.filter(r=>r.dt&&r.dt.startsWith(td().slice(0,7)));$('qtCnt').textContent=ma.length;$('qtAmt').textContent=fmt(ma.reduce((s,r)=>s+(r.total||0),0))+'원';$('qtWon').textContent=ma.filter(r=>r.st==='수주').length;$('qtTbl').querySelector('tbody').innerHTML=fl.map(r=>{const stBd=r.st==='수주'?'bd-s':r.st==='실주'?'bd-d':r.st==='발송'?'bd-p':'bd-w';return '<tr><td style="font-weight:700">'+r.num+'</td><td>'+r.dt+'</td><td style="font-weight:700">'+r.cli+'</td><td>'+(r.items||[]).map(i=>i.nm).join(', ')+'</td><td style="text-align:right;font-weight:700">'+fmt(r.total)+'원</td><td>'+(r.exp||'-')+'</td><td><span class="bd '+stBd+'">'+r.st+'</span></td><td><button class="btn btn-sm btn-p" onclick="quoteToWO(\''+r.id+'\')">지시</button> <button class="btn btn-sm btn-o" onclick="eQt(\''+r.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="dQt(\''+r.id+'\')">삭제</button></td></tr>'}).join('')||'<tr><td colspan="8" class="empty-cell">내역 없음</td></tr>'}
+function genQtNum(){const d=td().replace(/-/g,'');const c=DB.g('quotes').filter(r=>r.num&&r.num.startsWith('QT'+d)).length;return 'QT'+d+String(c+1).padStart(3,'0')}
+function openQtM(){$('qtId').value='';$('qtNum').value=genQtNum();$('qtDt').value=td();$('qtExp').value='';$('qtCli').value='';$('qtMgr').value='';$('qtNote').value='';$('qtSt').value='작성중';qtItemList=[{nm:'',spec:'',qty:0,price:0}];renQtItems();$('qtMoT').textContent='견적서 작성';oMo('qtMo2')}
+function eQt(id){const r=DB.g('quotes').find(x=>x.id===id);if(!r)return;$('qtId').value=r.id;$('qtNum').value=r.num;$('qtDt').value=r.dt;$('qtExp').value=r.exp||'';$('qtCli').value=r.cli;$('qtMgr').value=r.mgr||'';$('qtNote').value=r.note||'';$('qtSt').value=r.st;qtItemList=(r.items||[]).map(x=>({...x}));renQtItems();$('qtMoT').textContent='수정';oMo('qtMo2')}
+function addQtItem(){qtItemList.push({nm:'',spec:'',qty:0,price:0});renQtItems()}
+function renQtItems(){$('qtItems').innerHTML=qtItemList.map((it,i)=>'<tr><td><input type="text" value="'+(it.nm||'')+'" onchange="qtItemList['+i+'].nm=this.value" style="width:100%;padding:4px;border:1px solid var(--bdr);font-size:12px"></td><td><input type="text" value="'+(it.spec||'')+'" onchange="qtItemList['+i+'].spec=this.value" style="width:70px;padding:4px;border:1px solid var(--bdr);font-size:12px"></td><td><input type="number" value="'+(it.qty||'')+'" onchange="qtItemList['+i+'].qty=+this.value;renQtItems()" style="width:60px;padding:4px;border:1px solid var(--bdr);font-size:12px;text-align:right"></td><td><input type="number" value="'+(it.price||'')+'" onchange="qtItemList['+i+'].price=+this.value;renQtItems()" style="width:80px;padding:4px;border:1px solid var(--bdr);font-size:12px;text-align:right"></td><td style="text-align:right;font-weight:700;font-size:12px">'+fmt((it.qty||0)*(it.price||0))+'</td><td><button class="btn btn-sm btn-d" onclick="qtItemList.splice('+i+',1);renQtItems()">×</button></td></tr>').join('');const t=qtItemList.reduce((s,it)=>s+(it.qty||0)*(it.price||0),0);$('qtTotal').value=fmt(t)+'원'}
+function saveQt(){const cli=$('qtCli').value.trim();if(!cli){toast('거래처','err');return}const id=$('qtId').value||gid();const total=qtItemList.reduce((s,it)=>s+(it.qty||0)*(it.price||0),0);const rec={id,num:$('qtNum').value,dt:$('qtDt').value,exp:$('qtExp').value,cli,mgr:$('qtMgr').value,items:qtItemList.filter(it=>it.nm),total,st:$('qtSt').value,note:$('qtNote').value};const ls=DB.g('quotes');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('quotes',ls);cMo('qtMo2');rQt();toast('저장','ok')}
+function dQt(id){if(!confirm('삭제?'))return;DB.s('quotes',DB.g('quotes').filter(x=>x.id!==id));rQt();toast('삭제','ok')}
+function printQt(){const cli=$('qtCli').value.trim();if(!cli){toast('거래처 먼저','err');return}const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};const total=qtItemList.reduce((s,it)=>s+(it.qty||0)*(it.price||0),0);let rows=qtItemList.filter(it=>it.nm).map((it,i)=>'<tr><td>'+(i+1)+'</td><td>'+it.nm+'</td><td>'+(it.spec||'')+'</td><td style="text-align:right">'+fmt(it.qty)+'</td><td style="text-align:right">'+fmt(it.price)+'</td><td style="text-align:right;font-weight:700">'+fmt((it.qty||0)*(it.price||0))+'</td></tr>').join('');const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>견적서</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;font-size:12px;padding:20mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:6px 8px;font-size:11px}th{background:#E5E7EB;font-weight:700}.title{text-align:center;font-size:22px;font-weight:800;margin-bottom:20px;letter-spacing:4px}</style></head><body><div class="title">견 적 서</div><div style="display:flex;justify-content:space-between;margin-bottom:16px"><div><b>수신:</b> '+cli+'<br><b>견적번호:</b> '+$('qtNum').value+'<br><b>견적일:</b> '+$('qtDt').value+'<br><b>유효기간:</b> '+($('qtExp').value||'협의')+'</div><div style="text-align:right"><b>'+co.nm+'</b><br>'+(co.addr||'')+'<br>TEL: '+(co.tel||'')+'</div></div><table><thead><tr><th>No</th><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>'+rows+'</tbody></table><div style="text-align:right;font-size:16px;font-weight:800;margin-top:12px">합계: '+fmt(total)+' 원 (VAT 별도)</div></body></html>');w.document.close();setTimeout(()=>w.print(),300)}
+
+/* 전자결재 */
+function rAp(){const filter=$('apFilter').value;const all=DB.g('approvals');const fl=filter?all.filter(r=>r.st===filter):all;$('apPend').textContent=all.filter(r=>r.st==='대기').length;$('apOk').textContent=all.filter(r=>r.st==='승인').length;$('apRej').textContent=all.filter(r=>r.st==='반려').length;$('apTbl').querySelector('tbody').innerHTML=fl.sort((a,b)=>b.dt>a.dt?1:-1).map(r=>{const stBd=r.st==='승인'?'bd-s':r.st==='반려'?'bd-d':'bd-o';return '<tr><td>'+r.dt+'</td><td>'+r.type+'</td><td style="font-weight:700">'+r.title+'</td><td>'+r.req+'</td><td style="text-align:right">'+(r.amt?fmt(r.amt)+'원':'-')+'</td><td><span class="bd '+stBd+'">'+r.st+'</span></td><td>'+(r.st==='대기'?'<button class="btn btn-sm btn-s" onclick="apAction(\''+r.id+'\',\'승인\')">승인</button> <button class="btn btn-sm btn-d" onclick="apAction(\''+r.id+'\',\'반려\')">반려</button>':'')+'<button class="btn btn-sm btn-o" onclick="eAp(\''+r.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="dAp(\''+r.id+'\')">삭제</button></td></tr>'}).join('')||'<tr><td colspan="7" class="empty-cell">내역 없음</td></tr>'}
+function openApM(){['apId','apTitle','apReq','apAmt','apContent'].forEach(x=>$(x).value='');$('apType').value='구매요청';$('apDt').value=td();$('apSt').value='대기';$('apMoT').textContent='결재 요청';oMo('apMo')}
+function eAp(id){const r=DB.g('approvals').find(x=>x.id===id);if(!r)return;$('apId').value=r.id;$('apType').value=r.type;$('apDt').value=r.dt;$('apTitle').value=r.title;$('apReq').value=r.req;$('apAmt').value=r.amt||'';$('apContent').value=r.content||'';$('apSt').value=r.st;$('apMoT').textContent='수정';oMo('apMo')}
+function saveAp(){const title=$('apTitle').value.trim();if(!title){toast('제목','err');return}const id=$('apId').value||gid();const rec={id,type:$('apType').value,dt:$('apDt').value,title,req:$('apReq').value,amt:+$('apAmt').value||0,content:$('apContent').value,st:$('apSt').value};const ls=DB.g('approvals');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('approvals',ls);cMo('apMo');rAp();toast('저장','ok')}
+function apAction(id,st){const ls=DB.g('approvals');const idx=ls.findIndex(x=>x.id===id);if(idx>=0){ls[idx].st=st;DB.s('approvals',ls);rAp();toast(st+' 처리','ok')}}
+function dAp(id){if(!confirm('삭제?'))return;DB.s('approvals',DB.g('approvals').filter(x=>x.id!==id));rAp();toast('삭제','ok')}
+
+/* ===== [NEW] 1. 현재위치 추적 시스템 ===== */
+
+/* ===== [NEW] 2. 외주 입고확인/검수 프로세스 ===== */
+function completeInspect(woId,procIdx,result){
+  var os=DB.g('wo');var wi=os.findIndex(function(x){return x.id===woId});
+  if(wi<0)return;var wo=os[wi];var p=wo.procs[procIdx];
+  var qty=+($('inspQty')?$('inspQty').value:0);
+  var def=+($('inspDef')?$('inspDef').value:0);
+  var note=$('inspNote')?$('inspNote').value:'';
+  p.inspQty=qty;p.inspDef=def;p.inspNote=note;
+  if(result==='pass'){
+    p.st='완료';p.t2=td()+' '+new Date().toTimeString().slice(0,5);
+    p.qty=qty;
+    addLog('검수합격: '+wo.pnm+' '+p.nm+' (불량:'+def+')');
+    moveToNextProc(wo);
+  }else{
+    p.st='보류';p.holdReason='검수불합격: '+note;
+    addLog('검수불합격: '+wo.pnm+' '+p.nm);
+  }
+  os[wi]=wo;DB.s('wo',os);
+  if(document.getElementById('inspectMo'))cMo('inspectMo');
+  toast(result==='pass'?'검수 합격':'검수 불합격 - 보류 처리',result==='pass'?'ok':'err');
+  if(typeof rDash==='function')rDash();
+}
+
+/* ===== [NEW] 3. 보류/재작업 상태 관리 ===== */
+
+/* ===== [NEW] 4. 공정 스킵 로직 ===== */
+function moveToNextProc(wo){
+  var ci=-1;
+  for(var i=0;i<wo.procs.length;i++){
+    if(wo.procs[i].st!=='완료'&&wo.procs[i].st!=='외주완료'&&wo.procs[i].st!=='스킵'){ci=i;break}
+  }
+  if(ci<0){wo.status='완료';addLog('전공정 완료: '+wo.pnm);return}
+  var np=wo.procs[ci];
+  if(np.tp==='skip'||np.mt==='없음'||np.mt==='스킵'){
+    np.st='스킵';np.t1=td();np.t2=td();
+    addLog('공정 스킵: '+wo.pnm+' '+np.nm);
+    moveToNextProc(wo);
+    return;
+  }
+  if(np.tp==='out'||np.tp==='exc'){
+    np.st='외주진행중';
+    wo.status='진행중';
+    addLog('외주 이동: '+wo.pnm+' '+np.nm+' → '+(np.vd||'외주처'));
+  }else{
+    np.st='대기';
+    wo.status='진행중';
+  }
+}
+
+/* ===== [NEW] 5. LOT 분할 기능 ===== */
+
+/* ===== [NEW] 6. 수주 관리 ===== */
+
+/* ===== [NEW] 7. 자재 직송/이동 추적 ===== */
+
+/* ===== [NEW] 8. 출고→매출 자동 연계 ===== */
+/* ===== badge 함수 통합 (원본 덮어쓰기) ===== */
+
+/* 현재위치는 rDash의 작업지시 테이블에서 이미 표시됨 */
+
+/* ===== 모든 모달에 닫기 버튼 자동 추가 ===== */
+document.addEventListener('DOMContentLoaded',function(){
+  // Initialize DB from server (async, non-blocking)
+  DB.init().then(function(){console.log('DB init complete');if(typeof refreshLoginUsers==='function')refreshLoginUsers()}).catch(function(e){console.warn('DB init error:',e)});
+  // mo-t (ERP 모달 헤더)에 × 버튼이 없으면 추가
+  document.querySelectorAll('.mo-t').forEach(function(el){
+    if(el.querySelector('.mo-x')||el.querySelector('button'))return;
+    var moParent=el.closest('.mo-bg')||el.closest('.mo-ov')||el.closest('[id$="Mo"]')||el.closest('.mo');
+    if(!moParent)return;
+    var moId=moParent.id;
+    if(!moId)return;
+    var btn=document.createElement('button');
+    btn.className='mo-x';
+    btn.innerHTML='×';
+    btn.style.cssText='float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt2);padding:0 4px;border-radius:4px;line-height:1';
+    btn.onmouseover=function(){this.style.color='var(--dan)';this.style.background='var(--dan-l)'};
+    btn.onmouseout=function(){this.style.color='var(--txt2)';this.style.background='none'};
+    btn.onclick=function(){cMo(moId)};
+    el.appendChild(btn);
+  });
+  // mh (MES 모달 헤더)에 mc 버튼 없으면 추가
+  document.querySelectorAll('.mh').forEach(function(el){
+    if(el.querySelector('.mc'))return;
+    var moParent=el.closest('[id$="Mo"]');
+    if(!moParent)return;
+    var moId=moParent.id;
+    var btn=document.createElement('button');
+    btn.className='mc';
+    btn.innerHTML='×';
+    btn.onclick=function(){cMo(moId)};
+    el.appendChild(btn);
+  });
+  // mo-bg 배경 클릭으로 닫기 (woFormOv 제외 — 작업지시서 폼은 실수 닫힘 방지)
+  document.querySelectorAll('.mo-bg,.mo-ov').forEach(function(el){
+    if(!el.id)return;
+    if(el.id==='woFormOv')return;
+    el.addEventListener('click',function(e){
+      if(e.target===el)cMo(el.id);
+    });
+  });
+  // 다른 탭에서 localStorage 변경 시 자동 갱신 (관리자↔작업자 실시간 동기화)
+  window.addEventListener('storage',function(e){
+    if(e.key==='wo'||e.key==='cli'||e.key==='prod'){
+      if(CU&&CU.role==='worker'&&typeof rWQ==='function')rWQ();
+      if(CU&&CU.role==='admin'&&typeof rDash==='function')rDash();
+    }
+  });
+});
+
+initDB();
+
+/* ===== AI 어시스턴트 (Gemini) ===== */
+var _aiOpen=false;
+function toggleAI(){
+  var panel=$('aiPanel');
+  if(!panel){
+    var el=document.createElement('div');
+    el.id='aiPanel';
+    el.innerHTML=`
+    <div style="position:fixed;right:16px;bottom:16px;width:380px;height:520px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;z-index:9999;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#4285F4,#34A853);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+        <span style="font-weight:700;font-size:14px">AI 어시스턴트</span>
+        <button onclick="toggleAI()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">&times;</button>
+      </div>
+      <div id="aiMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="background:#F0F7FF;padding:10px 12px;border-radius:12px;font-size:13px;color:#1E40AF;max-width:90%">안녕하세요! MES 데이터를 기반으로 도움을 드립니다.<br><br>예시 질문:<br>• 현재 생산 현황 요약해줘<br>• 납기 임박한 작업 알려줘<br>• 이번주 생산 효율 분석해줘</div>
+      </div>
+      <div style="padding:8px;border-top:1px solid #E5E7EB;display:flex;gap:6px;flex-shrink:0">
+        <input id="aiInput" type="text" placeholder="질문을 입력하세요..." style="flex:1;padding:10px 14px;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendAI()">
+        <button onclick="sendAI()" style="padding:10px 16px;border-radius:10px;border:none;background:#4285F4;color:#fff;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">전송</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+    _aiOpen=true;
+    $('aiInput').focus();
+    return;
+  }
+  _aiOpen=!_aiOpen;
+  panel.style.display=_aiOpen?'block':'none';
+  if(_aiOpen)$('aiInput').focus();
+}
+
+function getAIContext(){
+  var wo=DB.g('wo'),cli=DB.g('cli'),prod=DB.g('prod');
+  var active=wo.filter(function(o){return o.status!=='출고완료'});
+  var summary='현재 시스템 데이터:\n';
+  summary+='- 전체 작업지시: '+wo.length+'건\n';
+  summary+='- 진행중: '+wo.filter(function(o){return o.status==='진행중'}).length+'건\n';
+  summary+='- 대기: '+wo.filter(function(o){return o.status==='대기'}).length+'건\n';
+  summary+='- 완료: '+wo.filter(function(o){return o.status==='완료'||o.status==='출고완료'}).length+'건\n';
+  summary+='- 등록 거래처: '+cli.length+'개\n';
+  summary+='- 등록 품목: '+prod.length+'개\n\n';
+  summary+='작업 상세:\n';
+  active.forEach(function(o){
+    var cp=typeof curP==='function'?curP(o):null;
+    var dl=typeof dLeft==='function'?dLeft(o):999;
+    summary+=o.cnm+' | '+o.pnm+' | '+o.fq+'매 | 현재공정:'+(cp?cp.nm+' ('+cp.st+')':'완료')+' | 납기:'+o.sd+' (D'+(dl>=0?'-':'+')+ Math.abs(dl)+')\n';
+  });
+  return summary;
+}
+
+async function sendAI(){
+  var input=$('aiInput');
+  var q=input.value.trim();
+  if(!q)return;
+  input.value='';
+  var msgs=$('aiMessages');
+  // 사용자 메시지
+  msgs.innerHTML+='<div style="align-self:flex-end;background:#4285F4;color:#fff;padding:8px 12px;border-radius:12px;font-size:13px;max-width:80%">'+q+'</div>';
+  // 로딩
+  msgs.innerHTML+='<div id="aiLoading" style="align-self:flex-start;padding:8px 12px;font-size:12px;color:#9CA3AF">생각 중...</div>';
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try{
+    var aiKey=localStorage.getItem('gemini_key')||'';
+    var context=getAIContext();
+    var systemPrompt='당신은 패키지 제조업 MES(생산관리시스템)의 AI 어시스턴트입니다. 한국어로 답변하세요. 간결하고 실용적으로 답변하세요. 아래는 현재 시스템 데이터입니다:\n\n'+context;
+
+    var resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='+aiKey,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:systemPrompt+'\n\n사용자 질문: '+q}]}],
+        generationConfig:{maxOutputTokens:1024,temperature:0.7}
+      })
+    });
+    var data=await resp.json();
+    if(data.error){
+      var loading=$('aiLoading');if(loading)loading.remove();
+      var errMsg='API 오류';
+      if(data.error.code===429)errMsg='API 한도 초과. 잠시 후 다시 시도하거나, 설정에서 새 API 키를 등록하세요.<br><br><button onclick="var k=prompt(\'Gemini API 키 입력:\');if(k){localStorage.setItem(\'gemini_key\',k);toast(\'API 키 저장\',\'ok\')}" style="padding:6px 12px;border-radius:6px;border:1px solid #3B82F6;background:#EFF6FF;color:#3B82F6;font-size:12px;cursor:pointer">API 키 변경</button>';
+      else errMsg=data.error.message;
+      msgs.innerHTML+='<div style="align-self:flex-start;background:#FEF2F2;padding:10px 12px;border-radius:12px;font-size:12px;color:#991B1B;max-width:90%">'+errMsg+'</div>';
+      msgs.scrollTop=msgs.scrollHeight;
+      return;
+    }
+    var answer=data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]?data.candidates[0].content.parts[0].text:'응답을 받지 못했습니다.';
+    // 마크다운 간단 처리
+    answer=answer.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+    var loading=$('aiLoading');if(loading)loading.remove();
+    msgs.innerHTML+='<div style="align-self:flex-start;background:#F3F4F6;padding:10px 12px;border-radius:12px;font-size:13px;max-width:90%;line-height:1.5">'+answer+'</div>';
+  }catch(e){
+    var loading=$('aiLoading');if(loading)loading.remove();
+    msgs.innerHTML+='<div style="align-self:flex-start;background:#FEF2F2;padding:10px 12px;border-radius:12px;font-size:13px;color:#DC2626">오류: '+e.message+'</div>';
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}

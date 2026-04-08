@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "inno-mes",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd '/Users/shoon/Documents/이노패키지MES' && python3 -m http.server 3100"],
+      "port": 3100
+    }
+  ]
+}

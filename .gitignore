@@ -1,0 +1,19 @@
+# Data & DB
+data/
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Mac
+.DS_Store
+
+# Zip
+*.zip
+
+# Backup
+*.bak

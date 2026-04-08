@@ -147,7 +147,9 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .prog-bar .track{width:100%;height:100%;background:#E2E8F0;border-radius:3px;position:relative}
 .prog-bar .fill{height:100%;background:var(--pri);border-radius:3px;transition:width .3s}
 .sb-r{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-.sb-r input[type="text"]{padding:8px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;flex:1;min-width:180px}
+.sb-r input[type="text"],.sb-r input:not([type]),.sb-r input[type="search"]{padding:10px 14px 10px 38px;border:1px solid var(--bdr);border-radius:var(--r-sm);font-size:13px;flex:1;min-width:180px;background:#FFFFFF url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B6473' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;color:var(--txt);font-weight:500;transition:all .25s var(--ease);box-shadow:var(--sh-xs)}
+.sb-r input[type="text"]:hover,.sb-r input:not([type]):hover{border-color:var(--bdr2)}
+.sb-r input[type="text"]:focus,.sb-r input:not([type]):focus,.sb-r input[type="search"]:focus{border-color:var(--pri);box-shadow:0 0 0 4px var(--pri-ring),var(--sh-xs);outline:none;background-color:#FFFFFF}
 .filter-btns{display:flex;gap:4px;flex-wrap:wrap}
 .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr);background:#fff;font-size:12px;cursor:pointer;transition:all .15s;font-weight:500}
 .filter-btn:hover{background:var(--bg2)}

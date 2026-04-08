@@ -137,7 +137,7 @@ if(shipped+qty>=o.fq){const all=DB.g('wo');const i=all.findIndex(x=>x.id===woId)
 }}
 /* === 데이터 연계: 출고 → 매출 자동 등록 === */
 try{
-  var unitPrice=o.totalAmt&&o.fq?(o.totalAmt/o.fq):0;
+  var unitPrice=o.price||(o.amt&&o.fq?Math.round(o.amt/o.fq):0);
   var salesAmt=Math.round(unitPrice*qty);
   if(salesAmt>0){
     var sb=DB.g('sales');

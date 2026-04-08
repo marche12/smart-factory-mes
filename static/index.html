@@ -562,17 +562,19 @@
 <!-- 직원정보 -->
 <div class="tc on" id="t-emp">
   <div class="sg">
-    <div class="sb"><div class="l">총 직원수</div><div class="v" id="empCnt">0</div></div>
-    <div class="sb"><div class="l">현장 인원</div><div class="v" id="empField">0</div></div>
-    <div class="sb"><div class="l">사무 인원</div><div class="v" id="empOffice">0</div></div>
-    <div class="sb"><div class="l">금일 출근</div><div class="v" style="color:var(--suc)" id="empToday">0</div></div>
+    <div class="sb blue"><div class="l">총 직원수</div><div class="v" id="empCnt">0</div></div>
+    <div class="sb orange"><div class="l">현장 인원</div><div class="v" id="empField">0</div></div>
+    <div class="sb purple"><div class="l">사무 인원</div><div class="v" id="empOffice">0</div></div>
+    <div class="sb green"><div class="l">금일 출근</div><div class="v" id="empToday">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openEmpM()">+ 직원등록</button>
-    <select id="empFilter" onchange="rEmp()">
-      <option value="">전체</option><option value="현장">현장</option><option value="사무">사무</option>
-    </select>
-    <input type="text" id="empSch" placeholder="이름 검색" oninput="rEmp()">
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="text" id="empSch" placeholder="이름으로 검색" oninput="rEmp()" class="fbar-grow">
+      <select id="empFilter" onchange="rEmp()">
+        <option value="">전체</option><option value="현장">현장</option><option value="사무">사무</option>
+      </select>
+      <button class="btn btn-p btn-sm" onclick="openEmpM()">+ 직원등록</button>
+    </div>
   </div>
   <div id="empList"></div>
 </div>
@@ -580,15 +582,19 @@
 <!-- 출퇴근 -->
 <div class="tc" id="t-att">
   <div class="sg">
-    <div class="sb"><div class="l">금일 출근</div><div class="v" style="color:var(--suc)" id="attIn">0</div></div>
-    <div class="sb"><div class="l">금일 퇴근</div><div class="v" id="attOut">0</div></div>
-    <div class="sb"><div class="l">미출근</div><div class="v" style="color:var(--dan)" id="attAbsent">0</div></div>
-    <div class="sb"><div class="l">초과근무</div><div class="v" style="color:var(--wrn)" id="attOT">0</div></div>
+    <div class="sb green"><div class="l">금일 출근</div><div class="v" id="attIn">0</div></div>
+    <div class="sb blue"><div class="l">금일 퇴근</div><div class="v" id="attOut">0</div></div>
+    <div class="sb red"><div class="l">미출근</div><div class="v" id="attAbsent">0</div></div>
+    <div class="sb orange"><div class="l">초과근무</div><div class="v" id="attOT">0</div></div>
   </div>
-  <div class="tb">
-    <input type="date" id="attDt" onchange="rAtt()">
-    <button class="btn btn-g btn-sm" onclick="$('attDt').value=td();rAtt()">오늘</button>
-    <button class="btn btn-g btn-sm" onclick="expAttCSV()">엑셀</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">날짜</span>
+      <input type="date" id="attDt" onchange="rAtt()">
+      <button class="btn btn-o btn-sm" onclick="$('attDt').value=td();rAtt()">오늘</button>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="expAttCSV()">엑셀</button>
+    </div>
   </div>
   <table class="dt" id="attTbl">
     <thead><tr><th>이름</th><th>부서</th><th>담당공정</th><th>출근</th><th>퇴근</th><th>근무시간</th><th>초과</th><th>상태</th><th>관리</th></tr></thead>
@@ -599,16 +605,19 @@
 <!-- 급여 -->
 <div class="tc" id="t-pay">
   <div class="sg">
-    <div class="sb"><div class="l">총 급여</div><div class="v" id="payTotal">0원</div></div>
-    <div class="sb"><div class="l">기본급 합</div><div class="v" id="payBase">0원</div></div>
-    <div class="sb"><div class="l">수당 합</div><div class="v" style="color:var(--suc)" id="payAllow">0원</div></div>
-    <div class="sb"><div class="l">공제 합</div><div class="v" style="color:var(--dan)" id="payDeduct">0원</div></div>
+    <div class="sb blue"><div class="l">총 급여</div><div class="v" id="payTotal">0원</div></div>
+    <div class="sb purple"><div class="l">기본급 합</div><div class="v" id="payBase">0원</div></div>
+    <div class="sb green"><div class="l">수당 합</div><div class="v" id="payAllow">0원</div></div>
+    <div class="sb red"><div class="l">공제 합</div><div class="v" id="payDeduct">0원</div></div>
   </div>
-  <div class="tb">
-    <input type="month" id="payMo2" onchange="rPay()">
-    <button class="btn btn-p" onclick="genPay()">급여 자동계산</button>
-    <button class="btn btn-g btn-sm" onclick="expPayCSV()">엑셀</button>
-    <button class="btn btn-o btn-sm" onclick="printPayAll()">전체 명세서</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="month" id="payMo2" onchange="rPay()">
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="printPayAll()">전체 명세서</button>
+      <button class="btn btn-o btn-sm" onclick="expPayCSV()">엑셀</button>
+      <button class="btn btn-p btn-sm" onclick="genPay()">급여 자동계산</button>
+    </div>
   </div>
   <table class="dt" id="payTbl">
     <thead><tr><th>이름</th><th>부서</th><th>근무일</th><th>기본급</th><th>야근수당</th><th>기타수당</th><th>공제</th><th>실수령</th><th>관리</th></tr></thead>
@@ -619,13 +628,17 @@
 <!-- 연차/휴가 -->
 <div class="tc" id="t-leave">
   <div class="sg">
-    <div class="sb"><div class="l">금월 사용</div><div class="v" id="lvUsed">0</div></div>
-    <div class="sb"><div class="l">승인대기</div><div class="v" style="color:var(--wrn)" id="lvPend">0</div></div>
-    <div class="sb"><div class="l">금년 총 사용</div><div class="v" id="lvYear">0</div></div>
+    <div class="sb blue"><div class="l">금월 사용</div><div class="v" id="lvUsed">0</div></div>
+    <div class="sb orange"><div class="l">승인대기</div><div class="v" id="lvPend">0</div></div>
+    <div class="sb green"><div class="l">금년 총 사용</div><div class="v" id="lvYear">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openLvM()">+ 휴가등록</button>
-    <select id="lvYear2" onchange="rLeave()"></select>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">연도</span>
+      <select id="lvYear2" onchange="rLeave()"></select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-p btn-sm" onclick="openLvM()">+ 휴가등록</button>
+    </div>
   </div>
   <table class="dt" id="lvTbl">
     <thead><tr><th>이름</th><th>구분</th><th>시작일</th><th>종료일</th><th>일수</th><th>사유</th><th>상태</th><th>관리</th></tr></thead>
@@ -703,9 +716,13 @@
 
 <!-- 매출/매입 추이 -->
 <div class="tc on" id="t-trend">
-  <div class="tb">
-    <select id="trY" onchange="renderTrend()"></select>
-    <button class="btn btn-g btn-sm" onclick="printSection('trendPrint')">인쇄</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">연도</span>
+      <select id="trY" onchange="renderTrend()"></select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="printSection('trendPrint')">인쇄</button>
+    </div>
   </div>
   <div class="sg" id="trendStats"></div>
   <div class="card" id="trendPrint">
@@ -723,14 +740,19 @@
 
 <!-- 거래처 순위 -->
 <div class="tc" id="t-rank">
-  <div class="tb">
-    <select id="rankPeriod" onchange="renderRank()">
-      <option value="month">금월</option><option value="quarter">금분기</option><option value="year">금년</option><option value="all">전체</option>
-    </select>
-    <select id="rankType" onchange="renderRank()">
-      <option value="sales">매출 기준</option><option value="count">건수 기준</option>
-    </select>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">기간</span>
+      <select id="rankPeriod" onchange="renderRank()">
+        <option value="month">금월</option><option value="quarter">금분기</option><option value="year">금년</option><option value="all">전체</option>
+      </select>
+      <span class="fbar-label">기준</span>
+      <select id="rankType" onchange="renderRank()">
+        <option value="sales">매출 기준</option><option value="count">건수 기준</option>
+      </select>
+    </div>
   </div>
+  <div id="rankPodium"></div>
   <div class="card">
     <div class="card-t" id="rankTitle">거래처별 매출 순위</div>
     <div id="rankChart"></div>
@@ -746,8 +768,10 @@
 
 <!-- 원가/이익률 -->
 <div class="tc" id="t-cost">
-  <div class="tb">
-    <input type="text" id="costSearch" placeholder="제품명 검색..." oninput="renderCost()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:200px">
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="text" id="costSearch" placeholder="제품명으로 검색" oninput="renderCost()" class="fbar-grow">
+    </div>
   </div>
   <div class="sg" id="costStats"></div>
   <div class="card">
@@ -761,9 +785,13 @@
 
 <!-- 생산성 분석 -->
 <div class="tc" id="t-productivity">
-  <div class="tb">
-    <input type="month" id="prodMonth" onchange="renderProductivity()">
-    <button class="btn btn-g btn-sm" onclick="printSection('prodPrint')">인쇄</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">월</span>
+      <input type="month" id="prodMonth" onchange="renderProductivity()">
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="printSection('prodPrint')">인쇄</button>
+    </div>
   </div>
   <div class="sg" id="prodStats"></div>
   <div class="card" id="prodPrint">

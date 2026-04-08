@@ -121,6 +121,21 @@ function renderRank() {
 
   $('rankTitle').textContent = '거래처별 ' + (type === 'sales' ? '매출' : '건수') + ' Top ' + sorted.length;
 
+  // Podium for Top 3
+  var pod=$('rankPodium');if(pod){
+    if(sorted.length>=1){
+      var fmtV=function(v){return type==='sales'?(v/10000).toFixed(0)+'만':v+'건'};
+      var podHtml='<div class="podium">';
+      [1,0,2].forEach(function(idx){
+        if(sorted[idx]){
+          var x=sorted[idx];var rank=idx+1;
+          podHtml+='<div class="pod r'+rank+'"><div class="pod-rank">'+(rank===1?'🥇 1ST':rank===2?'🥈 2ND':'🥉 3RD')+'</div><div class="pod-nm">'+x[0]+'</div><div class="pod-v">'+fmtV(type==='sales'?x[1].amt:x[1].cnt)+'</div><div class="pod-sub">'+x[1].cnt+'건 / '+(x[1].unpaid>0?'미수 '+(x[1].unpaid/10000).toFixed(0)+'만':'완납')+'</div></div>';
+        }
+      });
+      podHtml+='</div>';pod.innerHTML=podHtml;
+    }else{pod.innerHTML=''}
+  }
+
   if (sorted.length === 0) {
     $('rankChart').innerHTML = emptyHtml('', '거래처 데이터가 없습니다', '매출 장부에 거래 내역을 등록하면 순위가 표시됩니다.');
   } else {

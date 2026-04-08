@@ -1,7 +1,7 @@
 {
-  "name": "이노패키지 MES",
-  "short_name": "이노MES",
-  "description": "이노패키지 생산관리 시스템",
+  "name": "팩플로우",
+  "short_name": "팩플로우",
+  "description": "팩플로우 생산관리 시스템",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8FAFC",

@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 >nul
-title 이노패키지 MES 서버
+title 팩플로우 서버
 echo ========================================
-echo   이노패키지 MES 서버 시작
+echo   팩플로우 서버 시작
 echo   접속: http://localhost:8080
 echo ========================================
 echo.

@@ -442,13 +442,16 @@
     <div class="sb green"><div class="l">금월 지급</div><div class="v" id="prP">0원</div></div>
     <div class="sb purple"><div class="l">거래처</div><div class="v" id="prC">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openPM()">+ 매입등록</button>
-    <button class="btn btn-s btn-sm" onclick="openPay('purchase')">지급처리</button>
-    <input type="month" id="prMo" onchange="rPr()">
-    <input type="text" id="prSch" placeholder="거래처 검색" oninput="rPr()">
-    <label><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
-    <button class="btn btn-g btn-sm" onclick="expCSV('purchase')">엑셀</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="month" id="prMo" onchange="rPr()">
+      <input type="text" id="prSch" placeholder="거래처로 검색" oninput="rPr()" class="fbar-grow">
+      <label><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="expCSV('purchase')">엑셀</button>
+      <button class="btn btn-s btn-sm" onclick="openPay('purchase')">지급처리</button>
+      <button class="btn btn-p btn-sm" onclick="openPM()">+ 매입등록</button>
+    </div>
   </div>
   <table class="dt" id="prTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>매입액</th><th>지급</th><th>미지급</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
@@ -456,14 +459,18 @@
 <!-- 손익 현황 -->
 <div class="tc" id="t-pl">
   <div class="sg">
-    <div class="sb"><div class="l">금월 매출</div><div class="v" style="color:var(--pri)" id="plS">0원</div></div>
-    <div class="sb"><div class="l">금월 매입</div><div class="v" style="color:var(--wrn)" id="plP">0원</div></div>
-    <div class="sb"><div class="l">인건비</div><div class="v" id="plL">0원</div></div>
-    <div class="sb"><div class="l">순이익</div><div class="v" id="plN">0원</div></div>
+    <div class="sb blue"><div class="l">금월 매출</div><div class="v" id="plS">0원</div></div>
+    <div class="sb orange"><div class="l">금월 매입</div><div class="v" id="plP">0원</div></div>
+    <div class="sb purple"><div class="l">인건비</div><div class="v" id="plL">0원</div></div>
+    <div class="sb green"><div class="l">순이익</div><div class="v" id="plN">0원</div></div>
   </div>
-  <div class="tb">
-    <select id="plY" onchange="rPl()"></select>
-    <button class="btn btn-g btn-sm" onclick="printPl()">인쇄</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">연도</span>
+      <select id="plY" onchange="rPl()"></select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="printPl()">인쇄</button>
+    </div>
   </div>
   <div class="card"><div class="card-t">월별 매출/매입/이익 추이<button class="btn btn-sm btn-o" style="margin-left:auto" onclick="startStockAudit()">재고 실사</button></div><div id="plChart"></div></div>
   <div class="card"><div class="card-t">월별 손익표</div>
@@ -474,16 +481,19 @@
 <!-- 세금계산서 -->
 <div class="tc" id="t-tax">
   <div class="sg">
-    <div class="sb"><div class="l">금월 발행</div><div class="v" id="txC">0</div></div>
-    <div class="sb"><div class="l">공급가액</div><div class="v" id="txS">0원</div></div>
-    <div class="sb"><div class="l">세액</div><div class="v" id="txV">0원</div></div>
-    <div class="sb"><div class="l">합계</div><div class="v" style="color:var(--pri)" id="txT">0원</div></div>
+    <div class="sb blue"><div class="l">금월 발행</div><div class="v" id="txC">0</div></div>
+    <div class="sb green"><div class="l">공급가액</div><div class="v" id="txS">0원</div></div>
+    <div class="sb orange"><div class="l">세액</div><div class="v" id="txV">0원</div></div>
+    <div class="sb purple"><div class="l">합계</div><div class="v" id="txT">0원</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openTxM()">+ 등록</button>
-    <input type="month" id="txMo" onchange="rTx()">
-    <select id="txTp" onchange="rTx()"><option value="">전체</option><option value="매출">매출</option><option value="매입">매입</option></select>
-    <button class="btn btn-g btn-sm" onclick="expCSV('tax')">엑셀</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="month" id="txMo" onchange="rTx()">
+      <select id="txTp" onchange="rTx()"><option value="">전체</option><option value="매출">매출</option><option value="매입">매입</option></select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="expCSV('tax')">엑셀</button>
+      <button class="btn btn-p btn-sm" onclick="openTxM()">+ 등록</button>
+    </div>
   </div>
   <table class="dt" id="txTbl"><thead><tr><th>발행일</th><th>구분</th><th>거래처</th><th>품목</th><th>공급가액</th><th>세액</th><th>합계</th><th>비고</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>

@@ -143,16 +143,19 @@
 <!-- ======== TAB 1: 원자재 입고 ======== -->
 <div class="tc on" id="t-income">
   <div class="sg">
-    <div class="sb"><div class="l">금월 입고건수</div><div class="v" id="incCnt">0</div></div>
-    <div class="sb"><div class="l">금월 입고금액</div><div class="v" id="incAmt">0원</div></div>
-    <div class="sb"><div class="l">최근 입고일</div><div class="v" id="incLast">-</div></div>
-    <div class="sb"><div class="l">미확인 건수</div><div class="v" style="color:var(--dan)" id="incPend">0</div></div>
+    <div class="sb blue"><div class="l">금월 입고건수</div><div class="v" id="incCnt">0</div></div>
+    <div class="sb green"><div class="l">금월 입고금액</div><div class="v" id="incAmt">0원</div></div>
+    <div class="sb orange"><div class="l">최근 입고일</div><div class="v" id="incLast">-</div></div>
+    <div class="sb red"><div class="l">미확인 건수</div><div class="v" id="incPend">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openIncM()">+ 입고등록</button>
-    <input type="month" id="incMonth" onchange="rIncome()">
-    <input type="text" id="incSch" placeholder="거래처/품명 검색" oninput="rIncome()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:160px">
-    <button class="btn btn-g btn-sm" onclick="exportIncCSV()">엑셀</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="month" id="incMonth" onchange="rIncome()">
+      <input type="text" id="incSch" placeholder="거래처 또는 품명으로 검색" oninput="rIncome()" class="fbar-grow">
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="exportIncCSV()">엑셀</button>
+      <button class="btn btn-p btn-sm" onclick="openIncM()">+ 입고등록</button>
+    </div>
   </div>
   <table class="dt" id="incTbl">
     <thead><tr><th>입고일</th><th>거래처</th><th>자재구분</th><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th><th>상태</th><th>관리</th></tr></thead>
@@ -163,24 +166,23 @@
 <!-- ======== TAB 2: 재고 현황 ======== -->
 <div class="tc" id="t-stock">
   <div class="sg">
-    <div class="sb"><div class="l">총 자재종류</div><div class="v" id="stkTotal">0</div></div>
-    <div class="sb"><div class="l">부족 자재</div><div class="v" style="color:var(--dan)" id="stkLow">0</div></div>
-    <div class="sb"><div class="l">재고 금액 합계</div><div class="v" id="stkValue">0원</div></div>
-    <div class="sb"><div class="l">최근 갱신</div><div class="v" id="stkUpdate">-</div></div>
+    <div class="sb blue"><div class="l">총 자재종류</div><div class="v" id="stkTotal">0</div></div>
+    <div class="sb red"><div class="l">부족 자재</div><div class="v" id="stkLow">0</div></div>
+    <div class="sb green"><div class="l">재고 금액 합계</div><div class="v" id="stkValue">0원</div></div>
+    <div class="sb purple"><div class="l">최근 갱신</div><div class="v" id="stkUpdate">-</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openStkM()">+ 자재등록</button>
-    <select id="stkCat" onchange="rStock()">
-      <option value="">전체</option>
-      <option value="종이">종이</option>
-      <option value="원단">원단</option>
-      <option value="잉크">잉크</option>
-      <option value="접착제">접착제</option>
-      <option value="박지">박지</option>
-      <option value="부자재">부자재</option>
-    </select>
-    <input type="text" id="stkSch" placeholder="자재명 검색" oninput="rStock()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:160px">
-    <label><input type="checkbox" id="stkLowOnly" onchange="rStock()"> 부족만</label>
+  <div id="stkRiskAlerts"></div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <select id="stkCat" onchange="rStock()">
+        <option value="">전체</option>
+        <option value="종이">종이</option><option value="원단">원단</option><option value="잉크">잉크</option>
+        <option value="접착제">접착제</option><option value="박지">박지</option><option value="부자재">부자재</option>
+      </select>
+      <input type="text" id="stkSch" placeholder="자재명으로 검색" oninput="rStock()" class="fbar-grow">
+      <label><input type="checkbox" id="stkLowOnly" onchange="rStock()"> 부족만</label>
+      <button class="btn btn-p btn-sm" onclick="openStkM()">+ 자재등록</button>
+    </div>
   </div>
   <table class="dt" id="stkTbl">
     <thead><tr><th>자재구분</th><th>품명</th><th>규격</th><th>단위</th><th>현재고</th><th>안전재고</th><th>상태</th><th>단가</th><th>거래처</th><th>관리</th></tr></thead>
@@ -191,23 +193,26 @@
 <!-- ======== TAB 3: 구매 발주서 ======== -->
 <div class="tc" id="t-po">
   <div class="sg">
-    <div class="sb"><div class="l">금월 발주건수</div><div class="v" id="poCnt">0</div></div>
-    <div class="sb"><div class="l">금월 발주금액</div><div class="v" id="poAmt">0원</div></div>
-    <div class="sb"><div class="l">미입고 건수</div><div class="v" style="color:var(--wrn)" id="poPend">0</div></div>
-    <div class="sb"><div class="l">완료 건수</div><div class="v" style="color:var(--suc)" id="poDone">0</div></div>
+    <div class="sb blue"><div class="l">금월 발주건수</div><div class="v" id="poCnt">0</div></div>
+    <div class="sb green"><div class="l">금월 발주금액</div><div class="v" id="poAmt">0원</div></div>
+    <div class="sb orange"><div class="l">미입고 건수</div><div class="v" id="poPend">0</div></div>
+    <div class="sb purple"><div class="l">완료 건수</div><div class="v" id="poDone">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openPoM()">+ 발주등록</button>
-    <input type="month" id="poMonth" onchange="rPO()">
-    <select id="poSt" onchange="rPO()">
-      <option value="">전체</option>
-      <option value="작성중">작성중</option>
-      <option value="발주완료">발주완료</option>
-      <option value="부분입고">부분입고</option>
-      <option value="입고완료">입고완료</option>
-    </select>
-    <button class="btn btn-g btn-sm" onclick="exportPoCSV()">엑셀</button>
-    <button class="btn btn-o btn-sm" onclick="showMRP()">MRP</button>
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="month" id="poMonth" onchange="rPO()">
+      <select id="poSt" onchange="rPO()">
+        <option value="">전체</option>
+        <option value="작성중">작성중</option>
+        <option value="발주완료">발주완료</option>
+        <option value="부분입고">부분입고</option>
+        <option value="입고완료">입고완료</option>
+      </select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="showMRP()">MRP 자동제안</button>
+      <button class="btn btn-o btn-sm" onclick="exportPoCSV()">엑셀</button>
+      <button class="btn btn-p btn-sm" onclick="openPoM()">+ 발주등록</button>
+    </div>
   </div>
   <table class="dt" id="poTbl">
     <thead><tr><th>발주번호</th><th>발주일</th><th>거래처</th><th>품목수</th><th>총금액</th><th>납기</th><th>상태</th><th>관리</th></tr></thead>
@@ -218,13 +223,15 @@
 <!-- ======== TAB 4: BOM 관리 ======== -->
 <div class="tc" id="t-bom">
   <div class="sg">
-    <div class="sb"><div class="l">등록 BOM</div><div class="v" id="bomCnt">0</div></div>
-    <div class="sb"><div class="l">평균 자재단가</div><div class="v" id="bomAvg">0원</div></div>
-    <div class="sb"><div class="l">원가 산출 제품</div><div class="v" id="bomCalc">0</div></div>
+    <div class="sb blue"><div class="l">등록 BOM</div><div class="v" id="bomCnt">0</div></div>
+    <div class="sb green"><div class="l">평균 자재단가</div><div class="v" id="bomAvg">0원</div></div>
+    <div class="sb orange"><div class="l">원가 산출 제품</div><div class="v" id="bomCalc">0</div></div>
   </div>
-  <div class="tb">
-    <button class="btn btn-p" onclick="openBomM()">+ BOM 등록</button>
-    <input type="text" id="bomSch" placeholder="제품명 검색" oninput="rBOM()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:180px">
+  <div class="fbar">
+    <div class="fbar-row">
+      <input type="text" id="bomSch" placeholder="제품명으로 검색" oninput="rBOM()" class="fbar-grow">
+      <button class="btn btn-p btn-sm" onclick="openBomM()">+ BOM 등록</button>
+    </div>
   </div>
   <table class="dt" id="bomTbl">
     <thead><tr><th>제품명</th><th>거래처</th><th>자재수</th><th>자재비 합계</th><th>단위당 원가</th><th>최종수정</th><th>관리</th></tr></thead>

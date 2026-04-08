@@ -194,10 +194,23 @@ function rStock(){
   });
 
   const lowCnt=all.filter(s=>s.safe>0&&s.qty<=s.safe).length;
+  const dangerCnt=all.filter(s=>s.safe>0&&s.qty<=s.safe*0.5).length;
+  const idleCnt=all.filter(s=>s.safe>0&&s.qty>s.safe*5).length;
   $('stkTotal').textContent=all.length;
   $('stkLow').textContent=lowCnt;
   $('stkValue').textContent=fmt(all.reduce((s,r)=>s+(r.qty||0)*(r.price||0),0))+'원';
   $('stkUpdate').textContent=all.length?all.sort((a,b)=>(b.updated||'')>(a.updated||'')?1:-1)[0].updated||'-':'-';
+  // Risk alerts
+  var ra=$('stkRiskAlerts');if(ra){
+    if(dangerCnt+lowCnt+idleCnt===0){ra.innerHTML=''}
+    else{
+      ra.innerHTML='<div class="risk-grid">'+
+        (dangerCnt>0?'<div class="risk-card danger"><div class="risk-l">⚠ 즉시 발주 필요</div><div class="risk-cnt">'+dangerCnt+'</div><div class="risk-foot">안전재고의 50% 미만</div></div>':'')+
+        (lowCnt-dangerCnt>0?'<div class="risk-card warn"><div class="risk-l">⚡ 부족 임박</div><div class="risk-cnt">'+(lowCnt-dangerCnt)+'</div><div class="risk-foot">안전재고 이하</div></div>':'')+
+        (idleCnt>0?'<div class="risk-card ok"><div class="risk-l">📦 과잉 재고</div><div class="risk-cnt">'+idleCnt+'</div><div class="risk-foot">안전재고의 5배 초과</div></div>':'')+
+        '</div>';
+    }
+  }
 
   $('stkTbl').querySelector('tbody').innerHTML=filtered.map(s=>{
     const isLow=s.safe>0&&s.qty<=s.safe;

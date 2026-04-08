@@ -1508,8 +1508,8 @@ function schedDrop(e){
   renderSchedBoard();
 }
 
-/* ===== 생산계획 우선순위 보드 ===== */
-function rPlan(){
+/* ===== 생산계획 우선순위 보드 (나중에 통합 예정) ===== */
+function rPlanPriority(){
   var wos=DB.g('wo').filter(function(o){
     return o.status!=='출고완료'&&o.status!=='취소';
   });
@@ -1644,7 +1644,7 @@ function renderPlanProcLoad(wos){
   $('planGrid').innerHTML=h;
 }
 
-if(typeof MR!=='undefined')MR['mes-plan']=function(){rPlan();};
+// MR['mes-plan'] 등록은 core.js에서 activateMesAdmin('plan')으로 처리됨
+// rPlanPriority() — 납기 우선순위 카드뷰, 추후 생산계획 상단에 통합 예정
 
 initDB();
-/* ===== SAMPLE DATA ===== */

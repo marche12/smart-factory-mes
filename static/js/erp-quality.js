@@ -240,7 +240,7 @@ function moveToNextProc(wo){
 /* ===== 모든 모달에 닫기 버튼 자동 추가 ===== */
 document.addEventListener('DOMContentLoaded',function(){
   // Initialize DB from server (async, non-blocking)
-  DB.init().then(function(){console.log('DB init complete');if(typeof refreshLoginUsers==='function')refreshLoginUsers()}).catch(function(e){console.warn('DB init error:',e)});
+  DB.init().then(function(){if(typeof refreshLoginUsers==='function')refreshLoginUsers()}).catch(function(e){console.warn('DB init error:',e)});
   // mo-t (ERP 모달 헤더)에 × 버튼이 없으면 추가
   document.querySelectorAll('.mo-t').forEach(function(el){
     if(el.querySelector('.mo-x')||el.querySelector('button'))return;

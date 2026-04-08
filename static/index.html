@@ -1159,49 +1159,74 @@
 <div style="overflow-x:auto"><table class="dt" id="shipReadyTbl"><thead><tr><th>지시번호</th><th>거래처</th><th>제품</th><th>완제품수량</th><th>완료수량</th><th>출고수량</th><th>잔량</th><th>출고예정</th><th>입고처</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div>
 </div></div>
 <div id="ship-hist" class="hidden">
-<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
-<div class="filter-btns" id="shipPeriodBtns">
-<button class="filter-btn on" onclick="setShipPeriod('daily',this)">일별</button>
-<button class="filter-btn" onclick="setShipPeriod('weekly',this)">주간</button>
-<button class="filter-btn" onclick="setShipPeriod('monthly',this)">월별</button>
-<button class="filter-btn" onclick="setShipPeriod('range',this)">기간</button>
-<button class="filter-btn" onclick="setShipPeriod('all',this)">전체</button>
+<div class="fbar">
+  <div class="fbar-row">
+    <div class="fbar-pills" id="shipPeriodBtns">
+      <button class="on" onclick="setShipPeriod('daily',this)">일별</button>
+      <button onclick="setShipPeriod('weekly',this)">주간</button>
+      <button onclick="setShipPeriod('monthly',this)">월별</button>
+      <button onclick="setShipPeriod('range',this)">기간</button>
+      <button onclick="setShipPeriod('all',this)">전체</button>
+    </div>
+    <div id="shipDateCtrl" class="fbar-date-nav">
+      <button onclick="shipDateNav(-1)">◀</button>
+      <input type="date" id="shipDateVal" onchange="rShipHist()">
+      <button onclick="shipDateNav(1)">▶</button>
+    </div>
+    <div id="shipRangeCtrl" class="fbar-date-nav" style="display:none">
+      <input type="date" id="shHistFrom" onchange="rShipHist()">
+      <span style="color:var(--txt3);padding:0 4px">~</span>
+      <input type="date" id="shHistTo" onchange="rShipHist()">
+    </div>
+    <span id="shipPeriodLabel" class="fbar-stat"></span>
+    <div class="fbar-spacer"></div>
+    <button class="btn btn-o btn-sm" onclick="exportShipCSV()">엑셀</button>
+  </div>
+  <div class="fbar-row">
+    <input type="text" id="shHistSch" placeholder="거래처 또는 제품명으로 검색" oninput="rShipHist()" class="fbar-grow">
+  </div>
 </div>
-<div id="shipDateCtrl" style="display:flex;gap:4px;align-items:center">
-<button class="btn btn-sm btn-o" onclick="shipDateNav(-1)" style="padding:3px 8px">◀</button>
-<input type="date" id="shipDateVal" onchange="rShipHist()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
-<button class="btn btn-sm btn-o" onclick="shipDateNav(1)" style="padding:3px 8px">▶</button>
-</div>
-<div id="shipRangeCtrl" style="display:none;gap:4px;align-items:center">
-<input type="date" id="shHistFrom" onchange="rShipHist()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
-<span style="color:var(--txt3)">~</span>
-<input type="date" id="shHistTo" onchange="rShipHist()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
-</div>
-<span id="shipPeriodLabel" style="font-size:12px;font-weight:600;color:var(--txt2)"></span>
-</div>
-<div class="sb-r">
-<input id="shHistSch" placeholder="거래처/제품 검색" oninput="rShipHist()" style="flex:1">
-<button class="btn btn-o btn-sm" onclick="exportShipCSV()">엑셀</button>
-</div>
-<div id="shipPeriodSum" style="margin-bottom:8px"></div>
+<div id="shipPeriodSum" style="margin-bottom:10px"></div>
+<div id="shipHeatmap"></div>
 <div class="card"><div style="overflow-x:auto"><table class="dt" id="shipHistTbl"><thead><tr><th>출고일</th><th>거래처</th><th>제품</th><th>출고수량</th><th>검수</th><th>불량</th><th>배송</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="ship-stat" class="hidden">
-<div class="sb-r"><input type="month" id="shStatM" onchange="rShipStat()"><button class="btn btn-p btn-sm" onclick="printShipStat()">출력</button></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <span class="fbar-label">월 선택</span>
+    <input type="month" id="shStatM" onchange="rShipStat()">
+    <div class="fbar-spacer"></div>
+    <button class="btn btn-p btn-sm" onclick="printShipStat()">출력</button>
+  </div>
+</div>
 <div class="card"><div id="shipStatC"></div></div>
 </div>
 <div id="ship-claim" class="hidden">
-<div style="display:flex;justify-content:space-between;margin-bottom:14px"><div class="sb-r" style="flex:1;margin-bottom:0"><input id="claimSch" placeholder="거래처/제품 검색" oninput="rClaim()"></div><button class="btn btn-d" style="margin-left:7px" onclick="openClaimM()">반품/클레임 등록</button></div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="claimTbl"><thead><tr><th>등록일</th><th>거래처</th><th>제품</th><th>유형</th><th>수량</th><th>사유</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <input type="text" id="claimSch" placeholder="거래처 또는 제품명으로 검색" oninput="rClaim()" class="fbar-grow">
+    <div class="fbar-pills" id="claimViewPills">
+      <button class="on" onclick="setClaimView('table',this)">목록</button>
+      <button onclick="setClaimView('kanban',this)">칸반</button>
+    </div>
+    <button class="btn btn-d btn-sm" onclick="openClaimM()">+ 등록</button>
+  </div>
+</div>
+<div id="claimTableView">
+  <div class="card"><div style="overflow-x:auto"><table class="dt" id="claimTbl"><thead><tr><th>등록일</th><th>거래처</th><th>제품</th><th>유형</th><th>수량</th><th>사유</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div id="claimKanbanView" style="display:none"><div id="claimKanbanArea"></div></div>
 </div>
 
 <div id="ship-lot" class="hidden">
-<div class="card">
-<div class="card-t">제품 생산 이력 조회</div>
-<div style="display:flex;gap:8px;margin-bottom:16px">
-<input id="lotSch" placeholder="제품명으로 검색... (예: A박스)" oninput="rLotHist()" style="flex:1;padding:10px 14px;font-size:14px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2)" autocomplete="off">
-<button class="btn btn-blue" onclick="rLotHist()">검색</button>
+<div class="fbar">
+  <div class="fbar-row">
+    <input type="text" id="lotSch" placeholder="제품명으로 검색 (예: 아이보리 쇼핑백)" oninput="rLotHist()" autocomplete="off" class="fbar-grow">
+    <button class="btn btn-p btn-sm" onclick="rLotHist()">검색</button>
+  </div>
 </div>
+<div class="card">
+<div class="card-t">제품 생산 이력</div>
 <div id="lotResult"><div class="empty-state"><div class="msg">제품명을 검색하세요</div><div class="sub">인쇄소 · 작업수량 · 출고량 · 불량 이력을 한눈에 확인</div></div></div>
 </div>
 </div>

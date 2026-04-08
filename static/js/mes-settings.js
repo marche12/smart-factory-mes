@@ -115,12 +115,25 @@ const ready=DB.g('wo').filter(function(o){
 $('shipAlerts').innerHTML='';
 // Summary
 const totReady=ready.length,overdue=ready.filter(o=>o.sd&&o.sd<td()).length,todayShip=ready.filter(o=>o.sd===td()).length;
-var _todayShipped=DB.g('shipLog').filter(s=>s.dt===td()).length;
+var _shipLog=DB.g('shipLog');
+var _todayShipped=_shipLog.filter(s=>s.dt===td()).length;
+// 어제 대비 — yesterday's shipLog 건수
+var _yd=new Date();_yd.setDate(_yd.getDate()-1);var _ydStr=_yd.toISOString().slice(0,10);
+var _ydShipped=_shipLog.filter(s=>s.dt===_ydStr).length;
+var _delta=_todayShipped-_ydShipped;
+var _deltaTxt=_delta>0?`<span style="color:var(--suc)">▲ ${_delta}</span>`:_delta<0?`<span style="color:var(--dan)">▼ ${Math.abs(_delta)}</span>`:`<span style="color:var(--txt3)">변동 없음</span>`;
+// 7일 sparkline (출고 건수 기준)
+var _spk=[];for(var _i=6;_i>=0;_i--){var _d=new Date();_d.setDate(_d.getDate()-_i);var _ds=_d.toISOString().slice(0,10);_spk.push(_shipLog.filter(s=>s.dt===_ds).length)}
+var _spkMax=Math.max.apply(null,_spk)||1;
+var _spkSvg='<svg width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none" style="display:block;margin-top:6px"><polyline fill="none" stroke="var(--suc)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="'+_spk.map((v,i)=>(i*100/6)+','+(28-(v/_spkMax)*24)).join(' ')+'"/><polyline fill="rgba(14,140,87,.08)" stroke="none" points="0,32 '+_spk.map((v,i)=>(i*100/6)+','+(28-(v/_spkMax)*24)).join(' ')+' 100,32"/></svg>';
+// 가장 큰 출고예정 건
+var _bigShip=ready.filter(o=>o.sd===td()).sort((a,b)=>(b.fq||0)-(a.fq||0))[0];
+var _bigTxt=_bigShip?`최대: <strong style="color:var(--txt)">${_bigShip.cnm}</strong> ${(_bigShip.fq||0).toLocaleString()}`:'예정 없음';
 $('shipSum').innerHTML=
-  `<div class="sb blue"><div class="l">출고대기</div><div class="v">${totReady}</div></div>`+
-  `<div class="sb ${overdue>0?'red':'orange'}"><div class="l">출고 지연</div><div class="v">${overdue}</div></div>`+
-  `<div class="sb orange"><div class="l">오늘 출고예정</div><div class="v">${todayShip}</div></div>`+
-  `<div class="sb green"><div class="l">금일 출고완료</div><div class="v">${_todayShipped}</div></div>`;
+  `<div class="sb blue"><div class="l">출고대기</div><div class="v">${totReady}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">총 잔량 ${ready.reduce((s,o)=>s+(o.fq-getShipped(o.id)),0).toLocaleString()}개</div></div>`+
+  `<div class="sb ${overdue>0?'red':'orange'}"><div class="l">출고 지연</div><div class="v">${overdue}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">${overdue>0?'⚠ 즉시 처리 필요':'지연 없음'}</div></div>`+
+  `<div class="sb orange"><div class="l">오늘 출고예정</div><div class="v">${todayShip}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_bigTxt}</div></div>`+
+  `<div class="sb green"><div class="l">금일 출고완료</div><div class="v">${_todayShipped}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">${_deltaTxt} <span style="color:var(--txt3);margin-left:4px">vs 어제</span></div>${_spkSvg}</div>`;
 // Table
 $('shipReadyTbl').querySelector('tbody').innerHTML=ready.length?ready.sort((a,b)=>a.sd>b.sd?1:-1).map(o=>{const shipped=getShipped(o.id);const remain=o.fq-shipped;const late=o.sd&&o.sd<td();
 var compQty=o.procs&&o.procs.length?o.procs[o.procs.length-1].qty||0:0;if(!compQty){for(var _pi=o.procs.length-1;_pi>=0;_pi--){if(o.procs[_pi].qty>0){compQty=o.procs[_pi].qty;break}}}

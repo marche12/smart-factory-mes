@@ -938,6 +938,77 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .tb input[type="text"]{padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:140px}
 .tb label{font-size:12px;display:flex;align-items:center;gap:4px}
 
+/* ===== Filter Toolbar (Premium 통일 컴포넌트) ===== */
+.fbar{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;gap:10px}
+.fbar-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fbar-row + .fbar-row{padding-top:10px;border-top:1px solid var(--bdr-soft)}
+.fbar-grow{flex:1;min-width:180px}
+.fbar input[type="text"],.fbar input[type="search"],.fbar input:not([type]){flex:1;min-width:200px;padding:10px 14px 10px 38px;border:1px solid var(--bdr);border-radius:var(--r-sm);font-size:13px;background:#FFFFFF url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B6473' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;color:var(--txt);font-weight:500;transition:all .25s var(--ease);box-shadow:var(--sh-xs)}
+.fbar input[type="text"]:hover,.fbar input:not([type]):hover{border-color:var(--bdr2)}
+.fbar input[type="text"]:focus,.fbar input:not([type]):focus{border-color:var(--pri);box-shadow:0 0 0 4px var(--pri-ring),var(--sh-xs);outline:none}
+.fbar input[type="date"],.fbar input[type="month"],.fbar select{padding:9px 12px;border:1px solid var(--bdr);border-radius:var(--r-sm);font-size:12.5px;background:#FFFFFF;font-weight:600;color:var(--txt);box-shadow:var(--sh-xs);transition:border-color .2s var(--ease)}
+.fbar input[type="date"]:focus,.fbar input[type="month"]:focus,.fbar select:focus{border-color:var(--pri);outline:none;box-shadow:0 0 0 3px var(--pri-ring)}
+.fbar-pills{display:inline-flex;gap:0;border:1px solid var(--bdr);border-radius:var(--r-sm);padding:3px;background:#F4F6FA;box-shadow:var(--sh-xs)}
+.fbar-pills button{padding:7px 14px;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--txt2);border-radius:6px;cursor:pointer;transition:all .2s var(--ease);letter-spacing:-.1px;white-space:nowrap}
+.fbar-pills button:hover{color:var(--txt)}
+.fbar-pills button.on{background:#FFFFFF;color:var(--pri);box-shadow:0 1px 2px rgba(15,23,42,.06),0 1px 0 rgba(15,23,42,.04);font-weight:700}
+.fbar-date-nav{display:inline-flex;align-items:center;gap:4px;background:#F4F6FA;border:1px solid var(--bdr);border-radius:var(--r-sm);padding:3px;box-shadow:var(--sh-xs)}
+.fbar-date-nav button{width:28px;height:28px;border:none;background:transparent;color:var(--txt2);font-size:13px;cursor:pointer;border-radius:4px;transition:all .15s}
+.fbar-date-nav button:hover{background:#FFFFFF;color:var(--txt)}
+.fbar-date-nav input[type="date"]{border:none;box-shadow:none;background:transparent;padding:5px 6px;font-weight:600;color:var(--txt)}
+.fbar-spacer{flex:1}
+.fbar-label{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.4px;text-transform:uppercase;margin-right:4px}
+.fbar-stat{font-size:12px;color:var(--txt2);font-weight:600;padding:4px 10px;background:var(--pri-l);color:var(--pri);border-radius:var(--r-full)}
+
+/* ===== Calendar Heatmap (출고이력) ===== */
+.heat{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--sh-xs)}
+.heat-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.heat-title{font-size:13px;font-weight:800;color:var(--txt);letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.heat-title::before{content:'';width:3px;height:14px;background:var(--pri-grad);border-radius:2px}
+.heat-legend{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2);font-weight:600}
+.heat-legend-cell{width:11px;height:11px;border-radius:3px;border:1px solid var(--bdr-soft)}
+.heat-grid{display:grid;grid-template-columns:repeat(13,16px);grid-auto-rows:16px;gap:4px;justify-content:start}
+.heat-cell{width:16px;height:16px;border-radius:3px;background:#F1F3F7;border:1px solid var(--bdr-soft);transition:transform .15s var(--ease),box-shadow .15s var(--ease);cursor:default;position:relative}
+.heat-cell:hover{transform:scale(1.4);z-index:5;box-shadow:var(--sh)}
+.heat-cell.lv1{background:#DBE5F7}
+.heat-cell.lv2{background:#9DB7E8}
+.heat-cell.lv3{background:#5887D6}
+.heat-cell.lv4{background:var(--pri)}
+.heat-cell.lv5{background:var(--pri-d)}
+.heat-cell .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%) scale(.8);background:#0B1220;color:#fff;font-size:10px;font-weight:600;padding:5px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:all .15s var(--ease)}
+.heat-cell:hover .tip{opacity:1;transform:translateX(-50%) scale(1)}
+
+/* ===== Kanban Board (반품/클레임 뷰) ===== */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.kb-col{background:var(--bg2);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:12px;min-height:240px}
+.kb-hd{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px;border-bottom:1px solid var(--bdr-soft);margin-bottom:10px}
+.kb-hd-nm{font-size:12px;font-weight:800;color:var(--txt);letter-spacing:.4px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.kb-hd-nm::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--txt3)}
+.kb-col.recv .kb-hd-nm::before{background:var(--dan)}
+.kb-col.proc .kb-hd-nm::before{background:var(--gold)}
+.kb-col.done .kb-hd-nm::before{background:var(--suc)}
+.kb-cnt{font-size:11px;font-weight:700;color:var(--txt2);background:#FFFFFF;padding:3px 8px;border-radius:var(--r-full);border:1px solid var(--bdr-soft)}
+.kb-card{background:#FFFFFF;border:1px solid var(--bdr-soft);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;box-shadow:var(--sh-xs);transition:all .25s var(--ease);cursor:pointer}
+.kb-card:hover{box-shadow:var(--sh);transform:translateY(-1px);border-color:var(--bdr)}
+.kb-card-cli{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.kb-card-prod{font-size:12px;color:var(--txt2);margin-bottom:8px}
+.kb-card-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt3);font-weight:500}
+.kb-card-reason{font-size:11px;color:var(--txt2);margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr-soft);line-height:1.5}
+.kb-empty{font-size:12px;color:var(--txt3);text-align:center;padding:24px 8px;font-style:italic}
+
+/* ===== Lot Timeline (이력조회) ===== */
+.lot-tl{position:relative;padding-left:32px}
+.lot-tl::before{content:'';position:absolute;left:11px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--pri) 0%,var(--bdr) 100%);border-radius:2px}
+.lot-step{position:relative;padding:0 0 18px 0}
+.lot-step::before{content:'';position:absolute;left:-26px;top:4px;width:14px;height:14px;border-radius:50%;background:#FFFFFF;border:3px solid var(--pri);box-shadow:0 0 0 3px var(--pri-l)}
+.lot-step.done::before{background:var(--pri);box-shadow:0 0 0 3px var(--pri-l),inset 0 0 0 2px #FFFFFF}
+.lot-step.warn::before{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-l)}
+.lot-step.danger::before{border-color:var(--dan);box-shadow:0 0 0 3px var(--dan-l)}
+.lot-step-hd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.lot-step-date{font-size:11px;color:var(--txt3);font-weight:500}
+.lot-step-body{font-size:12px;color:var(--txt2);line-height:1.6;background:var(--bg2);border-radius:var(--r-sm);padding:10px 12px;border:1px solid var(--bdr-soft)}
+.lot-step-body strong{color:var(--txt)}
+
 /* ===== 거래처별 미수금 현황 (매출 탭) ===== */
 .recv-section{background:var(--bg);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-top:16px}
 .recv-section h3{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--txt)}

@@ -39,6 +39,17 @@ function _getShipDateRange(){
   }
   return{from:null,to:null,label:''};
 }
+function _renderShipHeatmap(allLogs){
+  var el=$('shipHeatmap');if(!el)return;
+  // 최근 13주(91일) 일별 출고 건수
+  var days=91;
+  var counts=[];var max=0;
+  for(var i=days-1;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var ds=d.toISOString().slice(0,10);var c=allLogs.filter(function(r){return r.dt===ds}).length;counts.push({d:ds,c:c});if(c>max)max=c}
+  if(max===0){el.innerHTML='';return}
+  var lvl=function(c){if(c===0)return '';var r=c/max;if(r>.8)return 'lv5';if(r>.6)return 'lv4';if(r>.4)return 'lv3';if(r>.2)return 'lv2';return 'lv1'};
+  var cells=counts.map(function(x){return '<div class="heat-cell '+lvl(x.c)+'" title="'+x.d+': '+x.c+'건"><span class="tip">'+x.d+' · '+x.c+'건</span></div>'}).join('');
+  el.innerHTML='<div class="heat"><div class="heat-hd"><div class="heat-title">최근 13주 출고 활동</div><div class="heat-legend">적음 <div class="heat-legend-cell" style="background:#F1F3F7"></div><div class="heat-legend-cell lv1"></div><div class="heat-legend-cell lv2"></div><div class="heat-legend-cell lv3"></div><div class="heat-legend-cell lv4"></div><div class="heat-legend-cell lv5"></div> 많음</div></div><div class="heat-grid">'+cells+'</div></div>';
+}
 function rShipHist(){
   if(!$('shipDateVal').value)$('shipDateVal').value=td();
   var range=_getShipDateRange();
@@ -46,6 +57,7 @@ function rShipHist(){
   var f=range.from,t=range.to;
   var s=($('shHistSch')?.value||'').toLowerCase();
   var allLogs=DB.g('shipLog');
+  _renderShipHeatmap(allLogs);
   var logs=allLogs.filter(function(r){
     if(f&&r.dt<f)return false;
     if(t&&r.dt>t)return false;
@@ -91,10 +103,20 @@ const h=`<h2 style="text-align:center;font-size:18px;letter-spacing:8px;margin-b
 <div style="margin-top:30px;display:flex;justify-content:space-around;font-size:11px"><div style="text-align:center"><div style="border-top:1px solid #333;width:120px;padding-top:5px">공급자 (인)</div></div><div style="text-align:center"><div style="border-top:1px solid #333;width:120px;padding-top:5px">인수자 (인)</div></div></div>`;
 const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>거래명세표</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:10px;line-height:1.3;padding:12mm;width:210mm}table{width:100%;border-collapse:collapse;margin-bottom:4px}th,td{border:1px solid #333;padding:4px 6px;font-size:10px;text-align:left}th{background:#E5E7EB;font-weight:700;white-space:nowrap}@media print{@page{size:A4;margin:8mm}}</style></head><body>${h}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
 // CLAIM MANAGEMENT
+var _claimView='table';
+function setClaimView(v,btn){_claimView=v;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('claimTableView'),k=$('claimKanbanView');if(t)t.style.display=v==='table'?'':'none';if(k)k.style.display=v==='kanban'?'':'none';rClaim()}
 function rClaim(){const s=($('claimSch')?.value||'').toLowerCase();const cs=DB.g('claims').filter(c=>!s||c.cnm.toLowerCase().includes(s)||c.pnm.toLowerCase().includes(s)).sort((a,b)=>b.dt>a.dt?1:-1);
 var _typeBadge=(t)=>t==='반품'?'<span class="bd bd-d">반품</span>':t==='클레임'?'<span class="bd bd-o">클레임</span>':'<span class="bd bd-p">재작업</span>';
 var _stBadge=(s)=>s==='접수'?'<span class="bd bd-w">접수</span>':s==='처리중'?'<span class="bd bd-p">처리중</span>':'<span class="bd bd-s">완료</span>';
-$('claimTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td>${c.dt}</td><td style="font-weight:600">${c.cnm}</td><td>${c.pnm}</td><td>${_typeBadge(c.type)}</td><td style="font-weight:700">${c.qty}</td><td style="color:#475569">${c.reason}</td><td>${_stBadge(c.st)}</td><td><button class="btn btn-sm btn-o" onclick="eClaim('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dClaim('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty-cell">등록된 반품/클레임 없음</td></tr>'}
+if(_claimView==='table'){
+  $('claimTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td>${c.dt}</td><td style="font-weight:600">${c.cnm}</td><td>${c.pnm}</td><td>${_typeBadge(c.type)}</td><td style="font-weight:700">${c.qty}</td><td style="color:#475569">${c.reason}</td><td>${_stBadge(c.st)}</td><td><button class="btn btn-sm btn-o" onclick="eClaim('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dClaim('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty-cell">등록된 반품/클레임 없음</td></tr>'
+}else{
+  // Kanban
+  var groups={'접수':[],'처리중':[],'완료':[]};
+  cs.forEach(c=>{var st=c.st||'접수';if(!groups[st])groups[st]=[];groups[st].push(c)});
+  var col=(key,cls)=>`<div class="kb-col ${cls}"><div class="kb-hd"><div class="kb-hd-nm">${key}</div><div class="kb-cnt">${groups[key].length}</div></div>${groups[key].length?groups[key].map(c=>`<div class="kb-card" onclick="eClaim('${c.id}')"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">${_typeBadge(c.type)}<span style="font-size:11px;color:var(--txt3);font-weight:600">${c.dt}</span></div><div class="kb-card-cli">${c.cnm}</div><div class="kb-card-prod">${c.pnm} · ${c.qty}매</div><div class="kb-card-reason">${c.reason}</div></div>`).join(''):'<div class="kb-empty">없음</div>'}</div>`;
+  $('claimKanbanArea').innerHTML='<div class="kanban">'+col('접수','recv')+col('처리중','proc')+col('완료','done')+'</div>';
+}}
 function openClaimM(){['clmId','clmCli','clmProd','clmQty','clmReason','clmNote'].forEach(x=>$(x).value='');$('clmType').value='반품';$('clmSt').value='접수';$('claimMoT').textContent='반품/클레임 등록';oMo('claimMo')}
 function eClaim(id){const c=DB.g('claims').find(x=>x.id===id);if(!c)return;$('clmId').value=c.id;$('clmCli').value=c.cnm;$('clmProd').value=c.pnm;$('clmType').value=c.type;$('clmQty').value=c.qty;$('clmReason').value=c.reason;$('clmSt').value=c.st;$('clmNote').value=c.note||'';$('claimMoT').textContent='반품/클레임 수정';oMo('claimMo')}
 function saveClaim(){const cn=$('clmCli').value.trim(),pn=$('clmProd').value.trim(),qty=+$('clmQty').value;if(!cn||!pn){toast('거래처/제품 필요','err');return}if(!qty){toast('수량 필요','err');return}if(!$('clmReason').value.trim()){toast('사유 필요','err');return}

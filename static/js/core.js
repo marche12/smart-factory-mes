@@ -310,6 +310,33 @@ function wrapTablesForScroll(){
   });
 }
 document.addEventListener('DOMContentLoaded',function(){setTimeout(wrapTablesForScroll,100)});
+var _resizeTimer=null;
+function _onWindowResize(){
+  if(_resizeTimer)clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(function(){
+    var active=document.querySelector('.sb-item.active');
+    if(!active)return;
+    var mod=active.getAttribute('data-mod');
+    if(!mod)return;
+    // 캔버스/SVG 차트가 있는 모듈만 재렌더
+    if(['mes-dash','biz-trend','biz-rank','biz-cost','mes-rpt','mes-ship','mes-wo','acc-cashflow'].indexOf(mod)>-1){
+      try{
+        if(typeof MR!=='undefined'&&MR[mod])MR[mod]();
+        if(typeof ER!=='undefined'&&ER[mod])ER[mod]();
+      }catch(e){}
+    }
+  },250);
+}
+window.addEventListener('resize',_onWindowResize);
+window.addEventListener('orientationchange',_onWindowResize);
+// 미디어쿼리 변경도 감지(viewport meta 시뮬 대응)
+if(window.matchMedia){
+  ['(max-width:767px)','(max-width:1023px)','(max-width:1279px)'].forEach(function(q){
+    var m=window.matchMedia(q);
+    if(m.addEventListener)m.addEventListener('change',_onWindowResize);
+    else if(m.addListener)m.addListener(_onWindowResize);
+  });
+}
 
 var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin','mes-wo':'mes-admin','mes-ship':'mes-admin','mes-cli':'mes-admin','mes-prod':'mes-admin','mes-vendor':'mes-admin','mes-mold':'mes-admin','mes-rpt':'mes-admin','mes-plan':'mes-admin','mes-queue':'mes-admin','mes-worker':'mes-admin','mes-perf':'mes-admin','mes-cal':'mes-admin','mat-stock':'mat-income','mat-po':'mat-income','mat-bom':'mat-income','acc-purchase':'acc-sales','acc-tax':'acc-sales','hr-att':'hr-emp','hr-pay':'hr-emp','hr-leave':'hr-emp','biz-rank':'biz-trend','biz-cost':'biz-trend','qc-equip':'qc-inspect','qc-quote':'qc-inspect','qc-approval':'qc-inspect'};
 var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','hr-emp':'emp','hr-att':'att','hr-pay':'pay','hr-leave':'leave','biz-trend':'trend','biz-rank':'rank','biz-cost':'cost','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote','qc-approval':'approval'};

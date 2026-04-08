@@ -75,11 +75,9 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="acc-sales" onclick="goMod('acc-sales')">매출</button>
 <button class="sb-item" data-mod="acc-purchase" onclick="goMod('acc-purchase')">매입</button>
-<button class="sb-item" data-mod="acc-pl" onclick="goMod('acc-pl')">손익</button>
 <button class="sb-item" data-mod="acc-tax" onclick="goMod('acc-tax')">세금계산서</button>
 <button class="sb-item" data-mod="acc-recv" onclick="goMod('acc-recv')">미수/미지급</button>
 <button class="sb-item" data-mod="acc-cashflow" onclick="goMod('acc-cashflow')">입출금</button>
-<button class="sb-item" data-mod="acc-monthly" onclick="goMod('acc-monthly')">월별 비교</button>
 <button class="sb-item" data-mod="acc-closing" onclick="goMod('acc-closing')">외상 마감</button>
 </div>
 <div class="sb-group" onclick="toggleSbGroup(this)">인사/급여<span class="sb-arrow">▶</span></div>
@@ -456,28 +454,6 @@
   <table class="dt" id="prTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>매입액</th><th>지급</th><th>미지급</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
-<!-- 손익 현황 -->
-<div class="tc" id="t-pl">
-  <div class="sg">
-    <div class="sb blue"><div class="l">금월 매출</div><div class="v" id="plS">0원</div></div>
-    <div class="sb orange"><div class="l">금월 매입</div><div class="v" id="plP">0원</div></div>
-    <div class="sb purple"><div class="l">인건비</div><div class="v" id="plL">0원</div></div>
-    <div class="sb green"><div class="l">순이익</div><div class="v" id="plN">0원</div></div>
-  </div>
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">연도</span>
-      <select id="plY" onchange="rPl()"></select>
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="printPl()">인쇄</button>
-    </div>
-  </div>
-  <div class="card"><div class="card-t">월별 매출/매입/이익 추이<button class="btn btn-sm btn-o" style="margin-left:auto" onclick="startStockAudit()">재고 실사</button></div><div id="plChart"></div></div>
-  <div class="card"><div class="card-t">월별 손익표</div>
-    <table class="dt" id="plTbl"><thead><tr><th>월</th><th>매출</th><th>매입</th><th>인건비</th><th>기타</th><th>순이익</th><th>이익률</th></tr></thead><tbody></tbody></table>
-  </div>
-</div>
-
 <!-- 세금계산서 -->
 <div class="tc" id="t-tax">
   <div class="sg">
@@ -544,7 +520,6 @@
 
 </div>
 <div class="module-page" id="pg-acc-purchase"></div>
-<div class="module-page" id="pg-acc-pl"></div>
 <div class="module-page" id="pg-acc-tax"></div>
 <div class="module-page" id="pg-hr-emp"><div class="app">
 <div class="hd">
@@ -735,6 +710,14 @@
       <thead><tr><th>월</th><th>매출</th><th>매입</th><th>차이(매출-매입)</th><th>매출 전월비</th><th>매입 전월비</th></tr></thead>
       <tbody></tbody>
     </table>
+  </div>
+  <div class="card">
+    <div class="card-t">YoY 월별 비교</div>
+    <div id="monthlyArea"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">거래처별 매출 추이 TOP 5</div>
+    <div id="salesTrendArea"></div>
   </div>
 </div>
 
@@ -1336,7 +1319,7 @@
 
 <!-- TAB: Report -->
 <div id="t-rpt" class="tc">
-<div class="st"><button class="s-tab on" onclick="rptSub('day',this)">일일</button><button class="s-tab" onclick="rptSub('week',this)">주간</button><button class="s-tab" onclick="rptSub('month',this)">월간</button><button class="s-tab" onclick="rptSub('perf',this)">작업자 성과</button><button class="s-tab" onclick="rptSub('prodstat',this)">생산 분석</button><button class="s-tab" onclick="rptSub('ordmonthly',this)">월별 수주</button><button class="s-tab" onclick="rptSub('ordstat',this)">수주 현황</button><button class="s-tab" onclick="rptSub('defect',this)">불량 분석</button><button class="s-tab" onclick="rptSub('ship',this)">출고 실적</button></div>
+<div class="st"><button class="s-tab on" onclick="rptSub('day',this)">일일</button><button class="s-tab" onclick="rptSub('week',this)">주간</button><button class="s-tab" onclick="rptSub('month',this)">월간</button><button class="s-tab" onclick="rptSub('pl',this)">손익</button><button class="s-tab" onclick="rptSub('perf',this)">작업자 성과</button><button class="s-tab" onclick="rptSub('prodstat',this)">생산 분석</button><button class="s-tab" onclick="rptSub('ordmonthly',this)">월별 수주</button><button class="s-tab" onclick="rptSub('ordstat',this)">수주 현황</button><button class="s-tab" onclick="rptSub('defect',this)">불량 분석</button><button class="s-tab" onclick="rptSub('ship',this)">출고 실적</button></div>
 <div id="rpt-day" class="card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
 <div class="fg" style="flex-direction:row;align-items:center;gap:7px"><label style="margin:0">날짜:</label><input type="date" id="rptDD" onchange="genRpt('day')"></div>
@@ -1356,6 +1339,27 @@
 </div><div id="rptMC"></div>
 </div>
 <div id="rpt-eff" class="hidden"></div>
+<div id="rpt-pl" class="hidden">
+  <div class="sg">
+    <div class="sb blue"><div class="l">금월 매출</div><div class="v" id="plS">0원</div></div>
+    <div class="sb orange"><div class="l">금월 매입</div><div class="v" id="plP">0원</div></div>
+    <div class="sb purple"><div class="l">인건비</div><div class="v" id="plL">0원</div></div>
+    <div class="sb green"><div class="l">순이익</div><div class="v" id="plN">0원</div></div>
+  </div>
+  <div class="fbar">
+    <div class="fbar-row">
+      <span class="fbar-label">연도</span>
+      <select id="plY" onchange="rPl()"></select>
+      <div class="fbar-spacer"></div>
+      <button class="btn btn-o btn-sm" onclick="startStockAudit()">재고 실사</button>
+      <button class="btn btn-o btn-sm" onclick="printPl()">인쇄</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-t">월별 매출/매입/이익 추이</div><div id="plChart"></div></div>
+  <div class="card"><div class="card-t">월별 손익표</div>
+    <table class="dt" id="plTbl"><thead><tr><th>월</th><th>매출</th><th>매입</th><th>인건비</th><th>기타</th><th>순이익</th><th>이익률</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
 <div id="rpt-prodstat" class="hidden">
   <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-p btn-sm" onclick="printRpt('prodstat')">출력</button></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
@@ -1825,9 +1829,6 @@
 <div id="auditMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('auditMo')"><div class="mo" style="max-width:700px"></div></div>
 
 
-<!-- 매출 월별비교 -->
-<div id="pg-acc-monthly" class="module-page"><div class="card"><div id="monthlyArea"></div></div>
-<div class="card" style="margin-top:14px"><div id="salesTrendArea"></div></div></div>
 <!-- 외상마감 -->
 <div id="pg-acc-closing" class="module-page"><div class="card"><div id="closingArea"></div></div></div>
 <!-- 입출고이력 -->

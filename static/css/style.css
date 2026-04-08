@@ -1035,6 +1035,19 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .ins-delta.down{color:var(--dan)}
 .ins-foot{font-size:11px;color:var(--txt3);font-weight:600;margin-top:4px}
 
+/* ===== Trend Chart (경영분석 추이) ===== */
+.chart-area{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:240px;padding:18px 12px 12px;background:linear-gradient(180deg,transparent 0,rgba(15,23,42,.02) 100%);border-radius:var(--r-sm);overflow:hidden}
+.chart-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:200px}
+.chart-bar{border-radius:3px 3px 0 0;position:relative;transition:opacity .2s var(--ease);cursor:default}
+.chart-bar:hover{opacity:.85}
+.chart-bar .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0B1220;color:#fff;font-size:10px;font-weight:600;padding:4px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.chart-bar:hover .tip{opacity:1}
+.chart-label{font-size:11px;color:var(--txt2);font-weight:600;white-space:nowrap}
+.chart-legend{display:flex;justify-content:center;gap:18px;margin-top:10px;font-size:11px;color:var(--txt2);font-weight:600}
+.chart-legend span{display:inline-flex;align-items:center;gap:5px}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:2px}
+
 /* ===== Calendar Heatmap (출고이력) ===== */
 .heat{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--sh-xs)}
 .heat-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}

@@ -150,7 +150,7 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openIncM()">+ 입고등록</button>
-    <input type="month" id="incMonth" onchange="rIncome()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <input type="month" id="incMonth" onchange="rIncome()">
     <input type="text" id="incSch" placeholder="거래처/품명 검색" oninput="rIncome()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:160px">
     <button class="btn btn-g btn-sm" onclick="exportIncCSV()">엑셀</button>
   </div>
@@ -170,7 +170,7 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openStkM()">+ 자재등록</button>
-    <select id="stkCat" onchange="rStock()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <select id="stkCat" onchange="rStock()">
       <option value="">전체</option>
       <option value="종이">종이</option>
       <option value="원단">원단</option>
@@ -180,7 +180,7 @@
       <option value="부자재">부자재</option>
     </select>
     <input type="text" id="stkSch" placeholder="자재명 검색" oninput="rStock()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:160px">
-    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="stkLowOnly" onchange="rStock()"> 부족만</label>
+    <label><input type="checkbox" id="stkLowOnly" onchange="rStock()"> 부족만</label>
   </div>
   <table class="dt" id="stkTbl">
     <thead><tr><th>자재구분</th><th>품명</th><th>규격</th><th>단위</th><th>현재고</th><th>안전재고</th><th>상태</th><th>단가</th><th>거래처</th><th>관리</th></tr></thead>
@@ -198,8 +198,8 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openPoM()">+ 발주등록</button>
-    <input type="month" id="poMonth" onchange="rPO()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
-    <select id="poSt" onchange="rPO()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <input type="month" id="poMonth" onchange="rPO()">
+    <select id="poSt" onchange="rPO()">
       <option value="">전체</option>
       <option value="작성중">작성중</option>
       <option value="발주완료">발주완료</option>
@@ -412,9 +412,9 @@
   <div class="tb">
     <button class="btn btn-p" onclick="openSM()">+ 매출등록</button>
     <button class="btn btn-s btn-sm" onclick="openPay('sales')">입금처리</button>
-    <input type="month" id="slMo" onchange="rSl()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
-    <input type="text" id="slSch" placeholder="거래처 검색" oninput="rSl()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:140px">
-    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="slUO" onchange="rSl()"> 미수만</label>
+    <input type="month" id="slMo" onchange="rSl()">
+    <input type="text" id="slSch" placeholder="거래처 검색" oninput="rSl()">
+    <label><input type="checkbox" id="slUO" onchange="rSl()"> 미수만</label>
     <button class="btn btn-g btn-sm" onclick="expCSV('sales')">엑셀</button>
   </div>
   <table class="dt" id="slTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>입금</th><th>미수금</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
@@ -438,9 +438,9 @@
   <div class="tb">
     <button class="btn btn-p" onclick="openPM()">+ 매입등록</button>
     <button class="btn btn-s btn-sm" onclick="openPay('purchase')">지급처리</button>
-    <input type="month" id="prMo" onchange="rPr()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
-    <input type="text" id="prSch" placeholder="거래처 검색" oninput="rPr()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:140px">
-    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
+    <input type="month" id="prMo" onchange="rPr()">
+    <input type="text" id="prSch" placeholder="거래처 검색" oninput="rPr()">
+    <label><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
     <button class="btn btn-g btn-sm" onclick="expCSV('purchase')">엑셀</button>
   </div>
   <table class="dt" id="prTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>매입액</th><th>지급</th><th>미지급</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
@@ -455,7 +455,7 @@
     <div class="sb"><div class="l">순이익</div><div class="v" id="plN">0원</div></div>
   </div>
   <div class="tb">
-    <select id="plY" onchange="rPl()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"></select>
+    <select id="plY" onchange="rPl()"></select>
     <button class="btn btn-g btn-sm" onclick="printPl()">인쇄</button>
   </div>
   <div class="card"><div class="card-t">월별 매출/매입/이익 추이<button class="btn btn-sm btn-o" style="margin-left:auto" onclick="startStockAudit()">재고 실사</button></div><div id="plChart"></div></div>
@@ -474,8 +474,8 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openTxM()">+ 등록</button>
-    <input type="month" id="txMo" onchange="rTx()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
-    <select id="txTp" onchange="rTx()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"><option value="">전체</option><option value="매출">매출</option><option value="매입">매입</option></select>
+    <input type="month" id="txMo" onchange="rTx()">
+    <select id="txTp" onchange="rTx()"><option value="">전체</option><option value="매출">매출</option><option value="매입">매입</option></select>
     <button class="btn btn-g btn-sm" onclick="expCSV('tax')">엑셀</button>
   </div>
   <table class="dt" id="txTbl"><thead><tr><th>발행일</th><th>구분</th><th>거래처</th><th>품목</th><th>공급가액</th><th>세액</th><th>합계</th><th>비고</th><th>관리</th></tr></thead><tbody></tbody></table>
@@ -552,10 +552,10 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openEmpM()">+ 직원등록</button>
-    <select id="empFilter" onchange="rEmp()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <select id="empFilter" onchange="rEmp()">
       <option value="">전체</option><option value="현장">현장</option><option value="사무">사무</option>
     </select>
-    <input type="text" id="empSch" placeholder="이름 검색" oninput="rEmp()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px;width:140px">
+    <input type="text" id="empSch" placeholder="이름 검색" oninput="rEmp()">
   </div>
   <div id="empList"></div>
 </div>
@@ -569,7 +569,7 @@
     <div class="sb"><div class="l">초과근무</div><div class="v" style="color:var(--wrn)" id="attOT">0</div></div>
   </div>
   <div class="tb">
-    <input type="date" id="attDt" onchange="rAtt()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <input type="date" id="attDt" onchange="rAtt()">
     <button class="btn btn-g btn-sm" onclick="$('attDt').value=td();rAtt()">오늘</button>
     <button class="btn btn-g btn-sm" onclick="expAttCSV()">엑셀</button>
   </div>
@@ -588,7 +588,7 @@
     <div class="sb"><div class="l">공제 합</div><div class="v" style="color:var(--dan)" id="payDeduct">0원</div></div>
   </div>
   <div class="tb">
-    <input type="month" id="payMo2" onchange="rPay()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <input type="month" id="payMo2" onchange="rPay()">
     <button class="btn btn-p" onclick="genPay()">급여 자동계산</button>
     <button class="btn btn-g btn-sm" onclick="expPayCSV()">엑셀</button>
     <button class="btn btn-o btn-sm" onclick="printPayAll()">전체 명세서</button>
@@ -608,7 +608,7 @@
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openLvM()">+ 휴가등록</button>
-    <select id="lvYear2" onchange="rLeave()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"></select>
+    <select id="lvYear2" onchange="rLeave()"></select>
   </div>
   <table class="dt" id="lvTbl">
     <thead><tr><th>이름</th><th>구분</th><th>시작일</th><th>종료일</th><th>일수</th><th>사유</th><th>상태</th><th>관리</th></tr></thead>
@@ -687,7 +687,7 @@
 <!-- 매출/매입 추이 -->
 <div class="tc on" id="t-trend">
   <div class="tb">
-    <select id="trY" onchange="renderTrend()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"></select>
+    <select id="trY" onchange="renderTrend()"></select>
     <button class="btn btn-g btn-sm" onclick="printSection('trendPrint')">인쇄</button>
   </div>
   <div class="sg" id="trendStats"></div>
@@ -707,10 +707,10 @@
 <!-- 거래처 순위 -->
 <div class="tc" id="t-rank">
   <div class="tb">
-    <select id="rankPeriod" onchange="renderRank()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <select id="rankPeriod" onchange="renderRank()">
       <option value="month">금월</option><option value="quarter">금분기</option><option value="year">금년</option><option value="all">전체</option>
     </select>
-    <select id="rankType" onchange="renderRank()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <select id="rankType" onchange="renderRank()">
       <option value="sales">매출 기준</option><option value="count">건수 기준</option>
     </select>
   </div>
@@ -745,7 +745,7 @@
 <!-- 생산성 분석 -->
 <div class="tc" id="t-productivity">
   <div class="tb">
-    <input type="month" id="prodMonth" onchange="renderProductivity()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+    <input type="month" id="prodMonth" onchange="renderProductivity()">
     <button class="btn btn-g btn-sm" onclick="printSection('prodPrint')">인쇄</button>
   </div>
   <div class="sg" id="prodStats"></div>
@@ -829,7 +829,7 @@
     <div class="sb"><div class="l">견적 금액</div><div class="v" id="qtAmt">0원</div></div>
     <div class="sb"><div class="l">수주 전환</div><div class="v" style="color:var(--suc)" id="qtWon">0</div></div>
   </div>
-  <div class="tb"><button class="btn btn-p" onclick="openQtM()">+ 견적등록</button><input type="month" id="qtMo" onchange="rQt()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"></div>
+  <div class="tb"><button class="btn btn-p" onclick="openQtM()">+ 견적등록</button><input type="month" id="qtMo" onchange="rQt()"></div>
   <table class="dt" id="qtTbl"><thead><tr><th>견적번호</th><th>견적일</th><th>거래처</th><th>제품</th><th>금액</th><th>유효기간</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
@@ -841,7 +841,7 @@
     <div class="sb"><div class="l">반려</div><div class="v" style="color:var(--dan)" id="apRej">0</div></div>
   </div>
   <div class="tb"><button class="btn btn-p" onclick="openApM()">+ 결재요청</button>
-    <select id="apFilter" onchange="rAp()" style="padding:7px;border:1px solid var(--bdr);border-radius:4px;font-size:13px"><option value="">전체</option><option value="대기">대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div>
+    <select id="apFilter" onchange="rAp()"><option value="">전체</option><option value="대기">대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div>
   <table class="dt" id="apTbl"><thead><tr><th>요청일</th><th>구분</th><th>제목</th><th>요청자</th><th>금액</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 

@@ -55,14 +55,9 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" onclick="goMod('mes-ship')">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">보고서<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-cli" onclick="goMod('mes-cli')">거래처</button>
-<button class="sb-item" data-mod="mes-vendor" onclick="goMod('mes-vendor')">인쇄소</button>
-<button class="sb-item" data-mod="mes-prod" onclick="goMod('mes-prod')">품목</button>
-<button class="sb-item" data-mod="mes-mold" onclick="goMod('mes-mold')">목형</button>
 <button class="sb-item" data-mod="mes-rpt" onclick="goMod('mes-rpt')">보고서</button>
-<button class="sb-item" data-mod="mes-queue" onclick="goMod('mes-queue')">설정</button>
 </div>
 <div class="sb-group" onclick="toggleSbGroup(this)">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -99,6 +94,14 @@
 <button class="sb-item" data-mod="qc-equip" onclick="goMod('qc-equip')">설비</button>
 <button class="sb-item" data-mod="qc-quote" onclick="goMod('qc-quote')">견적</button>
 <button class="sb-item" data-mod="qc-approval" onclick="goMod('qc-approval')">결재</button>
+</div>
+<div class="sb-group" onclick="toggleSbGroup(this)">관리<span class="sb-arrow">▶</span></div>
+<div class="sb-tree">
+<button class="sb-item" data-mod="mes-cli" onclick="goMod('mes-cli')">거래처</button>
+<button class="sb-item" data-mod="mes-vendor" onclick="goMod('mes-vendor')">인쇄소</button>
+<button class="sb-item" data-mod="mes-prod" onclick="goMod('mes-prod')">품목</button>
+<button class="sb-item" data-mod="mes-mold" onclick="goMod('mes-mold')">목형</button>
+<button class="sb-item" data-mod="mes-queue" onclick="goMod('mes-queue')">설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>

@@ -892,3 +892,18 @@ table{border-collapse:collapse;width:100%}
 .pc-mini-dday{font-weight:600;font-size:10px}
 .pc-more{font-size:9px;color:var(--txt2);text-align:center;margin-top:2px}
 
+/* ===== 거래처별 미수금 현황 (매출 탭) ===== */
+.recv-section{background:var(--bg);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-top:16px}
+.recv-section h3{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--txt)}
+.recv-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.recv-nm{width:120px;font-size:12px;font-weight:600;color:var(--txt);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recv-bar-wrap{flex:1;background:#F1F5F9;border-radius:4px;height:14px;overflow:hidden}
+.recv-bar{height:100%;border-radius:4px;transition:width .3s}
+.recv-bar.lv-hi{background:var(--dan)}
+.recv-bar.lv-md{background:var(--wrn)}
+.recv-bar.lv-lo{background:#94A3B8}
+.recv-amt{width:110px;text-align:right;font-size:12px;font-weight:700;color:var(--dan);flex-shrink:0}
+.recv-days{font-size:10px;color:var(--txt2);width:70px;flex-shrink:0;text-align:right}
+.recv-empty{font-size:12px;color:var(--txt2);text-align:center;padding:16px}
+.recv-foot{font-size:11px;color:var(--txt2);margin-top:8px}
+

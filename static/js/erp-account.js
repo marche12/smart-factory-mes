@@ -14,7 +14,29 @@ function rSl(){
   $('slP').textContent=fmt(ma.reduce((s,r)=>s+(r.paid||0),0))+'원';
   $('slC').textContent=[...new Set(ma.map(r=>r.cli))].length;
   $('slTbl').querySelector('tbody').innerHTML=fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const st=u<=0?'<span class="bd bd-s">완납</span>':r.paid>0?'<span class="bd bd-o">부분</span>':'<span class="bd bd-d">미수</span>';
-    return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="genTradeStatement('${r.id}')" title="거래명세서">명세</button> <button class="btn btn-sm btn-o" onclick="eSlr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dSlr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+    const supply=Math.round((r.amt||0)/1.1),vat=(r.amt||0)-supply;
+    return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right">${fmt(supply)}</td><td style="text-align:right;color:var(--txt2)">${fmt(vat)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="genTradeStatement('${r.id}')" title="거래명세서">명세</button> <button class="btn btn-sm btn-o" onclick="eSlr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dSlr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="12" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+  rRecv();
+}
+function rRecv(){
+  const el=$('recvList');if(!el)return;
+  const all=DB.g('sales');
+  const byCli={};
+  all.forEach(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));if(u<=0)return;
+    if(!byCli[r.cli])byCli[r.cli]={cli:r.cli,amt:0,oldest:r.dt};
+    byCli[r.cli].amt+=u;
+    if(r.dt<byCli[r.cli].oldest)byCli[r.cli].oldest=r.dt;
+  });
+  const list=Object.values(byCli).sort((a,b)=>b.amt-a.amt);
+  if(!list.length){el.innerHTML='<div class="recv-empty">미수금이 없습니다.</div>';return}
+  const max=Math.max(...list.map(x=>x.amt));
+  const today=new Date();
+  el.innerHTML=list.map(x=>{
+    const days=Math.floor((today-new Date(x.oldest))/86400000);
+    const lv=days>=30?'lv-hi':days>=14?'lv-md':'lv-lo';
+    const w=Math.max(5,Math.round(x.amt/max*100));
+    return `<div class="recv-row"><div class="recv-nm">${x.cli}</div><div class="recv-bar-wrap"><div class="recv-bar ${lv}" style="width:${w}%"></div></div><div class="recv-amt">${fmt(x.amt)}원</div><div class="recv-days">${days}일 경과</div></div>`;
+  }).join('');
 }
 function openSM(){['sId','sProd','sNote'].forEach(x=>$(x).value='');$('sDt').value=td();$('sCli').value='';$('sQty').value='';$('sPrice').value='';$('sAmt').value='';$('sPaid').value=0;$('sPay').value='미수';$('sMoT').textContent='매출 등록';oMo('sMo')}
 function eSlr(id){const r=DB.g('sales').find(x=>x.id===id);if(!r)return;$('sId').value=r.id;$('sDt').value=r.dt;$('sCli').value=r.cli;$('sProd').value=r.prod;$('sQty').value=r.qty;$('sPrice').value=r.price;$('sAmt').value=fmt(r.amt);$('sPaid').value=r.paid||0;$('sPay').value=r.payType||'미수';$('sNote').value=r.note||'';$('sMoT').textContent='매출 수정';oMo('sMo')}

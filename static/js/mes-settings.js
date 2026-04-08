@@ -116,12 +116,11 @@ $('shipAlerts').innerHTML='';
 // Summary
 const totReady=ready.length,overdue=ready.filter(o=>o.sd&&o.sd<td()).length,todayShip=ready.filter(o=>o.sd===td()).length;
 var _todayShipped=DB.g('shipLog').filter(s=>s.dt===td()).length;
-$('shipSum').innerHTML='<div class="sg">'+
-  `<div class="sb blue" style="text-align:center"><div class="v">${totReady}</div><div class="l">출고대기</div></div>`+
-  `<div class="sb ${overdue>0?'red':''}" style="text-align:center"><div class="v">${overdue}</div><div class="l">출고 지연</div></div>`+
-  `<div class="sb orange" style="text-align:center"><div class="v">${todayShip}</div><div class="l">오늘 출고예정</div></div>`+
-  `<div class="sb green" style="text-align:center"><div class="v">${_todayShipped}</div><div class="l">금일 출고완료</div></div>`+
-'</div>';
+$('shipSum').innerHTML=
+  `<div class="sb blue"><div class="l">출고대기</div><div class="v">${totReady}</div></div>`+
+  `<div class="sb ${overdue>0?'red':'orange'}"><div class="l">출고 지연</div><div class="v">${overdue}</div></div>`+
+  `<div class="sb orange"><div class="l">오늘 출고예정</div><div class="v">${todayShip}</div></div>`+
+  `<div class="sb green"><div class="l">금일 출고완료</div><div class="v">${_todayShipped}</div></div>`;
 // Table
 $('shipReadyTbl').querySelector('tbody').innerHTML=ready.length?ready.sort((a,b)=>a.sd>b.sd?1:-1).map(o=>{const shipped=getShipped(o.id);const remain=o.fq-shipped;const late=o.sd&&o.sd<td();
 var compQty=o.procs&&o.procs.length?o.procs[o.procs.length-1].qty||0:0;if(!compQty){for(var _pi=o.procs.length-1;_pi>=0;_pi--){if(o.procs[_pi].qty>0){compQty=o.procs[_pi].qty;break}}}

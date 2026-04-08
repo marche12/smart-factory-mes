@@ -187,7 +187,12 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .sb.purple::after{background:linear-gradient(180deg,#9466F0,#6D28D9);opacity:1}.sb.purple .v{color:#6D28D9}
 
 /* ===== TABLE — Premium ===== */
+.dt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;border-radius:var(--r-sm)}
+.dt-scroll::-webkit-scrollbar{height:6px}
+.dt-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.4);border-radius:6px}
 .dt{width:100%;font-size:13px;font-feature-settings:"tnum","ss01"}
+.dt th,.dt td{white-space:nowrap}
+.dt td.wrap,.dt th.wrap{white-space:normal;min-width:120px}
 .dt thead{background:linear-gradient(180deg,#FAFBFD,#F4F6FA)}
 .dt th{padding:12px 12px;text-align:left;font-weight:700;font-size:10.5px;color:var(--txt2);letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
 .dt th:first-child{border-radius:0}.dt th:last-child{border-radius:0}

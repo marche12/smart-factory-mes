@@ -960,6 +960,81 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .fbar-label{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.4px;text-transform:uppercase;margin-right:4px}
 .fbar-stat{font-size:12px;color:var(--txt2);font-weight:600;padding:4px 10px;background:var(--pri-l);color:var(--pri);border-radius:var(--r-full)}
 
+/* ===== Gallery Card Grid (거래처/품목/인쇄소/직원 등) ===== */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.gal-card{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-xs);transition:all .25s var(--ease-out);cursor:pointer;position:relative;overflow:hidden}
+.gal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent)}
+.gal-card:hover{box-shadow:var(--sh);border-color:var(--bdr);transform:translateY(-2px)}
+.gal-hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.gal-avatar{width:42px;height:42px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;background:var(--pri-grad);box-shadow:0 4px 10px -2px rgba(30,64,175,.35),inset 0 1px 0 rgba(255,255,255,.2);flex-shrink:0}
+.gal-avatar.gold{background:var(--gold-grad);box-shadow:0 4px 10px -2px rgba(182,138,78,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+.gal-avatar.green{background:linear-gradient(135deg,#10B97E,#0E8C57);box-shadow:0 4px 10px -2px rgba(14,140,87,.35)}
+.gal-avatar.purple{background:linear-gradient(135deg,#9466F0,#6D28D9);box-shadow:0 4px 10px -2px rgba(109,40,217,.35)}
+.gal-info{flex:1;min-width:0}
+.gal-nm{font-size:14px;font-weight:800;color:var(--txt);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal-sub{font-size:11px;color:var(--txt2);font-weight:600;margin-top:2px}
+.gal-grade{padding:3px 8px;border-radius:var(--r-full);font-size:10px;font-weight:800;letter-spacing:.4px}
+.gal-grade.A{background:var(--pri-l);color:var(--pri)}
+.gal-grade.B{background:var(--gold-l);color:var(--gold-d)}
+.gal-grade.C{background:#F1F3F7;color:var(--txt2)}
+.gal-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0;border-top:1px solid var(--bdr-soft);margin-top:8px}
+.gal-stat-l{font-size:10px;color:var(--txt3);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.gal-stat-v{font-size:14px;font-weight:800;color:var(--txt);font-feature-settings:"tnum";margin-top:2px}
+.gal-stat-v.dan{color:var(--dan)}
+.gal-stat-v.suc{color:var(--suc)}
+.gal-stat-v.pri{color:var(--pri)}
+.gal-spark{width:100%;height:24px;display:block;margin-top:6px}
+
+/* ===== Risk Alert Cards (재고 등) ===== */
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px}
+.risk-card{background:var(--card);border:1px solid var(--bdr-soft);border-left:4px solid var(--bdr);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh-xs);transition:all .25s var(--ease)}
+.risk-card.danger{border-left-color:var(--dan);background:linear-gradient(90deg,rgba(200,54,43,.04) 0%,#FFFFFF 30%)}
+.risk-card.warn{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(182,138,78,.05) 0%,#FFFFFF 30%)}
+.risk-card.ok{border-left-color:var(--suc);background:linear-gradient(90deg,rgba(14,140,87,.04) 0%,#FFFFFF 30%)}
+.risk-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.risk-icon{font-size:16px}
+.risk-cnt{font-size:22px;font-weight:800;color:var(--txt);font-feature-settings:"tnum";letter-spacing:-.5px}
+.risk-l{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px}
+.risk-foot{font-size:11px;color:var(--txt3);margin-top:6px;font-weight:600}
+
+/* ===== Podium (TOP rank) ===== */
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:18px}
+.pod{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:18px 14px;text-align:center;box-shadow:var(--sh-xs);position:relative;overflow:hidden}
+.pod::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.pod.r1{order:2;padding-top:30px}.pod.r1::before{background:var(--gold-grad)}
+.pod.r2{order:1}.pod.r2::before{background:linear-gradient(90deg,#C7CCD4,#9AA0A8)}
+.pod.r3{order:3}.pod.r3::before{background:linear-gradient(90deg,#CC9966,#A67148)}
+.pod-rank{font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.pod.r1 .pod-rank{color:var(--gold-d)}
+.pod-nm{font-size:14px;font-weight:800;color:var(--txt);letter-spacing:-.2px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pod-v{font-size:18px;font-weight:800;color:var(--pri);font-feature-settings:"tnum"}
+.pod-sub{font-size:11px;color:var(--txt3);font-weight:600;margin-top:4px}
+
+/* ===== Progress List (랭킹/순위) ===== */
+.prk{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-xs);margin-bottom:14px}
+.prk-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr-soft)}
+.prk-row:last-child{border-bottom:none}
+.prk-rank{width:24px;height:24px;border-radius:50%;background:var(--bg2);color:var(--txt2);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prk-rank.top{background:var(--gold-grad);color:#fff;box-shadow:0 2px 6px -1px rgba(182,138,78,.4)}
+.prk-nm{flex:1;font-size:13px;font-weight:700;color:var(--txt);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prk-bar-wrap{flex:1;background:#F1F3F7;border-radius:4px;height:8px;overflow:hidden;max-width:240px}
+.prk-bar{height:100%;background:var(--pri-grad);border-radius:4px;transition:width .3s var(--ease)}
+.prk-v{font-size:12px;font-weight:800;color:var(--pri);font-feature-settings:"tnum";min-width:80px;text-align:right}
+
+/* ===== Insight Card (경영분석 등) ===== */
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px}
+.ins{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-xs);position:relative;overflow:hidden}
+.ins::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pri-grad)}
+.ins.gold::before{background:var(--gold-grad)}
+.ins.green::before{background:linear-gradient(90deg,#10B97E,#0E8C57)}
+.ins.danger::before{background:linear-gradient(90deg,#E04B3F,#C8362B)}
+.ins-l{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
+.ins-v{font-size:24px;font-weight:800;color:var(--txt);letter-spacing:-.6px;font-feature-settings:"tnum";line-height:1}
+.ins-delta{font-size:12px;font-weight:700;margin-top:6px;display:flex;align-items:center;gap:4px}
+.ins-delta.up{color:var(--suc)}
+.ins-delta.down{color:var(--dan)}
+.ins-foot{font-size:11px;color:var(--txt3);font-weight:600;margin-top:4px}
+
 /* ===== Calendar Heatmap (출고이력) ===== */
 .heat{background:var(--card);border:1px solid var(--bdr-soft);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--sh-xs)}
 .heat-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}

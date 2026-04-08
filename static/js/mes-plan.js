@@ -475,6 +475,16 @@ function delVendor(id){
 }
 function rVendor(){
   var vendors=DB.g('vendors'),os=DB.g('wo');
+  // KPI
+  var totalWo=os.filter(function(o){return o.vendor}).length;
+  var done=os.filter(function(o){return o.vendor&&(o.status==='완료'||o.status==='출고완료')}).length;
+  var late=os.filter(function(o){return o.vendor&&o.sd&&o.sd<td()&&o.status!=='완료'&&o.status!=='출고완료'}).length;
+  var avgRate=totalWo?Math.round(done/totalWo*100):0;
+  var k=$('vendorKpi');if(k)k.innerHTML=
+    '<div class="sb blue"><div class="l">전체 인쇄소</div><div class="v">'+vendors.length+'</div></div>'+
+    '<div class="sb green"><div class="l">완료 작업</div><div class="v">'+done+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">전체 '+totalWo+'건 중</div></div>'+
+    '<div class="sb '+(late>0?'red':'orange')+'"><div class="l">지연 작업</div><div class="v">'+late+'</div></div>'+
+    '<div class="sb purple"><div class="l">평균 완료율</div><div class="v">'+avgRate+'<span style="font-size:14px">%</span></div></div>';
   // 테이블
   var tbody='';
   vendors.forEach(function(v){

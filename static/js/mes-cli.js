@@ -1,7 +1,49 @@
 // CLIENT
-function rCli(){const s=($('cliSch')?.value||'').toLowerCase();var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';var cs=DB.g('cli').filter(c=>!s||c.nm.toLowerCase().includes(s)||((c.biz||'').includes(s)));if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
+var _cliView='table';
+function setCliView(v,btn){_cliView=v;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('cliTableView'),g=$('cliGalleryView');if(t)t.style.display=v==='table'?'':'none';if(g)g.style.display=v==='gallery'?'':'none';rCli()}
+function _cliStats(c){
+  var sales=DB.g('sales').filter(s=>s.cli===c.nm);
+  var totalAmt=sales.reduce((s,r)=>s+(r.amt||0),0);
+  var unpaid=sales.reduce((s,r)=>s+Math.max(0,(r.amt||0)-(r.paid||0)),0);
+  var lastDt=sales.length?sales.sort((a,b)=>b.dt>a.dt?1:-1)[0].dt:'-';
+  // 등급: 월 평균 매출 100만↑ A, 30만↑ B, 그 외 C
+  var monthlyAvg=totalAmt/12;
+  var grade=monthlyAvg>=1000000?'A':monthlyAvg>=300000?'B':'C';
+  return {total:totalAmt,unpaid:unpaid,last:lastDt,grade:grade,count:sales.length};
+}
 function cTypeBadge(c){var t=c.cType||'sales';if(t==='both')return'<span class="bd bd-p">매출</span> <span class="bd bd-d">매입</span>';if(t==='purchase')return'<span class="bd bd-d">매입</span>';return'<span class="bd bd-p">매출</span>'}
-$('cliTbl').querySelector('tbody').innerHTML=cs.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td style="font-size:12px;color:#64748B">${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-p" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목등록</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty-cell">거래처 없음</td></tr>'}
+function rCli(){
+  const s=($('cliSch')?.value||'').toLowerCase();var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';
+  var cs=DB.g('cli').filter(c=>!s||c.nm.toLowerCase().includes(s)||((c.biz||'').includes(s)));
+  if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
+  else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
+  // KPI
+  var allCli=DB.g('cli');
+  var salesCnt=allCli.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType).length;
+  var purchCnt=allCli.filter(c=>c.cType==='purchase'||c.cType==='both').length;
+  var withSales=DB.g('sales').reduce((acc,r)=>{acc[r.cli]=true;return acc},{});
+  var activeCnt=Object.keys(withSales).length;
+  var k=$('cliKpi');if(k)k.innerHTML=
+    `<div class="sb blue"><div class="l">전체 거래처</div><div class="v">${allCli.length}</div></div>`+
+    `<div class="sb green"><div class="l">매출처</div><div class="v">${salesCnt}</div></div>`+
+    `<div class="sb orange"><div class="l">매입처</div><div class="v">${purchCnt}</div></div>`+
+    `<div class="sb purple"><div class="l">활성 거래처</div><div class="v">${activeCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">최근 매출 발생</div></div>`;
+  if(_cliView==='table'){
+    $('cliTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td style="font-size:12px;color:var(--txt2)">${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
+  }else{
+    var html=cs.length?'<div class="gal">'+cs.map(c=>{var st=_cliStats(c);var ini=c.nm.charAt(0);var av=st.grade==='A'?'':st.grade==='B'?'gold':'';
+      return `<div class="gal-card" onclick="showCliHist('${c.id}')">
+        <div class="gal-hd"><div class="gal-avatar ${av}">${ini}</div><div class="gal-info"><div class="gal-nm">${c.nm}</div><div class="gal-sub">${cTypeBadge(c)}</div></div><div class="gal-grade ${st.grade}">${st.grade}</div></div>
+        <div class="gal-stats">
+          <div><div class="gal-stat-l">총 매출</div><div class="gal-stat-v pri">${(st.total/10000).toFixed(0)}만</div></div>
+          <div><div class="gal-stat-l">미수금</div><div class="gal-stat-v ${st.unpaid>0?'dan':'suc'}">${st.unpaid>0?(st.unpaid/10000).toFixed(0)+'만':'완납'}</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--txt3);font-weight:600;margin-top:8px">최근 거래 ${st.last} · ${st.count}건</div>
+      </div>`;
+    }).join('')+'</div>':'<div class="empty-state"><div class="msg">거래처 없음</div></div>';
+    $('cliGalleryArea').innerHTML=html;
+  }
+}
 async function checkBizStatusInline(){
   var biz=$('qcBiz').value.replace(/\D/g,'');
   var res=$('qcBizResult');
@@ -60,7 +102,39 @@ function genProdCode(clientName){
   prods.forEach(function(p){var m=p.code.match(/-(\d+)$/);if(m){var n=parseInt(m[1],10);if(n>maxNum)maxNum=n}});
   return prefix+'-'+String(maxNum+1).padStart(3,'0');
 }
-function rProd(){const s=($('prodSch')?.value||'').toLowerCase();const ps=DB.g('prod').filter(p=>!s||p.nm.toLowerCase().includes(s)||p.cnm.toLowerCase().includes(s)||(p.code||'').toLowerCase().includes(s));$('prodTbl').querySelector('tbody').innerHTML=ps.map(p=>`<tr><td style="font-weight:600;color:#3B82F6">${p.code||'-'}</td><td style="font-weight:700">${p.nm}</td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${p.paper||'-'}</td><td>${p.spec||'-'}</td><td>${(p.procs||[]).map(x=>x.nm).join(' > ')}</td><td><button class="btn btn-sm btn-o" onclick="eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dProd('${p.id}')">삭제</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty-cell">품목 없음</td></tr>'}
+var _prodView='table';
+function setProdView(v,btn){_prodView=v;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('prodTableView'),g=$('prodGalleryView');if(t)t.style.display=v==='table'?'':'none';if(g)g.style.display=v==='gallery'?'':'none';rProd()}
+function rProd(){
+  const s=($('prodSch')?.value||'').toLowerCase();
+  const ps=DB.g('prod').filter(p=>!s||p.nm.toLowerCase().includes(s)||p.cnm.toLowerCase().includes(s)||(p.code||'').toLowerCase().includes(s));
+  // KPI
+  var allProd=DB.g('prod');
+  var withPrice=allProd.filter(p=>p.price>0).length;
+  var clientCnt=Object.keys(allProd.reduce((a,p)=>{a[p.cnm]=true;return a},{})).length;
+  var avgPrice=allProd.length?Math.round(allProd.reduce((s,p)=>s+(p.price||0),0)/allProd.length):0;
+  var k=$('prodKpi');if(k)k.innerHTML=
+    `<div class="sb blue"><div class="l">전체 품목</div><div class="v">${allProd.length}</div></div>`+
+    `<div class="sb green"><div class="l">단가 등록</div><div class="v">${withPrice}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">${allProd.length?Math.round(withPrice/allProd.length*100):0}%</div></div>`+
+    `<div class="sb orange"><div class="l">평균 단가</div><div class="v">${avgPrice.toLocaleString()}<span style="font-size:14px">원</span></div></div>`+
+    `<div class="sb purple"><div class="l">거래처 수</div><div class="v">${clientCnt}</div></div>`;
+  if(_prodView==='table'){
+    $('prodTbl').querySelector('tbody').innerHTML=ps.length?ps.map(p=>`<tr><td style="font-weight:700;color:var(--pri)">${p.code||'-'}</td><td style="font-weight:700">${p.nm}</td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${p.paper||'-'}</td><td>${p.spec||'-'}</td><td>${(p.procs||[]).map(x=>x.nm).join(' > ')}</td><td><button class="btn btn-sm btn-o" onclick="eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dProd('${p.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty-cell">품목 없음</td></tr>';
+  }else{
+    var html=ps.length?'<div class="gal">'+ps.map(p=>{var ini=(p.code||p.nm).charAt(0);
+      var orderCnt=DB.g('wo').filter(w=>w.pnm===p.nm).length;
+      return `<div class="gal-card" onclick="eProd('${p.id}')">
+        <div class="gal-hd"><div class="gal-avatar purple">${ini}</div><div class="gal-info"><div class="gal-nm">${p.nm}</div><div class="gal-sub">${p.cnm}</div></div></div>
+        <div style="font-size:11px;color:var(--txt3);font-weight:600;margin-bottom:6px">${p.code||''}</div>
+        <div class="gal-stats">
+          <div><div class="gal-stat-l">단가</div><div class="gal-stat-v pri">${p.price?p.price.toLocaleString()+'원':'-'}</div></div>
+          <div><div class="gal-stat-l">주문</div><div class="gal-stat-v">${orderCnt}건</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--txt2);font-weight:600;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.paper||'-'}${p.spec?' / '+p.spec:''}</div>
+      </div>`;
+    }).join('')+'</div>':'<div class="empty-state"><div class="msg">품목 없음</div></div>';
+    $('prodGalleryArea').innerHTML=html;
+  }
+}
 function acPmCli(v){const l=$('acPmCliL');const cs=DB.g('cli').filter(c=>!v||!v.trim()||v.trim()===' '||c.nm.toLowerCase().includes(v.toLowerCase()));if(!cs.length){l.classList.add('hidden');return}l.innerHTML=cs.map(c=>{var sn=c.nm.replace(/'/g,"&#39;");return`<div class="ac-i" onclick="$('pmCli').value='${sn}';$('acPmCliL').classList.add('hidden');if(!$('pmCode').value||$('pmCode').value.indexOf('-')>0)$('pmCode').value=genProdCode('${sn}')">${c.nm}<span style="float:right;font-size:11px;color:var(--txt2)">${c.ps||''}</span></div>`}).join('');l.classList.remove('hidden')}
 function openProdMWithCli(cid){const c=DB.g('cli').find(x=>x.id===cid);openProdM();if(c)$('pmCli').value=c.nm}
 function openProdM(){['pmId','pmCode','pmPrice','pmCli','pmNm','pmPaper','pmSpec','pmFabric','pmFabricSpec','pmQM','pmQE','pmPrint','pmGold','pmMold','pmHand','pmNote','pmCaut'].forEach(x=>$(x).value='');pProcs=[];renPP();$('prodMoT').textContent='품목 등록';oMo('prodMo')}
@@ -71,7 +145,20 @@ function saveProd(){const nm=$('pmNm').value.trim(),cn=$('pmCli').value.trim();i
 function dProd(id){if(!confirm('삭제?'))return;DB.s('prod',DB.g('prod').filter(x=>x.id!==id));rProd();toast('삭제','ok')}
 
 // MOLD
-function rMold(){const s=($('moldSch')?.value||'').toLowerCase();const ms=DB.g('mold').filter(m=>!s||m.no.toLowerCase().includes(s)||m.pnm.toLowerCase().includes(s));$('moldTbl').querySelector('tbody').innerHTML=ms.map(m=>`<tr><td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty-cell">목형 없음</td></tr>'}
+function rMold(){
+  const s=($('moldSch')?.value||'').toLowerCase();
+  const ms=DB.g('mold').filter(m=>!s||m.no.toLowerCase().includes(s)||m.pnm.toLowerCase().includes(s));
+  var allMold=DB.g('mold');
+  var inUse=allMold.filter(m=>m.st==='사용중').length;
+  var idle=allMold.filter(m=>m.st==='보관중').length;
+  var disposed=allMold.filter(m=>m.st==='폐기').length;
+  var k=$('moldKpi');if(k)k.innerHTML=
+    `<div class="sb blue"><div class="l">전체 목형</div><div class="v">${allMold.length}</div></div>`+
+    `<div class="sb green"><div class="l">사용중</div><div class="v">${inUse}</div></div>`+
+    `<div class="sb orange"><div class="l">보관중</div><div class="v">${idle}</div></div>`+
+    `<div class="sb red"><div class="l">폐기</div><div class="v">${disposed}</div></div>`;
+  $('moldTbl').querySelector('tbody').innerHTML=ms.length?ms.map(m=>`<tr><td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">목형 없음</td></tr>';
+}
 function openMoldM(){['mmId','mmNo','mmProd','mmCli','mmLoc','mmNt'].forEach(x=>$(x).value='');$('mmSt').value='사용중';$('moldMoT').textContent='목형 등록';oMo('moldMo')}
 function eMold(id){const m=DB.g('mold').find(x=>x.id===id);if(!m)return;$('mmId').value=m.id;$('mmNo').value=m.no;$('mmProd').value=m.pnm||'';$('mmCli').value=m.cnm||'';$('mmLoc').value=m.loc||'';$('mmSt').value=m.st;$('mmNt').value=m.nt||'';$('moldMoT').textContent='목형 수정';oMo('moldMo')}
 function saveMold(){const no=$('mmNo').value.trim();if(!no){toast('목형번호 필요','err');return}const id=$('mmId').value||gid();const ms=DB.g('mold');const ei=ms.findIndex(x=>x.id===id);const m={id,no,pnm:$('mmProd').value,cnm:$('mmCli').value,loc:$('mmLoc').value,st:$('mmSt').value,nt:$('mmNt').value,cat:ei>=0?ms[ei].cat:nw()};if(ei>=0)ms[ei]=m;else ms.push(m);DB.s('mold',ms);cMo('moldMo');rMold();toast('저장','ok')}

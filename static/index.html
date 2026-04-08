@@ -1242,32 +1242,49 @@
 
 <!-- TAB: Client -->
 <div id="t-cli" class="tc">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-<div style="display:flex;align-items:center;gap:8px;flex:1">
-<select id="cliTypeFilter" onchange="rCli()" style="padding:8px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;font-weight:600">
-<option value="">전체</option><option value="sales">매출처</option><option value="purchase">매입처</option>
-</select>
-<input id="cliSch" placeholder="거래처명 검색" oninput="rCli()" style="flex:1;padding:8px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:13px">
+<div class="sg" id="cliKpi"></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <input type="text" id="cliSch" placeholder="거래처명 또는 사업자번호로 검색" oninput="rCli()" class="fbar-grow">
+    <select id="cliTypeFilter" onchange="rCli()">
+      <option value="">전체</option><option value="sales">매출처</option><option value="purchase">매입처</option>
+    </select>
+    <div class="fbar-pills" id="cliViewPills">
+      <button class="on" onclick="setCliView('table',this)">목록</button>
+      <button onclick="setCliView('gallery',this)">갤러리</button>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
+  </div>
 </div>
-<button class="btn btn-p" style="margin-left:7px" onclick="openCliM()">거래처 등록</button>
-</div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div id="cliTableView"><div class="card"><div style="overflow-x:auto"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
 </div>
 
 <!-- TAB: Product -->
 <div id="t-prod" class="tc">
-<div style="display:flex;justify-content:space-between;margin-bottom:14px">
-<div class="sb-r" style="flex:1;margin-bottom:0"><input id="prodSch" placeholder="제품명 또는 거래처 검색" oninput="rProd()"></div>
-<button class="btn btn-p" style="margin-left:7px" onclick="openProdM()">품목 등록</button>
+<div class="sg" id="prodKpi"></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <input type="text" id="prodSch" placeholder="제품명, 코드 또는 거래처로 검색" oninput="rProd()" class="fbar-grow">
+    <div class="fbar-pills" id="prodViewPills">
+      <button class="on" onclick="setProdView('table',this)">목록</button>
+      <button onclick="setProdView('gallery',this)">갤러리</button>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
+  </div>
 </div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div id="prodTableView"><div class="card"><div style="overflow-x:auto"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="prodGalleryView" style="display:none"><div id="prodGalleryArea"></div></div>
 </div>
 
 <!-- TAB: Mold -->
 <div id="t-mold" class="tc">
-<div style="display:flex;justify-content:space-between;margin-bottom:14px">
-<div class="sb-r" style="flex:1;margin-bottom:0"><input id="moldSch" placeholder="목형번호 또는 제품명 검색" oninput="rMold()"></div>
-<button class="btn btn-p" style="margin-left:7px" onclick="openMoldM()">목형 등록</button>
+<div class="sg" id="moldKpi"></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <input type="text" id="moldSch" placeholder="목형번호 또는 제품명으로 검색" oninput="rMold()" class="fbar-grow">
+    <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
+  </div>
 </div>
 <div class="card"><div style="overflow-x:auto"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
@@ -1375,8 +1392,15 @@
 <div id="planGrid"></div>
 </div>
 <div id="t-vendor" class="tc">
-<div class="card" style="margin-bottom:14px">
-<div class="card-t" style="display:flex;justify-content:space-between;align-items:center">외주 인쇄소 관리<button class="btn btn-sm btn-p" onclick="oMo('vendorMo');$('vdNm').value='';$('vdTel').value='';$('vdAddr').value='';$('vdNote').value='';_editVdId=null">+ 인쇄소 등록</button></div>
+<div class="sg" id="vendorKpi"></div>
+<div class="fbar">
+  <div class="fbar-row">
+    <span class="fbar-label">인쇄소 관리</span>
+    <div class="fbar-spacer"></div>
+    <button class="btn btn-p btn-sm" onclick="oMo('vendorMo');$('vdNm').value='';$('vdTel').value='';$('vdAddr').value='';$('vdNote').value='';_editVdId=null">+ 등록</button>
+  </div>
+</div>
+<div class="card" style="margin-bottom:14px"><div class="card-t">전체 인쇄소</div>
 <table class="dt" id="vendorTbl"><thead><tr><th>인쇄소명</th><th>연락처</th><th>주소</th><th>작업건수</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 <div class="card"><div class="card-t">인쇄소별 작업 현황</div><div id="vendorDash" class="vd-grid"></div></div>

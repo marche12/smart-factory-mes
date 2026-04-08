@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="이노MES">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
-<title>이노패키지 ERP+MES</title>
+<title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
 <script src="/js/core.js?v=3"></script>
 </head>
@@ -15,7 +15,7 @@
 <div id="toast" class="toast"></div>
 <div id="loginOverlay" class="login-overlay">
 <div class="login-card">
-<h1 class="login-title">이노패키지</h1>
+<h1 class="login-title">팩플로우</h1>
 <div class="login-sub">통합 ERP + MES</div>
 <div class="login-field"><label>사용자</label>
 <select id="loginUser" class="login-input">
@@ -38,7 +38,7 @@
 <div style="margin-bottom:16px"><div style="font-size:16px;font-weight:800;color:#16A34A;padding:8px 12px;background:#DCFCE7;border-left:4px solid #16A34A;margin-bottom:8px">금일 완료 <span id="wCntDone" style="font-size:13px;color:#6B7280"></span></div><div id="wQueueDone"></div></div>
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
-<div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>이노패키지 ERP+MES</div><div style="flex:1;overflow-y:auto">
+<div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
 <div class="sb-group open" onclick="this.classList.toggle('open')">수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order" onclick="goMod('mes-order')">수주관리</button>
@@ -390,7 +390,7 @@
 <div class="module-page" id="pg-mat-bom"></div>
 <div class="module-page" id="pg-acc-sales"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">매출/회계</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">매출/회계</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('sales',this)">매출 장부</button>
     <button class="hd-tab" onclick="goTab('purchase',this)">매입 장부</button>
@@ -404,10 +404,10 @@
 <!-- 매출 장부 -->
 <div class="tc on" id="t-sales">
   <div class="sg">
-    <div class="sb"><div class="l">금월 매출</div><div class="v" style="color:var(--pri)" id="slT">0원</div></div>
-    <div class="sb"><div class="l">미수금</div><div class="v" style="color:var(--dan)" id="slU">0원</div></div>
-    <div class="sb"><div class="l">금월 입금</div><div class="v" style="color:var(--suc)" id="slP">0원</div></div>
-    <div class="sb"><div class="l">거래처</div><div class="v" id="slC">0</div></div>
+    <div class="sb blue"><div class="l">금월 매출</div><div class="v" id="slT">0원</div></div>
+    <div class="sb red"><div class="l">미수금</div><div class="v" id="slU">0원</div></div>
+    <div class="sb green"><div class="l">금월 입금</div><div class="v" id="slP">0원</div></div>
+    <div class="sb purple"><div class="l">거래처</div><div class="v" id="slC">0</div></div>
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openSM()">+ 매출등록</button>
@@ -430,10 +430,10 @@
 <!-- 매입 장부 -->
 <div class="tc" id="t-purchase">
   <div class="sg">
-    <div class="sb"><div class="l">금월 매입</div><div class="v" style="color:var(--wrn)" id="prT">0원</div></div>
-    <div class="sb"><div class="l">미지급</div><div class="v" style="color:var(--dan)" id="prU">0원</div></div>
-    <div class="sb"><div class="l">금월 지급</div><div class="v" style="color:var(--suc)" id="prP">0원</div></div>
-    <div class="sb"><div class="l">거래처</div><div class="v" id="prC">0</div></div>
+    <div class="sb orange"><div class="l">금월 매입</div><div class="v" id="prT">0원</div></div>
+    <div class="sb red"><div class="l">미지급</div><div class="v" id="prU">0원</div></div>
+    <div class="sb green"><div class="l">금월 지급</div><div class="v" id="prP">0원</div></div>
+    <div class="sb purple"><div class="l">거래처</div><div class="v" id="prC">0</div></div>
   </div>
   <div class="tb">
     <button class="btn btn-p" onclick="openPM()">+ 매입등록</button>
@@ -531,7 +531,7 @@
 <div class="module-page" id="pg-acc-tax"></div>
 <div class="module-page" id="pg-hr-emp"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">인사/급여</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">인사/급여</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('emp',this)">직원 정보</button>
     <button class="hd-tab" onclick="goTab('att',this)">출퇴근 기록</button>
@@ -673,7 +673,7 @@
 <div class="module-page" id="pg-hr-leave"></div>
 <div class="module-page" id="pg-biz-trend"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">경영분석</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">경영분석</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('trend',this)">매출/매입 추이</button>
     <button class="hd-tab" onclick="goTab('rank',this)">거래처 순위</button>
@@ -765,7 +765,7 @@
 <div class="module-page" id="pg-biz-cost"></div>
 <div class="module-page" id="pg-qc-inspect"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
+  <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('qc',this)">품질검사</button>
     <button class="hd-tab" onclick="goTab('equip',this)">설비관리</button>

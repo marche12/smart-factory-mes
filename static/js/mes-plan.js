@@ -1508,5 +1508,143 @@ function schedDrop(e){
   renderSchedBoard();
 }
 
+/* ===== 생산계획 우선순위 보드 ===== */
+function rPlan(){
+  var wos=DB.g('wo').filter(function(o){
+    return o.status!=='출고완료'&&o.status!=='취소';
+  });
+  var today=td();
+
+  function dayDiff(sd){
+    if(!sd)return 999;
+    return Math.round((new Date(sd)-new Date(today))/(1000*60*60*24));
+  }
+
+  // 납기일 기준 분류
+  var groups={overdue:[],today:[],d1:[],d3:[],normal:[]};
+  wos.forEach(function(o){
+    var d=dayDiff(o.sd);
+    if(d<0)groups.overdue.push(o);
+    else if(d===0)groups.today.push(o);
+    else if(d===1)groups.d1.push(o);
+    else if(d<=3)groups.d3.push(o);
+    else groups.normal.push(o);
+  });
+
+  // 요약 배지
+  var sbHtml='<div class="sg" style="margin-bottom:16px">';
+  if(groups.overdue.length)sbHtml+='<div class="sb red"><div class="v">'+groups.overdue.length+'</div><div class="l">⚠ 납기 지연</div></div>';
+  if(groups.today.length)sbHtml+='<div class="sb orange"><div class="v">'+groups.today.length+'</div><div class="l">📦 오늘 납기</div></div>';
+  if(groups.d1.length)sbHtml+='<div class="sb orange"><div class="v">'+groups.d1.length+'</div><div class="l">⏰ 내일 납기</div></div>';
+  if(groups.d3.length)sbHtml+='<div class="sb blue"><div class="v">'+groups.d3.length+'</div><div class="l">📋 3일 이내</div></div>';
+  sbHtml+='<div class="sb green"><div class="v">'+groups.normal.length+'</div><div class="l">✓ 여유 있음</div></div>';
+  sbHtml+='</div>';
+
+  // 우선순위 카드 목록 (납기 급한 순)
+  var sorted=[].concat(groups.overdue,groups.today,groups.d1,groups.d3,groups.normal);
+  var cardsHtml='';
+  if(!sorted.length){
+    cardsHtml=emptyHtml('','진행중인 작업 없음','작업지시서를 등록하면 우선순위가 표시됩니다.');
+  }else{
+    cardsHtml='<div style="display:flex;flex-direction:column;gap:8px">';
+    sorted.forEach(function(o){
+      var diff=dayDiff(o.sd);
+      var urgLabel=diff<0?'D+'+Math.abs(diff)+' 지연':diff===0?'오늘 납기':diff===1?'내일 납기':o.sd?'D-'+diff:'납기미정';
+      var urgColor=diff<0?'#EF4444':diff<=1?'#F59E0B':diff<=3?'#3182F6':'#10B981';
+      var urgBg=diff<0?'#FEF2F2':diff<=1?'#FFFBEB':diff<=3?'#EFF6FF':'#F0FDF4';
+
+      // 공정 진행률
+      var procs=o.procs||[];
+      var total=procs.length;
+      var done=procs.filter(function(p){return p.st==='완료'||p.st==='외주완료'||p.st==='스킵';}).length;
+      var curProc=procs.find(function(p){return p.st==='진행중'||p.st==='외주대기'||p.st==='외주진행중';});
+      var nextProc=procs.find(function(p){return p.st==='대기';});
+      var pct=total>0?Math.round(done/total*100):0;
+      var procLabel=curProc?'🔄 진행중: '+curProc.nm:nextProc?'⏳ 대기: '+nextProc.nm:done===total&&total>0?'✅ 공정 완료':'공정 없음';
+
+      cardsHtml+='<div class="card" style="padding:12px 14px;border-left:3px solid '+urgColor+'">';
+      // 헤더
+      cardsHtml+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
+      cardsHtml+='<div style="flex:1;min-width:0">';
+      cardsHtml+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
+      cardsHtml+='<span style="font-weight:700;font-size:14px">'+o.pnm+'</span>';
+      cardsHtml+='<span style="font-size:12px;color:var(--txt2)">'+o.cnm+'</span>';
+      if(o.urgent)cardsHtml+='<span class="bd bd-d" style="background:#FEF2F2;color:#EF4444;border-color:#FECACA;font-size:10px">긴급</span>';
+      cardsHtml+='</div>';
+      cardsHtml+='<div style="font-size:12px;color:var(--txt2);margin-bottom:6px">'+o.wn+' · '+fmt(o.fq||0)+'매'+(o.sd?' · 납기 '+o.sd:'')+'</div>';
+      // 공정 진행 바
+      cardsHtml+='<div style="font-size:11px;color:var(--txt2);margin-bottom:3px;display:flex;justify-content:space-between">';
+      cardsHtml+='<span>'+procLabel+'</span><span>'+done+'/'+total+'</span></div>';
+      cardsHtml+='<div style="height:5px;background:#E5E7EB;border-radius:3px">';
+      cardsHtml+='<div style="height:5px;width:'+pct+'%;background:'+urgColor+';border-radius:3px"></div></div>';
+      cardsHtml+='</div>';
+      // 납기 배지
+      if(o.sd||diff<999){
+        cardsHtml+='<div style="min-width:64px;text-align:center">';
+        cardsHtml+='<div style="font-size:11px;font-weight:700;color:'+urgColor+';background:'+urgBg+';padding:5px 8px;border-radius:6px;white-space:nowrap">'+urgLabel+'</div>';
+        cardsHtml+='</div>';
+      }
+      cardsHtml+='</div>';
+      // 공정 칩
+      if(procs.length){
+        cardsHtml+='<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
+        procs.forEach(function(p){
+          var c=p.st==='완료'||p.st==='외주완료'?'#10B981':p.st==='진행중'||p.st==='외주진행중'?'#3182F6':p.st==='외주대기'?'#8B5CF6':'#94A3B8';
+          var bg=p.st==='완료'||p.st==='외주완료'?'#F0FDF4':p.st==='진행중'||p.st==='외주진행중'?'#EFF6FF':p.st==='외주대기'?'#F5F3FF':'#F8FAFC';
+          cardsHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+c+';border:1px solid '+c+'40">'+p.nm+'</span>';
+        });
+        cardsHtml+='</div>';
+      }
+      cardsHtml+='</div>';
+    });
+    cardsHtml+='</div>';
+  }
+
+  $('planPriority').innerHTML=sbHtml+cardsHtml;
+  renderPlanProcLoad(wos);
+}
+
+function renderPlanProcLoad(wos){
+  var procColors=getProcColors();
+  var byProc={};
+  wos.forEach(function(o){
+    (o.procs||[]).forEach(function(p){
+      if(p.st==='완료'||p.st==='외주완료'||p.st==='스킵')return;
+      if(!byProc[p.nm])byProc[p.nm]={waiting:0,inprog:0};
+      if(p.st==='진행중'||p.st==='외주진행중'||p.st==='외주대기')byProc[p.nm].inprog++;
+      else if(p.st==='대기')byProc[p.nm].waiting++;
+    });
+  });
+  var procs=Object.entries(byProc);
+  if(!procs.length){$('planGrid').innerHTML='';return;}
+  procs.sort(function(a,b){return(b[1].waiting+b[1].inprog)-(a[1].waiting+a[1].inprog);});
+  var maxTotal=Math.max.apply(null,procs.map(function(x){return x[1].waiting+x[1].inprog;}));
+  var h='<div class="card" style="margin-top:16px"><div class="card-t" style="margin-bottom:14px">공정별 작업 부하 현황</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:12px">';
+  procs.forEach(function(entry){
+    var nm=entry[0];var d=entry[1];
+    var total=d.waiting+d.inprog;
+    var color=procColors[nm]||'#6B7280';
+    var loadColor=total>=5?'#EF4444':total>=3?'#F59E0B':color;
+    var pct=maxTotal>0?Math.round(total/maxTotal*100):0;
+    h+='<div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+    h+='<div style="display:flex;align-items:center;gap:6px">';
+    h+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+'"></span>';
+    h+='<span style="font-size:13px;font-weight:600">'+nm+'</span>';
+    if(d.inprog>0)h+='<span class="bd" style="background:#EFF6FF;color:#3182F6;border-color:#BFDBFE;font-size:10px">진행중 '+d.inprog+'건</span>';
+    h+='</div>';
+    h+='<span style="font-size:12px;font-weight:700;color:'+loadColor+'">대기 '+d.waiting+'건</span>';
+    h+='</div>';
+    h+='<div style="height:6px;background:#E5E7EB;border-radius:3px">';
+    h+='<div style="height:6px;width:'+pct+'%;background:'+loadColor+';border-radius:3px"></div></div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+  $('planGrid').innerHTML=h;
+}
+
+if(typeof MR!=='undefined')MR['mes-plan']=function(){rPlan();};
+
 initDB();
 /* ===== SAMPLE DATA ===== */

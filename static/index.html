@@ -39,23 +39,23 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open" onclick="this.classList.toggle('open')">수주<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" onclick="toggleSbGroup(this)">수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order" onclick="goMod('mes-order')">수주관리</button>
 <button class="sb-item" data-mod="mes-wo" onclick="goMod('mes-wo')">작업지시서</button>
 </div>
-<div class="sb-group open" onclick="this.classList.toggle('open')">생산<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" onclick="toggleSbGroup(this)">생산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-dash" onclick="goMod('mes-dash')">생산현황</button>
 <button class="sb-item" data-mod="mes-plan" onclick="goMod('mes-plan')">생산계획</button>
 <button class="sb-item" data-mod="mes-worker" onclick="goMod('mes-worker')">작업자 현황</button>
 <button class="sb-item" data-mod="mes-monitor" onclick="goMod('mes-monitor')">현장 모니터</button>
 </div>
-<div class="sb-group open" onclick="this.classList.toggle('open')">출고<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" onclick="toggleSbGroup(this)">출고<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" onclick="goMod('mes-ship')">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-cli" onclick="goMod('mes-cli')">거래처</button>
 <button class="sb-item" data-mod="mes-vendor" onclick="goMod('mes-vendor')">인쇄소</button>
@@ -64,14 +64,14 @@
 <button class="sb-item" data-mod="mes-rpt" onclick="goMod('mes-rpt')">보고서</button>
 <button class="sb-item" data-mod="mes-queue" onclick="goMod('mes-queue')">설정</button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">구매/자재<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-income" onclick="goMod('mat-income')">입고</button>
 <button class="sb-item" data-mod="mat-stock" onclick="goMod('mat-stock')">재고</button>
 <button class="sb-item" data-mod="mat-po" onclick="goMod('mat-po')">발주서</button>
 <button class="sb-item" data-mod="mat-bom" onclick="goMod('mat-bom')">BOM</button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">매출/회계<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">매출/회계<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="acc-sales" onclick="goMod('acc-sales')">매출</button>
 <button class="sb-item" data-mod="acc-purchase" onclick="goMod('acc-purchase')">매입</button>
@@ -82,20 +82,20 @@
 <button class="sb-item" data-mod="acc-monthly" onclick="goMod('acc-monthly')">월별 비교</button>
 <button class="sb-item" data-mod="acc-closing" onclick="goMod('acc-closing')">외상 마감</button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">인사/급여<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="hr-emp" onclick="goMod('hr-emp')">직원</button>
 <button class="sb-item" data-mod="hr-att" onclick="goMod('hr-att')">출퇴근</button>
 <button class="sb-item" data-mod="hr-pay" onclick="goMod('hr-pay')">급여</button>
 <button class="sb-item" data-mod="hr-leave" onclick="goMod('hr-leave')">연차</button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">경영분석<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">경영분석<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="biz-trend" onclick="goMod('biz-trend')">추이</button>
 <button class="sb-item" data-mod="biz-rank" onclick="goMod('biz-rank')">순위</button>
 <button class="sb-item" data-mod="biz-cost" onclick="goMod('biz-cost')">원가</button>
 </div>
-<div class="sb-group" onclick="this.classList.toggle('open')">품질/기타<span class="sb-arrow">▶</span></div>
+<div class="sb-group" onclick="toggleSbGroup(this)">품질/기타<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-inspect" onclick="goMod('qc-inspect')">검사</button>
 <button class="sb-item" data-mod="qc-equip" onclick="goMod('qc-equip')">설비</button>

@@ -147,7 +147,7 @@ function dProd(id){if(!confirm('삭제?'))return;DB.s('prod',DB.g('prod').filter
 // MOLD
 function rMold(){
   const s=($('moldSch')?.value||'').toLowerCase();
-  const ms=DB.g('mold').filter(m=>!s||m.no.toLowerCase().includes(s)||m.pnm.toLowerCase().includes(s));
+  const ms=DB.g('mold').filter(m=>!s||(m.no||'').toLowerCase().includes(s)||(m.pnm||'').toLowerCase().includes(s)||(m.cnm||'').toLowerCase().includes(s));
   var allMold=DB.g('mold');
   var inUse=allMold.filter(m=>m.st==='사용중').length;
   var idle=allMold.filter(m=>m.st==='보관중').length;
@@ -164,3 +164,116 @@ function eMold(id){const m=DB.g('mold').find(x=>x.id===id);if(!m)return;$('mmId'
 function saveMold(){const no=$('mmNo').value.trim();if(!no){toast('목형번호 필요','err');return}const id=$('mmId').value||gid();const ms=DB.g('mold');const ei=ms.findIndex(x=>x.id===id);const m={id,no,pnm:$('mmProd').value,cnm:$('mmCli').value,loc:$('mmLoc').value,st:$('mmSt').value,nt:$('mmNt').value,cat:ei>=0?ms[ei].cat:nw()};if(ei>=0)ms[ei]=m;else ms.push(m);DB.s('mold',ms);cMo('moldMo');rMold();toast('저장','ok')}
 function dMold(id){if(!confirm('삭제?'))return;DB.s('mold',DB.g('mold').filter(x=>x.id!==id));rMold();toast('삭제','ok')}
 
+// ===== 엑셀 업로드 (품목/목형) =====
+var XLSX_FIELD_MAP={
+  prod:{
+    code:['품목코드','코드','품번','자재코드','code','item code','품목번호'],
+    nm:['품목명','품명','제품명','자재명','name','item','품목 이름','품목별칭'],
+    cnm:['거래처','거래처명','업체','업체명','client','customer','매출처','매입처'],
+    spec:['규격','사이즈','size','spec','치수'],
+    paper:['종이','지종','용지','paper','재질'],
+    price:['매출단가','매출단가1','판매가','단가','price','출고단가','매가'],
+    cost:['매입단가','원가','cost','입고단가','매입가'],
+    note:['비고','메모','note','memo','설명','description']
+  },
+  mold:{
+    no:['목형번호','목형No','목형 번호','번호','no','mold no','코드'],
+    pnm:['제품명','품목명','품명','name','item'],
+    cnm:['거래처','거래처명','업체','client','customer'],
+    loc:['보관위치','위치','location','보관'],
+    st:['상태','status','state'],
+    nt:['비고','메모','note','memo','설명']
+  }
+};
+function _xlsxNorm(s){return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[._\-/()]/g,'')}
+function _xlsxMapHeader(headers,fieldMap){
+  var out={};
+  Object.keys(fieldMap).forEach(function(k){
+    var aliases=fieldMap[k].map(_xlsxNorm);
+    for(var i=0;i<headers.length;i++){
+      var h=_xlsxNorm(headers[i]);
+      if(!h)continue;
+      if(aliases.indexOf(h)>=0||aliases.some(function(a){return h===a||h.indexOf(a)>=0&&a.length>=2})){out[k]=i;break}
+    }
+  });
+  return out;
+}
+function _xlsxReadFile(file,cb){
+  if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로드 실패','err');return}
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      cb(rows);
+    }catch(err){toast('파일 읽기 실패: '+err.message,'err')}
+  };
+  r.readAsArrayBuffer(file);
+}
+function _xlsxFindHeaderRow(rows,fieldMap){
+  // 상위 10행에서 가장 매핑이 많이 되는 행을 헤더로 본다
+  var best={idx:0,score:0,map:{}};
+  for(var i=0;i<Math.min(10,rows.length);i++){
+    var m=_xlsxMapHeader(rows[i],fieldMap);
+    var s=Object.keys(m).length;
+    if(s>best.score){best={idx:i,score:s,map:m}}
+  }
+  return best;
+}
+function impProdXlsx(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  _xlsxReadFile(f,function(rows){
+    if(!rows.length){toast('빈 파일','err');return}
+    var hdr=_xlsxFindHeaderRow(rows,XLSX_FIELD_MAP.prod);
+    if(!hdr.map.nm){toast('품목명 컬럼을 찾을 수 없음','err');return}
+    var items=[];
+    for(var i=hdr.idx+1;i<rows.length;i++){
+      var r=rows[i];if(!r||!r.length)continue;
+      var nm=String(r[hdr.map.nm]||'').trim();
+      if(!nm)continue;
+      var get=function(k){return hdr.map[k]!=null?r[hdr.map[k]]:''};
+      var price=parseFloat(String(get('price')).replace(/[^\d.-]/g,''))||0;
+      items.push({
+        id:gid(),code:String(get('code')||'').trim()||genProdCode(String(get('cnm')||'미지정').trim()||'미지정'),
+        nm:nm,cnm:String(get('cnm')||'').trim(),spec:String(get('spec')||'').trim(),
+        paper:String(get('paper')||'').trim(),price:price,
+        nt:String(get('note')||'').trim(),
+        papers:[{paper:String(get('paper')||'').trim(),spec:String(get('spec')||'').trim(),qm:0,qe:0}],
+        fabrics:[],procs:[]
+      });
+    }
+    if(!items.length){toast('등록할 데이터가 없음','err');return}
+    if(!confirm(items.length+'개 품목을 등록합니다. 계속할까요?\n(매핑 컬럼: '+Object.keys(hdr.map).join(', ')+')'))return;
+    var ps=DB.g('prod');DB.s('prod',ps.concat(items));rProd();
+    toast(items.length+'개 품목 등록 완료','ok');
+  });
+}
+function impMoldXlsx(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  _xlsxReadFile(f,function(rows){
+    if(!rows.length){toast('빈 파일','err');return}
+    var hdr=_xlsxFindHeaderRow(rows,XLSX_FIELD_MAP.mold);
+    if(!hdr.map.no){toast('목형번호 컬럼을 찾을 수 없음','err');return}
+    var items=[];
+    for(var i=hdr.idx+1;i<rows.length;i++){
+      var r=rows[i];if(!r||!r.length)continue;
+      var no=String(r[hdr.map.no]||'').trim();
+      if(!no)continue;
+      var get=function(k){return hdr.map[k]!=null?r[hdr.map[k]]:''};
+      items.push({
+        id:gid(),no:no,
+        pnm:String(get('pnm')||'').trim(),
+        cnm:String(get('cnm')||'').trim(),
+        loc:String(get('loc')||'').trim(),
+        st:String(get('st')||'사용중').trim()||'사용중',
+        nt:String(get('nt')||'').trim(),
+        cat:nw()
+      });
+    }
+    if(!items.length){toast('등록할 데이터가 없음','err');return}
+    if(!confirm(items.length+'개 목형을 등록합니다. 계속할까요?\n(매핑 컬럼: '+Object.keys(hdr.map).join(', ')+')'))return;
+    var ms=DB.g('mold');DB.s('mold',ms.concat(items));rMold();
+    toast(items.length+'개 목형 등록 완료','ok');
+  });
+}

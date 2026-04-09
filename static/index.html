@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#3B82F6">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -9,6 +9,7 @@
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="/js/core.js?v=3"></script>
 </head>
 <body>
@@ -1299,6 +1300,8 @@
       <button onclick="setProdView('gallery',this)">갤러리</button>
     </div>
     <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">📥 엑셀 업로드</button>
+    <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
   </div>
 </div>
 <div id="prodTableView"><div class="card"><div style="overflow-x:auto"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
@@ -1310,8 +1313,10 @@
 <div class="sg" id="moldKpi"></div>
 <div class="fbar">
   <div class="fbar-row">
-    <input type="text" id="moldSch" placeholder="목형번호 또는 제품명으로 검색" oninput="rMold()" class="fbar-grow">
+    <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="rMold()" class="fbar-grow">
     <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">📥 엑셀 업로드</button>
+    <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
   </div>
 </div>
 <div class="card"><div style="overflow-x:auto"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
@@ -1547,7 +1552,7 @@
 </div><div class="mf"><button class="btn btn-o" onclick="cMo('cliMo')">취소</button><button class="btn btn-p" onclick="saveCli()">저장</button></div>
 </div></div>
 
-<div id="prodMo" class="mo hidden"><div class="mb" style="width:600px;max-height:90vh">
+<div id="prodMo" class="mo hidden"><div class="mb" style="width:900px;max-width:95vw;max-height:92vh">
 <div class="mh" style="padding:10px 16px"><h3 id="prodMoT" style="font-size:15px;margin:0">품목 등록</h3><button class="mc" onclick="cMo('prodMo')">&times;</button></div>
 <div class="my" style="padding:10px 16px"><input type="hidden" id="pmId">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">

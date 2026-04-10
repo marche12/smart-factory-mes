@@ -66,7 +66,7 @@ h+='<div class="fg"><label>'+( i+1)+'. '+p.nm+' - 방식</label><input value="'+
 h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div>';
 h+='</div>';
 if(p.nm==='톰슨'){
-  h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>목형번호</label><div class="ac-w"><input value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력 또는 검색" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div></div>';
+  h+='<div style="margin-top:6px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">목형번호</label><div style="display:inline-flex;gap:4px;align-items:center"><div class="ac-w" style="width:200px"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off" style="padding:6px 8px;font-size:12px;width:100%;box-sizing:border-box"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')" style="padding:6px 8px;font-size:12px">🔍 검색</button></div></div>';
 }
 if(p.nm==='외주가공'){
 h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div></div>';
@@ -328,6 +328,55 @@ function pickCli(id){
   cMo('cliSearchMo');
   $('woProd').value='';
   toast(c.nm+' 선택됨','ok');
+}
+
+/* ===== 목형 검색 모달 ===== */
+function openMoldSearch(){
+  if(_moldPickTarget===undefined||_moldPickTarget===null)_moldPickTarget=null;
+  var h='<div class="mb" style="width:580px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">목형 검색<button class="mo-x" onclick="cMo(\'moldSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
+  h+='<div style="padding:16px 20px 8px"><input id="moldSchInput" placeholder="목형번호, 제품명 또는 거래처 검색..." oninput="filterMoldSearch()" style="width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2);box-sizing:border-box"></div>';
+  h+='<div id="moldSchList" style="padding:0 20px 12px;max-height:420px;overflow-y:auto"></div></div>';
+  var el=document.createElement('div');el.id='moldSearchMo';el.className='mo-bg';el.innerHTML=h;
+  el.onclick=function(e){if(e.target===el)cMo('moldSearchMo')};
+  document.body.appendChild(el);
+  filterMoldSearch();
+  setTimeout(function(){$('moldSchInput').focus()},100);
+}
+function filterMoldSearch(){
+  var v=($('moldSchInput')?$('moldSchInput').value:'').toLowerCase();
+  var ms=DB.g('mold').filter(function(m){return !v||(m.no||'').toLowerCase().includes(v)||(m.pnm||'').toLowerCase().includes(v)||(m.cnm||'').toLowerCase().includes(v)});
+  var h='';
+  if(!ms.length){h='<div style="padding:20px;text-align:center;color:var(--txt3)">검색 결과 없음</div>';}
+  else{ms.slice(0,50).forEach(function(m){
+    var stColor=m.st==='사용중'?'var(--suc)':m.st==='폐기'?'var(--dan)':'var(--wrn)';
+    h+='<div onclick="pickMold(\''+m.id+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
+    h+='<div><div style="font-weight:700;font-size:14px">'+m.no+'</div>';
+    h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px">'+(m.pnm||'-')+' | '+(m.cnm||'-')+'</div></div>';
+    h+='<div style="display:flex;align-items:center;gap:8px">';
+    if(m.loc)h+='<span style="font-size:11px;color:var(--txt2)">'+m.loc+'</span>';
+    h+='<span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;color:'+stColor+';background:rgba(0,0,0,.05)">'+m.st+'</span>';
+    h+='</div></div>';
+  })}
+  $('moldSchList').innerHTML=h;
+}
+var _moldPickTarget=null; // null=WO header, number=proc index
+function pickMold(id){
+  var m=DB.g('mold').find(function(x){return x.id===id});if(!m)return;
+  if(_moldPickTarget!==null&&typeof _moldPickTarget==='number'){
+    cProcs[_moldPickTarget].moldNo=m.no;
+    var inp=$('moldProcInp'+_moldPickTarget);if(inp)inp.value=m.no;
+    $('woMold').value=m.no;
+  }else{
+    $('woMold').value=m.no;
+    if($('woMoldDisplay'))$('woMoldDisplay').value=m.no+(m.pnm?' ('+m.pnm+')':'');
+  }
+  _moldPickTarget=null;
+  cMo('moldSearchMo');
+  toast(m.no+' 선택됨','ok');
+}
+function openMoldSearchForProc(idx){
+  _moldPickTarget=idx;
+  openMoldSearch();
 }
 
 /* ===== 품목 검색 모달 ===== */

@@ -14,9 +14,14 @@ function _cliStats(c){
 function cTypeBadge(c){var t=c.cType||'sales';if(t==='both')return'<span class="bd bd-p">매출</span> <span class="bd bd-d">매입</span>';if(t==='purchase')return'<span class="bd bd-d">매입</span>';return'<span class="bd bd-p">매출</span>'}
 function rCli(){
   const s=($('cliSch')?.value||'').toLowerCase();var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';
-  var cs=DB.g('cli').filter(c=>!s||c.nm.toLowerCase().includes(s)||((c.biz||'').includes(s)));
-  if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
-  else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
+  var cs;
+  if(tf==='vendor'){
+    cs=DB.g('vendors').filter(v=>!s||(v.nm||'').toLowerCase().includes(s)||(v.tel||'').includes(s));
+  }else{
+    cs=DB.g('cli').filter(c=>!s||c.nm.toLowerCase().includes(s)||((c.biz||'').includes(s)));
+    if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
+    else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
+  }
   // KPI
   var allCli=DB.g('cli');
   var salesCnt=allCli.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType).length;
@@ -29,7 +34,11 @@ function rCli(){
     `<div class="sb orange"><div class="l">매입처</div><div class="v">${purchCnt}</div></div>`+
     `<div class="sb purple"><div class="l">활성 거래처</div><div class="v">${activeCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">최근 매출 발생</div></div>`;
   if(_cliView==='table'){
-    $('cliTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td style="font-size:12px;color:var(--txt2)">${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
+    if(tf==='vendor'){
+      $('cliTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td style="font-weight:700">${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>-</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td>${c.note||'-'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">인쇄소 없음</td></tr>';
+    }else{
+      $('cliTbl').querySelector('tbody').innerHTML=cs.length?cs.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
+    }
   }else{
     var html=cs.length?'<div class="gal">'+cs.map(c=>{var st=_cliStats(c);var ini=c.nm.charAt(0);var av=st.grade==='A'?'':st.grade==='B'?'gold':'';
       return `<div class="gal-card" onclick="showCliHist('${c.id}')">

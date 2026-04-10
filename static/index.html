@@ -117,7 +117,7 @@
 <div class="noti-list" id="notiList"></div>
 </div>
 </div>
-<button onclick="openQuickCli()" style="background:none;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:600;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" style="background:none;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:600;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" style="background:none;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:600;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">＋ 작업지시서</button><button onclick="exportPDF()" style="background:none;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:600;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">PDF</button><button onclick="autoCSV()" style="background:none;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--txt2);font-size:13px;font-weight:600;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">CSV</button><div class="header-right"><span id="headerDate"></span></div>
+<button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">＋ 작업지시서</button><button onclick="exportPDF()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">PDF</button><button onclick="autoCSV()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">CSV</button><div class="header-right"><span id="headerDate"></span></div>
 </div></div>
 <div class="main-content">
 <div class="module-page" id="pg-mes-admin"></div>
@@ -647,7 +647,7 @@
 <!-- 출퇴근 수정 모달 -->
 <div class="mo-bg hidden" id="attMo" onclick="event.target===this&&cMo('attMo')"><div class="mo">
   <div class="mo-t">출퇴근 수정</div><input type="hidden" id="attEmpId">
-  <div class="fg"><label>이름</label><div id="attNm" style="font-weight:700;font-size:15px"></div></div>
+  <div class="fg"><label>이름</label><div id="attNm" class="u-fw700-15"></div></div>
   <div class="fr"><div class="fg"><label>출근시간</label><input type="time" id="attInT"></div><div class="fg"><label>퇴근시간</label><input type="time" id="attOutT"></div></div>
   <div class="fg"><label>비고</label><input type="text" id="attNote"></div>
   <div class="mo-f"><button class="btn btn-g" onclick="cMo('attMo')">취소</button><button class="btn btn-p" onclick="saveAtt()">저장</button></div>
@@ -656,7 +656,7 @@
 <!-- 급여 수정 모달 -->
 <div class="mo-bg hidden" id="payEditMo" onclick="event.target===this&&cMo('payEditMo')"><div class="mo">
   <div class="mo-t">급여 수정</div><input type="hidden" id="peId">
-  <div class="fg"><label>이름</label><div id="peNm" style="font-weight:700;font-size:15px"></div></div>
+  <div class="fg"><label>이름</label><div id="peNm" class="u-fw700-15"></div></div>
   <div class="fr"><div class="fg"><label>근무일수</label><input type="number" id="peDays"></div><div class="fg"><label>기본급</label><input type="number" id="peBase" oninput="calcPe()"></div></div>
   <div class="fr"><div class="fg"><label>야근수당</label><input type="number" id="peOT" oninput="calcPe()"></div><div class="fg"><label>기타수당</label><input type="number" id="peEtc" oninput="calcPe()"></div></div>
   <div class="fr"><div class="fg"><label>공제</label><input type="number" id="peDed" oninput="calcPe()"></div><div class="fg"><label>실수령</label><input type="text" id="peNet" readonly style="background:var(--bg2);font-weight:800;font-size:16px"></div></div>
@@ -810,7 +810,7 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:15px;font-weight:700">불량 현황</span>
-      <input type="month" id="qcMonthSel" onchange="rQc()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px">
+      <input type="month" id="qcMonthSel" onchange="rQc()" class="u-select">
     </div>
     <button class="btn btn-gray btn-sm" onclick="expQcCSV()">엑셀 내보내기</button>
   </div>
@@ -830,7 +830,7 @@
   </div>
   <div class="card">
     <div class="card-t">불량 상세 이력</div>
-    <div style="overflow-x:auto">
+    <div class="u-scroll-x">
       <table class="dt" id="qcDfTbl">
         <thead><tr><th>날짜</th><th>제품</th><th>거래처</th><th>공정</th><th>불량수량</th><th>사유</th><th>작업자</th></tr></thead>
         <tbody></tbody>
@@ -998,10 +998,10 @@
 <button class="btn btn-o btn-sm" onclick="exportOrderCSV()">엑셀</button>
 </div>
 <div id="orderPeriodSum" style="margin-bottom:8px"></div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="orderTbl"><thead><tr><th>수주번호</th><th>거래처</th><th>제품</th><th>금액</th><th>진행흐름</th><th>납기일</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="orderTbl"><thead><tr><th>수주번호</th><th>거래처</th><th>제품</th><th>금액</th><th>진행흐름</th><th>납기일</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="order-new" class="hidden">
-<div class="card" style="padding:12px">
+<div class="card u-pad12">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <span id="orderFormTitle" style="font-size:14px;font-weight:600">수주 등록</span>
 <div style="display:flex;gap:5px">
@@ -1012,9 +1012,9 @@
 <input type="hidden" id="ordId">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
 <div class="fg"><label>수주번호</label><input id="ordNo" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>수주일</label><input type="date" id="ordDt" style="padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label>수주일</label><input type="date" id="ordDt" class="u-input-md"></div>
 <div class="fg"><label class="req">거래처</label><input id="ordCli" placeholder="거래처 선택" readonly style="cursor:pointer;padding:6px 8px;font-size:12px" onclick="openOrdCliSearch()"></div>
-<div class="fg"><label class="req">납기일</label><input type="date" id="ordShipDt" style="padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label class="req">납기일</label><input type="date" id="ordShipDt" class="u-input-md"></div>
 </div>
 <div id="ordItemArea">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -1025,7 +1025,7 @@
 <div style="text-align:right;margin-top:6px;font-size:13px;font-weight:700">합계: <span id="ordTotalAmt">0</span>원</div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-<div class="fg"><label>배송지</label><input id="ordDlv" style="padding:6px 8px;font-size:12px" placeholder="배송지 주소"></div>
+<div class="fg"><label>배송지</label><input id="ordDlv" class="u-input-md" placeholder="배송지 주소"></div>
 <div class="fg"><label>비고</label><textarea id="ordNote" rows="1" style="padding:6px 8px;font-size:12px;min-height:28px"></textarea></div>
 </div>
 </div>
@@ -1035,7 +1035,7 @@
 <!-- TAB: Dashboard (A형 미션 컨트롤) -->
 <div id="t-dash" class="tc on">
 <!-- 헤더 -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="u-flex-between">
 <div style="font-size:18px;font-weight:800;color:#1E293B">금일현황</div>
 <div id="dashDateDisp" style="font-size:13px;color:#64748B"></div>
 </div>
@@ -1043,14 +1043,14 @@
 <div id="dSum" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px"></div>
 <!-- Charts Row 1 -->
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px" id="dashCharts">
-  <div class="dash-card"><div class="dash-card-header">공정별 작업 현황</div><div style="padding:12px"><canvas id="chartProc"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header">납기 준수율</div><div style="padding:12px"><canvas id="chartDelivery"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header" id="chartDailyTitle">일별 생산량</div><div style="padding:12px"><canvas id="chartDaily"></canvas></div></div>
+  <div class="dash-card"><div class="dash-card-header">공정별 작업 현황</div><div class="u-pad12"><canvas id="chartProc"></canvas></div></div>
+  <div class="dash-card"><div class="dash-card-header">납기 준수율</div><div class="u-pad12"><canvas id="chartDelivery"></canvas></div></div>
+  <div class="dash-card"><div class="dash-card-header" id="chartDailyTitle">일별 생산량</div><div class="u-pad12"><canvas id="chartDaily"></canvas></div></div>
 </div>
 <!-- Charts Row 2 -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px" id="dashCharts2">
-  <div class="dash-card"><div class="dash-card-header">미출고 잔량 (납기 임박순)</div><div style="padding:12px"><canvas id="chartPending"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header">거래처별 수주량</div><div style="padding:12px"><canvas id="chartClient"></canvas></div></div>
+  <div class="dash-card"><div class="dash-card-header">미출고 잔량 (납기 임박순)</div><div class="u-pad12"><canvas id="chartPending"></canvas></div></div>
+  <div class="dash-card"><div class="dash-card-header">거래처별 수주량</div><div class="u-pad12"><canvas id="chartClient"></canvas></div></div>
 </div>
 <!-- 공정 파이프라인 (차트 아래) -->
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:12px" id="dProcCards"></div>
@@ -1082,7 +1082,7 @@
 <select id="woCliFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 거래처</option></select>
 <button class="btn btn-o btn-sm" onclick="exportCSV()">엑셀</button>
 </div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="woTbl"><thead><tr><th>번호</th><th>작성일</th><th>거래처</th><th>제품</th><th>수량</th><th>금액</th><th>출고일</th><th>인쇄소</th><th>진행</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="woTbl"><thead><tr><th>번호</th><th>작성일</th><th>거래처</th><th>제품</th><th>수량</th><th>금액</th><th>출고일</th><th>인쇄소</th><th>진행</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- 작업지시서 등록/수정 팝업 -->
@@ -1105,7 +1105,7 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
 <input type="hidden" id="woOrdId">
 <div class="fg"><label>지시번호</label><input id="woNum" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>작성일</label><input type="date" id="woDt" style="padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label>작성일</label><input type="date" id="woDt" class="u-input-md"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
 <div class="fg"><label>인쇄소</label><div style="display:flex;gap:4px"><select id="woVendor" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px;flex:1;min-width:0"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()" style="white-space:nowrap;padding:6px 8px;font-size:12px">🔍 검색</button></div></div>
@@ -1127,17 +1127,17 @@
 <input type="hidden" id="woFabric"><input type="hidden" id="woFabricSpec"><input type="hidden" id="woFabricQty"><input type="hidden" id="woFabricExtra">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
 <div class="fg"><label>목형번호</label><input id="woMoldDisplay" placeholder="톰슨 공정에서 검색" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>인쇄사양</label><input id="woPrint" placeholder="4도/전면" style="padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>손잡이</label><input id="woHand" style="padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label>인쇄사양</label><input id="woPrint" placeholder="4도/전면" class="u-input-md"></div>
+<div class="fg"><label>손잡이</label><input id="woHand" class="u-input-md"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label class="req">완제품수량</label><input type="number" id="woFQ" min="0" style="padding:6px 8px;font-size:12px" oninput="_updateWoAmt()"></div>
-<div class="fg"><label class="req">출고일</label><input type="date" id="woShip" style="padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>단가 (원)</label><input type="number" id="woPrice" min="0" placeholder="0" style="padding:6px 8px;font-size:12px" oninput="_updateWoAmt()"></div>
+<div class="fg"><label class="req">완제품수량</label><input type="number" id="woFQ" min="0" class="u-input-md" oninput="_updateWoAmt()"></div>
+<div class="fg"><label class="req">출고일</label><input type="date" id="woShip" class="u-input-md"></div>
+<div class="fg"><label>단가 (원)</label><input type="number" id="woPrice" min="0" placeholder="0" class="u-input-md" oninput="_updateWoAmt()"></div>
 <div class="fg" id="woAmtBox" style="display:flex;flex-direction:column;justify-content:flex-end"><label style="color:var(--txt2)">수주금액</label><div id="woAmtDisplay" style="padding:6px 8px;font-size:12px;background:#F3F4F6;border-radius:8px;border:1px solid var(--bdr);color:#1D4ED8;font-weight:600">-</div></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>입고처</label><input id="woDlv" style="padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label>입고처</label><input id="woDlv" class="u-input-md"></div>
 <div class="fg"><label>참고이미지</label>
 <div id="woImgZone" style="border:2px dashed var(--bdr);border-radius:8px;padding:10px;text-align:center;cursor:pointer;background:var(--bg2);transition:border-color .15s" onclick="document.getElementById('woImg').click()" ondragover="event.preventDefault();this.style.borderColor='var(--pri)'" ondragleave="this.style.borderColor='var(--bdr)'" ondrop="woImgDrop(event)">
   <div id="woImgP" style="margin-bottom:4px"></div>
@@ -1155,12 +1155,12 @@
 <div style="overflow-y:auto;padding-right:4px">
 <div class="fg" style="margin-bottom:6px"><label class="req" style="font-size:12px">공정 설정</label>
 <div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">
-<button type="button" class="pb" onclick="addP('인쇄')" style="padding:5px 10px;font-size:12px">인쇄</button>
-<button type="button" class="pb" onclick="addP('코팅')" style="padding:5px 10px;font-size:12px">코팅</button>
-<button type="button" class="pb" onclick="addP('합지')" style="padding:5px 10px;font-size:12px">합지</button>
-<button type="button" class="pb" onclick="addP('톰슨')" style="padding:5px 10px;font-size:12px">톰슨</button>
-<button type="button" class="pb" onclick="addP('접착')" style="padding:5px 10px;font-size:12px">접착</button>
-<button type="button" class="pb out" onclick="addP('외주가공','out')" style="padding:5px 10px;font-size:12px">외주가공</button>
+<button type="button" class="pb u-input-pill" onclick="addP('인쇄')">인쇄</button>
+<button type="button" class="pb u-input-pill" onclick="addP('코팅')">코팅</button>
+<button type="button" class="pb u-input-pill" onclick="addP('합지')">합지</button>
+<button type="button" class="pb u-input-pill" onclick="addP('톰슨')">톰슨</button>
+<button type="button" class="pb u-input-pill" onclick="addP('접착')">접착</button>
+<button type="button" class="pb out u-input-pill" onclick="addP('외주가공','out')">외주가공</button>
 </div>
 <div id="selP" style="min-height:28px;padding:5px;background:var(--bg2);border:1px dashed var(--bdr);border-radius:8px;font-size:12px"><span style="color:var(--txt2);font-size:12px">공정 버튼 클릭하여 추가</span></div>
 </div>
@@ -1186,7 +1186,7 @@
 <div id="shipAlerts"></div>
 <div class="sg" id="shipSum" style="margin-bottom:14px"></div>
 <div class="card"><div class="card-t">출고 대기 목록</div>
-<div style="overflow-x:auto"><table class="dt" id="shipReadyTbl"><thead><tr><th>지시번호</th><th>거래처</th><th>제품</th><th>완제품수량</th><th>완료수량</th><th>출고수량</th><th>잔량</th><th>출고예정</th><th>입고처</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div>
+<div class="u-scroll-x"><table class="dt" id="shipReadyTbl"><thead><tr><th>지시번호</th><th>거래처</th><th>제품</th><th>완제품수량</th><th>완료수량</th><th>출고수량</th><th>잔량</th><th>출고예정</th><th>입고처</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div>
 </div></div>
 <div id="ship-hist" class="hidden">
 <div class="fbar">
@@ -1218,7 +1218,7 @@
 </div>
 <div id="shipPeriodSum" style="margin-bottom:10px"></div>
 <div id="shipHeatmap"></div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="shipHistTbl"><thead><tr><th>출고일</th><th>거래처</th><th>제품</th><th>출고수량</th><th>검수</th><th>불량</th><th>배송</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="shipHistTbl"><thead><tr><th>출고일</th><th>거래처</th><th>제품</th><th>출고수량</th><th>검수</th><th>불량</th><th>배송</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="ship-stat" class="hidden">
 <div class="fbar">
@@ -1243,7 +1243,7 @@
   </div>
 </div>
 <div id="claimTableView">
-  <div class="card"><div style="overflow-x:auto"><table class="dt" id="claimTbl"><thead><tr><th>등록일</th><th>거래처</th><th>제품</th><th>유형</th><th>수량</th><th>사유</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="card"><div class="u-scroll-x"><table class="dt" id="claimTbl"><thead><tr><th>등록일</th><th>거래처</th><th>제품</th><th>유형</th><th>수량</th><th>사유</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="claimKanbanView" style="display:none"><div id="claimKanbanArea"></div></div>
 </div>
@@ -1286,7 +1286,7 @@
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
   </div>
 </div>
-<div id="cliTableView"><div class="card"><div style="overflow-x:auto"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
 </div>
 
@@ -1305,7 +1305,7 @@
     <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
   </div>
 </div>
-<div id="prodTableView"><div class="card"><div style="overflow-x:auto"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="prodGalleryView" style="display:none"><div id="prodGalleryArea"></div></div>
 </div>
 
@@ -1320,28 +1320,28 @@
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
   </div>
 </div>
-<div class="card"><div style="overflow-x:auto"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- TAB: Report -->
 <div id="t-rpt" class="tc">
 <div class="st"><button class="s-tab on" onclick="rptSub('day',this)">일일</button><button class="s-tab" onclick="rptSub('week',this)">주간</button><button class="s-tab" onclick="rptSub('month',this)">월간</button><button class="s-tab" onclick="rptSub('pl',this)">손익</button><button class="s-tab" onclick="rptSub('perf',this)">작업자 성과</button><button class="s-tab" onclick="rptSub('prodstat',this)">생산 분석</button><button class="s-tab" onclick="rptSub('ordmonthly',this)">월별 수주</button><button class="s-tab" onclick="rptSub('ordstat',this)">수주 현황</button><button class="s-tab" onclick="rptSub('defect',this)">불량 분석</button><button class="s-tab" onclick="rptSub('ship',this)">출고 실적</button></div>
 <div id="rpt-day" class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="u-flex-between10">
 <div class="fg" style="flex-direction:row;align-items:center;gap:7px"><label style="margin:0">날짜:</label><input type="date" id="rptDD" onchange="genRpt('day')"></div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('day')">CSV</button><button class="btn btn-p" onclick="printRpt('day')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('day')">CSV</button><button class="btn btn-p" onclick="printRpt('day')">출력</button></div>
 </div><div id="rptDC"></div>
 </div>
 <div id="rpt-week" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="u-flex-between10">
 <div class="fg" style="flex-direction:row;align-items:center;gap:7px"><label style="margin:0">주:</label><input type="week" id="rptWD" onchange="genRpt('week')"></div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('week')">CSV</button><button class="btn btn-p" onclick="printRpt('week')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('week')">CSV</button><button class="btn btn-p" onclick="printRpt('week')">출력</button></div>
 </div><div id="rptWC"></div>
 </div>
 <div id="rpt-month" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="u-flex-between10">
 <div class="fg" style="flex-direction:row;align-items:center;gap:7px"><label style="margin:0">월:</label><input type="month" id="rptMD" onchange="genRpt('month')"></div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('month')">CSV</button><button class="btn btn-p" onclick="printRpt('month')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('month')">CSV</button><button class="btn btn-p" onclick="printRpt('month')">출력</button></div>
 </div><div id="rptMC"></div>
 </div>
 <div id="rpt-eff" class="hidden"></div>
@@ -1369,54 +1369,54 @@
 <div id="rpt-prodstat" class="hidden">
   <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-p btn-sm" onclick="printRpt('prodstat')">출력</button></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-    <div class="card"><div class="card-t">상태별 분포</div><div style="padding:12px"><canvas id="rptChartStatus"></canvas></div></div>
-    <div class="card"><div class="card-t">월별 생산량 비교</div><div style="padding:12px"><canvas id="rptChartMonthly"></canvas></div></div>
+    <div class="card"><div class="card-t">상태별 분포</div><div class="u-pad12"><canvas id="rptChartStatus"></canvas></div></div>
+    <div class="card"><div class="card-t">월별 생산량 비교</div><div class="u-pad12"><canvas id="rptChartMonthly"></canvas></div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-    <div class="card"><div class="card-t">거래처별 수주량</div><div style="padding:12px"><canvas id="rptChartClient"></canvas></div></div>
-    <div class="card"><div class="card-t">공정별 작업 품목</div><div style="padding:12px"><canvas id="rptChartEfficiency"></canvas></div></div>
+    <div class="card"><div class="card-t">거래처별 수주량</div><div class="u-pad12"><canvas id="rptChartClient"></canvas></div></div>
+    <div class="card"><div class="card-t">공정별 작업 품목</div><div class="u-pad12"><canvas id="rptChartEfficiency"></canvas></div></div>
   </div>
 </div>
 <div id="rpt-ordmonthly" class="hidden">
-  <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('ordmonthly')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ordmonthly')">출력</button></div></div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('ordmonthly')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ordmonthly')">출력</button></div></div>
   <div id="rptOrdMonthlyWrap"></div>
 </div>
 <div id="rpt-ordstat" class="hidden">
-  <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('ordstat')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ordstat')">출력</button></div></div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('ordstat')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ordstat')">출력</button></div></div>
   <div id="rptOrdStatWrap"></div>
 </div>
 <div id="rpt-perf" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="u-flex-between">
 <div class="card-t" style="margin:0">작업자 성과분석</div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('perf')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('perf')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('perf')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('perf')">출력</button></div>
 </div>
 <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-<select id="perfMonth" onchange="rPerf()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px"></select>
+<select id="perfMonth" onchange="rPerf()" class="u-select"></select>
 <button class="btn btn-o btn-sm" onclick="perfAll()">전체기간</button>
 </div>
 <div id="perfSummary"></div>
 <div id="perfGrid" class="perf-grid"></div>
 </div>
 <div id="rpt-defect" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="u-flex-between">
 <div class="card-t" style="margin:0">불량 분석</div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('defect')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('defect')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('defect')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('defect')">출력</button></div>
 </div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
 <label style="font-size:13px;color:var(--txt2)">기간:</label>
-<input type="month" id="rptDefectM" onchange="genDefectRpt()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px">
+<input type="month" id="rptDefectM" onchange="genDefectRpt()" class="u-select">
 <button class="btn btn-o btn-sm" onclick="document.getElementById('rptDefectM').value='';genDefectRpt()">전체</button>
 </div>
 <div id="rptDefectC"></div>
 </div>
 <div id="rpt-ship" class="card hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="u-flex-between">
 <div class="card-t" style="margin:0">출고 실적</div>
-<div style="display:flex;gap:6px"><button class="btn btn-o btn-sm" onclick="csvRpt('ship')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ship')">출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o btn-sm" onclick="csvRpt('ship')">CSV</button><button class="btn btn-p btn-sm" onclick="printRpt('ship')">출력</button></div>
 </div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
 <label style="font-size:13px;color:var(--txt2)">기간:</label>
-<input type="month" id="rptShipM" onchange="genShipRpt()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px">
+<input type="month" id="rptShipM" onchange="genShipRpt()" class="u-select">
 <button class="btn btn-o btn-sm" onclick="document.getElementById('rptShipM').value='';genShipRpt()">전체</button>
 </div>
 <div id="rptShipC"></div>
@@ -1478,7 +1478,7 @@
 <div id="t-set" class="tc">
 <div class="card"><div class="card-t">사용자 관리</div>
 <div style="margin-bottom:14px"><button class="btn btn-p" onclick="openUserM()">사용자 추가</button></div>
-<div style="overflow-x:auto"><table class="dt" id="userTbl"><thead><tr><th>이름</th><th>부서</th><th>직책</th><th>아이디</th><th>관리</th></tr></thead><tbody></tbody></table></div>
+<div class="u-scroll-x"><table class="dt" id="userTbl"><thead><tr><th>이름</th><th>부서</th><th>직책</th><th>아이디</th><th>관리</th></tr></thead><tbody></tbody></table></div>
 </div>
 <div class="card"><div class="card-t">공정 관리 (내부/외주)</div>
 <div id="procManagerArea"></div>
@@ -1486,7 +1486,7 @@
 <div class="card"><div class="card-t">수신처 정보 (출력용)</div>
 <div class="fr"><div class="fg"><label>회사명</label><input id="sCo" value="이노패키지"></div><div class="fg"><label>주소</label><input id="sAddr" value="경기도 파주시"></div></div>
 <div class="fr"><div class="fg"><label>전화</label><input id="sTel"></div><div class="fg"><label>팩스</label><input id="sFax"></div></div>
-<div style="margin-top:10px"><button class="btn btn-p" onclick="saveCo()">저장</button></div>
+<div class="u-mt10"><button class="btn btn-p" onclick="saveCo()">저장</button></div>
 </div>
 <div class="card"><div class="card-t">외부 API 연동</div>
 <div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:12px">국세청 사업자 조회 API 키 <a href="https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15081808" target="_blank" style="font-size:11px;color:#3B82F6">(발급 안내)</a></label><input id="sBizApiKey" placeholder="공공데이터포털 인증키 입력" style="font-family:monospace;font-size:12px"></div><button class="btn btn-p btn-sm" onclick="saveBizApiKey()" style="margin-bottom:1px;white-space:nowrap">저장</button></div>
@@ -1499,7 +1499,7 @@
   <button class="btn btn-p btn-sm" onclick="createBackupNow()">💾 지금 백업</button>
   <span style="font-size:11px;color:var(--txt2);margin-left:8px">서버 시작 시 매일 자동 백업 (30일 보관)</span>
 </div>
-<div style="overflow-x:auto"><table class="dt" id="backupTbl"><thead><tr>
+<div class="u-scroll-x"><table class="dt" id="backupTbl"><thead><tr>
 <th>파일명</th><th>크기</th><th>관리</th>
 </tr></thead><tbody id="backupTbody"></tbody></table></div>
 </div>
@@ -1519,7 +1519,7 @@
   <input type="date" id="alTo" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:4px">
   <button class="btn btn-p btn-sm" onclick="loadAuditLogs()">조회</button>
 </div>
-<div style="overflow-x:auto"><table class="dt" id="auditTbl"><thead><tr>
+<div class="u-scroll-x"><table class="dt" id="auditTbl"><thead><tr>
 <th>시각</th><th>사용자</th><th>액션</th><th>대상</th><th>상세</th><th>IP</th>
 </tr></thead><tbody id="auditTbody"></tbody></table></div>
 <div id="auditPaging" style="text-align:center;margin-top:8px;font-size:12px"></div>
@@ -1578,9 +1578,9 @@
 <label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cmSales" checked style="width:16px;height:16px;accent-color:#3B82F6"> 매출처</label>
 <label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cmPurch" style="width:16px;height:16px;accent-color:#EF4444"> 매입처</label>
 </div>
-<div class="fr" style="margin-top:10px"><div class="fg"><label>담당자</label><input id="cmPs"></div><div class="fg"><label>주소</label><input id="cmAd"></div></div>
-<div class="fr" style="margin-top:10px"><div class="fg"><label>전화</label><input id="cmTl"></div><div class="fg"><label>팩스</label><input id="cmFx"></div></div>
-<div class="fg" style="margin-top:10px"><label>비고</label><textarea id="cmNt"></textarea></div>
+<div class="fr u-mt10"><div class="fg"><label>담당자</label><input id="cmPs"></div><div class="fg"><label>주소</label><input id="cmAd"></div></div>
+<div class="fr u-mt10"><div class="fg"><label>전화</label><input id="cmTl"></div><div class="fg"><label>팩스</label><input id="cmFx"></div></div>
+<div class="fg u-mt10"><label>비고</label><textarea id="cmNt"></textarea></div>
 </div><div class="mf"><button class="btn btn-o" onclick="cMo('cliMo')">취소</button><button class="btn btn-p" onclick="saveCli()">저장</button></div>
 </div></div>
 
@@ -1588,31 +1588,31 @@
 <div class="mh" style="padding:10px 16px"><h3 id="prodMoT" style="font-size:15px;margin:0">품목 등록</h3><button class="mc" onclick="cMo('prodMo')">&times;</button></div>
 <div class="my" style="padding:10px 16px"><input type="hidden" id="pmId">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label class="req" style="font-size:11px">거래처명</label><div class="ac-w"><input id="pmCli" placeholder="거래처명" oninput="acPmCli(this.value)" onfocus="acPmCli(this.value||' ')" autocomplete="off" style="padding:5px 8px;font-size:12px"><div id="acPmCliL" class="ac-l hidden"></div></div></div>
-<div class="fg"><label style="font-size:11px">제품코드</label><input id="pmCode" placeholder="AP-001" style="padding:5px 8px;font-size:12px"></div>
-<div class="fg"><label class="req" style="font-size:11px">제품명</label><input id="pmNm" style="padding:5px 8px;font-size:12px"></div>
-<div class="fg"><label style="font-size:11px">단가(원)</label><input type="number" id="pmPrice" min="0" style="padding:5px 8px;font-size:12px"></div>
+<div class="fg"><label class="req u-fs11">거래처명</label><div class="ac-w"><input id="pmCli" placeholder="거래처명" oninput="acPmCli(this.value)" onfocus="acPmCli(this.value||' ')" autocomplete="off" class="u-input-sm"><div id="acPmCliL" class="ac-l hidden"></div></div></div>
+<div class="fg"><label class="u-fs11">제품코드</label><input id="pmCode" placeholder="AP-001" class="u-input-sm"></div>
+<div class="fg"><label class="req u-fs11">제품명</label><input id="pmNm" class="u-input-sm"></div>
+<div class="fg"><label class="u-fs11">단가(원)</label><input type="number" id="pmPrice" min="0" class="u-input-sm"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label style="font-size:11px">종이</label><input id="pmPaper" style="padding:5px 8px;font-size:12px" placeholder="아이보리 300g"></div>
-<div class="fg"><label style="font-size:11px">종이규격</label><input id="pmSpec" style="padding:5px 8px;font-size:12px" placeholder="540x390"></div>
-<div class="fg"><label style="font-size:11px">원단</label><input id="pmFabric" style="padding:5px 8px;font-size:12px" placeholder="합성지 80g"></div>
-<div class="fg"><label style="font-size:11px">원단규격</label><input id="pmFabricSpec" style="padding:5px 8px;font-size:12px" placeholder="500x350"></div>
+<div class="fg"><label class="u-fs11">종이</label><input id="pmPaper" class="u-input-sm" placeholder="아이보리 300g"></div>
+<div class="fg"><label class="u-fs11">종이규격</label><input id="pmSpec" class="u-input-sm" placeholder="540x390"></div>
+<div class="fg"><label class="u-fs11">원단</label><input id="pmFabric" class="u-input-sm" placeholder="합성지 80g"></div>
+<div class="fg"><label class="u-fs11">원단규격</label><input id="pmFabricSpec" class="u-input-sm" placeholder="500x350"></div>
 </div>
 <input type="hidden" id="pmQM"><input type="hidden" id="pmQE">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label style="font-size:11px">인쇄사양</label><input id="pmPrint" style="padding:5px 8px;font-size:12px"></div>
-<div class="fg"><label style="font-size:11px">목형번호</label><input id="pmMold" style="padding:5px 8px;font-size:12px"></div>
-<div class="fg"><label style="font-size:11px">손잡이</label><input id="pmHand" style="padding:5px 8px;font-size:12px"></div>
+<div class="fg"><label class="u-fs11">인쇄사양</label><input id="pmPrint" class="u-input-sm"></div>
+<div class="fg"><label class="u-fs11">목형번호</label><input id="pmMold" class="u-input-sm"></div>
+<div class="fg"><label class="u-fs11">손잡이</label><input id="pmHand" class="u-input-sm"></div>
 </div>
-<div class="fg" style="margin-bottom:6px"><label style="font-size:11px">기본 공정</label>
+<div class="fg" style="margin-bottom:6px"><label class="u-fs11">기본 공정</label>
 <div class="pb-g" id="procBtnArea" style="margin:2px 0"></div>
 <div id="pmPL" style="min-height:24px;padding:4px;background:var(--bg2);border:1px dashed var(--bdr);font-size:11px"></div>
 </div>
 <input type="hidden" id="pmGold">
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-<div class="fg"><label style="font-size:11px">특이사항</label><textarea id="pmNote" rows="1" style="padding:5px 8px;font-size:12px;min-height:26px"></textarea></div>
-<div class="fg"><label style="font-size:11px">주의사항</label><textarea id="pmCaut" rows="1" style="padding:5px 8px;font-size:12px;min-height:26px"></textarea></div>
+<div class="fg"><label class="u-fs11">특이사항</label><textarea id="pmNote" rows="1" style="padding:5px 8px;font-size:12px;min-height:26px"></textarea></div>
+<div class="fg"><label class="u-fs11">주의사항</label><textarea id="pmCaut" rows="1" style="padding:5px 8px;font-size:12px;min-height:26px"></textarea></div>
 </div>
 </div><div class="mf" style="padding:8px 16px"><button class="btn btn-o btn-sm" onclick="cMo('prodMo')">취소</button><button class="btn btn-p btn-sm" onclick="saveProd()">저장</button></div>
 </div></div>
@@ -1621,11 +1621,11 @@
 <div class="mh"><h3 id="moldMoT">목형 등록</h3><button class="mc" onclick="cMo('moldMo')">&times;</button></div>
 <div class="my"><input type="hidden" id="mmId">
 <div class="fg"><label class="req">목형번호</label><input id="mmNo"></div>
-<div class="fg" style="margin-top:10px"><label>제품명</label><input id="mmProd"></div>
-<div class="fg" style="margin-top:10px"><label>거래처</label><input id="mmCli"></div>
-<div class="fg" style="margin-top:10px"><label>보관위치</label><input id="mmLoc"></div>
-<div class="fg" style="margin-top:10px"><label>상태</label><select id="mmSt"><option>사용중</option><option>보관중</option><option>폐기</option></select></div>
-<div class="fg" style="margin-top:10px"><label>비고</label><textarea id="mmNt"></textarea></div>
+<div class="fg u-mt10"><label>제품명</label><input id="mmProd"></div>
+<div class="fg u-mt10"><label>거래처</label><input id="mmCli"></div>
+<div class="fg u-mt10"><label>보관위치</label><input id="mmLoc"></div>
+<div class="fg u-mt10"><label>상태</label><select id="mmSt"><option>사용중</option><option>보관중</option><option>폐기</option></select></div>
+<div class="fg u-mt10"><label>비고</label><textarea id="mmNt"></textarea></div>
 </div><div class="mf"><button class="btn btn-o" onclick="cMo('moldMo')">취소</button><button class="btn btn-p" onclick="saveMold()">저장</button></div>
 </div></div>
 
@@ -1633,23 +1633,23 @@
 <div class="mh"><h3 id="umTitle">사용자 등록</h3><button class="mc" onclick="cMo('userMo')">&times;</button></div>
 <div class="my" style="overflow-y:auto;flex:1"><input type="hidden" id="umId">
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-<div class="fg"><label class="req">이름</label><input id="umNm" style="padding:6px 8px;font-size:13px"></div>
-<div class="fg"><label>부서</label><input id="umDept" placeholder="생산부, 영업부 등" style="padding:6px 8px;font-size:13px"></div>
+<div class="fg"><label class="req">이름</label><input id="umNm" class="u-input-md13"></div>
+<div class="fg"><label>부서</label><input id="umDept" placeholder="생산부, 영업부 등" class="u-input-md13"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-<div class="fg"><label>직책</label><input id="umPosition" placeholder="대표, 과장, 사원 등" style="padding:6px 8px;font-size:13px"></div>
-<div class="fg"><label class="req">역할</label><select id="umRole" onchange="onRoleChange(this.value)" style="padding:6px 8px;font-size:13px"><option value="admin">관리자</option><option value="office">사무실</option><option value="worker">작업자</option></select></div>
+<div class="fg"><label>직책</label><input id="umPosition" placeholder="대표, 과장, 사원 등" class="u-input-md13"></div>
+<div class="fg"><label class="req">역할</label><select id="umRole" onchange="onRoleChange(this.value)" class="u-input-md13"><option value="admin">관리자</option><option value="office">사무실</option><option value="worker">작업자</option></select></div>
 </div>
-<div class="fg hidden" id="umPG" style="margin-top:8px"><label>담당공정</label><select id="umProc" style="padding:6px 8px;font-size:13px"><option>코팅</option><option>합지</option><option>톰슨</option><option>접착</option><option>인쇄</option><option>외주가공</option></select></div>
+<div class="fg hidden" id="umPG" style="margin-top:8px"><label>담당공정</label><select id="umProc" class="u-input-md13"><option>코팅</option><option>합지</option><option>톰슨</option><option>접착</option><option>인쇄</option><option>외주가공</option></select></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-<div class="fg"><label>아이디</label><input id="umUn" style="padding:6px 8px;font-size:13px"></div>
-<div class="fg"><label>비밀번호</label><input type="password" id="umPw" style="padding:6px 8px;font-size:13px" placeholder="수정 시 빈칸이면 유지"></div>
+<div class="fg"><label>아이디</label><input id="umUn" class="u-input-md13"></div>
+<div class="fg"><label>비밀번호</label><input type="password" id="umPw" class="u-input-md13" placeholder="수정 시 빈칸이면 유지"></div>
 </div>
 <!-- 메뉴 권한 설정 -->
 <div id="umPermsArea" style="margin-top:12px;border:1px solid var(--bdr);border-radius:10px;padding:12px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-<label style="font-weight:700;font-size:13px">메뉴 접근 권한</label>
-<div style="display:flex;gap:6px">
+<div class="u-flex-between10">
+<label class="u-fw700-13">메뉴 접근 권한</label>
+<div class="u-flex-gap6">
 <button type="button" class="btn btn-sm btn-o" onclick="toggleAllPerms(true)" style="font-size:11px;padding:3px 8px">전체선택</button>
 <button type="button" class="btn btn-sm btn-o" onclick="toggleAllPerms(false)" style="font-size:11px;padding:3px 8px">전체해제</button>
 </div>
@@ -1657,47 +1657,47 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px" id="umPermGrid">
 <div>
 <div style="font-weight:700;color:var(--pri);margin-bottom:4px">MES 생산</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-wo">작업지시서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-cli">거래처</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-vendor">인쇄소</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-prod">품목</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-mold">목형</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-ship">출고</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-rpt">보고서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-worker">작업자현황</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-queue">설정</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-wo">작업지시서</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-cli">거래처</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-vendor">인쇄소</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-prod">품목</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-mold">목형</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-ship">출고</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-rpt">보고서</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-worker">작업자현황</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-queue">설정</label>
 <div style="font-weight:700;color:#0369A1;margin:8px 0 4px">구매/자재</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-income">입고</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-stock">재고</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-po">발주서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-bom">BOM</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-income">입고</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-stock">재고</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-po">발주서</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-bom">BOM</label>
 </div>
 <div>
 <div style="font-weight:700;color:#059669;margin-bottom:4px">매출/회계</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-sales">매출</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-purchase">매입</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-pl">손익</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-tax">세금계산서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-recv">미수/미지급</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-cashflow">입출금</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-monthly">월별비교</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-closing">외상마감</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-sales">매출</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-purchase">매입</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-pl">손익</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-tax">세금계산서</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-recv">미수/미지급</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-cashflow">입출금</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-monthly">월별비교</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-closing">외상마감</label>
 <div style="font-weight:700;color:#7C3AED;margin:8px 0 4px">인사/급여</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-emp">직원</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-att">출퇴근</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-pay">급여</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-leave">연차</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-emp">직원</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-att">출퇴근</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-pay">급여</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-leave">연차</label>
 <div style="font-weight:700;color:#B45309;margin:8px 0 4px">경영분석</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-trend">추이</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-rank">순위</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-cost">원가</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="biz-trend">추이</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="biz-rank">순위</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="biz-cost">원가</label>
 <div style="font-weight:700;color:#DC2626;margin:8px 0 4px">품질/기타</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-inspect">검사</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-equip">설비</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-quote">견적</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-approval">결재</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-inspect">검사</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-equip">설비</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-quote">견적</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-approval">결재</label>
 </div>
 </div>
 </div>
@@ -1727,16 +1727,16 @@
 <div style="font-size:13px;color:#64748B;margin-top:4px" id="incInfo">거래처 | 인쇄소</div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-<div class="fg"><label style="font-weight:700;font-size:13px">입고 수량 *</label><input type="number" id="dashIncQty" min="0" placeholder="수량 입력" style="padding:10px;font-size:14px"></div>
-<div class="fg"><label style="font-weight:700;font-size:13px">불량 수량</label><input type="number" id="incDef" min="0" value="0" style="padding:10px;font-size:14px"></div>
+<div class="fg"><label class="u-fw700-13">입고 수량 *</label><input type="number" id="dashIncQty" min="0" placeholder="수량 입력" style="padding:10px;font-size:14px"></div>
+<div class="fg"><label class="u-fw700-13">불량 수량</label><input type="number" id="incDef" min="0" value="0" style="padding:10px;font-size:14px"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-<div class="fg"><label style="font-weight:700;font-size:13px">인쇄 상태</label>
+<div class="fg"><label class="u-fw700-13">인쇄 상태</label>
 <select id="incPrintSt" style="padding:10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;width:100%"><option value="양호">양호</option><option value="미흡">미흡</option><option value="불량">불량</option></select></div>
-<div class="fg"><label style="font-weight:700;font-size:13px">파손 여부</label>
+<div class="fg"><label class="u-fw700-13">파손 여부</label>
 <select id="incDamage" style="padding:10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;width:100%"><option value="없음">없음</option><option value="일부파손">일부 파손</option><option value="심각">심각</option></select></div>
 </div>
-<div class="fg" style="margin-bottom:12px"><label style="font-weight:700;font-size:13px">비고</label><textarea id="incNoteConfirm" rows="2" placeholder="입고 관련 메모" style="padding:8px;font-size:13px"></textarea></div>
+<div class="fg" style="margin-bottom:12px"><label class="u-fw700-13">비고</label><textarea id="incNoteConfirm" rows="2" placeholder="입고 관련 메모" style="padding:8px;font-size:13px"></textarea></div>
 <div style="display:flex;gap:8px;justify-content:flex-end">
 <button class="btn btn-o" onclick="cMo('incomeMo')">취소</button>
 <button class="btn btn-p" onclick="doIncome()" style="background:#0369A1">입고 확인</button>
@@ -1765,8 +1765,8 @@
 <div class="mh"><h3>작업지시서 상세</h3><button class="mc" onclick="cMo('woDetMo')">&times;</button></div>
 <div class="my" id="woDetC"></div>
 <div class="mf" style="display:flex;justify-content:space-between">
-<div style="display:flex;gap:6px"><button class="btn btn-sm" id="woDetCancel" style="background:#FEF3C7;color:#B45309;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">작업취소</button><button class="btn btn-sm" id="woDetDel" style="background:#FEE2E2;color:#DC2626;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">삭제</button></div>
-<div style="display:flex;gap:6px"><button class="btn btn-o" onclick="cMo('woDetMo')">닫기</button><button class="btn btn-p" id="woDetPr">A4 출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-sm" id="woDetCancel" style="background:#FEF3C7;color:#B45309;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">작업취소</button><button class="btn btn-sm" id="woDetDel" style="background:#FEE2E2;color:#DC2626;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">삭제</button></div>
+<div class="u-flex-gap6"><button class="btn btn-o" onclick="cMo('woDetMo')">닫기</button><button class="btn btn-p" id="woDetPr">A4 출력</button></div>
 </div><div style="display:none"><button id="woDetEd"></button><button id="woDetCp"></button></div>
 </div></div>
 
@@ -1774,18 +1774,18 @@
 <div class="mh"><h3 id="shipMoT">출고 처리</h3><button class="mc" onclick="cMo('shipMo')">&times;</button></div>
 <div class="my">
 <input type="hidden" id="smWoId">
-<div class="fr"><div class="fg"><label>거래처</label><div id="smCli" style="font-weight:700;font-size:15px"></div></div><div class="fg"><label>제품</label><div id="smProd" style="font-weight:700;font-size:15px"></div></div></div>
-<div class="fr" style="margin-top:10px"><div class="fg"><label>완제품수량</label><div id="smTotal" style="font-weight:700"></div></div><div class="fg"><label>기출고</label><div id="smShipped" style="font-weight:700;color:var(--suc)"></div></div><div class="fg"><label>잔량</label><div id="smRemain" style="font-weight:700;color:var(--dan)"></div></div></div>
+<div class="fr"><div class="fg"><label>거래처</label><div id="smCli" class="u-fw700-15"></div></div><div class="fg"><label>제품</label><div id="smProd" class="u-fw700-15"></div></div></div>
+<div class="fr u-mt10"><div class="fg"><label>완제품수량</label><div id="smTotal" style="font-weight:700"></div></div><div class="fg"><label>기출고</label><div id="smShipped" style="font-weight:700;color:var(--suc)"></div></div><div class="fg"><label>잔량</label><div id="smRemain" style="font-weight:700;color:var(--dan)"></div></div></div>
 <div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:14px">
 <div class="card-t">검수</div>
 <div class="fr"><div class="fg"><label class="req">출고수량</label><input type="number" id="smQty" min="0" oninput="calcDefect()"></div><div class="fg"><label>불량수량</label><input type="number" id="smDefect" min="0" value="0" oninput="calcDefect()"></div><div class="fg"><label>양품수량</label><div id="smGood" style="font-weight:700;font-size:16px;padding-top:8px">-</div></div></div>
-<div class="fg" style="margin-top:10px"><label>검수메모</label><textarea id="smInspNote" placeholder="검수 특이사항"></textarea></div>
+<div class="fg u-mt10"><label>검수메모</label><textarea id="smInspNote" placeholder="검수 특이사항"></textarea></div>
 </div>
 <div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:14px">
 <div class="card-t">배송 정보</div>
 <div class="fr"><div class="fg"><label>차량번호</label><input id="smCar" placeholder="12가3456"></div><div class="fg"><label>기사 연락처</label><input id="smDriver" placeholder="010-0000-0000"></div></div>
-<div class="fg" style="margin-top:10px"><label>입고처</label><input id="smDlv"></div>
-<div class="fg" style="margin-top:10px"><label>배송메모</label><textarea id="smMemo" placeholder="배송 관련 메모"></textarea></div>
+<div class="fg u-mt10"><label>입고처</label><input id="smDlv"></div>
+<div class="fg u-mt10"><label>배송메모</label><textarea id="smMemo" placeholder="배송 관련 메모"></textarea></div>
 </div>
 </div>
 <div class="mf"><button class="btn btn-o" onclick="cMo('shipMo')">취소</button><button class="btn btn-p" onclick="printShipDoc()" style="margin-right:auto">거래명세표 미리보기</button><button class="btn btn-s btn-lg" onclick="doShip()">출고확정</button></div>
@@ -1796,10 +1796,10 @@
 <div class="my">
 <input type="hidden" id="clmId">
 <div class="fr"><div class="fg"><label class="req">거래처</label><div class="ac-w"><input id="clmCli" placeholder="거래처 검색" oninput="acClmCli(this.value)" onfocus="acClmCli(this.value||' ')" autocomplete="off"><div id="acClmCliL" class="ac-l hidden"></div></div></div><div class="fg"><label class="req">제품명</label><input id="clmProd"></div></div>
-<div class="fr" style="margin-top:10px"><div class="fg"><label class="req">유형</label><select id="clmType"><option>반품</option><option>클레임</option><option>재작업</option></select></div><div class="fg"><label class="req">수량</label><input type="number" id="clmQty" min="0"></div></div>
-<div class="fg" style="margin-top:10px"><label class="req">사유</label><textarea id="clmReason" placeholder="반품/클레임 사유"></textarea></div>
-<div class="fg" style="margin-top:10px"><label>처리상태</label><select id="clmSt"><option>접수</option><option>처리중</option><option>완료</option></select></div>
-<div class="fg" style="margin-top:10px"><label>비고</label><textarea id="clmNote"></textarea></div>
+<div class="fr u-mt10"><div class="fg"><label class="req">유형</label><select id="clmType"><option>반품</option><option>클레임</option><option>재작업</option></select></div><div class="fg"><label class="req">수량</label><input type="number" id="clmQty" min="0"></div></div>
+<div class="fg u-mt10"><label class="req">사유</label><textarea id="clmReason" placeholder="반품/클레임 사유"></textarea></div>
+<div class="fg u-mt10"><label>처리상태</label><select id="clmSt"><option>접수</option><option>처리중</option><option>완료</option></select></div>
+<div class="fg u-mt10"><label>비고</label><textarea id="clmNote"></textarea></div>
 </div>
 <div class="mf"><button class="btn btn-o" onclick="cMo('claimMo')">취소</button><button class="btn btn-p" onclick="saveClaim()">저장</button></div>
 </div></div>
@@ -1897,7 +1897,7 @@
 <button onclick="schedNav(1)" title="다음 주">▶</button>
 <button onclick="schedNav(0)" style="font-size:11px;padding:4px 10px">오늘</button>
 </div>
-<div style="display:flex;gap:6px">
+<div class="u-flex-gap6">
 <select id="schedProcFilter" onchange="renderSchedBoard()"><option value="all">전체 공정</option></select>
 <select id="schedStatusFilter" onchange="renderSchedBoard()"><option value="all">전체 상태</option><option value="active">진행중만</option><option value="wait">대기만</option></select>
 </div>

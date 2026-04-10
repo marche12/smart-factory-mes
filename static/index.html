@@ -44,17 +44,29 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order">수주관리</button>
 <button class="sb-item" data-mod="mes-wo">작업지시서</button>
+<button class="sb-item" data-mod="mes-order-track">수주진행추적</button>
+<button class="sb-item" data-mod="mes-due">납기관리</button>
 </div>
 <div class="sb-group open" role="button" aria-expanded="true">생산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-dash">생산현황</button>
 <button class="sb-item" data-mod="mes-plan">생산계획</button>
 <button class="sb-item" data-mod="mes-worker">작업자 현황</button>
+<button class="sb-item" data-mod="mes-proc-log">공정실적</button>
+<button class="sb-item" data-mod="mes-lot">로트추적</button>
+<button class="sb-item" data-mod="mes-downtime">비가동관리</button>
+<button class="sb-item" data-mod="mes-defect">불량관리</button>
+<button class="sb-item" data-mod="mes-outsource">외주관리</button>
+<button class="sb-item" data-mod="mes-mold-hist">금형이력</button>
+<button class="sb-item" data-mod="mes-oee">OEE</button>
 <button class="sb-item" data-mod="mes-monitor" data-ready="false">현장 모니터</button>
 </div>
 <div class="sb-group open" role="button" aria-expanded="true">출고<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="ship-partial">부분출고</button>
+<button class="sb-item" data-mod="ship-return">반품관리</button>
+<button class="sb-item" data-mod="ship-inspect">출하검사</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -62,6 +74,10 @@
 <button class="sb-item" data-mod="mat-stock">재고</button>
 <button class="sb-item" data-mod="mat-po">발주서</button>
 <button class="sb-item" data-mod="mat-bom">BOM</button>
+<button class="sb-item" data-mod="mat-safety">안전재고</button>
+<button class="sb-item" data-mod="mat-mrp">MRP</button>
+<button class="sb-item" data-mod="mat-audit">재고실사</button>
+<button class="sb-item" data-mod="mat-price">단가이력</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">매출/회계<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -71,6 +87,9 @@
 <button class="sb-item" data-mod="acc-recv">미수/미지급</button>
 <button class="sb-item" data-mod="acc-cashflow">입출금</button>
 <button class="sb-item" data-mod="acc-closing">외상 마감</button>
+<button class="sb-item" data-mod="acc-etax">전자세금계산서</button>
+<button class="sb-item" data-mod="acc-costing">원가분석</button>
+<button class="sb-item" data-mod="acc-aging">채권aging</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -78,18 +97,27 @@
 <button class="sb-item" data-mod="hr-att">출퇴근</button>
 <button class="sb-item" data-mod="hr-pay">급여</button>
 <button class="sb-item" data-mod="hr-leave">연차</button>
+<button class="sb-item" data-mod="hr-shift">교대스케줄</button>
+<button class="sb-item" data-mod="hr-insurance">4대보험</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">경영분석<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="biz-trend">추이</button>
 <button class="sb-item" data-mod="biz-rank">순위</button>
 <button class="sb-item" data-mod="biz-cost">원가</button>
+<button class="sb-item" data-mod="biz-kpi">실시간KPI</button>
+<button class="sb-item" data-mod="biz-profit">수익성분석</button>
+<button class="sb-item" data-mod="biz-ontime">납기준수율</button>
 <button class="sb-item" data-mod="mes-rpt">보고서</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">품질/기타<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-inspect">검사</button>
 <button class="sb-item" data-mod="qc-equip">설비</button>
+<button class="sb-item" data-mod="qc-claim">클레임</button>
+<button class="sb-item" data-mod="qc-pm">예방보전</button>
+<button class="sb-item" data-mod="qc-breakdown">고장이력</button>
+<button class="sb-item" data-mod="qc-cert">검사성적서</button>
 <button class="sb-item" data-mod="qc-quote">견적</button>
 <button class="sb-item" data-mod="qc-approval">결재</button>
 </div>
@@ -99,6 +127,10 @@
 <button class="sb-item" data-mod="mes-vendor">인쇄소</button>
 <button class="sb-item" data-mod="mes-prod">품목</button>
 <button class="sb-item" data-mod="mes-mold">목형</button>
+<button class="sb-item" data-mod="adm-perm">권한관리</button>
+<button class="sb-item" data-mod="adm-backup">백업/복원</button>
+<button class="sb-item" data-mod="adm-audit">감사로그</button>
+<button class="sb-item" data-mod="adm-code">공통코드</button>
 <button class="sb-item" data-mod="mes-queue">설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
@@ -1917,6 +1949,462 @@
 </div>
 </div>
 
+<!-- ===== 수주진행추적 ===== -->
+<div id="pg-mes-order-track" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">수주 진행 상태 추적</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="otMonth" onchange="rOrderTrack()">
+<input type="text" id="otSearch" placeholder="거래처/품목 검색" oninput="rOrderTrack()" class="fbar-grow">
+<select id="otStatus" onchange="rOrderTrack()"><option value="">전체</option><option value="수주">수주</option><option value="생산중">생산중</option><option value="출고대기">출고대기</option><option value="출고완료">출고완료</option></select>
+</div></div>
+<div id="orderTrackArea"></div>
+</div></div>
+
+<!-- ===== 납기관리 ===== -->
+<div id="pg-mes-due" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">납기 관리</div>
+<div class="sg">
+<div class="sb red"><div class="l">납기 지연</div><div class="v" id="dueOver">0</div></div>
+<div class="sb orange"><div class="l">D-3 이내</div><div class="v" id="dueSoon">0</div></div>
+<div class="sb blue"><div class="l">진행중</div><div class="v" id="dueActive">0</div></div>
+<div class="sb green"><div class="l">완료</div><div class="v" id="dueDone">0</div></div>
+</div>
+<div id="dueArea"></div>
+</div></div>
+
+<!-- ===== 공정실적 ===== -->
+<div id="pg-mes-proc-log" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">공정별 실적 입력</div>
+<div class="fbar"><div class="fbar-row">
+<input type="date" id="plDate" onchange="rProcLog()">
+<select id="plProc" onchange="rProcLog()"><option value="">전체 공정</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openProcLogM()">+ 실적입력</button>
+</div></div>
+<table class="dt" id="procLogTbl"><thead><tr><th>일자</th><th>작업지시</th><th>공정</th><th>작업자</th><th>생산수량</th><th>불량수량</th><th>작업시간</th><th>비고</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="procLogMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('procLogMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">공정 실적 입력</div>
+<div class="mo-b"><label>작업지시서</label><select id="plWO" onchange="fillPLProcs()"></select>
+<label>공정</label><select id="plProcSel"></select>
+<label>작업자</label><input id="plWorker"><label>생산수량</label><input type="number" id="plQty">
+<label>불량수량</label><input type="number" id="plDefect" value="0"><label>작업시간(분)</label><input type="number" id="plTime">
+<label>비고</label><input id="plNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('procLogMo')">취소</button><button class="btn btn-p" onclick="saveProcLog()">저장</button></div>
+</div></div>
+
+<!-- ===== 로트추적 ===== -->
+<div id="pg-mes-lot" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">로트 추적</div>
+<div class="fbar"><div class="fbar-row">
+<input type="text" id="lotSearch" placeholder="로트번호/품목/거래처 검색" oninput="rLotTrace()" class="fbar-grow">
+<button class="btn btn-p btn-sm" onclick="openLotM()">+ 로트등록</button>
+</div></div>
+<div id="lotTraceArea"></div>
+</div></div>
+<div id="lotMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('lotMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">로트 등록</div>
+<div class="mo-b"><label>로트번호</label><input id="lotNo"><label>작업지시서</label><select id="lotWO"></select>
+<label>원자재 로트</label><input id="lotMat" placeholder="원자재 로트번호">
+<label>생산일</label><input type="date" id="lotDt"><label>비고</label><input id="lotNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('lotMo')">취소</button><button class="btn btn-p" onclick="saveLot()">저장</button></div>
+</div></div>
+
+<!-- ===== 비가동관리 ===== -->
+<div id="pg-mes-downtime" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">비가동 관리</div>
+<div class="sg">
+<div class="sb red"><div class="l">금월 비가동 시간</div><div class="v" id="dtTotal">0h</div></div>
+<div class="sb orange"><div class="l">비가동 건수</div><div class="v" id="dtCount">0</div></div>
+<div class="sb blue"><div class="l">주요 사유</div><div class="v" id="dtTopReason">-</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="dtMonth" onchange="rDowntime()">
+<select id="dtEquip" onchange="rDowntime()"><option value="">전체 설비</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openDtM()">+ 비가동 등록</button>
+</div></div>
+<table class="dt" id="dtTbl"><thead><tr><th>일시</th><th>설비</th><th>사유분류</th><th>상세사유</th><th>시간(분)</th><th>조치</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="dtMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('dtMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">비가동 등록</div>
+<div class="mo-b"><label>설비</label><select id="dtEquipSel"></select>
+<label>사유분류</label><select id="dtReason"><option value="고장">고장</option><option value="자재대기">자재대기</option><option value="금형교체">금형교체</option><option value="청소/정비">청소/정비</option><option value="작업자부재">작업자부재</option><option value="기타">기타</option></select>
+<label>상세사유</label><input id="dtDetail"><label>시작시각</label><input type="datetime-local" id="dtStart">
+<label>종료시각</label><input type="datetime-local" id="dtEnd"><label>조치내용</label><input id="dtAction"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('dtMo')">취소</button><button class="btn btn-p" onclick="saveDowntime()">저장</button></div>
+</div></div>
+
+<!-- ===== 불량관리 ===== -->
+<div id="pg-mes-defect" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">불량 관리</div>
+<div class="sg">
+<div class="sb red"><div class="l">금월 불량수</div><div class="v" id="dfTotal">0</div></div>
+<div class="sb orange"><div class="l">불량률</div><div class="v" id="dfRate">0%</div></div>
+<div class="sb blue"><div class="l">주요 유형</div><div class="v" id="dfTopType">-</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="dfMonth" onchange="rDefect()">
+<select id="dfType" onchange="rDefect()"><option value="">전체유형</option><option value="인쇄불량">인쇄불량</option><option value="접착불량">접착불량</option><option value="타발불량">타발불량</option><option value="합지불량">합지불량</option><option value="코팅불량">코팅불량</option><option value="자재불량">자재불량</option><option value="기타">기타</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openDfM()">+ 불량등록</button>
+</div></div>
+<table class="dt" id="dfTbl"><thead><tr><th>일자</th><th>작업지시</th><th>공정</th><th>불량유형</th><th>불량수량</th><th>원인</th><th>조치</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="dfMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('dfMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">불량 등록</div>
+<div class="mo-b"><label>작업지시서</label><select id="dfWO"></select>
+<label>공정</label><select id="dfProc"></select><label>불량유형</label><select id="dfTypeSel"><option value="인쇄불량">인쇄불량</option><option value="접착불량">접착불량</option><option value="타발불량">타발불량</option><option value="합지불량">합지불량</option><option value="코팅불량">코팅불량</option><option value="자재불량">자재불량</option><option value="기타">기타</option></select>
+<label>불량수량</label><input type="number" id="dfQty"><label>원인</label><input id="dfCause"><label>조치</label><input id="dfActionTxt"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('dfMo')">취소</button><button class="btn btn-p" onclick="saveDefect()">저장</button></div>
+</div></div>
+
+<!-- ===== 외주관리 ===== -->
+<div id="pg-mes-outsource" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">외주 공정 관리</div>
+<div class="sg">
+<div class="sb blue"><div class="l">외주 진행중</div><div class="v" id="osActive">0</div></div>
+<div class="sb green"><div class="l">금월 완료</div><div class="v" id="osDone">0</div></div>
+<div class="sb orange"><div class="l">금월 외주비</div><div class="v" id="osCost">0원</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="osMonth" onchange="rOutsource()">
+<select id="osVendor" onchange="rOutsource()"><option value="">전체 업체</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openOsM()">+ 외주등록</button>
+</div></div>
+<table class="dt" id="osTbl"><thead><tr><th>발주일</th><th>작업지시</th><th>공정</th><th>업체</th><th>수량</th><th>단가</th><th>금액</th><th>납기</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="osMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('osMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">외주 등록</div>
+<div class="mo-b"><label>작업지시서</label><select id="osWO"></select><label>공정</label><select id="osProc"></select>
+<label>외주업체</label><select id="osVendorSel"></select><label>수량</label><input type="number" id="osQty">
+<label>단가</label><input type="number" id="osPrice"><label>납기</label><input type="date" id="osDue"><label>비고</label><input id="osNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('osMo')">취소</button><button class="btn btn-p" onclick="saveOutsource()">저장</button></div>
+</div></div>
+
+<!-- ===== 금형이력 ===== -->
+<div id="pg-mes-mold-hist" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">금형/목형 사용 이력</div>
+<div class="fbar"><div class="fbar-row">
+<input type="text" id="mhSearch" placeholder="목형명 검색" oninput="rMoldHist()" class="fbar-grow">
+</div></div>
+<div id="moldHistArea"></div>
+</div></div>
+
+<!-- ===== OEE ===== -->
+<div id="pg-mes-oee" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">OEE (설비종합효율)</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="oeeMonth" onchange="rOEE()">
+<select id="oeeEquip" onchange="rOEE()"><option value="">전체 설비</option></select>
+</div></div>
+<div id="oeeArea"></div>
+</div></div>
+
+<!-- ===== 부분출고 ===== -->
+<div id="pg-ship-partial" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">부분출고 / 분할납품 관리</div>
+<div class="fbar"><div class="fbar-row">
+<input type="text" id="spSearch" placeholder="수주번호/거래처 검색" oninput="rShipPartial()" class="fbar-grow">
+</div></div>
+<div id="shipPartialArea"></div>
+</div></div>
+
+<!-- ===== 반품관리 ===== -->
+<div id="pg-ship-return" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">반품 관리</div>
+<div class="sg">
+<div class="sb red"><div class="l">금월 반품</div><div class="v" id="retCount">0</div></div>
+<div class="sb orange"><div class="l">반품금액</div><div class="v" id="retAmt">0원</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="retMonth" onchange="rReturn()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openRetM()">+ 반품등록</button>
+</div></div>
+<table class="dt" id="retTbl"><thead><tr><th>반품일</th><th>거래처</th><th>품목</th><th>수량</th><th>사유</th><th>처리</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="retMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('retMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">반품 등록</div>
+<div class="mo-b"><label>거래처</label><select id="retCli"></select><label>품목</label><select id="retProd"></select>
+<label>수량</label><input type="number" id="retQty"><label>사유</label><select id="retReason"><option value="품질불량">품질불량</option><option value="규격불일치">규격불일치</option><option value="파손">파손</option><option value="납기지연">납기지연</option><option value="고객변심">고객변심</option><option value="기타">기타</option></select>
+<label>처리방법</label><select id="retAction"><option value="재입고">재입고</option><option value="폐기">폐기</option><option value="재작업">재작업</option></select>
+<label>비고</label><input id="retNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('retMo')">취소</button><button class="btn btn-p" onclick="saveReturn()">저장</button></div>
+</div></div>
+
+<!-- ===== 출하검사 ===== -->
+<div id="pg-ship-inspect" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">출하 검사</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="siMonth" onchange="rShipInspect()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openSiM()">+ 검사등록</button>
+</div></div>
+<table class="dt" id="siTbl"><thead><tr><th>검사일</th><th>작업지시</th><th>품목</th><th>검사수량</th><th>합격수량</th><th>불합격</th><th>합격률</th><th>판정</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="siMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('siMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">출하 검사 등록</div>
+<div class="mo-b"><label>작업지시서</label><select id="siWO"></select><label>검사수량</label><input type="number" id="siQty">
+<label>합격수량</label><input type="number" id="siPass"><label>검사항목</label><input id="siItems" placeholder="외관,치수,인쇄상태">
+<label>판정</label><select id="siResult"><option value="합격">합격</option><option value="불합격">불합격</option><option value="조건부합격">조건부합격</option></select>
+<label>비고</label><input id="siNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('siMo')">취소</button><button class="btn btn-p" onclick="saveShipInspect()">저장</button></div>
+</div></div>
+
+<!-- ===== 안전재고 ===== -->
+<div id="pg-mat-safety" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">안전재고 / 발주점 관리</div>
+<div id="safetyArea"></div>
+</div></div>
+
+<!-- ===== MRP ===== -->
+<div id="pg-mat-mrp" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">MRP (자재소요량 계획)</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="mrpMonth" onchange="rMRP()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-o btn-sm" onclick="runMRP()">MRP 실행</button>
+</div></div>
+<div id="mrpArea"></div>
+</div></div>
+
+<!-- ===== 재고실사 ===== -->
+<div id="pg-mat-audit" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">재고 실사</div>
+<div class="fbar"><div class="fbar-row">
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openAuditNew()">+ 실사시작</button>
+</div></div>
+<div id="matAuditArea"></div>
+</div></div>
+
+<!-- ===== 단가이력 ===== -->
+<div id="pg-mat-price" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">구매 단가 이력</div>
+<div class="fbar"><div class="fbar-row">
+<input type="text" id="priceSearch" placeholder="자재명 검색" oninput="rPriceHist()" class="fbar-grow">
+</div></div>
+<div id="priceHistArea"></div>
+</div></div>
+
+<!-- ===== 전자세금계산서 ===== -->
+<div id="pg-acc-etax" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">전자세금계산서</div>
+<div class="sg">
+<div class="sb blue"><div class="l">금월 발행</div><div class="v" id="etaxCount">0</div></div>
+<div class="sb green"><div class="l">발행금액</div><div class="v" id="etaxAmt">0원</div></div>
+<div class="sb orange"><div class="l">미발행</div><div class="v" id="etaxPend">0</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="etaxMonth" onchange="rEtax()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-o btn-sm" onclick="autoGenEtax()">자동발행</button>
+<button class="btn btn-p btn-sm" onclick="openEtaxM()">+ 수동등록</button>
+</div></div>
+<table class="dt" id="etaxTbl"><thead><tr><th>발행일</th><th>유형</th><th>거래처</th><th>공급가액</th><th>세액</th><th>합계</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="etaxMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('etaxMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">세금계산서 등록</div>
+<div class="mo-b"><label>유형</label><select id="etaxType"><option value="매출">매출</option><option value="매입">매입</option></select>
+<label>거래처</label><select id="etaxCli"></select><label>공급가액</label><input type="number" id="etaxSupply">
+<label>세액</label><input type="number" id="etaxVat"><label>발행일</label><input type="date" id="etaxDt"><label>비고</label><input id="etaxNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('etaxMo')">취소</button><button class="btn btn-p" onclick="saveEtax()">저장</button></div>
+</div></div>
+
+<!-- ===== 원가분석 ===== -->
+<div id="pg-acc-costing" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">원가 분석</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="costMonth" onchange="rCosting()">
+<input type="text" id="costSearch" placeholder="품목 검색" oninput="rCosting()" class="fbar-grow">
+</div></div>
+<div id="costingArea"></div>
+</div></div>
+
+<!-- ===== 채권aging ===== -->
+<div id="pg-acc-aging" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">매출 채권 Aging 분석</div>
+<div id="agingArea"></div>
+</div></div>
+
+<!-- ===== 교대스케줄 ===== -->
+<div id="pg-hr-shift" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">교대/근무 스케줄</div>
+<div class="fbar"><div class="fbar-row">
+<input type="week" id="shiftWeek" onchange="rShift()">
+<select id="shiftType" onchange="rShift()"><option value="2">2교대</option><option value="3">3교대</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-o btn-sm" onclick="autoGenShift()">자동생성</button>
+</div></div>
+<div id="shiftArea"></div>
+</div></div>
+
+<!-- ===== 4대보험 ===== -->
+<div id="pg-hr-insurance" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">4대보험 관리</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="insMonth" onchange="rInsurance()">
+</div></div>
+<div id="insuranceArea"></div>
+</div></div>
+
+<!-- ===== 실시간KPI ===== -->
+<div id="pg-biz-kpi" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">실시간 KPI 대시보드</div>
+<div id="kpiArea"></div>
+</div></div>
+
+<!-- ===== 수익성분석 ===== -->
+<div id="pg-biz-profit" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">수익성 분석</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="profitMonth" onchange="rProfit()">
+<select id="profitView" onchange="rProfit()"><option value="client">거래처별</option><option value="product">제품별</option></select>
+</div></div>
+<div id="profitArea"></div>
+</div></div>
+
+<!-- ===== 납기준수율 ===== -->
+<div id="pg-biz-ontime" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">납기 준수율</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="ontimeMonth" onchange="rOntime()">
+</div></div>
+<div id="ontimeArea"></div>
+</div></div>
+
+<!-- ===== 클레임 ===== -->
+<div id="pg-qc-claim" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">클레임 / 고객불만 관리</div>
+<div class="sg">
+<div class="sb red"><div class="l">미처리</div><div class="v" id="claimOpen">0</div></div>
+<div class="sb orange"><div class="l">처리중</div><div class="v" id="claimIng">0</div></div>
+<div class="sb green"><div class="l">완료</div><div class="v" id="claimDone">0</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="claimMonth" onchange="rClaims()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openClaimM()">+ 클레임등록</button>
+</div></div>
+<table class="dt" id="claimTbl"><thead><tr><th>접수일</th><th>거래처</th><th>품목</th><th>유형</th><th>내용</th><th>원인</th><th>대책</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="claimMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('claimMo')"><div class="mo" style="max-width:600px">
+<div class="mo-t">클레임 등록</div>
+<div class="mo-b"><label>거래처</label><select id="claimCli"></select><label>품목</label><select id="claimProd"></select>
+<label>유형</label><select id="claimType"><option value="품질불량">품질불량</option><option value="납기지연">납기지연</option><option value="수량부족">수량부족</option><option value="규격불일치">규격불일치</option><option value="기타">기타</option></select>
+<label>내용</label><textarea id="claimDesc" rows="3"></textarea><label>원인분석</label><input id="claimCause">
+<label>대책</label><input id="claimAction"><label>상태</label><select id="claimSt"><option value="접수">접수</option><option value="분석중">분석중</option><option value="대책수립">대책수립</option><option value="완료">완료</option></select></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('claimMo')">취소</button><button class="btn btn-p" onclick="saveClaim2()">저장</button></div>
+</div></div>
+
+<!-- ===== 예방보전 ===== -->
+<div id="pg-qc-pm" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">설비 예방 보전 (PM)</div>
+<div class="sg">
+<div class="sb red"><div class="l">점검 예정 초과</div><div class="v" id="pmOverdue">0</div></div>
+<div class="sb orange"><div class="l">금주 예정</div><div class="v" id="pmThisWeek">0</div></div>
+<div class="sb green"><div class="l">금월 완료</div><div class="v" id="pmDone">0</div></div>
+</div>
+<div class="fbar"><div class="fbar-row">
+<select id="pmEquip" onchange="rPM()"><option value="">전체 설비</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openPmM()">+ 점검등록</button>
+</div></div>
+<table class="dt" id="pmTbl"><thead><tr><th>설비</th><th>점검항목</th><th>주기</th><th>최근점검</th><th>다음예정</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="pmMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('pmMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">예방보전 등록</div>
+<div class="mo-b"><label>설비</label><select id="pmEquipSel"></select>
+<label>점검항목</label><input id="pmItem" placeholder="윤활유 교체, 벨트 점검 등">
+<label>점검주기</label><select id="pmCycle"><option value="7">매주</option><option value="14">격주</option><option value="30">매월</option><option value="90">분기</option><option value="180">반기</option><option value="365">매년</option></select>
+<label>최근점검일</label><input type="date" id="pmLastDt"><label>비고</label><input id="pmNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('pmMo')">취소</button><button class="btn btn-p" onclick="savePM()">저장</button></div>
+</div></div>
+
+<!-- ===== 고장이력 ===== -->
+<div id="pg-qc-breakdown" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">설비 고장 이력</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="bdMonth" onchange="rBreakdown()">
+<select id="bdEquip" onchange="rBreakdown()"><option value="">전체 설비</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openBdM()">+ 고장등록</button>
+</div></div>
+<table class="dt" id="bdTbl"><thead><tr><th>발생일시</th><th>설비</th><th>증상</th><th>원인</th><th>조치</th><th>수리시간</th><th>비용</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="bdMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('bdMo')"><div class="mo" style="max-width:500px">
+<div class="mo-t">고장 등록</div>
+<div class="mo-b"><label>설비</label><select id="bdEquipSel"></select>
+<label>발생일시</label><input type="datetime-local" id="bdStart"><label>복구일시</label><input type="datetime-local" id="bdEnd">
+<label>증상</label><input id="bdSymptom"><label>원인</label><input id="bdCause"><label>조치내용</label><input id="bdFix">
+<label>수리비용</label><input type="number" id="bdCost" value="0"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('bdMo')">취소</button><button class="btn btn-p" onclick="saveBreakdown()">저장</button></div>
+</div></div>
+
+<!-- ===== 검사성적서 ===== -->
+<div id="pg-qc-cert" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">검사 성적서</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="certMonth" onchange="rCert()">
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openCertM()">+ 성적서 발행</button>
+</div></div>
+<table class="dt" id="certTbl"><thead><tr><th>발행일</th><th>작업지시</th><th>품목</th><th>거래처</th><th>검사항목</th><th>결과</th><th>관리</th></tr></thead><tbody></tbody></table>
+</div></div>
+<div id="certMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('certMo')"><div class="mo" style="max-width:600px">
+<div class="mo-t">검사 성적서 발행</div>
+<div class="mo-b"><label>작업지시서</label><select id="certWO"></select>
+<label>검사항목</label><textarea id="certItems" rows="4" placeholder="항목명: 결과값 (줄바꿈으로 구분)&#10;외관검사: 양호&#10;치수검사: 규격이내&#10;인쇄상태: 양호"></textarea>
+<label>종합판정</label><select id="certResult"><option value="합격">합격</option><option value="불합격">불합격</option></select>
+<label>비고</label><input id="certNote"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('certMo')">취소</button><button class="btn btn-p" onclick="saveCert()">저장</button></div>
+</div></div>
+
+<!-- ===== 권한관리 ===== -->
+<div id="pg-adm-perm" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">사용자 권한 관리</div>
+<div id="permArea"></div>
+</div></div>
+
+<!-- ===== 백업/복원 ===== -->
+<div id="pg-adm-backup" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">데이터 백업 / 복원</div>
+<div class="fbar"><div class="fbar-row">
+<button class="btn btn-p btn-sm" onclick="doBackupNow()">지금 백업</button>
+<button class="btn btn-o btn-sm" onclick="downloadBackup()">백업 다운로드</button>
+</div></div>
+<div id="backupArea"></div>
+</div></div>
+
+<!-- ===== 감사로그 ===== -->
+<div id="pg-adm-audit" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">감사 로그 (Audit Trail)</div>
+<div class="fbar"><div class="fbar-row">
+<input type="date" id="auditFrom" onchange="rAuditLog()"><span style="color:var(--txt3)">~</span>
+<input type="date" id="auditTo" onchange="rAuditLog()">
+<input type="text" id="auditUser" placeholder="사용자" oninput="rAuditLog()" class="fbar-grow">
+</div></div>
+<div id="auditLogArea"></div>
+</div></div>
+
+<!-- ===== 공통코드 ===== -->
+<div id="pg-adm-code" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">공통 코드 관리</div>
+<div class="fbar"><div class="fbar-row">
+<select id="codeGroup" onchange="rCodes()"><option value="">그룹 선택</option><option value="defect_type">불량유형</option><option value="downtime_reason">비가동사유</option><option value="claim_type">클레임유형</option><option value="return_reason">반품사유</option><option value="material_cat">자재구분</option><option value="unit">단위</option></select>
+<div class="fbar-spacer"></div>
+<button class="btn btn-p btn-sm" onclick="openCodeM()">+ 코드추가</button>
+</div></div>
+<div id="codeArea"></div>
+</div></div>
+<div id="codeMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('codeMo')"><div class="mo" style="max-width:400px">
+<div class="mo-t">공통코드 추가</div>
+<div class="mo-b"><label>코드명</label><input id="codeName"><label>설명</label><input id="codeDesc"><label>정렬순서</label><input type="number" id="codeOrd" value="0"></div>
+<div class="mo-f"><button class="btn btn-g" onclick="cMo('codeMo')">취소</button><button class="btn btn-p" onclick="saveCode()">저장</button></div>
+</div></div>
+
 </div></div>
 <script src="/js/mes-dash.js?v=9"></script>
 <script src="/js/mes-wo.js?v=19"></script>
@@ -1930,4 +2418,5 @@
 <script src="/js/erp-hr.js?v=1"></script>
 <script src="/js/erp-biz.js?v=1"></script>
 <script src="/js/erp-quality.js?v=1"></script>
+<script src="/js/features-ext.js?v=1"></script>
 </body></html>

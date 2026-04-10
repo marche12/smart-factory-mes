@@ -357,7 +357,7 @@ function wrapTablesForScroll(){
     p.insertBefore(w,t);w.appendChild(t);
   });
 }
-document.addEventListener('DOMContentLoaded',function(){setTimeout(wrapTablesForScroll,100)});
+document.addEventListener('DOMContentLoaded',function(){setTimeout(wrapTablesForScroll,100);setTimeout(function(){if(typeof ContrastCheck!=='undefined')ContrastCheck.audit()},2000)});
 var _resizeTimer=null;
 function _onWindowResize(){
   if(_resizeTimer)clearTimeout(_resizeTimer);
@@ -493,4 +493,54 @@ function refreshLoginUsers(){
       if(mid)cMo(mid);
     }
   });
+})();
+
+/* ===== WCAG 대비 자동 점검 ===== */
+var ContrastCheck=(function(){
+  function luminance(r,g,b){
+    var a=[r,g,b].map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});
+    return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2];
+  }
+  function parseColor(str){
+    if(!str||str==='transparent')return null;
+    var d=document.createElement('div');d.style.color=str;document.body.appendChild(d);
+    var c=getComputedStyle(d).color;document.body.removeChild(d);
+    var m=c.match(/(\d+)/g);if(!m||m.length<3)return null;
+    return[+m[0],+m[1],+m[2]];
+  }
+  function ratio(fg,bg){
+    var l1=luminance(fg[0],fg[1],fg[2])+0.05;
+    var l2=luminance(bg[0],bg[1],bg[2])+0.05;
+    return l1>l2?l1/l2:l2/l1;
+  }
+  function check(el){
+    var cs=getComputedStyle(el);
+    var fg=parseColor(cs.color);
+    var bg=parseColor(cs.backgroundColor);
+    if(!fg||!bg)return null;
+    var r=ratio(fg,bg);
+    var size=parseFloat(cs.fontSize);
+    var bold=parseInt(cs.fontWeight)>=700;
+    var threshold=(size>=18||(size>=14&&bold))?3:4.5;
+    return{ratio:Math.round(r*100)/100,threshold:threshold,pass:r>=threshold};
+  }
+  function audit(selector){
+    var els=document.querySelectorAll(selector||'.bd,.btn,.filter-btn,.wb,.det-btn');
+    var fails=[];
+    els.forEach(function(el){
+      if(el.offsetParent===null)return;
+      var result=check(el);
+      if(result&&!result.pass){
+        fails.push({el:el,text:el.textContent.trim(),ratio:result.ratio,threshold:result.threshold});
+      }
+    });
+    if(fails.length){
+      console.warn('[대비 점검] '+fails.length+'개 요소가 WCAG AA 기준 미달:');
+      fails.forEach(function(f){console.warn('  "'+f.text+'" — '+f.ratio+':1 (필요: '+f.threshold+':1)',f.el)});
+    }else{
+      console.info('[대비 점검] 모든 요소가 WCAG AA 기준 충족');
+    }
+    return fails;
+  }
+  return{check:check,audit:audit,ratio:function(c1,c2){var a=parseColor(c1),b=parseColor(c2);return a&&b?ratio(a,b):null}};
 })();

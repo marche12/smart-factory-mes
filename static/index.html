@@ -40,66 +40,66 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open" onclick="toggleSbGroup(this)">수주<span class="sb-arrow">▶</span></div>
+<div class="sb-group open">수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-order" onclick="goMod('mes-order')">수주관리</button>
-<button class="sb-item" data-mod="mes-wo" onclick="goMod('mes-wo')">작업지시서</button>
+<button class="sb-item" data-mod="mes-order">수주관리</button>
+<button class="sb-item" data-mod="mes-wo">작업지시서</button>
 </div>
-<div class="sb-group open" onclick="toggleSbGroup(this)">생산<span class="sb-arrow">▶</span></div>
+<div class="sb-group open">생산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-dash" onclick="goMod('mes-dash')">생산현황</button>
-<button class="sb-item" data-mod="mes-plan" onclick="goMod('mes-plan')">생산계획</button>
-<button class="sb-item" data-mod="mes-worker" onclick="goMod('mes-worker')">작업자 현황</button>
-<button class="sb-item" data-mod="mes-monitor" data-ready="false" onclick="goMod('mes-monitor')">현장 모니터</button>
+<button class="sb-item" data-mod="mes-dash">생산현황</button>
+<button class="sb-item" data-mod="mes-plan">생산계획</button>
+<button class="sb-item" data-mod="mes-worker">작업자 현황</button>
+<button class="sb-item" data-mod="mes-monitor" data-ready="false">현장 모니터</button>
 </div>
-<div class="sb-group open" onclick="toggleSbGroup(this)">출고<span class="sb-arrow">▶</span></div>
+<div class="sb-group open">출고<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-ship" onclick="goMod('mes-ship')">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">구매/자재<span class="sb-arrow">▶</span></div>
+<div class="sb-group">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mat-income" onclick="goMod('mat-income')">입고</button>
-<button class="sb-item" data-mod="mat-stock" onclick="goMod('mat-stock')">재고</button>
-<button class="sb-item" data-mod="mat-po" onclick="goMod('mat-po')">발주서</button>
-<button class="sb-item" data-mod="mat-bom" onclick="goMod('mat-bom')">BOM</button>
+<button class="sb-item" data-mod="mat-income">입고</button>
+<button class="sb-item" data-mod="mat-stock">재고</button>
+<button class="sb-item" data-mod="mat-po">발주서</button>
+<button class="sb-item" data-mod="mat-bom">BOM</button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">매출/회계<span class="sb-arrow">▶</span></div>
+<div class="sb-group">매출/회계<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="acc-sales" onclick="goMod('acc-sales')">매출</button>
-<button class="sb-item" data-mod="acc-purchase" onclick="goMod('acc-purchase')">매입</button>
-<button class="sb-item" data-mod="acc-tax" onclick="goMod('acc-tax')">세금계산서</button>
-<button class="sb-item" data-mod="acc-recv" onclick="goMod('acc-recv')">미수/미지급</button>
-<button class="sb-item" data-mod="acc-cashflow" onclick="goMod('acc-cashflow')">입출금</button>
-<button class="sb-item" data-mod="acc-closing" onclick="goMod('acc-closing')">외상 마감</button>
+<button class="sb-item" data-mod="acc-sales">매출</button>
+<button class="sb-item" data-mod="acc-purchase">매입</button>
+<button class="sb-item" data-mod="acc-tax">세금계산서</button>
+<button class="sb-item" data-mod="acc-recv">미수/미지급</button>
+<button class="sb-item" data-mod="acc-cashflow">입출금</button>
+<button class="sb-item" data-mod="acc-closing">외상 마감</button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">인사/급여<span class="sb-arrow">▶</span></div>
+<div class="sb-group">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="hr-emp" onclick="goMod('hr-emp')">직원</button>
-<button class="sb-item" data-mod="hr-att" onclick="goMod('hr-att')">출퇴근</button>
-<button class="sb-item" data-mod="hr-pay" onclick="goMod('hr-pay')">급여</button>
-<button class="sb-item" data-mod="hr-leave" onclick="goMod('hr-leave')">연차</button>
+<button class="sb-item" data-mod="hr-emp">직원</button>
+<button class="sb-item" data-mod="hr-att">출퇴근</button>
+<button class="sb-item" data-mod="hr-pay">급여</button>
+<button class="sb-item" data-mod="hr-leave">연차</button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">경영분석<span class="sb-arrow">▶</span></div>
+<div class="sb-group">경영분석<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="biz-trend" onclick="goMod('biz-trend')">추이</button>
-<button class="sb-item" data-mod="biz-rank" onclick="goMod('biz-rank')">순위</button>
-<button class="sb-item" data-mod="biz-cost" onclick="goMod('biz-cost')">원가</button>
-<button class="sb-item" data-mod="mes-rpt" onclick="goMod('mes-rpt')">보고서</button>
+<button class="sb-item" data-mod="biz-trend">추이</button>
+<button class="sb-item" data-mod="biz-rank">순위</button>
+<button class="sb-item" data-mod="biz-cost">원가</button>
+<button class="sb-item" data-mod="mes-rpt">보고서</button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">품질/기타<span class="sb-arrow">▶</span></div>
+<div class="sb-group">품질/기타<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="qc-inspect" onclick="goMod('qc-inspect')">검사</button>
-<button class="sb-item" data-mod="qc-equip" onclick="goMod('qc-equip')">설비</button>
-<button class="sb-item" data-mod="qc-quote" onclick="goMod('qc-quote')">견적</button>
-<button class="sb-item" data-mod="qc-approval" onclick="goMod('qc-approval')">결재</button>
+<button class="sb-item" data-mod="qc-inspect">검사</button>
+<button class="sb-item" data-mod="qc-equip">설비</button>
+<button class="sb-item" data-mod="qc-quote">견적</button>
+<button class="sb-item" data-mod="qc-approval">결재</button>
 </div>
-<div class="sb-group" onclick="toggleSbGroup(this)">관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group">관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-cli" onclick="goMod('mes-cli')">거래처</button>
-<button class="sb-item" data-mod="mes-vendor" onclick="goMod('mes-vendor')">인쇄소</button>
-<button class="sb-item" data-mod="mes-prod" onclick="goMod('mes-prod')">품목</button>
-<button class="sb-item" data-mod="mes-mold" onclick="goMod('mes-mold')">목형</button>
-<button class="sb-item" data-mod="mes-queue" onclick="goMod('mes-queue')">설정</button>
+<button class="sb-item" data-mod="mes-cli">거래처</button>
+<button class="sb-item" data-mod="mes-vendor">인쇄소</button>
+<button class="sb-item" data-mod="mes-prod">품목</button>
+<button class="sb-item" data-mod="mes-mold">목형</button>
+<button class="sb-item" data-mod="mes-queue">설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -398,10 +398,10 @@
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">매출/회계</span>
   <div class="hd-tabs">
-    <button class="hd-tab on" onclick="goTab('sales',this)">매출 장부</button>
-    <button class="hd-tab" onclick="goTab('purchase',this)">매입 장부</button>
-    <button class="hd-tab" onclick="goTab('pl',this)">손익 현황</button>
-    <button class="hd-tab" onclick="goTab('tax',this)">세금계산서</button>
+    <button class="hd-tab on" data-tab="sales">매출 장부</button>
+    <button class="hd-tab" data-tab="purchase">매입 장부</button>
+    <button class="hd-tab" data-tab="pl">손익 현황</button>
+    <button class="hd-tab" data-tab="tax">세금계산서</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -526,10 +526,10 @@
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">인사/급여</span>
   <div class="hd-tabs">
-    <button class="hd-tab on" onclick="goTab('emp',this)">직원 정보</button>
-    <button class="hd-tab" onclick="goTab('att',this)">출퇴근 기록</button>
-    <button class="hd-tab" onclick="goTab('pay',this)">급여 관리</button>
-    <button class="hd-tab" onclick="goTab('leave',this)">연차/휴가</button>
+    <button class="hd-tab on" data-tab="emp">직원 정보</button>
+    <button class="hd-tab" data-tab="att">출퇴근 기록</button>
+    <button class="hd-tab" data-tab="pay">급여 관리</button>
+    <button class="hd-tab" data-tab="leave">연차/휴가</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -681,10 +681,10 @@
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">경영분석</span>
   <div class="hd-tabs">
-    <button class="hd-tab on" onclick="goTab('trend',this)">매출/매입 추이</button>
-    <button class="hd-tab" onclick="goTab('rank',this)">거래처 순위</button>
-    <button class="hd-tab" onclick="goTab('cost',this)">원가/이익률</button>
-    <button class="hd-tab" onclick="goTab('productivity',this)">생산성 분석</button>
+    <button class="hd-tab on" data-tab="trend">매출/매입 추이</button>
+    <button class="hd-tab" data-tab="rank">거래처 순위</button>
+    <button class="hd-tab" data-tab="cost">원가/이익률</button>
+    <button class="hd-tab" data-tab="productivity">생산성 분석</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -796,10 +796,10 @@
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
   <div class="hd-tabs">
-    <button class="hd-tab on" onclick="goTab('qc',this)">품질검사</button>
-    <button class="hd-tab" onclick="goTab('equip',this)">설비관리</button>
-    <button class="hd-tab" onclick="goTab('quote',this)">견적서</button>
-    <button class="hd-tab" onclick="goTab('approval',this)">전자결재</button>
+    <button class="hd-tab on" data-tab="qc">품질검사</button>
+    <button class="hd-tab" data-tab="equip">설비관리</button>
+    <button class="hd-tab" data-tab="quote">견적서</button>
+    <button class="hd-tab" data-tab="approval">전자결재</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -966,11 +966,11 @@
 <div id="order-list">
 <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
 <div class="filter-btns" id="orderPeriodBtns">
-<button class="filter-btn" onclick="setOrderPeriod('all',this)">전체</button>
-<button class="filter-btn on" onclick="setOrderPeriod('daily',this)">일별</button>
-<button class="filter-btn" onclick="setOrderPeriod('weekly',this)">주간</button>
-<button class="filter-btn" onclick="setOrderPeriod('monthly',this)">월별</button>
-<button class="filter-btn" onclick="setOrderPeriod('range',this)">기간</button>
+<button class="filter-btn" data-period="all" data-period-fn="setOrderPeriod">전체</button>
+<button class="filter-btn on" data-period="daily" data-period-fn="setOrderPeriod">일별</button>
+<button class="filter-btn" data-period="weekly" data-period-fn="setOrderPeriod">주간</button>
+<button class="filter-btn" data-period="monthly" data-period-fn="setOrderPeriod">월별</button>
+<button class="filter-btn" data-period="range" data-period-fn="setOrderPeriod">기간</button>
 </div>
 <div id="orderDateCtrl" style="display:flex;gap:4px;align-items:center">
 <button class="btn btn-sm btn-o" onclick="orderDateNav(-1)" id="orderPrev" style="padding:3px 8px">◀</button>
@@ -987,12 +987,12 @@
 <div class="sb-r">
 <input type="text" id="orderSch" placeholder="거래처 또는 제품명 검색" oninput="rOrderList()">
 <div class="filter-btns">
-<button class="filter-btn on" data-f="all" onclick="setOrderFilter('all',this)">전체</button>
-<button class="filter-btn" data-f="수주" onclick="setOrderFilter('수주',this)">수주</button>
-<button class="filter-btn" data-f="수주확정" onclick="setOrderFilter('수주확정',this)">확정</button>
-<button class="filter-btn" data-f="생산중" onclick="setOrderFilter('생산중',this)">생산중</button>
-<button class="filter-btn" data-f="출고완료" onclick="setOrderFilter('출고완료',this)">출고완료</button>
-<button class="filter-btn" data-f="취소" onclick="setOrderFilter('취소',this)" style="color:#94A3B8">취소</button>
+<button class="filter-btn on" data-f="all" data-filter-fn="setOrderFilter">전체</button>
+<button class="filter-btn" data-f="수주" data-filter-fn="setOrderFilter">수주</button>
+<button class="filter-btn" data-f="수주확정" data-filter-fn="setOrderFilter">확정</button>
+<button class="filter-btn" data-f="생산중" data-filter-fn="setOrderFilter">생산중</button>
+<button class="filter-btn" data-f="출고완료" data-filter-fn="setOrderFilter">출고완료</button>
+<button class="filter-btn" data-f="취소" data-filter-fn="setOrderFilter" style="color:#94A3B8">취소</button>
 </div>
 <select id="orderCliFilter" onchange="rOrderList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 거래처</option></select>
 <button class="btn btn-o btn-sm" onclick="exportOrderCSV()">엑셀</button>
@@ -1070,13 +1070,13 @@
 <div class="sb-r">
 <input type="text" id="woSch" placeholder="거래처 또는 제품명 검색" oninput="rWOList()">
 <div class="filter-btns">
-<button class="filter-btn on" data-f="all" onclick="setWOFilter('all',this)">전체</button>
-<button class="filter-btn" data-f="대기" onclick="setWOFilter('대기',this)">대기</button>
-<button class="filter-btn" data-f="진행중" onclick="setWOFilter('진행중',this)">진행</button>
-<button class="filter-btn" data-f="완료" onclick="setWOFilter('완료',this)">완료</button>
-<button class="filter-btn" data-f="지연" onclick="setWOFilter('지연',this)">지연</button>
-<button class="filter-btn" data-f="보류" onclick="setWOFilter('보류',this)" style="color:#F59E0B">보류</button>
-<button class="filter-btn" data-f="취소" onclick="setWOFilter('취소',this)" style="color:#94A3B8">취소</button>
+<button class="filter-btn on" data-f="all" data-filter-fn="setWOFilter">전체</button>
+<button class="filter-btn" data-f="대기" data-filter-fn="setWOFilter">대기</button>
+<button class="filter-btn" data-f="진행중" data-filter-fn="setWOFilter">진행</button>
+<button class="filter-btn" data-f="완료" data-filter-fn="setWOFilter">완료</button>
+<button class="filter-btn" data-f="지연" data-filter-fn="setWOFilter">지연</button>
+<button class="filter-btn" data-f="보류" data-filter-fn="setWOFilter" style="color:#F59E0B">보류</button>
+<button class="filter-btn" data-f="취소" data-filter-fn="setWOFilter" style="color:#94A3B8">취소</button>
 </div>
 <select id="woVendorFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 인쇄소</option><option value="__self__">자체생산</option></select>
 <select id="woCliFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 거래처</option></select>
@@ -1192,11 +1192,11 @@
 <div class="fbar">
   <div class="fbar-row">
     <div class="fbar-pills" id="shipPeriodBtns">
-      <button class="on" onclick="setShipPeriod('daily',this)">일별</button>
-      <button onclick="setShipPeriod('weekly',this)">주간</button>
-      <button onclick="setShipPeriod('monthly',this)">월별</button>
-      <button onclick="setShipPeriod('range',this)">기간</button>
-      <button onclick="setShipPeriod('all',this)">전체</button>
+      <button class="on" data-period="daily" data-period-fn="setShipPeriod">일별</button>
+      <button data-period="weekly" data-period-fn="setShipPeriod">주간</button>
+      <button data-period="monthly" data-period-fn="setShipPeriod">월별</button>
+      <button data-period="range" data-period-fn="setShipPeriod">기간</button>
+      <button data-period="all" data-period-fn="setShipPeriod">전체</button>
     </div>
     <div id="shipDateCtrl" class="fbar-date-nav">
       <button onclick="shipDateNav(-1)">◀</button>

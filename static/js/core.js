@@ -390,7 +390,7 @@ var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin'
 var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','hr-emp':'emp','hr-att':'att','hr-pay':'pay','hr-leave':'leave','biz-trend':'trend','biz-rank':'rank','biz-cost':'cost','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote','qc-approval':'approval'};
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active')});var el=document.querySelector('.sb-item[data-mod="'+id+'"]');if(el){el.classList.add('active');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
-var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+tabId+"'")>-1)b.classList.add('on')})}}
+var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on')})}}
 var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'작업지시서','mes-ship':'출고','mes-cli':'거래처','mes-prod':'품목','mes-mold':'목형','mes-rpt':'보고서','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'인쇄소 관리','mes-queue':'설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'검사','qc-equip':'설비','qc-quote':'견적','qc-approval':'결재'};
 if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'수주','mes-dash':'생산','mes-plan':'생산','mes-rpt':'생산','mes-worker':'생산','mes-ship':'출고','mes-shiplog':'출고','mes-cli':'관리','mes-vendor':'관리','mes-prod':'관리','mes-mold':'관리','mes-queue':'관리'};if(bcMap[id])bc.textContent=bcMap[id];else if(id.startsWith('mes-'))bc.textContent='생산';else if(id.startsWith('mat-'))bc.textContent='구매/자재';else if(id.startsWith('acc-'))bc.textContent='매출/회계';else if(id.startsWith('hr-'))bc.textContent='인사/급여';else if(id.startsWith('biz-'))bc.textContent='경영분석';else if(id.startsWith('qc-'))bc.textContent='품질/기타'}}
 if(MR[id])MR[id]();if(ER[id])ER[id]();}
@@ -447,3 +447,50 @@ function refreshLoginUsers(){
   });
   if(curVal)sel.value=curVal;
 }
+
+/* ===== EVENT DELEGATION ===== */
+(function(){
+  // 1. Sidebar: goMod delegation
+  var sidebar=document.getElementById('sidebar');
+  if(sidebar){
+    sidebar.addEventListener('click',function(e){
+      var item=e.target.closest('.sb-item[data-mod]');
+      if(item){goMod(item.getAttribute('data-mod'));return}
+      var grp=e.target.closest('.sb-group');
+      if(grp){toggleSbGroup(grp);return}
+    });
+  }
+
+  // 2. Tab navigation delegation
+  document.addEventListener('click',function(e){
+    var tab=e.target.closest('.hd-tab[data-tab]');
+    if(tab){goTab(tab.getAttribute('data-tab'),tab);return}
+  });
+
+  // 3. Filter buttons delegation
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-period]');
+    if(btn){
+      var fn=btn.getAttribute('data-period-fn');
+      if(fn==='setOrderPeriod')setOrderPeriod(btn.getAttribute('data-period'),btn);
+      else if(fn==='setShipPeriod')setShipPeriod(btn.getAttribute('data-period'),btn);
+      return;
+    }
+    var fbtn=e.target.closest('[data-filter-fn]');
+    if(fbtn){
+      var ffn=fbtn.getAttribute('data-filter-fn');
+      var fv=fbtn.getAttribute('data-f');
+      if(ffn==='setOrderFilter')setOrderFilter(fv,fbtn);
+      else if(ffn==='setWOFilter')setWOFilter(fv,fbtn);
+      return;
+    }
+  });
+
+  // 4. Modal backdrop close delegation
+  document.addEventListener('click',function(e){
+    if(e.target.classList.contains('mo-bg')&&e.target===e.target){
+      var mid=e.target.id;
+      if(mid)cMo(mid);
+    }
+  });
+})();

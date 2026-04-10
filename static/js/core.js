@@ -97,6 +97,30 @@ function refreshProcSelects(){
   fillProcSelect('eProc',false);
 }
 
+/* ===== Auth Token Management ===== */
+var _authTokens={access:null,refresh:null};
+var _refreshing=null;
+async function authFetch(url,opts){
+  opts=opts||{};if(!opts.headers)opts.headers={};
+  if(_authTokens.access)opts.headers['Authorization']='Bearer '+_authTokens.access;
+  var res=await fetch(url,opts);
+  if(res.status===401&&_authTokens.refresh){
+    await _doRefresh();
+    if(_authTokens.access){opts.headers['Authorization']='Bearer '+_authTokens.access;res=await fetch(url,opts)}
+  }
+  if(res.status===401){unifiedLogout();throw new Error('Session expired')}
+  return res;
+}
+async function _doRefresh(){
+  if(_refreshing)return _refreshing;
+  _refreshing=fetch('/api/auth/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:_authTokens.refresh})})
+  .then(function(r){if(!r.ok){_authTokens.access=null;_authTokens.refresh=null;return}return r.json()})
+  .then(function(d){if(d&&d.access_token)_authTokens.access=d.access_token})
+  .catch(function(){_authTokens.access=null;_authTokens.refresh=null})
+  .finally(function(){_refreshing=null});
+  return _refreshing;
+}
+
 var _cache={};
 var DB={
   _prefix:'ino_',
@@ -104,10 +128,10 @@ var DB={
   _serverOk:true,
   init:async function(){
     try{
-      var res=await fetch('/api/data');
+      var res=await authFetch('/api/data');
       var keys=await res.json();
       for(var i=0;i<keys.length;i++){
-        var r=await fetch('/api/data/'+encodeURIComponent(keys[i]));
+        var r=await authFetch('/api/data/'+encodeURIComponent(keys[i]));
         var d=await r.json();
         if(d.value!==null)_cache[keys[i]]=d.value;
       }
@@ -121,11 +145,11 @@ var DB={
   },
   _syncToServer:function(storeKey,json){
     if(!DB._serverOk)return;
-    fetch('/api/data/'+encodeURIComponent(storeKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:json})}).catch(function(e){console.warn('Sync failed:',storeKey)});
+    authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:json})}).catch(function(e){console.warn('Sync failed:',storeKey)});
   },
   _deleteFromServer:function(storeKey){
     if(!DB._serverOk)return;
-    fetch('/api/data/'+encodeURIComponent(storeKey),{method:'DELETE'}).catch(function(){});
+    authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'DELETE'}).catch(function(){});
   },
   g:function(k,mo){
     if(k==='wo'){return DB._gWO(mo)}
@@ -297,8 +321,32 @@ function monthStart(dateStr){return dateStr.slice(0,7)+'-01'}
 function monthEnd(dateStr){var d=new Date(dateStr+'T00:00:00');var last=new Date(d.getFullYear(),d.getMonth()+1,0);return localDate(last)}
 
 var currentUser=null,CU=null,MR={},ER={},woFilter='all';
-function unifiedLogin(){var user=$('loginUser').value,pw=$('loginPw').value;if(!user){$('loginErr').textContent='사용자를 선택하세요';return}var us=DB.g('users');var uObj=us.find(function(u){return u.nm===user||u.un===user||u.id===user});var isAdmin=user==='admin'||(uObj&&uObj.role==='admin');var isOffice=uObj&&(uObj.role==='office'||uObj.role==='sales'||uObj.role==='material'||uObj.role==='accounting'||uObj.role==='quality');var userPw=uObj&&uObj.pw?uObj.pw:'1234';if(pw!==userPw){$('loginErr').textContent='비밀번호가 틀립니다';return}var proc=uObj?uObj.proc:'';var userRole=isAdmin?'admin':(isOffice?(uObj.role):(proc?'worker':'admin'));currentUser={id:user,name:isAdmin?'관리자':user,role:userRole,proc:proc};CU={nm:currentUser.name,role:currentUser.role,proc:currentUser.proc,perms:uObj&&uObj.perms?uObj.perms:null};$('loginOverlay').style.display='none';var now=new Date(),days=['일','월','화','수','목','금','토'],ds=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0')+' ('+days[now.getDay()]+')';if(currentUser.role==='worker'&&currentUser.proc){$('workerApp').style.display='flex';$('adminApp').style.display='none';$('wProcTitle').textContent=currentUser.proc;$('wNameDisp').textContent=currentUser.name;$('wDateDisp').textContent=ds;rWQ();}else{$('workerApp').style.display='none';$('adminApp').style.display='flex';$('sbUserName').textContent=currentUser.name;$('sbAvatar').textContent=currentUser.name.charAt(0);var roleNames={'admin':'관리자','office':'사무실','sales':'영업','material':'자재','accounting':'회계','quality':'품질'};$('sbUserRole').textContent=roleNames[currentUser.role]||currentUser.role;$('headerDate').textContent=ds;initProcsIfNeeded();refreshProcSelects();fillProcButtons('procBtnArea');goMod('mes-dash');genNotifications();applyRoleAccess();}}
-function unifiedLogout(){currentUser=null;CU=null;$('loginOverlay').style.display='flex';$('adminApp').style.display='none';$('workerApp').style.display='none';if(typeof refreshLoginUsers==='function')refreshLoginUsers()}
+async function unifiedLogin(){var user=$('loginUser').value,pw=$('loginPw').value;if(!user){$('loginErr').textContent='사용자를 선택하세요';return}
+  // Server auth
+  var serverAuth=false;
+  try{
+    var res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pw})});
+    var data=await res.json();
+    if(!res.ok){$('loginErr').textContent=data.detail||'로그인 실패';return}
+    _authTokens.access=data.access_token;_authTokens.refresh=data.refresh_token;
+    serverAuth=true;
+    await DB.init();
+  }catch(e){
+    // Offline fallback
+    var us=DB.g('users');var uObj=us.find(function(u){return u.nm===user||u.un===user||u.id===user});
+    var userPw=uObj&&uObj.pw?uObj.pw:'1234';
+    if(userPw.startsWith('$2b$')||userPw.startsWith('$2a$')){$('loginErr').textContent='오프라인에서는 로그인 불가';return}
+    if(pw!==userPw){$('loginErr').textContent='비밀번호가 틀립니다';return}
+  }
+  var us=DB.g('users');var uObj=us.find(function(u){return u.nm===user||u.un===user||u.id===user});
+  var isAdmin=user==='admin'||(uObj&&uObj.role==='admin');var isOffice=uObj&&(uObj.role==='office'||uObj.role==='sales'||uObj.role==='material'||uObj.role==='accounting'||uObj.role==='quality');
+  var proc=uObj?uObj.proc:'';var userRole=isAdmin?'admin':(isOffice?(uObj.role):(proc?'worker':'admin'));
+  currentUser={id:user,name:isAdmin?'관리자':user,role:userRole,proc:proc};CU={nm:currentUser.name,role:currentUser.role,proc:currentUser.proc,perms:uObj&&uObj.perms?uObj.perms:null};
+  $('loginOverlay').style.display='none';var now=new Date(),days=['일','월','화','수','목','금','토'],ds=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0')+' ('+days[now.getDay()]+')';
+  if(currentUser.role==='worker'&&currentUser.proc){$('workerApp').style.display='flex';$('adminApp').style.display='none';$('wProcTitle').textContent=currentUser.proc;$('wNameDisp').textContent=currentUser.name;$('wDateDisp').textContent=ds;rWQ();}else{$('workerApp').style.display='none';$('adminApp').style.display='flex';$('sbUserName').textContent=currentUser.name;$('sbAvatar').textContent=currentUser.name.charAt(0);var roleNames={'admin':'관리자','office':'사무실','sales':'영업','material':'자재','accounting':'회계','quality':'품질'};$('sbUserRole').textContent=roleNames[currentUser.role]||currentUser.role;$('headerDate').textContent=ds;initProcsIfNeeded();refreshProcSelects();fillProcButtons('procBtnArea');goMod('mes-dash');genNotifications();applyRoleAccess();}}
+function unifiedLogout(){
+  if(_authTokens.refresh){fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:_authTokens.refresh})}).catch(function(){})}
+  _authTokens={access:null,refresh:null};currentUser=null;CU=null;$('loginOverlay').style.display='flex';$('adminApp').style.display='none';$('workerApp').style.display='none';if(typeof refreshLoginUsers==='function')refreshLoginUsers()}
 function toggleSbGroup(g){var willOpen=!g.classList.contains('open');g.classList.toggle('open');if(!willOpen)return;var tree=g.nextElementSibling;if(!tree)return;setTimeout(function(){var sc=g.parentElement;while(sc&&sc!==document.body){var cs=getComputedStyle(sc);if(cs.overflowY==='auto'||cs.overflowY==='scroll')break;sc=sc.parentElement}if(!sc||sc===document.body)return;var scR=sc.getBoundingClientRect(),trR=tree.getBoundingClientRect();var overflow=trR.bottom-scR.bottom;if(overflow>0)sc.scrollTo({top:sc.scrollTop+overflow+10,behavior:'smooth'})},300)}
 function wrapTablesForScroll(){
   document.querySelectorAll('table.dt').forEach(function(t){
@@ -341,7 +389,7 @@ if(window.matchMedia){
 var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin','mes-wo':'mes-admin','mes-ship':'mes-admin','mes-cli':'mes-admin','mes-prod':'mes-admin','mes-vendor':'mes-admin','mes-mold':'mes-admin','mes-rpt':'mes-admin','mes-plan':'mes-admin','mes-queue':'mes-admin','mes-worker':'mes-admin','mes-perf':'mes-admin','mes-cal':'mes-admin','mat-stock':'mat-income','mat-po':'mat-income','mat-bom':'mat-income','acc-purchase':'acc-sales','acc-tax':'acc-sales','hr-att':'hr-emp','hr-pay':'hr-emp','hr-leave':'hr-emp','biz-rank':'biz-trend','biz-cost':'biz-trend','qc-equip':'qc-inspect','qc-quote':'qc-inspect','qc-approval':'qc-inspect'};
 var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','hr-emp':'emp','hr-att':'att','hr-pay':'pay','hr-leave':'leave','biz-trend':'trend','biz-rank':'rank','biz-cost':'cost','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote','qc-approval':'approval'};
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
-function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active')});var el=document.querySelector('.sb-item[data-mod="'+id+'"]');if(el){el.classList.add('active');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
+function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active')});var el=document.querySelector('.sb-item[data-mod="'+id+'"]');if(el){el.classList.add('active');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+tabId+"'")>-1)b.classList.add('on')})}}
 var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'작업지시서','mes-ship':'출고','mes-cli':'거래처','mes-prod':'품목','mes-mold':'목형','mes-rpt':'보고서','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'인쇄소 관리','mes-queue':'설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'검사','qc-equip':'설비','qc-quote':'견적','qc-approval':'결재'};
 if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'수주','mes-dash':'생산','mes-plan':'생산','mes-rpt':'생산','mes-worker':'생산','mes-ship':'출고','mes-shiplog':'출고','mes-cli':'관리','mes-vendor':'관리','mes-prod':'관리','mes-mold':'관리','mes-queue':'관리'};if(bcMap[id])bc.textContent=bcMap[id];else if(id.startsWith('mes-'))bc.textContent='생산';else if(id.startsWith('mat-'))bc.textContent='구매/자재';else if(id.startsWith('acc-'))bc.textContent='매출/회계';else if(id.startsWith('hr-'))bc.textContent='인사/급여';else if(id.startsWith('biz-'))bc.textContent='경영분석';else if(id.startsWith('qc-'))bc.textContent='품질/기타'}}

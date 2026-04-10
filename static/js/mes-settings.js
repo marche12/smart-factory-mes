@@ -23,7 +23,7 @@ else setPermsUI(ALL_PERMS);
 onRoleChange(u.role||'admin');
 $('umTitle').textContent='사용자 수정';oMo('userMo');
 }
-function rUsers(){const us=DB.g('users');$('userTbl').querySelector('tbody').innerHTML=us.map(u=>`<tr><td style="font-weight:700">${u.nm}</td><td>${u.dept||'-'}</td><td>${u.position||'-'}</td><td>${u.un||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eUser('${u.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dUser('${u.id}')">삭제</button></td></tr>`).join('');const co=DB.g1('co');if(co){$('sCo').value=co.nm||'';$('sAddr').value=co.addr||'';$('sTel').value=co.tel||'';$('sFax').value=co.fax||''}loadBizApiKey()}
+function rUsers(){const us=DB.g('users');$('userTbl').querySelector('tbody').innerHTML=us.map(u=>`<tr><td style="font-weight:700">${u.nm}</td><td>${u.dept||'-'}</td><td>${u.position||'-'}</td><td>${u.un||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eUser('${u.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dUser('${u.id}')">삭제</button></td></tr>`).join('');const co=DB.g1('co');if(co){$('sCo').value=co.nm||'';$('sAddr').value=co.addr||'';$('sTel').value=co.tel||'';$('sFax').value=co.fax||''}loadBizApiKey();if(typeof initBackupCard==='function')initBackupCard();if(typeof initAuditCard==='function')initAuditCard()}
 function rLogs(){const logs=DB.g('logs');$('editLogList').innerHTML=logs.length?logs.slice(0,50).map(l=>`<div class="log-item">${l.t} | ${l.m}</div>`).join(''):'<div style="color:var(--txt2);text-align:center;padding:10px">이력 없음</div>'}
 function openUserM(){['umId','umNm','umDept','umPosition','umUn','umPw'].forEach(x=>$(x).value='');$('umRole').value='admin';$('umPG').classList.add('hidden');toggleAllPerms(true);onRoleChange('admin');$('umTitle').textContent='사용자 등록';oMo('userMo')}
 function saveUser(){const nm=$('umNm').value.trim();if(!nm){toast('이름 필요','err');return}
@@ -167,3 +167,74 @@ try{
   }
 }catch(e){console.log('품질연계오류:',e)}
 addLog(`출고: ${o.pnm} ${qty}매 → ${o.cnm}`);cMo('shipMo');rShipReady();if(typeof rDash==='function')rDash();if(typeof rWOList==='function')rWOList();if(typeof rPlan==='function')rPlan();if(typeof updateShipBadge==='function')updateShipBadge();toast(shipped+qty>=o.fq?'출고 완료!':'부분 출고 완료','ok')}
+
+// ===== 백업 관리 UI =====
+function initBackupCard(){
+  if(!CU||CU.role!=='admin'){if($('backupCard'))$('backupCard').style.display='none';return}
+  $('backupCard').style.display='';
+  loadBackups();
+}
+function loadBackups(){
+  authFetch('/api/backups').then(r=>r.json()).then(d=>{
+    $('backupTbody').innerHTML=d.backups.length?d.backups.map(b=>
+      '<tr><td style="font-weight:600;font-size:12px">'+b.filename+'</td><td>'+b.size_str+'</td><td>'+
+      '<button class="btn btn-sm btn-o" onclick="restoreBackup(\''+b.filename+'\')">복원</button> '+
+      '<button class="btn btn-sm btn-d" onclick="deleteBackup(\''+b.filename+'\')">삭제</button></td></tr>'
+    ).join(''):'<tr><td colspan="3" class="empty-cell">백업 없음</td></tr>';
+  }).catch(()=>{$('backupTbody').innerHTML='<tr><td colspan="3" class="empty-cell">조회 실패</td></tr>'});
+}
+function createBackupNow(){
+  authFetch('/api/backups/now',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){toast('백업 완료: '+d.filename,'ok');loadBackups()}
+  }).catch(()=>toast('백업 실패','err'));
+}
+function restoreBackup(fn){
+  if(!confirm('⚠️ "'+fn+'" 으로 복원합니다.\n현재 데이터는 자동 백업 후 교체됩니다.\n\n계속할까요?'))return;
+  authFetch('/api/backups/restore/'+encodeURIComponent(fn),{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){toast(d.keys_restored+'개 키 복원 완료','ok');loadBackups();location.reload()}
+    else toast('복원 실패: '+(d.error||''),'err');
+  }).catch(()=>toast('복원 실패','err'));
+}
+function deleteBackup(fn){
+  if(!confirm('"'+fn+'" 삭제?'))return;
+  authFetch('/api/backups/'+encodeURIComponent(fn),{method:'DELETE'}).then(r=>r.json()).then(d=>{
+    if(d.ok){toast('삭제','ok');loadBackups()}
+  }).catch(()=>toast('삭제 실패','err'));
+}
+
+// ===== 감사 로그 UI =====
+var _auditPage=0;
+function initAuditCard(){
+  if(!CU||CU.role!=='admin'){if($('auditLogCard'))$('auditLogCard').style.display='none';return}
+  $('auditLogCard').style.display='';
+  var sel=$('alUser');sel.innerHTML='<option value="">전체 사용자</option>';
+  DB.g('users').forEach(function(u){var o=document.createElement('option');o.value=u.id||u.un||u.nm;o.textContent=u.nm;sel.appendChild(o)});
+  loadAuditLogs();
+}
+function loadAuditLogs(page){
+  if(typeof page!=='number')page=0;_auditPage=page;
+  var params=new URLSearchParams();
+  var u=$('alUser').value;if(u)params.set('user_id',u);
+  var a=$('alAction').value;if(a)params.set('action',a);
+  var f=$('alFrom').value;if(f)params.set('from_dt',f);
+  var t=$('alTo').value;if(t)params.set('to_dt',t);
+  params.set('limit','30');params.set('offset',String(page*30));
+  authFetch('/api/audit-logs?'+params.toString()).then(function(r){return r.json()}).then(function(d){
+    var actionNames={'login':'로그인','logout':'로그아웃','login_failed':'로그인실패','update':'수정','delete':'삭제','backup':'백업','restore':'복원'};
+    var actionColors={'login':'var(--suc)','logout':'var(--txt2)','login_failed':'var(--dan)','update':'var(--pri)','delete':'var(--dan)','backup':'var(--wrn)','restore':'var(--wrn)'};
+    $('auditTbody').innerHTML=d.logs.length?d.logs.map(function(l){
+      var dt=(l.created_at||'').replace('T',' ').slice(0,19);
+      var ac=actionNames[l.action]||l.action;
+      var col=actionColors[l.action]||'var(--txt)';
+      return '<tr><td style="font-size:11px;white-space:nowrap">'+dt+'</td><td style="font-weight:600">'+
+        (l.user_name||'-')+'</td><td><span style="color:'+col+';font-weight:700;font-size:11px">'+ac+'</span></td><td>'+
+        (l.target||'-')+'</td><td style="font-size:11px;color:var(--txt2)">'+
+        (l.detail||l.target_id||'-')+'</td><td style="font-size:11px">'+
+        (l.ip||'-')+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" class="empty-cell">감사 로그 없음</td></tr>';
+    var total=d.total||0;var pages=Math.ceil(total/30);
+    var pg='<span style="color:var(--txt2)">총 '+total+'건</span> ';
+    if(pages>1){for(var i=0;i<pages&&i<10;i++){pg+=page===i?'<strong style="margin:0 3px">'+(i+1)+'</strong>':'<a href="#" onclick="loadAuditLogs('+i+');return false" style="margin:0 3px">'+(i+1)+'</a>'}}
+    $('auditPaging').innerHTML=pg;
+  }).catch(function(e){$('auditTbody').innerHTML='<tr><td colspan="6" class="empty-cell">조회 실패</td></tr>'});
+}

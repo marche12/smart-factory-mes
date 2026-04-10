@@ -50,7 +50,7 @@
 <button class="sb-item" data-mod="mes-dash" onclick="goMod('mes-dash')">생산현황</button>
 <button class="sb-item" data-mod="mes-plan" onclick="goMod('mes-plan')">생산계획</button>
 <button class="sb-item" data-mod="mes-worker" onclick="goMod('mes-worker')">작업자 현황</button>
-<button class="sb-item" data-mod="mes-monitor" onclick="goMod('mes-monitor')">현장 모니터</button>
+<button class="sb-item" data-mod="mes-monitor" data-ready="false" onclick="goMod('mes-monitor')">현장 모니터</button>
 </div>
 <div class="sb-group open" onclick="toggleSbGroup(this)">출고<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -1492,6 +1492,37 @@
 <div style="font-size:11px;color:#94A3B8;margin-top:4px">거래처 등록 시 사업자번호 입력 후 [조회] 버튼으로 일반과세자/간이과세자/폐업 여부 확인</div>
 </div>
 <div class="card"><div class="card-t">수정 이력</div><div id="editLogList" style="max-height:200px;overflow-y:auto"></div></div>
+<div class="card" id="backupCard" style="display:none">
+<div class="card-t">백업 관리</div>
+<div style="margin-bottom:12px">
+  <button class="btn btn-p btn-sm" onclick="createBackupNow()">💾 지금 백업</button>
+  <span style="font-size:11px;color:var(--txt2);margin-left:8px">서버 시작 시 매일 자동 백업 (30일 보관)</span>
+</div>
+<div style="overflow-x:auto"><table class="dt" id="backupTbl"><thead><tr>
+<th>파일명</th><th>크기</th><th>관리</th>
+</tr></thead><tbody id="backupTbody"></tbody></table></div>
+</div>
+
+<div class="card" id="auditLogCard" style="display:none">
+<div class="card-t">감사 로그</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+  <select id="alUser" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:4px"><option value="">전체 사용자</option></select>
+  <select id="alAction" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:4px">
+    <option value="">전체 액션</option>
+    <option value="login">로그인</option><option value="logout">로그아웃</option>
+    <option value="login_failed">로그인 실패</option>
+    <option value="update">수정</option><option value="delete">삭제</option>
+    <option value="backup">백업</option><option value="restore">복원</option>
+  </select>
+  <input type="date" id="alFrom" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:4px">
+  <input type="date" id="alTo" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:4px">
+  <button class="btn btn-p btn-sm" onclick="loadAuditLogs()">조회</button>
+</div>
+<div style="overflow-x:auto"><table class="dt" id="auditTbl"><thead><tr>
+<th>시각</th><th>사용자</th><th>액션</th><th>대상</th><th>상세</th><th>IP</th>
+</tr></thead><tbody id="auditTbody"></tbody></table></div>
+<div id="auditPaging" style="text-align:center;margin-top:8px;font-size:12px"></div>
+</div>
 <div class="card"><div class="card-t">데이터 관리</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
 <div style="background:#EFF6FF;border-radius:10px;padding:14px;text-align:center">

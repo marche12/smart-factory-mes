@@ -324,6 +324,8 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .sb-user{margin-top:auto;padding:18px 20px;border-top:1px solid var(--bdr-soft);display:flex;align-items:center;gap:12px;background:#FAFBFD}
 .sb-avatar{width:38px;height:38px;border-radius:50%;background:var(--pri-grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;box-shadow:0 4px 10px -2px rgba(30,64,175,.35),inset 0 1px 0 rgba(255,255,255,.2)}
 .sb-user-name{font-size:13px;font-weight:700;color:var(--txt);letter-spacing:-.1px}.sb-user-role{font-size:11px;color:var(--txt3);font-weight:500;margin-top:1px}
+.sb-item[data-ready="false"]{opacity:.5;position:relative}
+.sb-item[data-ready="false"]::after{content:'준비중';font-size:9px;font-weight:700;color:#fff;background:#94A3B8;border-radius:3px;padding:1px 5px;margin-left:auto}
 .sb-logout{width:100%;padding:13px;font-size:12px;font-weight:600;background:none;color:var(--txt3);border:none;border-top:1px solid var(--bdr-soft);cursor:pointer;transition:all .2s var(--ease);letter-spacing:.3px}
 .sb-logout:hover{background:var(--dan-l);color:var(--dan)}
 

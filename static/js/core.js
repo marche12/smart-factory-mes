@@ -449,7 +449,7 @@ function refreshLoginUsers(){
 }
 
 /* ===== EVENT DELEGATION ===== */
-(function(){
+document.addEventListener('DOMContentLoaded',function(){
   // 1. Sidebar: goMod delegation
   var sidebar=document.getElementById('sidebar');
   if(sidebar){
@@ -493,7 +493,7 @@ function refreshLoginUsers(){
       if(mid)cMo(mid);
     }
   });
-})();
+});
 
 /* ===== WCAG 대비 자동 점검 ===== */
 var ContrastCheck=(function(){

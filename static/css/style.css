@@ -1187,4 +1187,6 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
 .u-input-bdr6{padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px}
 .u-flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .u-flex-between10{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pager{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 0}
+.pager-info{font-size:13px;color:var(--txt2);font-weight:600}
 

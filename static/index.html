@@ -1275,8 +1275,8 @@
 <div class="sg" id="cliKpi"></div>
 <div class="fbar">
   <div class="fbar-row">
-    <input type="text" id="cliSch" placeholder="거래처명 또는 사업자번호로 검색" oninput="rCli()" class="fbar-grow">
-    <select id="cliTypeFilter" onchange="rCli()">
+    <input type="text" id="cliSch" placeholder="거래처명 또는 사업자번호로 검색" oninput="_dCli()" class="fbar-grow">
+    <select id="cliTypeFilter" onchange="_cliPage=0;rCli()">
       <option value="">전체</option><option value="sales">매출처</option><option value="purchase">매입처</option><option value="vendor">인쇄소</option>
     </select>
     <div class="fbar-pills" id="cliViewPills">
@@ -1288,6 +1288,7 @@
 </div>
 <div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
+<div id="cliPager"></div>
 </div>
 
 <!-- TAB: Product -->
@@ -1295,7 +1296,7 @@
 <div class="sg" id="prodKpi"></div>
 <div class="fbar">
   <div class="fbar-row">
-    <input type="text" id="prodSch" placeholder="제품명, 코드 또는 거래처로 검색" oninput="rProd()" class="fbar-grow">
+    <input type="text" id="prodSch" placeholder="제품명, 코드 또는 거래처로 검색" oninput="_dProd()" class="fbar-grow">
     <div class="fbar-pills" id="prodViewPills">
       <button class="on" onclick="setProdView('table',this)">목록</button>
       <button onclick="setProdView('gallery',this)">갤러리</button>
@@ -1307,6 +1308,7 @@
 </div>
 <div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="prodGalleryView" style="display:none"><div id="prodGalleryArea"></div></div>
+<div id="prodPager"></div>
 </div>
 
 <!-- TAB: Mold -->
@@ -1314,13 +1316,14 @@
 <div class="sg" id="moldKpi"></div>
 <div class="fbar">
   <div class="fbar-row">
-    <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="rMold()" class="fbar-grow">
+    <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="_dMold()" class="fbar-grow">
     <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">📥 엑셀 업로드</button>
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
   </div>
 </div>
 <div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div id="moldPager"></div>
 </div>
 
 <!-- TAB: Report -->

@@ -495,6 +495,22 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 
+/* ===== 디바운스 & 페이지네이션 ===== */
+function debounce(fn,ms){var t;return function(){var a=arguments,c=this;clearTimeout(t);t=setTimeout(function(){fn.apply(c,a)},ms)}}
+var PAGE_SIZE=50;
+function paginate(arr,page){var s=page*PAGE_SIZE,e=s+PAGE_SIZE;return{items:arr.slice(s,e),page:page,total:arr.length,totalPages:Math.ceil(arr.length/PAGE_SIZE),hasMore:e<arr.length}}
+function renderPager(containerId,pg,onPage){
+  var el=$(containerId);if(!el||el.id==='__null__')return;
+  if(pg.totalPages<=1){el.innerHTML='';return}
+  var h='<div class="pager">';
+  if(pg.page>0)h+='<button class="btn btn-sm btn-o" data-pg="'+(pg.page-1)+'">◀ 이전</button>';
+  h+='<span class="pager-info">'+(pg.page+1)+' / '+pg.totalPages+' ('+pg.total+'건)</span>';
+  if(pg.hasMore)h+='<button class="btn btn-sm btn-o" data-pg="'+(pg.page+1)+'">다음 ▶</button>';
+  h+='</div>';
+  el.innerHTML=h;
+  el.querySelectorAll('[data-pg]').forEach(function(b){b.addEventListener('click',function(){onPage(+b.getAttribute('data-pg'))})});
+}
+
 /* ===== WCAG 대비 자동 점검 ===== */
 var ContrastCheck=(function(){
   function luminance(r,g,b){

@@ -577,6 +577,17 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em}
   .fbar input[type="date"],.fbar input[type="month"],.fbar select{min-height:40px;font-size:14px}
   .fg input,.fg select,.fg textarea,.lf input,.lf select,.login-input{min-height:44px;font-size:16px}
   .pb{padding:12px 20px;min-height:44px}
+  /* 44px 터치 타깃 보강 */
+  .filter-btn{min-height:44px;min-width:44px;padding:8px 14px}
+  .hd-tab{min-height:44px;padding:12px 16px}
+  .mo-x{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+  .sb-group{min-height:44px;display:flex;align-items:center}
+  .bd{min-height:28px;padding:4px 10px}
+  .u-tab-btn{min-height:44px;min-width:44px}
+  .u-input-sm,.u-input-md,.u-input-md13,.u-input-pill,.u-select,.u-select-sm,.u-input-bdr,.u-input-bdr6{min-height:44px}
+  [id="sbShipBadge"]{min-width:24px;min-height:24px}
+  .det-btn{min-height:44px;padding:10px 14px}
+  .wb{min-height:44px;padding:10px 18px}
 }
 
 /* ============================================

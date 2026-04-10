@@ -7,8 +7,8 @@ try{var _rptEl=$('rptDD');if(_rptEl)_rptEl.value=td();}catch(e){}
 /* ========== Navigation ========== */
 function goTab(t,b){
   var parent=b?b.closest('.module-page')||document:document;
-  parent.querySelectorAll('.hd-tab').forEach(x=>x.classList.remove('on'));
-  if(b)b.classList.add('on');
+  parent.querySelectorAll('.hd-tab').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});
+  if(b){b.classList.add('on');b.setAttribute('aria-selected','true')}
   parent.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
   var tab=$('t-'+t);if(tab)tab.classList.add('on');
   var tabFn={

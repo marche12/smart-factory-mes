@@ -39,31 +39,31 @@
 <div style="margin-bottom:16px"><div style="font-size:16px;font-weight:800;color:#16A34A;padding:8px 12px;background:#DCFCE7;border-left:4px solid #16A34A;margin-bottom:8px">금일 완료 <span id="wCntDone" style="font-size:13px;color:#6B7280"></span></div><div id="wQueueDone"></div></div>
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
-<div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open">수주<span class="sb-arrow">▶</span></div>
+<div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
+<div class="sb-group open" role="button" aria-expanded="true">수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order">수주관리</button>
 <button class="sb-item" data-mod="mes-wo">작업지시서</button>
 </div>
-<div class="sb-group open">생산<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" role="button" aria-expanded="true">생산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-dash">생산현황</button>
 <button class="sb-item" data-mod="mes-plan">생산계획</button>
 <button class="sb-item" data-mod="mes-worker">작업자 현황</button>
 <button class="sb-item" data-mod="mes-monitor" data-ready="false">현장 모니터</button>
 </div>
-<div class="sb-group open">출고<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" role="button" aria-expanded="true">출고<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 </div>
-<div class="sb-group">구매/자재<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-income">입고</button>
 <button class="sb-item" data-mod="mat-stock">재고</button>
 <button class="sb-item" data-mod="mat-po">발주서</button>
 <button class="sb-item" data-mod="mat-bom">BOM</button>
 </div>
-<div class="sb-group">매출/회계<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">매출/회계<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="acc-sales">매출</button>
 <button class="sb-item" data-mod="acc-purchase">매입</button>
@@ -72,28 +72,28 @@
 <button class="sb-item" data-mod="acc-cashflow">입출금</button>
 <button class="sb-item" data-mod="acc-closing">외상 마감</button>
 </div>
-<div class="sb-group">인사/급여<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="hr-emp">직원</button>
 <button class="sb-item" data-mod="hr-att">출퇴근</button>
 <button class="sb-item" data-mod="hr-pay">급여</button>
 <button class="sb-item" data-mod="hr-leave">연차</button>
 </div>
-<div class="sb-group">경영분석<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">경영분석<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="biz-trend">추이</button>
 <button class="sb-item" data-mod="biz-rank">순위</button>
 <button class="sb-item" data-mod="biz-cost">원가</button>
 <button class="sb-item" data-mod="mes-rpt">보고서</button>
 </div>
-<div class="sb-group">품질/기타<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">품질/기타<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-inspect">검사</button>
 <button class="sb-item" data-mod="qc-equip">설비</button>
 <button class="sb-item" data-mod="qc-quote">견적</button>
 <button class="sb-item" data-mod="qc-approval">결재</button>
 </div>
-<div class="sb-group">관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-cli">거래처</button>
 <button class="sb-item" data-mod="mes-vendor">인쇄소</button>
@@ -104,11 +104,11 @@
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
 <div class="main-area"><div class="main-header">
-<button onclick="document.getElementById('sidebar').classList.toggle('open')" class="mob-toggle" aria-label="메뉴 열기">≡</button>
+<button onclick="var s=document.getElementById('sidebar');s.classList.toggle('open');this.setAttribute('aria-expanded',s.classList.contains('open'))" class="mob-toggle" aria-label="메뉴 열기" aria-expanded="false">≡</button>
 <span id="mainBreadcrumb" style="font-size:13px;color:var(--txt3);font-weight:400">MES</span><span style="font-size:13px;color:var(--txt3);margin:0 6px">›</span><h2 id="mainTitle" style="font-size:17px;font-weight:600;color:var(--txt)">생산현황</h2>
 <div style="display:flex;align-items:center;margin-left:auto;gap:4px">
 <div style="position:relative" id="notiWrap">
-<button class="noti-bell" onclick="toggleNotiPanel()">
+<button class="noti-bell" onclick="toggleNotiPanel()" aria-label="알림">
 <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
 <span class="noti-badge" id="notiBadge"></span>
 </button>
@@ -119,7 +119,7 @@
 </div>
 <button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">＋ 작업지시서</button><button onclick="exportPDF()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">PDF</button><button onclick="autoCSV()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">CSV</button><div class="header-right"><span id="headerDate"></span></div>
 </div></div>
-<div class="main-content">
+<div class="main-content" role="main">
 <div class="module-page" id="pg-mes-admin"></div>
 <div class="module-page" id="pg-mes-monitor">
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:20px;color:var(--txt3)">
@@ -397,11 +397,11 @@
 <div class="module-page" id="pg-acc-sales"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">매출/회계</span>
-  <div class="hd-tabs">
-    <button class="hd-tab on" data-tab="sales">매출 장부</button>
-    <button class="hd-tab" data-tab="purchase">매입 장부</button>
-    <button class="hd-tab" data-tab="pl">손익 현황</button>
-    <button class="hd-tab" data-tab="tax">세금계산서</button>
+  <div class="hd-tabs" role="tablist">
+    <button class="hd-tab on" data-tab="sales" role="tab" aria-selected="true">매출 장부</button>
+    <button class="hd-tab" data-tab="purchase" role="tab" aria-selected="false">매입 장부</button>
+    <button class="hd-tab" data-tab="pl" role="tab" aria-selected="false">손익 현황</button>
+    <button class="hd-tab" data-tab="tax" role="tab" aria-selected="false">세금계산서</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -525,11 +525,11 @@
 <div class="module-page" id="pg-hr-emp"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">인사/급여</span>
-  <div class="hd-tabs">
-    <button class="hd-tab on" data-tab="emp">직원 정보</button>
-    <button class="hd-tab" data-tab="att">출퇴근 기록</button>
-    <button class="hd-tab" data-tab="pay">급여 관리</button>
-    <button class="hd-tab" data-tab="leave">연차/휴가</button>
+  <div class="hd-tabs" role="tablist">
+    <button class="hd-tab on" data-tab="emp" role="tab" aria-selected="true">직원 정보</button>
+    <button class="hd-tab" data-tab="att" role="tab" aria-selected="false">출퇴근 기록</button>
+    <button class="hd-tab" data-tab="pay" role="tab" aria-selected="false">급여 관리</button>
+    <button class="hd-tab" data-tab="leave" role="tab" aria-selected="false">연차/휴가</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -680,11 +680,11 @@
 <div class="module-page" id="pg-biz-trend"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">경영분석</span>
-  <div class="hd-tabs">
-    <button class="hd-tab on" data-tab="trend">매출/매입 추이</button>
-    <button class="hd-tab" data-tab="rank">거래처 순위</button>
-    <button class="hd-tab" data-tab="cost">원가/이익률</button>
-    <button class="hd-tab" data-tab="productivity">생산성 분석</button>
+  <div class="hd-tabs" role="tablist">
+    <button class="hd-tab on" data-tab="trend" role="tab" aria-selected="true">매출/매입 추이</button>
+    <button class="hd-tab" data-tab="rank" role="tab" aria-selected="false">거래처 순위</button>
+    <button class="hd-tab" data-tab="cost" role="tab" aria-selected="false">원가/이익률</button>
+    <button class="hd-tab" data-tab="productivity" role="tab" aria-selected="false">생산성 분석</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -795,11 +795,11 @@
 <div class="module-page" id="pg-qc-inspect"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
-  <div class="hd-tabs">
-    <button class="hd-tab on" data-tab="qc">품질검사</button>
-    <button class="hd-tab" data-tab="equip">설비관리</button>
-    <button class="hd-tab" data-tab="quote">견적서</button>
-    <button class="hd-tab" data-tab="approval">전자결재</button>
+  <div class="hd-tabs" role="tablist">
+    <button class="hd-tab on" data-tab="qc" role="tab" aria-selected="true">품질검사</button>
+    <button class="hd-tab" data-tab="equip" role="tab" aria-selected="false">설비관리</button>
+    <button class="hd-tab" data-tab="quote" role="tab" aria-selected="false">견적서</button>
+    <button class="hd-tab" data-tab="approval" role="tab" aria-selected="false">전자결재</button>
   </div>
   <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
 </div>
@@ -1265,7 +1265,7 @@
 <!-- 이력조회 상세 모달 -->
 <div id="lotDetMo" class="mo-bg" onclick="if(event.target===this)cMo('lotDetMo')" style="display:none">
 <div class="cmb" style="width:620px;max-height:88vh;overflow-y:auto">
-<div class="mo-hd"><h3 id="lotDetTitle">생산 이력 상세</h3><button class="mo-x" onclick="cMo('lotDetMo')">&times;</button></div>
+<div class="mo-hd"><h3 id="lotDetTitle">생산 이력 상세</h3><button class="mo-x" onclick="cMo('lotDetMo')" aria-label="닫기">&times;</button></div>
 <div id="lotDetC" style="padding:16px 20px"></div>
 </div>
 </div>
@@ -1829,7 +1829,7 @@
 </div></div>
 <div id="mrpMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('mrpMo')"><div class="mo" style="max-width:600px"></div></div>
 <div id="vendorMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('vendorMo')"><div class="mo" style="max-width:500px">
-<div class="mo-t">인쇄소 등록<button class="mo-x" onclick="cMo('vendorMo')">×</button></div>
+<div class="mo-t">인쇄소 등록<button class="mo-x" onclick="cMo('vendorMo')" aria-label="닫기">×</button></div>
 <div class="mo-b">
 <div class="fr" style="grid-template-columns:1fr 1fr">
 <div class="fg"><label>인쇄소명 *</label><input id="vdNm" placeholder="예: 프리미엄인쇄"></div>

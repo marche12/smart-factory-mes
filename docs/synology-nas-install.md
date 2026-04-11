@@ -1,10 +1,24 @@
 # 시놀로지 NAS 설치 가이드 (팩플로우 MES)
 
+> 빠른 설치가 필요하면 → [퀵가이드 (nas-quick-install.md)](nas-quick-install.md) 참고
+
 ## 사전 요구사항
 
 - 시놀로지 NAS (DS220+, DS420+, DS920+ 등 x86 모델)
 - DSM 7.2 이상
 - Container Manager 패키지 설치 완료
+- **반드시 NAS와 같은 네트워크(같은 공유기)에 연결된 PC에서 작업**
+  - 집에서 사무실 NAS 직접 접속 불가 (VPN 또는 QuickConnect 필요)
+
+---
+
+## NAS IP 주소 찾기
+
+설치 전 NAS의 IP 주소를 알아야 합니다:
+
+1. 브라우저에서 `https://find.synology.com` 접속 → 자동 검색
+2. 또는 이미 DSM에 접속 중이면 브라우저 주소창의 IP 확인
+3. 또는 PowerShell에서 `ping NAS이름` 실행
 
 ---
 
@@ -12,8 +26,29 @@
 
 ### 1단계: SSH 활성화
 
-1. DSM 접속 → **제어판** → **터미널 및 SNMP**
-2. **SSH 서비스 활성화** 체크 → 포트 22 → 적용
+1. 브라우저에서 DSM 접속: `http://NAS_IP:5000`
+2. **제어판** → **터미널 및 SNMP** → **터미널** 탭
+3. **SSH 서비스 활성화** 체크 → 포트 22 → 적용
+
+### SSH 접속 방법
+
+**Windows (PowerShell 또는 CMD):**
+```bash
+ssh 관리자계정@NAS_IP
+# 예: ssh admin@192.168.0.15
+# 비밀번호는 화면에 안 보이는 게 정상 — 그냥 입력 후 Enter
+```
+
+**Mac (터미널):**
+```bash
+ssh admin@192.168.0.15
+```
+
+**root 권한 전환 (Docker 명령에 필요):**
+```bash
+sudo -i
+# 비밀번호 다시 입력
+```
 
 ### 2단계: 프로젝트 파일 업로드
 

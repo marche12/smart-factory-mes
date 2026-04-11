@@ -405,6 +405,141 @@ def delete_backup_file(filename: str, user=Depends(require_admin)):
     return JSONResponse(content={"ok": True, "deleted": deleted})
 
 
+# --- Popbill 전자세금계산서 API Proxy ---
+
+@app.post("/api/popbill/issue")
+async def popbill_issue(request: Request, user=Depends(get_current_user)):
+    """Proxy endpoint for Popbill electronic tax invoice issuance."""
+    import urllib.request
+    import hmac as hmac_mod
+    import base64
+
+    body = await request.json()
+
+    # Load Popbill config from DB
+    config_raw = db.get_data("ino_popbillConfig")
+    if not config_raw:
+        return JSONResponse(content={"ok": False, "error": "팝빌 API 설정이 없습니다. 시스템관리에서 설정해주세요."})
+
+    config = json.loads(config_raw)
+    link_id = config.get("linkId", "")
+    secret_key = config.get("secretKey", "")
+    corp_num = config.get("corpNum", "")
+    is_test = config.get("isTest", True)
+
+    if not link_id or not secret_key or not corp_num:
+        return JSONResponse(content={"ok": False, "error": "팝빌 LinkID, SecretKey, 사업자번호를 모두 입력해주세요."})
+
+    # Company info
+    co_raw = db.get_data("ino_co")
+    co = json.loads(co_raw) if co_raw else {}
+
+    auth_url = "https://auth.linkhub.co.kr"
+    api_url = "https://popbill-test.linkhub.co.kr" if is_test else "https://popbill.linkhub.co.kr"
+    service_id = "POPBILL_TEST" if is_test else "POPBILL"
+
+    try:
+        # Step 1: Get auth token
+        token_body = json.dumps({"access_id": corp_num, "scope": ["member", "110"]}).encode("utf-8")
+        content_md5 = base64.b64encode(hashlib.md5(token_body).digest()).decode()
+        dt_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        sign_target = f"POST\n{content_md5}\n{dt_str}\n/{service_id}/Token\n"
+        signature = base64.b64encode(
+            hmac_mod.new(base64.b64decode(secret_key), sign_target.encode(), hashlib.sha256).digest()
+        ).decode()
+
+        token_req = urllib.request.Request(
+            f"{auth_url}/{service_id}/Token",
+            data=token_body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"LINKHUB {link_id} {signature}",
+                "x-lh-date": dt_str,
+                "x-lh-version": "2.0",
+                "x-lh-forwarded": "*",
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(token_req, timeout=10) as resp:
+            token_data = json.loads(resp.read().decode())
+        session_token = token_data.get("session_token", "")
+
+        if not session_token:
+            return JSONResponse(content={"ok": False, "error": "인증 토큰 발급 실패: " + json.dumps(token_data)})
+
+        # Step 2: Build tax invoice object
+        mgt_key = f"MES-{body.get('invoiceId', '')[:20]}"
+        invoice = {
+            "writeDate": body.get("writeDate", ""),
+            "chargeDirection": "정과금",
+            "issueType": "정발행",
+            "purposeType": body.get("purposeType", "영수"),
+            "taxType": "과세",
+            "invoicerCorpNum": corp_num,
+            "invoicerCorpName": co.get("nm", ""),
+            "invoicerCEOName": co.get("ceo", ""),
+            "invoicerAddr": co.get("addr", ""),
+            "invoicerBizType": co.get("bizType", ""),
+            "invoicerBizClass": co.get("bizClass", ""),
+            "invoicerMgtKey": mgt_key,
+            "invoiceeType": "사업자",
+            "invoiceeCorpNum": body.get("invoiceeCorpNum", ""),
+            "invoiceeCorpName": body.get("invoiceeCorp", ""),
+            "invoiceeCEOName": body.get("invoiceeCeo", ""),
+            "invoiceeAddr": body.get("invoiceeAddr", ""),
+            "supplyCostTotal": body.get("supplyCost", "0"),
+            "taxTotal": body.get("tax", "0"),
+            "totalAmount": body.get("totalAmount", "0"),
+            "detailList": [{
+                "serialNum": 1,
+                "purchaseDT": body.get("writeDate", ""),
+                "itemName": body.get("itemName", ""),
+                "qty": body.get("qty", 1),
+                "unitCost": body.get("unitCost", "0"),
+                "supplyCost": body.get("supplyCost", "0"),
+                "tax": body.get("tax", "0"),
+                "remark": body.get("note", ""),
+            }]
+        }
+
+        # Step 3: Issue (RegistIssue)
+        issue_body = json.dumps(invoice).encode("utf-8")
+        issue_req = urllib.request.Request(
+            f"{api_url}/Taxinvoice",
+            data=issue_body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {session_token}",
+                "x-pb-userid": "",
+                "X-HTTP-Method-Override": "ISSUE",
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(issue_req, timeout=15) as resp:
+            result = json.loads(resp.read().decode())
+
+        if result.get("code", 0) == 1:
+            db.add_audit_log(user.get("sub"), user.get("name"), "etax_issue", "taxinvoice",
+                             mgt_key, f"{body.get('invoiceeCorp','')} {body.get('totalAmount','')}원",
+                             get_client_ip(request))
+            return JSONResponse(content={
+                "ok": True,
+                "ntsConfirmNum": result.get("ntsConfirmNum", ""),
+                "message": result.get("message", "발행 성공")
+            })
+        else:
+            return JSONResponse(content={
+                "ok": False,
+                "error": f"[{result.get('code','')}] {result.get('message','알 수 없는 오류')}"
+            })
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        return JSONResponse(content={"ok": False, "error": f"API 오류 ({e.code}): {error_body}"})
+    except Exception as e:
+        return JSONResponse(content={"ok": False, "error": f"서버 오류: {str(e)}"})
+
+
 # --- Serve Frontend ---
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")

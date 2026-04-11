@@ -112,14 +112,204 @@ function rTx(){
   $('txC').textContent=ma.length;$('txS').textContent=fmt(ma.reduce((s,r)=>s+(r.supply||0),0))+'원';
   $('txV').textContent=fmt(ma.reduce((s,r)=>s+(r.vat||0),0))+'원';
   $('txT').textContent=fmt(ma.reduce((s,r)=>s+(r.supply||0)+(r.vat||0),0))+'원';
+  var stBadge=function(m){
+    if(m==='전자발행')return '<span class="bd" style="background:#EFF6FF;color:#1E40AF;border-color:#BFDBFE">⚡전자</span>';
+    if(m==='전자실패')return '<span class="bd" style="background:#FEE2E2;color:#DC2626;border-color:#FECACA">실패</span>';
+    return '<span class="bd" style="background:#F1F5F9;color:#64748B;border-color:#E2E8F0">📄종이</span>';
+  };
   $('txTbl').querySelector('tbody').innerHTML=fl.map(r=>{const tot=(r.supply||0)+(r.vat||0);
-    return `<tr><td>${r.dt}</td><td><span class="bd ${r.type==='매출'?'bd-p':'bd-o'}">${r.type}</span></td><td style="font-weight:700">${r.cli}</td><td>${r.item||'-'}</td><td style="text-align:right">${fmt(r.supply)}</td><td style="text-align:right">${fmt(r.vat)}</td><td style="text-align:right;font-weight:700">${fmt(tot)}</td><td>${r.note||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eTxr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dTxr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+    return `<tr><td>${r.dt}</td><td><span class="bd ${r.type==='매출'?'bd-p':'bd-o'}">${r.type}</span></td><td style="font-weight:700">${r.cli}</td><td>${r.item||'-'}</td><td style="text-align:right">${fmt(r.supply)}</td><td style="text-align:right">${fmt(r.vat)}</td><td style="text-align:right;font-weight:700">${fmt(tot)}</td><td>${stBadge(r.method||'종이')}</td><td><button class="btn btn-sm btn-o" onclick="eTxr('${r.id}')">수정</button>${r.method!=='전자발행'?' <button class="btn btn-sm" style="background:#1E40AF;color:#fff" onclick="reissueElecTx(\''+r.id+'\')">전자발행</button>':''} <button class="btn btn-sm btn-d" onclick="dTxr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="9" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
 }
-function openTxM(){['txId','txItem','txBiz','txNt'].forEach(x=>$(x).value='');$('txDt').value=td();$('txTpS').value='매출';$('txCli').value='';$('txSup').value='';$('txVat').value='';$('txTot').value='';$('txMoT').textContent='세금계산서 등록';oMo('txMo2')}
-function eTxr(id){const r=DB.g('taxInvoice').find(x=>x.id===id);if(!r)return;$('txId').value=r.id;$('txDt').value=r.dt;$('txTpS').value=r.type;$('txCli').value=r.cli;$('txBiz').value=r.bizNo||'';$('txItem').value=r.item||'';$('txSup').value=r.supply;$('txVat').value=r.vat;$('txTot').value=fmt((r.supply||0)+(r.vat||0))+'원';$('txNt').value=r.note||'';$('txMoT').textContent='수정';oMo('txMo2')}
-function saveTx(){const c=$('txCli').value.trim(),s=+$('txSup').value;if(!c){toast('거래처','err');return}if(!s){toast('공급가액','err');return}const id=$('txId').value||gid();const v=Math.round(s*0.1);const rec={id,dt:$('txDt').value,type:$('txTpS').value,cli:c,bizNo:$('txBiz').value,item:$('txItem').value,supply:s,vat:v,note:$('txNt').value,cat:nw()};const ls=DB.g('taxInvoice');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('taxInvoice',ls);cMo('txMo2');rTx();toast('저장','ok')}
+function toggleTxMethod(){
+  var method=document.querySelector('input[name="txMethod"]:checked').value;
+  var isElec=method==='electronic';
+  $('txPrintBtn').style.display=isElec?'none':'';
+  $('txElecBtn').style.display=isElec?'':'none';
+  $('txElecInfo').style.display=isElec?'':'none';
+  $('txElecLabel').style.borderColor=isElec?'var(--pri)':'var(--bdr)';
+  $('txElecLabel').style.background=isElec?'var(--pri-l)':'';
+  document.querySelector('input[name="txMethod"][value="paper"]').closest('label').style.borderColor=isElec?'var(--bdr)':'var(--pri)';
+  document.querySelector('input[name="txMethod"][value="paper"]').closest('label').style.background=isElec?'':'var(--pri-l)';
+  if(isElec){
+    var cfg=DB.g1('popbillConfig')||{};
+    $('txElecStatus').textContent=cfg.linkId?'✅ 팝빌 연동 설정됨 (LinkID: '+cfg.linkId+')':'⚠️ 시스템관리 → 팝빌 API 설정이 필요합니다';
+  }
+}
+function openTxM(){['txId','txItem','txBiz','txNt','txCeo','txAddr'].forEach(x=>{if($(x))$(x).value=''});$('txDt').value=td();$('txTpS').value='매출';$('txCli').value='';$('txSup').value='';$('txVat').value='';$('txTot').value='';if($('txQty'))$('txQty').value=1;if($('txPrice'))$('txPrice').value='';if($('txPurpose'))$('txPurpose').value='영수';document.querySelector('input[name="txMethod"][value="paper"]').checked=true;toggleTxMethod();$('txMoT').textContent='세금계산서 등록';oMo('txMo2')}
+function eTxr(id){const r=DB.g('taxInvoice').find(x=>x.id===id);if(!r)return;$('txId').value=r.id;$('txDt').value=r.dt;$('txTpS').value=r.type;$('txCli').value=r.cli;$('txBiz').value=r.bizNo||'';if($('txCeo'))$('txCeo').value=r.ceo||'';if($('txAddr'))$('txAddr').value=r.addr||'';$('txItem').value=r.item||'';if($('txQty'))$('txQty').value=r.qty||1;if($('txPrice'))$('txPrice').value=r.price||'';$('txSup').value=r.supply;$('txVat').value=r.vat;$('txTot').value=fmt((r.supply||0)+(r.vat||0))+'원';$('txNt').value=r.note||'';if($('txPurpose'))$('txPurpose').value=r.purpose||'영수';var m=(r.method==='전자발행')?'electronic':'paper';document.querySelector('input[name="txMethod"][value="'+m+'"]').checked=true;toggleTxMethod();$('txMoT').textContent='수정';oMo('txMo2')}
+function saveTx(){const c=$('txCli').value.trim(),s=+$('txSup').value;if(!c){toast('거래처','err');return}if(!s){toast('공급가액','err');return}const id=$('txId').value||gid();const v=Math.round(s*0.1);const method=document.querySelector('input[name="txMethod"]:checked').value==='electronic'?'전자대기':'종이';const rec={id,dt:$('txDt').value,type:$('txTpS').value,cli:c,bizNo:$('txBiz').value,ceo:$('txCeo')?$('txCeo').value:'',addr:$('txAddr')?$('txAddr').value:'',item:$('txItem').value,qty:+($('txQty')?$('txQty').value:1)||1,price:+($('txPrice')?$('txPrice').value:0)||0,supply:s,vat:v,purpose:$('txPurpose')?$('txPurpose').value:'영수',method:method,note:$('txNt').value,cat:nw()};const ls=DB.g('taxInvoice');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('taxInvoice',ls);cMo('txMo2');rTx();toast('저장','ok')}
 function dTxr(id){if(!confirm('삭제?'))return;DB.s('taxInvoice',DB.g('taxInvoice').filter(x=>x.id!==id));rTx();toast('삭제','ok')}
-function printTx(){const c=$('txCli').value.trim(),s=+$('txSup').value;if(!c||!s){toast('거래처/공급가액 필요','err');return}const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};const v=Math.round(s*0.1);const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>세금계산서</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:12px;padding:20mm}.title{text-align:center;font-size:24px;font-weight:800;margin-bottom:24px;letter-spacing:8px;color:#1E40AF}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:8px;font-size:12px}th{background:#E5E7EB;font-weight:700;width:100px}@media print{@page{size:A4;margin:15mm}}</style></head><body><div class="title">세 금 계 산 서</div><table><tr><th>공급자</th><td>${co.nm}</td><th>공급받는자</th><td>${c}</td></tr><tr><th>사업자번호</th><td></td><th>사업자번호</th><td>${$('txBiz').value||''}</td></tr><tr><th>주소</th><td>${co.addr||''}</td><th>품목</th><td>${$('txItem').value||''}</td></tr></table><table style="margin-top:16px"><tr><th>공급가액</th><td style="text-align:right;font-size:16px;font-weight:700">${fmt(s)} 원</td></tr><tr><th>세액 (10%)</th><td style="text-align:right;font-size:16px">${fmt(v)} 원</td></tr><tr><th>합계</th><td style="text-align:right;font-size:20px;font-weight:800;color:#1E40AF">${fmt(s+v)} 원</td></tr></table><div style="margin-top:16px;font-size:11px">발행일: ${$('txDt').value}${$('txNt').value?' | 비고: '+$('txNt').value:''}</div></body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
+
+/* 종이 세금계산서 인쇄 */
+function printTx(){
+  const c=$('txCli').value.trim(),s=+$('txSup').value;
+  if(!c||!s){toast('거래처/공급가액 필요','err');return}
+  const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};
+  const v=Math.round(s*0.1);
+  const qty=$('txQty')?$('txQty').value:'1';
+  const price=$('txPrice')?$('txPrice').value:s;
+  const purpose=$('txPurpose')?$('txPurpose').value:'영수';
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>세금계산서</title>');
+  w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Malgun Gothic",sans-serif;font-size:11px;padding:15mm}');
+  w.document.write('.wrap{border:3px solid #1E40AF;padding:0}.title-row{display:flex;background:#1E40AF;color:#fff}');
+  w.document.write('.title-col{flex:1;text-align:center;padding:8px;font-size:20px;font-weight:900;letter-spacing:6px}');
+  w.document.write('.title-side{width:40px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:13px;font-weight:700;letter-spacing:4px}');
+  w.document.write('.half{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid #1E40AF}');
+  w.document.write('.half>div{padding:0}.half>div:first-child{border-right:2px solid #1E40AF}');
+  w.document.write('table{width:100%;border-collapse:collapse}th,td{border:1px solid #94A3B8;padding:5px 7px;font-size:11px}');
+  w.document.write('th{background:#E8F0FE;font-weight:700;text-align:center;white-space:nowrap}');
+  w.document.write('.amt-tbl td{text-align:right}.amt-tbl th{width:80px}');
+  w.document.write('.total{font-size:16px;font-weight:900;color:#1E40AF}');
+  w.document.write('.purpose{display:flex;gap:20px;padding:6px 10px;font-size:12px;border-bottom:1px solid #94A3B8}');
+  w.document.write('.purpose span{font-weight:700}.ck{color:#1E40AF;font-weight:900}');
+  w.document.write('@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body>');
+  w.document.write('<div class="wrap">');
+  w.document.write('<div class="title-row"><div class="title-side" style="background:#1565C0;color:#fff">공급자</div><div class="title-col">세 금 계 산 서</div><div class="title-side" style="background:#1565C0;color:#fff">공급받는자</div></div>');
+  // 공급자/공급받는자 정보
+  w.document.write('<div class="half"><div><table>');
+  w.document.write('<tr><th>등록번호</th><td colspan="3">'+(co.bizNo||'')+'</td></tr>');
+  w.document.write('<tr><th>상호</th><td>'+(co.nm||'')+'</td><th>성명</th><td>'+(co.ceo||'')+'</td></tr>');
+  w.document.write('<tr><th>주소</th><td colspan="3">'+(co.addr||'')+'</td></tr>');
+  w.document.write('<tr><th>업태</th><td>'+(co.bizType||'')+'</td><th>종목</th><td>'+(co.bizClass||'')+'</td></tr>');
+  w.document.write('</table></div><div><table>');
+  w.document.write('<tr><th>등록번호</th><td colspan="3">'+($('txBiz').value||'')+'</td></tr>');
+  w.document.write('<tr><th>상호</th><td>'+c+'</td><th>성명</th><td>'+($('txCeo')?$('txCeo').value:'')+'</td></tr>');
+  w.document.write('<tr><th>주소</th><td colspan="3">'+($('txAddr')?$('txAddr').value:'')+'</td></tr>');
+  w.document.write('<tr><th>업태</th><td></td><th>종목</th><td></td></tr>');
+  w.document.write('</table></div></div>');
+  // 금액
+  w.document.write('<table class="amt-tbl"><tr><th>공급가액</th><td style="width:30%"><span class="total">'+fmt(s)+'</span> 원</td><th>세액</th><td>'+fmt(v)+' 원</td></tr></table>');
+  // 품목
+  w.document.write('<table><thead><tr><th>월일</th><th>품목</th><th>규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th><th>비고</th></tr></thead><tbody>');
+  var dtShort=$('txDt').value?$('txDt').value.slice(5):'';
+  w.document.write('<tr><td style="text-align:center">'+dtShort+'</td><td>'+($('txItem').value||'-')+'</td><td></td><td style="text-align:right">'+qty+'</td><td style="text-align:right">'+fmt(+price)+'</td><td style="text-align:right">'+fmt(s)+'</td><td style="text-align:right">'+fmt(v)+'</td><td>'+($('txNt').value||'')+'</td></tr>');
+  // 빈 행 3줄
+  for(var i=0;i<3;i++)w.document.write('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
+  w.document.write('</tbody></table>');
+  // 합계/영수청구
+  w.document.write('<table class="amt-tbl"><tr><th>합계금액</th><td colspan="3"><span class="total">'+fmt(s+v)+'</span> 원</td><th>현금</th><td></td><th>수표</th><td></td></tr>');
+  w.document.write('<tr><th>'+purpose+'</th><td colspan="7" style="text-align:left;font-size:12px">위 금액을 '+(purpose==='영수'?'영수':'청구')+'함</td></tr></table>');
+  w.document.write('</div></body></html>');
+  w.document.close();setTimeout(function(){w.print()},300);
+}
+
+/* 전자세금계산서 발행 (팝빌 API) */
+function issueElecTx(){
+  var c=$('txCli').value.trim(),s=+$('txSup').value;
+  if(!c||!s){toast('거래처/공급가액 필요','err');return}
+  var cfg=DB.g1('popbillConfig')||{};
+  if(!cfg.linkId||!cfg.secretKey){toast('시스템관리에서 팝빌 API 설정을 먼저 해주세요','err');return}
+  if(!$('txBiz').value.trim()){toast('공급받는자 사업자번호가 필요합니다','err');return}
+  // 먼저 저장
+  saveTx();
+  var ls=DB.g('taxInvoice');var last=ls[ls.length-1];
+  if(!last)return;
+  // 서버로 전자발행 요청
+  var body={
+    invoiceId:last.id,
+    writeDate:last.dt.replace(/-/g,''),
+    type:last.type,
+    purposeType:last.purpose||'영수',
+    invoiceeCorp:last.cli,
+    invoiceeCorpNum:last.bizNo.replace(/-/g,''),
+    invoiceeCeo:last.ceo||'',
+    invoiceeAddr:last.addr||'',
+    itemName:last.item||'',
+    qty:last.qty||1,
+    unitCost:String(last.price||last.supply),
+    supplyCost:String(last.supply),
+    tax:String(last.vat),
+    totalAmount:String(last.supply+last.vat),
+    note:last.note||''
+  };
+  toast('전자세금계산서 발행 중...','');
+  authFetch('/api/popbill/issue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()})
+    .then(function(res){
+      if(res.ok){
+        last.method='전자발행';last.ntsNum=res.ntsConfirmNum||'';
+        DB.s('taxInvoice',ls);rTx();
+        toast('✅ 전자세금계산서 발행 완료'+(res.ntsConfirmNum?' (승인번호: '+res.ntsConfirmNum+')':''),'ok');
+      } else {
+        last.method='전자실패';DB.s('taxInvoice',ls);rTx();
+        toast('❌ 발행 실패: '+(res.error||'알 수 없는 오류'),'err');
+      }
+    })
+    .catch(function(e){last.method='전자실패';DB.s('taxInvoice',ls);rTx();toast('❌ 서버 오류: '+e.message,'err')});
+}
+
+/* 기존 세금계산서 전자 재발행 */
+function reissueElecTx(id){
+  var ls=DB.g('taxInvoice');var r=ls.find(function(x){return x.id===id});
+  if(!r){toast('데이터 없음','err');return}
+  if(!r.bizNo){toast('사업자번호가 필요합니다. 수정에서 입력해주세요','err');return}
+  var cfg=DB.g1('popbillConfig')||{};
+  if(!cfg.linkId||!cfg.secretKey){toast('시스템관리에서 팝빌 API 설정을 먼저 해주세요','err');return}
+  if(!confirm(r.cli+' - '+fmt(r.supply)+'원 전자발행하시겠습니까?'))return;
+  var body={
+    invoiceId:r.id,writeDate:r.dt.replace(/-/g,''),type:r.type,purposeType:r.purpose||'영수',
+    invoiceeCorp:r.cli,invoiceeCorpNum:(r.bizNo||'').replace(/-/g,''),invoiceeCeo:r.ceo||'',invoiceeAddr:r.addr||'',
+    itemName:r.item||'',qty:r.qty||1,unitCost:String(r.price||r.supply),
+    supplyCost:String(r.supply),tax:String(r.vat),totalAmount:String(r.supply+r.vat),note:r.note||''
+  };
+  toast('전자발행 중...','');
+  authFetch('/api/popbill/issue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(res){return res.json()})
+    .then(function(res){
+      if(res.ok){r.method='전자발행';r.ntsNum=res.ntsConfirmNum||'';DB.s('taxInvoice',ls);rTx();toast('✅ 전자발행 완료','ok')}
+      else{r.method='전자실패';DB.s('taxInvoice',ls);rTx();toast('❌ 실패: '+(res.error||''),'err')}
+    }).catch(function(){toast('서버 오류','err')});
+}
+
+/* 홈택스 일괄업로드용 엑셀 내보내기 */
+function expHometax(){
+  var mo=$('txMo').value||td().slice(0,7);
+  var data=DB.g('taxInvoice').filter(function(r){return r.dt&&r.dt.startsWith(mo)});
+  if(!data.length){toast('해당 월에 세금계산서가 없습니다','err');return}
+  var co=DB.g1('co')||{};
+  // 홈택스 전자세금계산서 일괄발급 양식 (CSV)
+  var csv='\uFEFF';
+  csv+='작성일자,공급자사업자번호,공급자상호,공급자대표자,공급자주소,공급자업태,공급자종목,';
+  csv+='공급받는자사업자번호,공급받는자상호,공급받는자대표자,공급받는자주소,';
+  csv+='품목명,규격,수량,단가,공급가액,세액,합계금액,영수청구,비고\n';
+  data.forEach(function(r){
+    csv+=(r.dt||'').replace(/-/g,'')+',';
+    csv+=(co.bizNo||'')+','+(co.nm||'')+','+(co.ceo||'')+','+(co.addr||'')+','+(co.bizType||'')+','+(co.bizClass||'')+',';
+    csv+=(r.bizNo||'').replace(/-/g,'')+','+(r.cli||'')+','+(r.ceo||'')+','+(r.addr||'')+',';
+    csv+=(r.item||'')+','+(r.spec||'')+','+(r.qty||1)+','+(r.price||r.supply)+',';
+    csv+=(r.supply||0)+','+(r.vat||0)+','+((r.supply||0)+(r.vat||0))+',';
+    csv+=(r.purpose||'영수')+','+(r.note||'')+'\n';
+  });
+  var b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download='hometax_'+mo+'.csv';a.click();
+  toast('홈택스 일괄발행용 엑셀 다운로드 ('+data.length+'건)','ok');
+}
+
+/* 세금계산서 단가/수량→공급가액 자동계산 */
+function cTax(){
+  var qty=+($('txQty')?$('txQty').value:0)||0;
+  var price=+($('txPrice')?$('txPrice').value:0)||0;
+  var s=+$('txSup').value||0;
+  // 수량×단가가 있으면 공급가액 자동계산
+  if(qty&&price){s=qty*price;$('txSup').value=s}
+  $('txVat').value=Math.round(s*0.1);
+  $('txTot').value=fmt(s+Math.round(s*0.1))+'원';
+}
+
+/* 팝빌 설정 저장/로드 */
+function savePopbillConfig(){
+  var cfg={linkId:$('pbLinkId').value.trim(),secretKey:$('pbSecretKey').value.trim(),corpNum:$('pbCorpNum').value.trim().replace(/-/g,''),isTest:$('pbIsTest').checked};
+  DB.s1('popbillConfig',cfg);toast('팝빌 API 설정 저장 완료','ok');
+}
+function loadPopbillConfig(){
+  var cfg=DB.g1('popbillConfig')||{};
+  if($('pbLinkId'))$('pbLinkId').value=cfg.linkId||'';
+  if($('pbSecretKey'))$('pbSecretKey').value=cfg.secretKey||'';
+  if($('pbCorpNum'))$('pbCorpNum').value=cfg.corpNum||'';
+  if($('pbIsTest'))$('pbIsTest').checked=cfg.isTest!==false;
+}
 
 function expCSV(type){
   let csv='',data;

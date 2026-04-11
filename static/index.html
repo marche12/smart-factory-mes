@@ -40,98 +40,48 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open" role="button" aria-expanded="true">수주<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" role="button" aria-expanded="true">영업관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order">수주관리</button>
-<button class="sb-item" data-mod="mes-wo">작업지시서</button>
-<button class="sb-item" data-mod="mes-order-track">수주진행추적</button>
-<button class="sb-item" data-mod="mes-due">납기관리</button>
+<button class="sb-item" data-mod="qc-quote">견적관리</button>
+<button class="sb-item" data-mod="mes-ship">출고관리<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="qc-claim">클레임</button>
 </div>
-<div class="sb-group open" role="button" aria-expanded="true">생산<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" role="button" aria-expanded="true">생산관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-dash">생산현황</button>
 <button class="sb-item" data-mod="mes-plan">생산계획</button>
-<button class="sb-item" data-mod="mes-worker">작업자 현황</button>
+<button class="sb-item" data-mod="mes-wo">작업지시서</button>
 <button class="sb-item" data-mod="mes-proc-log">공정실적</button>
-<button class="sb-item" data-mod="mes-lot">로트추적</button>
-<button class="sb-item" data-mod="mes-downtime">비가동관리</button>
-<button class="sb-item" data-mod="mes-defect">불량관리</button>
 <button class="sb-item" data-mod="mes-outsource">외주관리</button>
-<button class="sb-item" data-mod="mes-mold-hist">금형이력</button>
-<button class="sb-item" data-mod="mes-oee">OEE</button>
-<button class="sb-item" data-mod="mes-monitor" data-ready="false">현장 모니터</button>
+<button class="sb-item" data-mod="mes-monitor" data-ready="false">현장모니터</button>
 </div>
-<div class="sb-group open" role="button" aria-expanded="true">출고<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">품질/설비<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
-<button class="sb-item" data-mod="ship-partial">부분출고</button>
-<button class="sb-item" data-mod="ship-return">반품관리</button>
-<button class="sb-item" data-mod="ship-inspect">출하검사</button>
+<button class="sb-item" data-mod="qc-inspect">검사관리</button>
+<button class="sb-item" data-mod="mes-defect">불량관리</button>
+<button class="sb-item" data-mod="qc-equip">설비관리</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">구매/자재<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">자재/구매<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mat-income">입고</button>
-<button class="sb-item" data-mod="mat-stock">재고</button>
-<button class="sb-item" data-mod="mat-po">발주서</button>
-<button class="sb-item" data-mod="mat-bom">BOM</button>
-<button class="sb-item" data-mod="mat-safety">안전재고</button>
-<button class="sb-item" data-mod="mat-mrp">MRP</button>
-<button class="sb-item" data-mod="mat-audit">재고실사</button>
-<button class="sb-item" data-mod="mat-price">단가이력</button>
+<button class="sb-item" data-mod="mat-stock">재고관리</button>
+<button class="sb-item" data-mod="mat-po">구매관리</button>
+<button class="sb-item" data-mod="mat-bom">BOM/MRP</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">매출/회계<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">회계/인사<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="acc-sales">매출</button>
-<button class="sb-item" data-mod="acc-purchase">매입</button>
+<button class="sb-item" data-mod="acc-sales">매출/매입</button>
 <button class="sb-item" data-mod="acc-tax">세금계산서</button>
-<button class="sb-item" data-mod="acc-recv">미수/미지급</button>
-<button class="sb-item" data-mod="acc-cashflow">입출금</button>
-<button class="sb-item" data-mod="acc-closing">외상 마감</button>
-<button class="sb-item" data-mod="acc-etax">전자세금계산서</button>
-<button class="sb-item" data-mod="acc-costing">원가분석</button>
-<button class="sb-item" data-mod="acc-aging">채권aging</button>
+<button class="sb-item" data-mod="acc-recv">채권/자금</button>
+<button class="sb-item" data-mod="hr-emp">인사관리</button>
+<button class="sb-item" data-mod="hr-pay">급여관리</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">시스템<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="hr-emp">직원</button>
-<button class="sb-item" data-mod="hr-att">출퇴근</button>
-<button class="sb-item" data-mod="hr-pay">급여</button>
-<button class="sb-item" data-mod="hr-leave">연차</button>
-<button class="sb-item" data-mod="hr-shift">교대스케줄</button>
-<button class="sb-item" data-mod="hr-insurance">4대보험</button>
-</div>
-<div class="sb-group" role="button" aria-expanded="false">경영분석<span class="sb-arrow">▶</span></div>
-<div class="sb-tree">
-<button class="sb-item" data-mod="biz-trend">추이</button>
-<button class="sb-item" data-mod="biz-rank">순위</button>
-<button class="sb-item" data-mod="biz-cost">원가</button>
-<button class="sb-item" data-mod="biz-kpi">실시간KPI</button>
-<button class="sb-item" data-mod="biz-profit">수익성분석</button>
-<button class="sb-item" data-mod="biz-ontime">납기준수율</button>
-<button class="sb-item" data-mod="mes-rpt">보고서</button>
-</div>
-<div class="sb-group" role="button" aria-expanded="false">품질/기타<span class="sb-arrow">▶</span></div>
-<div class="sb-tree">
-<button class="sb-item" data-mod="qc-inspect">검사</button>
-<button class="sb-item" data-mod="qc-equip">설비</button>
-<button class="sb-item" data-mod="qc-claim">클레임</button>
-<button class="sb-item" data-mod="qc-pm">예방보전</button>
-<button class="sb-item" data-mod="qc-breakdown">고장이력</button>
-<button class="sb-item" data-mod="qc-cert">검사성적서</button>
-<button class="sb-item" data-mod="qc-quote">견적</button>
-<button class="sb-item" data-mod="qc-approval">결재</button>
-</div>
-<div class="sb-group" role="button" aria-expanded="false">관리<span class="sb-arrow">▶</span></div>
-<div class="sb-tree">
-<button class="sb-item" data-mod="mes-cli">거래처</button>
-<button class="sb-item" data-mod="mes-vendor">인쇄소</button>
-<button class="sb-item" data-mod="mes-prod">품목</button>
-<button class="sb-item" data-mod="mes-mold">목형</button>
+<button class="sb-item" data-mod="mes-cli">마스터관리</button>
 <button class="sb-item" data-mod="adm-perm">권한관리</button>
-<button class="sb-item" data-mod="adm-backup">백업/복원</button>
-<button class="sb-item" data-mod="adm-audit">감사로그</button>
-<button class="sb-item" data-mod="adm-code">공통코드</button>
-<button class="sb-item" data-mod="mes-queue">설정</button>
+<button class="sb-item" data-mod="adm-backup">시스템관리</button>
+<button class="sb-item" data-mod="biz-kpi">경영분석</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -150,7 +100,9 @@
 </div>
 </div>
 <button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">＋ 작업지시서</button><button onclick="exportPDF()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">PDF</button><button onclick="autoCSV()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">CSV</button><div class="header-right"><span id="headerDate"></span></div>
-</div></div>
+</div>
+<div id="groupTabBar" style="display:none;gap:4px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-wrap:wrap"></div>
+</div>
 <div class="main-content" role="main">
 <div class="module-page" id="pg-mes-admin"></div>
 <div class="module-page" id="pg-mes-monitor">

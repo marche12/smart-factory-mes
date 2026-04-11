@@ -364,6 +364,7 @@ def delete_backup_file(filename: str, user=Depends(require_admin)):
 # --- Serve Frontend ---
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -388,6 +389,14 @@ app.mount("/js", StaticFiles(directory=os.path.join(STATIC_DIR, "js")), name="js
 def serve_index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
+
+# Serve docs (diagrams etc.)
+@app.get("/docs/{filename:path}")
+def serve_docs(filename: str):
+    filepath = os.path.join(DOCS_DIR, filename)
+    if os.path.isfile(filepath):
+        return FileResponse(filepath)
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
 # Serve static assets (icons, manifest, etc.)
 @app.get("/{filename:path}")

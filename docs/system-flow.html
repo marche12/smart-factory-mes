@@ -131,7 +131,10 @@ var nodes = [
 
   // 시스템 (red) - right-bottom
   {id:'master', label:'마스터관리', cat:'sys', color:'#EF4444', x:0.88, y:0.70},
-  {id:'system', label:'시스템', cat:'sys', color:'#EF4444', x:0.88, y:0.86},
+  {id:'system', label:'시스템/백업', cat:'sys', color:'#EF4444', x:0.88, y:0.86},
+
+  // 인쇄양식 (slate) - output
+  {id:'print', label:'인쇄양식', cat:'sys', color:'#EF4444', x:0.48, y:0.86},
 ];
 
 // ============ FLOW DEFINITIONS ============
@@ -247,6 +250,15 @@ var allFlows = [
   {from:'hr',to:'approval',label:'연차/지출 결재',data:'leave,expense→approval',type:'write'},
   {from:'approval',to:'purchase',label:'발주 승인',data:'approved→po확정',type:'write'},
   {from:'approval',to:'ship',label:'반품 승인',data:'approved→반품처리',type:'write'},
+
+  // ===== 인쇄양식 연동 =====
+  {from:'ship',to:'print',label:'거래명세서 인쇄',data:'shipLog→거래명세서',type:'read'},
+  {from:'wo',to:'print',label:'작업지시서 인쇄',data:'wo→작업지시서',type:'read'},
+  {from:'quote',to:'print',label:'견적서 인쇄',data:'quotes→견적서',type:'read'},
+  {from:'inspect',to:'print',label:'검사성적서 인쇄',data:'certs→성적서',type:'read'},
+
+  // ===== 시스템/백업 연동 =====
+  {from:'system',to:'master',label:'마스터 데이터 관리',data:'cli,prod,mold',type:'read'},
 ];
 
 // ============ STEP SCENARIOS ============

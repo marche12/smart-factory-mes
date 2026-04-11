@@ -3,7 +3,10 @@ services:
   mes:
     build: .
     ports:
-      - "8080:8080"
+      - "${MES_PORT:-8080}:8080"
     volumes:
       - ./data:/app/data
+    environment:
+      - JWT_SECRET=packflow-nas-secret-a7c3e9f1b2d4
+      - TZ=Asia/Seoul
     restart: always

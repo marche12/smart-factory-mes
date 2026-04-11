@@ -50,6 +50,7 @@ body{font-family:'Segoe UI',sans-serif;background:#0F172A;color:#E2E8F0;overflow
   <div class="leg-item"><div class="leg-dot" style="background:#EC4899"></div> 인사</div>
   <div class="leg-item"><div class="leg-dot" style="background:#06B6D4"></div> 경영분석</div>
   <div class="leg-item"><div class="leg-dot" style="background:#F97316"></div> 작업자</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#84CC16"></div> 전자결재</div>
   <div class="leg-item"><div class="leg-dot" style="background:#EF4444"></div> 시스템/마스터</div>
   <div style="margin-top:8px;border-top:1px solid #334155;padding-top:8px">
     <div class="leg-item"><div style="width:20px;height:2px;background:#3B82F6"></div> 데이터 흐름</div>
@@ -124,6 +125,9 @@ var nodes = [
 
   // 경영분석 (cyan) - right
   {id:'kpi', label:'경영분석', cat:'biz', color:'#06B6D4', x:0.88, y:0.50},
+
+  // 전자결재 (lime)
+  {id:'approval', label:'전자결재', cat:'approval', color:'#84CC16', x:0.68, y:0.86},
 
   // 시스템 (red) - right-bottom
   {id:'master', label:'마스터관리', cat:'sys', color:'#EF4444', x:0.88, y:0.70},
@@ -235,6 +239,14 @@ var allFlows = [
   {from:'worker',to:'monitor',label:'실시간 작업현황',data:'진행중/완료 현황',type:'write'},
   // 외주관리 → 작업자 (외주 입고확인)
   {from:'outsource',to:'worker',label:'외주 입고확인',data:'외주완료→입고확인',type:'write'},
+
+  // ===== 전자결재 연동 =====
+  {from:'purchase',to:'approval',label:'발주서 결재요청',data:'po→approval',type:'write'},
+  {from:'quote',to:'approval',label:'견적서 결재요청',data:'quotes→approval',type:'write'},
+  {from:'ship',to:'approval',label:'반품 결재요청',data:'returns→approval',type:'write'},
+  {from:'hr',to:'approval',label:'연차/지출 결재',data:'leave,expense→approval',type:'write'},
+  {from:'approval',to:'purchase',label:'발주 승인',data:'approved→po확정',type:'write'},
+  {from:'approval',to:'ship',label:'반품 승인',data:'approved→반품처리',type:'write'},
 ];
 
 // ============ STEP SCENARIOS ============
@@ -311,6 +323,12 @@ var steps = [
     desc: '고객 클레임 접수 → 반품 처리 → 재고 복원 → 원인 분석',
     highlight: ['claim','ship','stock','defect'],
     flowIds: [{from:'claim',to:'ship'},{from:'ship',to:'stock'}]
+  },
+  {
+    title: '13단계: 전자결재 — 발주/견적/반품/연차 승인',
+    desc: '발주서, 견적서, 반품, 연차/지출 요청이 결재를 거쳐 승인되면 해당 모듈에 확정 반영됩니다',
+    highlight: ['purchase','quote','ship','hr','approval'],
+    flowIds: [{from:'purchase',to:'approval'},{from:'quote',to:'approval'},{from:'ship',to:'approval'},{from:'hr',to:'approval'},{from:'approval',to:'purchase'},{from:'approval',to:'ship'}]
   }
 ];
 

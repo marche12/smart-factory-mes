@@ -168,12 +168,94 @@ function rQt(){
 }
 
 /* 전자결재 */
-function rAp(){const filter=$('apFilter').value;const all=DB.g('approvals');const fl=filter?all.filter(r=>r.st===filter):all;$('apPend').textContent=all.filter(r=>r.st==='대기').length;$('apOk').textContent=all.filter(r=>r.st==='승인').length;$('apRej').textContent=all.filter(r=>r.st==='반려').length;$('apTbl').querySelector('tbody').innerHTML=fl.sort((a,b)=>b.dt>a.dt?1:-1).map(r=>{const stBd=r.st==='승인'?'bd-s':r.st==='반려'?'bd-d':'bd-o';return '<tr><td>'+r.dt+'</td><td>'+r.type+'</td><td style="font-weight:700">'+r.title+'</td><td>'+r.req+'</td><td style="text-align:right">'+(r.amt?fmt(r.amt)+'원':'-')+'</td><td><span class="bd '+stBd+'">'+r.st+'</span></td><td>'+(r.st==='대기'?'<button class="btn btn-sm btn-s" onclick="apAction(\''+r.id+'\',\'승인\')">승인</button> <button class="btn btn-sm btn-d" onclick="apAction(\''+r.id+'\',\'반려\')">반려</button>':'')+'<button class="btn btn-sm btn-o" onclick="eAp(\''+r.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="dAp(\''+r.id+'\')">삭제</button></td></tr>'}).join('')||'<tr><td colspan="7" class="empty-cell">내역 없음</td></tr>'}
-function openApM(){['apId','apTitle','apReq','apAmt','apContent'].forEach(x=>$(x).value='');$('apType').value='구매요청';$('apDt').value=td();$('apSt').value='대기';$('apMoT').textContent='결재 요청';oMo('apMo')}
-function eAp(id){const r=DB.g('approvals').find(x=>x.id===id);if(!r)return;$('apId').value=r.id;$('apType').value=r.type;$('apDt').value=r.dt;$('apTitle').value=r.title;$('apReq').value=r.req;$('apAmt').value=r.amt||'';$('apContent').value=r.content||'';$('apSt').value=r.st;$('apMoT').textContent='수정';oMo('apMo')}
-function saveAp(){const title=$('apTitle').value.trim();if(!title){toast('제목','err');return}const id=$('apId').value||gid();const rec={id,type:$('apType').value,dt:$('apDt').value,title,req:$('apReq').value,amt:+$('apAmt').value||0,content:$('apContent').value,st:$('apSt').value};const ls=DB.g('approvals');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('approvals',ls);cMo('apMo');rAp();toast('저장','ok')}
-function apAction(id,st){const ls=DB.g('approvals');const idx=ls.findIndex(x=>x.id===id);if(idx>=0){ls[idx].st=st;DB.s('approvals',ls);rAp();toast(st+' 처리','ok')}}
-function dAp(id){if(!confirm('삭제?'))return;DB.s('approvals',DB.g('approvals').filter(x=>x.id!==id));rAp();toast('삭제','ok')}
+function rAp(){
+  var stFilter=$('apFilter').value;
+  var typeFilter=$('apTypeFilter')?$('apTypeFilter').value:'';
+  var all=DB.g('approvals');
+  var fl=all;
+  if(stFilter)fl=fl.filter(function(r){return r.st===stFilter});
+  if(typeFilter)fl=fl.filter(function(r){return r.type===typeFilter});
+  $('apPend').textContent=all.filter(function(r){return r.st==='대기'}).length;
+  var progEl=$('apProg');if(progEl)progEl.textContent=all.filter(function(r){return r.st==='진행중'}).length;
+  $('apOk').textContent=all.filter(function(r){return r.st==='승인'}).length;
+  $('apRej').textContent=all.filter(function(r){return r.st==='반려'}).length;
+  var myEl=$('apMyCount');
+  if(myEl&&CU){var myPend=all.filter(function(r){return r.st==='대기'&&(r.approver===CU.nm||!r.approver)}).length;myEl.textContent=myPend?'내 결재대기: '+myPend+'건':''}
+  $('apTbl').querySelector('tbody').innerHTML=fl.sort(function(a,b){return b.dt>a.dt?1:-1}).map(function(r){
+    var stBd=r.st==='승인'?'bd-s':r.st==='반려'?'bd-d':r.st==='진행중'?'bd-o':'bd-o';
+    var urgTag=r.urgent?'<span style="color:#EF4444;font-weight:700;margin-right:4px">[긴급]</span>':'';
+    var acts='';
+    if(r.st==='대기'||r.st==='진행중'){
+      acts='<button class="btn btn-sm btn-s" onclick="apActionMo(\''+r.id+'\',\'승인\')">승인</button> <button class="btn btn-sm btn-d" onclick="apActionMo(\''+r.id+'\',\'반려\')">반려</button> ';
+    }
+    acts+='<button class="btn btn-sm btn-o" onclick="eAp(\''+r.id+'\')">상세</button>';
+    if(r.st==='대기')acts+=' <button class="btn btn-sm btn-d" onclick="dAp(\''+r.id+'\')">삭제</button>';
+    return '<tr><td>'+r.dt+'</td><td>'+r.type+'</td><td style="font-weight:700">'+urgTag+r.title+'</td><td>'+r.req+'</td><td>'+(r.approver||'관리자')+'</td><td style="text-align:right">'+(r.amt?fmt(r.amt)+'원':'-')+'</td><td><span class="bd '+stBd+'">'+r.st+'</span></td><td>'+acts+'</td></tr>';
+  }).join('')||'<tr><td colspan="8" class="empty-cell">내역 없음</td></tr>';
+}
+function _fillApproverSelect(){
+  var sel=$('apApprover');if(!sel)return;
+  var users=DB.g('users');
+  sel.innerHTML='<option value="">관리자</option>';
+  users.forEach(function(u){if(u.role==='admin'||u.role==='office')sel.innerHTML+='<option value="'+u.nm+'">'+u.nm+'</option>'});
+}
+function openApM(){
+  ['apId','apTitle','apAmt','apContent'].forEach(function(x){$(x).value=''});
+  $('apReq').value=CU?CU.nm:'';
+  $('apType').value='발주서';$('apDt').value=td();$('apSt').value='대기';
+  var urg=$('apUrgent');if(urg)urg.value='';
+  $('apMoT').textContent='결재 요청';
+  $('apHistoryWrap').style.display='none';
+  $('apCommentWrap').style.display='none';
+  _fillApproverSelect();
+  oMo('apMo');
+}
+function eAp(id){
+  var r=DB.g('approvals').find(function(x){return x.id===id});if(!r)return;
+  $('apId').value=r.id;$('apType').value=r.type;$('apDt').value=r.dt;
+  $('apTitle').value=r.title;$('apReq').value=r.req;$('apAmt').value=r.amt||'';
+  $('apContent').value=r.content||'';$('apSt').value=r.st;
+  var urg=$('apUrgent');if(urg)urg.value=r.urgent||'';
+  _fillApproverSelect();
+  var apSel=$('apApprover');if(apSel)apSel.value=r.approver||'';
+  $('apMoT').textContent=r.st==='대기'?'결재 수정':'결재 상세';
+  // 이력 표시
+  var hw=$('apHistoryWrap'),hd=$('apHistory');
+  if(r.history&&r.history.length){
+    hw.style.display='block';
+    hd.innerHTML=r.history.map(function(h){return '<div style="padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--pri);font-weight:700">'+h.who+'</span> <span class="bd '+(h.action==='승인'?'bd-s':'bd-d')+'">'+h.action+'</span> <span style="color:var(--txt3)">'+h.dt+'</span>'+(h.comment?'<div style="margin-top:2px;color:var(--txt2)">'+h.comment+'</div>':'')+'</div>'}).join('');
+  }else{hw.style.display='none'}
+  $('apCommentWrap').style.display='none';
+  oMo('apMo');
+}
+function saveAp(){
+  var title=$('apTitle').value.trim();if(!title){toast('제목을 입력하세요','err');return}
+  var id=$('apId').value||gid();
+  var rec={id:id,type:$('apType').value,dt:$('apDt').value,title:title,req:$('apReq').value,
+    approver:$('apApprover')?$('apApprover').value:'',
+    amt:+$('apAmt').value||0,content:$('apContent').value,st:$('apSt').value,
+    urgent:$('apUrgent')?$('apUrgent').value:''};
+  var ls=DB.g('approvals');var idx=ls.findIndex(function(x){return x.id===id});
+  if(idx>=0){rec.history=ls[idx].history||[];ls[idx]=rec}else{rec.history=[];ls.push(rec)}
+  DB.s('approvals',ls);cMo('apMo');rAp();toast('저장','ok');
+}
+function apActionMo(id,action){
+  $('apCommentWrap').style.display='block';
+  $('apComment').value='';
+  $('apComment').placeholder=action==='승인'?'승인 코멘트 (선택)':'반려 사유를 입력하세요';
+  // Show confirmation dialog
+  var ok=action==='반려'?prompt(action+' 사유를 입력하세요:',''):confirm(action+' 처리하시겠습니까?');
+  if(ok===null)return;
+  var comment=typeof ok==='string'?ok:'';
+  var ls=DB.g('approvals');var idx=ls.findIndex(function(x){return x.id===id});
+  if(idx>=0){
+    ls[idx].st=action;
+    if(!ls[idx].history)ls[idx].history=[];
+    ls[idx].history.push({who:CU?CU.nm:'관리자',action:action,dt:td()+' '+new Date().toTimeString().substring(0,5),comment:comment});
+    DB.s('approvals',ls);rAp();toast(action+' 처리 완료','ok');
+  }
+}
+function dAp(id){if(!confirm('삭제하시겠습니까?'))return;DB.s('approvals',DB.g('approvals').filter(function(x){return x.id!==id}));rAp();toast('삭제','ok')}
 
 /* ===== [NEW] 1. 현재위치 추적 시스템 ===== */
 

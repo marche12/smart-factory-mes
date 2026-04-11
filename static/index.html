@@ -79,6 +79,7 @@
 <div class="sb-group" role="button" aria-expanded="false">시스템<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-cli">마스터관리</button>
+<button class="sb-item" data-mod="qc-approval">전자결재</button>
 <button class="sb-item" data-mod="adm-perm">권한관리</button>
 <button class="sb-item" data-mod="adm-backup">시스템관리</button>
 <button class="sb-item" data-mod="biz-kpi">경영분석</button>
@@ -99,7 +100,7 @@
 <div class="noti-list" id="notiList"></div>
 </div>
 </div>
-<button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">＋ 작업지시서</button><button onclick="exportPDF()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">PDF</button><button onclick="autoCSV()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">CSV</button><div class="header-right"><span id="headerDate"></span></div>
+<button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ 작업지시서</button><button onclick="goMod('biz-kpi')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">KPI</button><button onclick="goMod('mes-order-track')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">납기</button><div class="header-right"><span id="headerDate"></span></div>
 </div>
 <div id="groupTabBar" style="display:none;gap:4px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-wrap:wrap"></div>
 </div>
@@ -850,12 +851,17 @@
 <div class="tc" id="t-approval">
   <div class="sg">
     <div class="sb"><div class="l">대기중</div><div class="v" style="color:var(--wrn)" id="apPend">0</div></div>
+    <div class="sb"><div class="l">진행중</div><div class="v" style="color:var(--pri)" id="apProg">0</div></div>
     <div class="sb"><div class="l">승인</div><div class="v" style="color:var(--suc)" id="apOk">0</div></div>
     <div class="sb"><div class="l">반려</div><div class="v" style="color:var(--dan)" id="apRej">0</div></div>
   </div>
-  <div class="tb"><button class="btn btn-p" onclick="openApM()">+ 결재요청</button>
-    <select id="apFilter" onchange="rAp()"><option value="">전체</option><option value="대기">대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div>
-  <table class="dt" id="apTbl"><thead><tr><th>요청일</th><th>구분</th><th>제목</th><th>요청자</th><th>금액</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+  <div class="tb" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <button class="btn btn-p" onclick="openApM()">+ 결재요청</button>
+    <select id="apFilter" onchange="rAp()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체</option><option value="대기">대기</option><option value="진행중">진행중</option><option value="승인">승인</option><option value="반려">반려</option></select>
+    <select id="apTypeFilter" onchange="rAp()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">구분 전체</option><option value="발주서">발주서</option><option value="견적서">견적서</option><option value="반품요청">반품요청</option><option value="연차신청">연차신청</option><option value="지출결의">지출결의</option><option value="구매요청">구매요청</option><option value="업무보고">업무보고</option><option value="기타">기타</option></select>
+    <span style="margin-left:auto;font-size:11px;color:var(--txt3)" id="apMyCount"></span>
+  </div>
+  <table class="dt" id="apTbl"><thead><tr><th>요청일</th><th>구분</th><th>제목</th><th>요청자</th><th>승인자</th><th>금액</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
 </div></div>
@@ -910,13 +916,15 @@
 </div></div>
 
 <!-- 결재 모달 -->
-<div class="mo-bg hidden" id="apMo" onclick="event.target===this&&cMo('apMo')"><div class="mo">
+<div class="mo-bg hidden" id="apMo" onclick="event.target===this&&cMo('apMo')"><div class="mo" style="width:620px">
   <div class="mo-t" id="apMoT">결재 요청</div><input type="hidden" id="apId">
-  <div class="fr"><div class="fg"><label>구분 *</label><select id="apType"><option>구매요청</option><option>휴가신청</option><option>경비청구</option><option>업무보고</option><option>기타</option></select></div><div class="fg"><label>요청일</label><input type="date" id="apDt"></div></div>
+  <div class="fr"><div class="fg"><label>구분 *</label><select id="apType"><option>발주서</option><option>견적서</option><option>반품요청</option><option>연차신청</option><option>지출결의</option><option>구매요청</option><option>업무보고</option><option>기타</option></select></div><div class="fg"><label>요청일</label><input type="date" id="apDt"></div><div class="fg"><label>긴급</label><select id="apUrgent"><option value="">일반</option><option value="urgent">긴급</option></select></div></div>
   <div class="fg"><label>제목 *</label><input type="text" id="apTitle"></div>
-  <div class="fr"><div class="fg"><label>요청자</label><input type="text" id="apReq"></div><div class="fg"><label>금액</label><input type="number" id="apAmt"></div></div>
-  <div class="fg"><label>내용</label><textarea id="apContent" rows="4"></textarea></div>
-  <div class="fg"><label>상태</label><select id="apSt"><option value="대기">대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div>
+  <div class="fr"><div class="fg"><label>요청자</label><input type="text" id="apReq"></div><div class="fg"><label>승인자</label><select id="apApprover"><option value="">관리자</option></select></div><div class="fg"><label>금액</label><input type="number" id="apAmt"></div></div>
+  <div class="fg"><label>내용</label><textarea id="apContent" rows="4" placeholder="결재 요청 상세 내용"></textarea></div>
+  <div class="fg" id="apHistoryWrap" style="display:none"><label>결재 이력</label><div id="apHistory" style="background:var(--bg2);border-radius:8px;padding:10px;font-size:12px;max-height:120px;overflow-y:auto"></div></div>
+  <div class="fg" id="apCommentWrap" style="display:none"><label>승인/반려 코멘트</label><textarea id="apComment" rows="2" placeholder="승인 또는 반려 사유를 입력하세요"></textarea></div>
+  <input type="hidden" id="apSt" value="대기">
   <div class="mo-f"><button class="btn btn-g" onclick="cMo('apMo')">취소</button><button class="btn btn-p" onclick="saveAp()">저장</button></div>
 </div></div>
 

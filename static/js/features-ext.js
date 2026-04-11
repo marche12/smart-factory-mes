@@ -138,19 +138,26 @@ function rDueManage(){
    ================================================================ */
 var _plEdit=null;
 function rProcLog(){
-  var dt=$('plDate').value||td();
+  // 기간 필터 초기화
+  if(!$('plPrdBar').innerHTML)$('plPrdBar').innerHTML=periodFilterHTML('pl');
+  if(!_prdState['pl']){setPrd('pl','daily',null);if(!$('plDtVal').value)$('plDtVal').value=td()}
   var proc=$('plProc').value;
-  var logs=DB.g('procLog').filter(function(l){
-    if(l.dt!==dt)return false;
+  var all=DB.g('procLog');
+  var filtered=prdFilterData(all,'pl','dt');
+  var logs=filtered.filter(function(l){
     if(proc&&proc!=='all'&&l.proc!==proc)return false;
     return true;
   });
   var tb=$('procLogTbl').querySelector('tbody');
-  if(!logs.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--txt3)">실적 없음</td></tr>';return}
+  if(!logs.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--txt3)">실적 없음</td></tr>';
+    _prdExportData['pl']={headers:[],rows:[],sheetName:'공정실적',fileName:'공정실적'};return}
   tb.innerHTML=logs.map(function(l){
     return'<tr><td>'+l.dt+'</td><td>'+(l.woNm||'-')+'</td><td>'+l.proc+'</td><td>'+(l.worker||'-')+'</td><td>'+fmt(l.qty)+'</td><td>'+fmt(l.defect||0)+'</td><td>'+(l.time||0)+'분</td><td>'+(l.note||'')+'</td><td><button class="btn btn-sm btn-d" onclick="delProcLog(\''+l.id+'\')">삭제</button></td></tr>'
   }).join('');
+  // 엑셀 내보내기 데이터
+  _prdExportData['pl']={headers:['일자','작업지시','공정','작업자','생산수량','불량수량','작업시간(분)','비고'],rows:logs.map(function(l){return[l.dt,l.woNm||'',l.proc,l.worker||'',l.qty,l.defect||0,l.time||0,l.note||'']}),sheetName:'공정실적',fileName:'공정실적'};
 }
+window._prdCb_pl=rProcLog;
 function openProcLogM(){
   _plEdit=null;
   _woSelect('plWO');fillProcSelect('plProcSel',false);

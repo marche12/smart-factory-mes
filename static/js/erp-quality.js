@@ -2,10 +2,11 @@
 
 /* 품질검사 — defectLog 기반 자동 분석 */
 function rQc(){
-  var mo=$('qcMonthSel')?$('qcMonthSel').value:td().slice(0,7);
-  if(!mo)mo=td().slice(0,7);
+  // 기간 필터 초기화
+  if(!$('qcPrdBar').innerHTML)$('qcPrdBar').innerHTML=periodFilterHTML('qc');
+  if(!_prdState['qc']){setPrd('qc','monthly',null);if(!$('qcDtVal').value)$('qcDtVal').value=td().slice(0,7)}
   var all=DB.g('defectLog');
-  var mLogs=all.filter(function(d){return d.dt&&d.dt.startsWith(mo)});
+  var mLogs=prdFilterData(all,'qc','dt');
   var totalDf=mLogs.reduce(function(s,d){return s+(d.defect||0)},0);
 
   // KPI
@@ -56,15 +57,11 @@ function rQc(){
         +'<td style="color:var(--txt3)">'+( d.worker||'-')+'</td>'
         +'</tr>';
     }).join('')
-    :'<tr><td colspan="7" class="empty-cell">이번 달 불량 없음</td></tr>';
+    :'<tr><td colspan="7" class="empty-cell">불량 없음</td></tr>';
+  // 엑셀 내보내기 데이터
+  _prdExportData['qc']={headers:['날짜','제품','거래처','공정','불량수량','사유','작업자'],rows:sorted.map(function(d){return[d.dt,d.pnm,d.cnm,d.proc,d.defect||0,d.reason||'',d.worker||'']}),sheetName:'불량현황',fileName:'불량현황'};
 }
-function expQcCSV(){
-  var all=DB.g('defectLog');
-  var csv='\uFEFF날짜,제품,거래처,공정,불량수량,사유,작업자\n';
-  all.forEach(function(d){csv+=d.dt+','+d.pnm+','+d.cnm+','+d.proc+','+(d.defect||0)+','+(d.reason||'')+','+(d.worker||'')+'\n'});
-  var b=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='불량이력_'+td()+'.csv';a.click();toast('내보내기','ok');
-}
+window._prdCb_qc=rQc;
 
 /* 설비관리 */
 function rEq(){const all=DB.g('equip');$('eqCnt').textContent=all.length;$('eqOk').textContent=all.filter(e=>e.st==='정상').length;$('eqWarn').textContent=all.filter(e=>e.st==='점검필요').length;$('eqDown').textContent=all.filter(e=>e.st==='수리중').length;$('eqTbl').querySelector('tbody').innerHTML=all.map(e=>{const stBd=e.st==='정상'?'bd-s':e.st==='점검필요'?'bd-o':'bd-d';return '<tr><td style="font-weight:700">'+e.nm+'</td><td>'+(e.model||'-')+'</td><td>'+e.proc+'</td><td>'+(e.install||'-')+'</td><td>'+(e.lastCheck||'-')+'</td><td>'+(e.nextCheck||'-')+'</td><td><span class="bd '+stBd+'">'+e.st+'</span></td><td><button class="btn btn-sm btn-o" onclick="editEq(\''+e.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="dEq(\''+e.id+'\')">삭제</button></td></tr>'}).join('')||'<tr><td colspan="8" class="empty-cell">설비 없음</td></tr>'}

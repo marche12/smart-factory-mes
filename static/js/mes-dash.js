@@ -665,6 +665,31 @@ $('dSum').innerHTML=kpiCards.map(function(k){
     +'<div class="lbl" style="margin-top:6px">'+k.label+'</div>'
     +'</div>';
 }).join('');
+// === 1-2. 인사이트 코멘트 ===
+(function(){
+var ins=[];
+var allHs=DB.g('hist');
+var now=new Date();
+var curM=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+var prevD=new Date(now.getFullYear(),now.getMonth()-1,1);
+var prevM=prevD.getFullYear()+'-'+String(prevD.getMonth()+1).padStart(2,'0');
+var curQ=0,prevQ=0;
+allHs.forEach(function(h){if(!h.doneAt)return;if(h.doneAt.startsWith(curM))curQ+=(+h.qty||0);if(h.doneAt.startsWith(prevM))prevQ+=(+h.qty||0)});
+if(prevQ>0){var chg=Math.round((curQ-prevQ)/prevQ*100);if(chg>0)ins.push({icon:'📈',text:'전월 대비 생산량 '+chg+'% 증가',type:'good'});else if(chg<0)ins.push({icon:'📉',text:'전월 대비 생산량 '+Math.abs(chg)+'% 감소',type:'warn'});else ins.push({icon:'📊',text:'전월과 생산량 동일',type:'info'})}
+else if(curQ>0){ins.push({icon:'📊',text:'이번 달 생산량 '+curQ.toLocaleString()+'개',type:'info'})}
+if(tot>0){var dRate=Math.round((tot-dl)/tot*100);if(dRate>=95)ins.push({icon:'✅',text:'납기준수율 '+dRate+'% (우수)',type:'good'});else if(dRate>=80)ins.push({icon:'📋',text:'납기준수율 '+dRate+'%',type:'info'});else ins.push({icon:'⚠️',text:'납기준수율 '+dRate+'% — 개선 필요',type:'warn'})}
+var pns=getProcNames();var maxWait='',maxWC=0;
+pns.forEach(function(pn){if(pn==='생산완료')return;var pq=getProcQueue(pn);if(pq.wait.length>maxWC){maxWC=pq.wait.length;maxWait=pn}});
+if(maxWC>=3)ins.push({icon:'🔴',text:maxWait+' 공정 대기 '+maxWC+'건 — 병목 주의',type:'warn'});
+if(dl>0)ins.push({icon:'🚨',text:'출고 지연 '+dl+'건 — 즉시 확인 필요',type:'bad'});
+if(hold+rework>0)ins.push({icon:'⚠️',text:'보류/재작업 '+(hold+rework)+'건 진행 중',type:'warn'});
+if(ins.length===0)ins.push({icon:'✅',text:'현재 특이사항 없음',type:'good'});
+var colors={good:'#059669',info:'#4F6CFF',warn:'#D97706',bad:'#DC2626'};
+var bgs={good:'#ECFDF5',info:'#EEF2FF',warn:'#FFFBEB',bad:'#FEF2F2'};
+if($('dInsight'))$('dInsight').innerHTML=ins.map(function(i){
+return '<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:'+bgs[i.type]+';border:1px solid '+(i.type==='good'?'#D1FAE5':i.type==='info'?'#DBEAFE':i.type==='warn'?'#FEF3C7':'#FECACA')+';font-size:14px;font-weight:600;color:'+colors[i.type]+'"><span>'+i.icon+'</span><span>'+i.text+'</span></div>'
+}).join('');
+})();
 // === 2-2. 완료 확인 대기 ===
 var compWait=os.filter(function(o){
 return o.status==='완료대기';

@@ -284,3 +284,114 @@ function renderProductivity() {
   }).join('') : '<tr><td colspan="7" class="empty-cell">데이터 없음</td></tr>';
 }
 
+// ===== 월간 경영보고서 =====
+function rMonthlyReport(){
+  var inp=$('monthlyRptMonth');
+  if(!inp.value){var n=new Date();inp.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
+  var month=inp.value;
+  var ym=month.split('-');var y=parseInt(ym[0]),m=parseInt(ym[1]);
+  var prevD=new Date(y,m-2,1);
+  var prevM=prevD.getFullYear()+'-'+String(prevD.getMonth()+1).padStart(2,'0');
+  var monthLabel=y+'년 '+m+'월';
+
+  // 매출/매입 집계
+  var sales=DB.g('sales'),purch=DB.g('purchase');
+  var curSales=0,prevSales=0,curPurch=0,prevPurch=0;
+  sales.forEach(function(s){if(s.dt&&s.dt.startsWith(month))curSales+=(s.amt||0);if(s.dt&&s.dt.startsWith(prevM))prevSales+=(s.amt||0)});
+  purch.forEach(function(p){if(p.dt&&p.dt.startsWith(month))curPurch+=(p.amt||0);if(p.dt&&p.dt.startsWith(prevM))prevPurch+=(p.amt||0)});
+  var curProfit=curSales-curPurch;
+  var prevProfit=prevSales-prevPurch;
+  var salesChg=prevSales>0?Math.round((curSales-prevSales)/prevSales*100):0;
+  var profitRate=curSales>0?Math.round(curProfit/curSales*100):0;
+
+  // 생산 집계
+  var allHs=DB.g('hist'),wo=DB.g('wo');
+  var curProdQty=0,prevProdQty=0;
+  allHs.forEach(function(h){if(!h.doneAt)return;if(h.doneAt.startsWith(month))curProdQty+=(+h.qty||0);if(h.doneAt.startsWith(prevM))prevProdQty+=(+h.qty||0)});
+  var prodChg=prevProdQty>0?Math.round((curProdQty-prevProdQty)/prevProdQty*100):0;
+
+  // 납기준수율
+  var monthWo=wo.filter(function(o){return o.cat&&o.cat.startsWith(month)&&o.status!=='취소'});
+  var ontime=monthWo.filter(function(o){return o.status==='완료'||o.status==='출고완료'}).length;
+  var lateWo=monthWo.filter(function(o){var d=o.dd;if(!d)return false;return new Date(d)<new Date()&&o.status!=='완료'&&o.status!=='출고완료'}).length;
+  var ontimeRate=monthWo.length>0?Math.round((monthWo.length-lateWo)/monthWo.length*100):0;
+
+  // 거래처별 매출 TOP5
+  var cliSales={};
+  sales.filter(function(s){return s.dt&&s.dt.startsWith(month)}).forEach(function(s){if(!cliSales[s.cli])cliSales[s.cli]=0;cliSales[s.cli]+=(s.amt||0)});
+  var topCli=Object.keys(cliSales).sort(function(a,b){return cliSales[b]-cliSales[a]}).slice(0,5);
+
+  // 미수금
+  var totalUnpaid=0;
+  sales.forEach(function(s){totalUnpaid+=Math.max(0,(s.amt||0)-(s.paid||0))});
+
+  function fmt(n){return n.toLocaleString()}
+  function chgBadge(v){if(v>0)return'<span style="color:#059669;font-weight:700">▲ '+v+'%</span>';if(v<0)return'<span style="color:#DC2626;font-weight:700">▼ '+Math.abs(v)+'%</span>';return'<span style="color:#64748B">—</span>'}
+
+  var h='<div id="monthlyRptPrint">';
+  h+='<div style="text-align:center;margin-bottom:24px;padding:20px;background:var(--bg2);border-radius:var(--r)">';
+  h+='<div style="font-size:22px;font-weight:800;color:var(--txt);margin-bottom:4px">'+monthLabel+' 경영보고서</div>';
+  h+='<div style="font-size:13px;color:var(--txt2)">생성일: '+new Date().toLocaleDateString('ko-KR')+'</div></div>';
+
+  // KPI 요약
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">';
+  h+='<div class="sb"><div class="l">매출액</div><div class="v" style="color:var(--pri)">'+fmt(curSales)+'</div><div style="font-size:13px;margin-top:6px">전월대비 '+chgBadge(salesChg)+'</div></div>';
+  h+='<div class="sb"><div class="l">매입액</div><div class="v">'+fmt(curPurch)+'</div></div>';
+  h+='<div class="sb"><div class="l">이익</div><div class="v" style="color:'+(curProfit>=0?'var(--suc)':'var(--dan)')+'">'+fmt(curProfit)+'</div><div style="font-size:13px;margin-top:6px">이익률 '+profitRate+'%</div></div>';
+  h+='<div class="sb"><div class="l">생산량</div><div class="v">'+fmt(curProdQty)+'</div><div style="font-size:13px;margin-top:6px">전월대비 '+chgBadge(prodChg)+'</div></div>';
+  h+='</div>';
+
+  // 핵심 지표
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-t">핵심 지표</div>';
+  h+='<table class="dt"><thead><tr><th>지표</th><th style="text-align:right">이번 달</th><th style="text-align:right">전월</th><th>변동</th></tr></thead><tbody>';
+  h+='<tr><td>매출액</td><td style="text-align:right">'+fmt(curSales)+'원</td><td style="text-align:right">'+fmt(prevSales)+'원</td><td>'+chgBadge(salesChg)+'</td></tr>';
+  h+='<tr><td>매입액</td><td style="text-align:right">'+fmt(curPurch)+'원</td><td style="text-align:right">'+fmt(prevPurch)+'원</td><td>'+chgBadge(prevPurch>0?Math.round((curPurch-prevPurch)/prevPurch*100):0)+'</td></tr>';
+  h+='<tr><td>이익</td><td style="text-align:right">'+fmt(curProfit)+'원</td><td style="text-align:right">'+fmt(prevProfit)+'원</td><td>'+chgBadge(prevProfit>0?Math.round((curProfit-prevProfit)/prevProfit*100):0)+'</td></tr>';
+  h+='<tr><td>생산량</td><td style="text-align:right">'+fmt(curProdQty)+'개</td><td style="text-align:right">'+fmt(prevProdQty)+'개</td><td>'+chgBadge(prodChg)+'</td></tr>';
+  h+='<tr><td>납기준수율</td><td style="text-align:right">'+ontimeRate+'%</td><td style="text-align:right">-</td><td>'+(ontimeRate>=90?'<span class="bd bd-s">양호</span>':'<span class="bd bd-x">개선필요</span>')+'</td></tr>';
+  h+='<tr><td>미수금 잔액</td><td style="text-align:right;color:var(--dan)">'+fmt(totalUnpaid)+'원</td><td></td><td></td></tr>';
+  h+='</tbody></table></div>';
+
+  // 거래처별 매출 TOP5
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-t">거래처별 매출 TOP 5</div>';
+  if(topCli.length){
+    h+='<table class="dt"><thead><tr><th>순위</th><th>거래처</th><th style="text-align:right">매출액</th><th style="text-align:right">비중</th></tr></thead><tbody>';
+    topCli.forEach(function(c,i){
+      var pct=curSales>0?Math.round(cliSales[c]/curSales*100):0;
+      h+='<tr><td style="font-weight:700">'+(i+1)+'</td><td>'+c+'</td><td style="text-align:right">'+fmt(cliSales[c])+'원</td><td style="text-align:right">'+pct+'%</td></tr>';
+    });
+    h+='</tbody></table>';
+  }else{h+='<div style="padding:20px;text-align:center;color:var(--txt3)">매출 데이터 없음</div>'}
+  h+='</div>';
+
+  // 인사이트 코멘트
+  h+='<div class="card"><div class="card-t">분석 코멘트</div><div style="padding:4px 0">';
+  var comments=[];
+  if(salesChg>10)comments.push('매출이 전월 대비 '+salesChg+'% 증가하여 성장세를 보이고 있습니다.');
+  else if(salesChg<-10)comments.push('매출이 전월 대비 '+Math.abs(salesChg)+'% 감소하여 원인 분석이 필요합니다.');
+  if(profitRate<10&&curSales>0)comments.push('이익률이 '+profitRate+'%로 낮습니다. 원가 절감 방안을 검토하세요.');
+  if(ontimeRate<90)comments.push('납기준수율이 '+ontimeRate+'%입니다. 생산 일정 관리 강화가 필요합니다.');
+  if(totalUnpaid>0)comments.push('미수금 잔액이 '+fmt(totalUnpaid)+'원입니다. 채권 회수에 주의하세요.');
+  if(prodChg>20)comments.push('생산량이 '+prodChg+'% 급증하여 품질 관리에 주의가 필요합니다.');
+  if(!comments.length)comments.push('전반적으로 안정적인 경영 상태입니다.');
+  comments.forEach(function(c){
+    h+='<div style="padding:8px 12px;margin-bottom:6px;background:var(--bg2);border-radius:8px;font-size:14px;color:var(--txt);border-left:3px solid var(--pri)">'+c+'</div>';
+  });
+  h+='</div></div>';
+  h+='</div>';
+  $('monthlyRptArea').innerHTML=h;
+}
+
+function dlMonthlyPdf(){
+  var area=$('monthlyRptPrint');
+  if(!area){rMonthlyReport();area=$('monthlyRptPrint')}
+  if(!area){toast('보고서를 먼저 조회하세요','err');return}
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>월간 경영보고서</title>');
+  w.document.write('<style>@page{size:A4;margin:20mm}body{font-family:-apple-system,sans-serif;color:#111827;font-size:14px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:10px 12px;border-bottom:1px solid #E5E7EB;text-align:left;font-size:13px}th{background:#F9FAFB;font-weight:700}.card-t{font-size:16px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #4F6CFF}.sb{padding:16px;border:1px solid #E5E7EB;border-radius:10px;text-align:center}.sb .l{font-size:12px;color:#6B7280;margin-bottom:6px}.sb .v{font-size:22px;font-weight:800}</style>');
+  w.document.write('</head><body>');
+  w.document.write(area.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},500);
+}

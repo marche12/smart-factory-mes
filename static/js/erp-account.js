@@ -5,9 +5,12 @@ function cTax(){const s=+$('txSup').value||0;$('txVat').value=Math.round(s*0.1);
 
 /* === 매출 === */
 function rSl(){
-  const mo=$('slMo').value||td().slice(0,7);if(!$('slMo').value)$('slMo').value=mo;
+  // 기간 필터 초기화
+  if(!$('slPrdBar').innerHTML)$('slPrdBar').innerHTML=periodFilterHTML('sl');
+  if(!_prdState['sl']){setPrd('sl','monthly',null);if(!$('slDtVal').value)$('slDtVal').value=td().slice(0,7)}
   const sch=($('slSch').value||'').toLowerCase(),uo=$('slUO').checked;
-  const all=DB.g('sales'),ma=all.filter(r=>r.dt.startsWith(mo));
+  const all=DB.g('sales');
+  const ma=prdFilterData(all,'sl','dt');
   const fl=ma.filter(r=>{if(sch&&!r.cli.toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
   $('slT').textContent=fmt(ma.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('slU').textContent=fmt(ma.reduce((s,r)=>s+Math.max(0,(r.amt||0)-(r.paid||0)),0))+'원';
@@ -16,8 +19,11 @@ function rSl(){
   $('slTbl').querySelector('tbody').innerHTML=fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const st=u<=0?'<span class="bd bd-s">완납</span>':r.paid>0?'<span class="bd bd-o">부분</span>':'<span class="bd bd-d">미수</span>';
     const supply=Math.round((r.amt||0)/1.1),vat=(r.amt||0)-supply;
     return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right">${fmt(supply)}</td><td style="text-align:right;color:var(--txt2)">${fmt(vat)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="genTradeStatement('${r.id}')" title="거래명세서">명세</button> <button class="btn btn-sm btn-o" onclick="eSlr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dSlr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="12" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+  // 엑셀 내보내기 데이터
+  _prdExportData['sl']={headers:['일자','거래처','품명','수량','단가','공급가액','부가세','합계','입금','미수금','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const supply=Math.round((r.amt||0)/1.1),vat=(r.amt||0)-supply;return[r.dt,r.cli,r.prod,r.qty,r.price,supply,vat,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미수']}),sheetName:'매출장부',fileName:'매출장부'};
   rRecv();
 }
+window._prdCb_sl=rSl;
 function rRecv(){
   const el=$('recvList');if(!el)return;
   const all=DB.g('sales');
@@ -45,9 +51,12 @@ function dSlr(id){if(!confirm('삭제?'))return;DB.s('sales',DB.g('sales').filte
 
 /* === 매입 === */
 function rPr(){
-  const mo=$('prMo').value||td().slice(0,7);if(!$('prMo').value)$('prMo').value=mo;
+  // 기간 필터 초기화
+  if(!$('prPrdBar').innerHTML)$('prPrdBar').innerHTML=periodFilterHTML('pr');
+  if(!_prdState['pr']){setPrd('pr','monthly',null);if(!$('prDtVal').value)$('prDtVal').value=td().slice(0,7)}
   const sch=($('prSch').value||'').toLowerCase(),uo=$('prUO').checked;
-  const all=DB.g('purchase'),ma=all.filter(r=>r.dt.startsWith(mo));
+  const all=DB.g('purchase');
+  const ma=prdFilterData(all,'pr','dt');
   const fl=ma.filter(r=>{if(sch&&!r.cli.toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
   $('prT').textContent=fmt(ma.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('prU').textContent=fmt(ma.reduce((s,r)=>s+Math.max(0,(r.amt||0)-(r.paid||0)),0))+'원';
@@ -55,7 +64,10 @@ function rPr(){
   $('prC').textContent=[...new Set(ma.map(r=>r.cli))].length;
   $('prTbl').querySelector('tbody').innerHTML=fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const st=u<=0?'<span class="bd bd-s">완납</span>':r.paid>0?'<span class="bd bd-o">부분</span>':'<span class="bd bd-d">미지급</span>';
     return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="ePrr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dPrr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+  // 엑셀 내보내기 데이터
+  _prdExportData['pr']={headers:['일자','거래처','품명','수량','단가','매입액','지급','미지급','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));return[r.dt,r.cli,r.prod,r.qty,r.price,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미지급']}),sheetName:'매입장부',fileName:'매입장부'};
 }
+window._prdCb_pr=rPr;
 function openPM(){['pId','pProd','pNote'].forEach(x=>$(x).value='');$('pDt').value=td();$('pCli').value='';$('pQty').value='';$('pPrice').value='';$('pAmt').value='';$('pPaid').value=0;$('pPayT').value='미지급';$('pMoT').textContent='매입 등록';oMo('pMo')}
 function ePrr(id){const r=DB.g('purchase').find(x=>x.id===id);if(!r)return;$('pId').value=r.id;$('pDt').value=r.dt;$('pCli').value=r.cli;$('pProd').value=r.prod;$('pQty').value=r.qty;$('pPrice').value=r.price;$('pAmt').value=fmt(r.amt);$('pPaid').value=r.paid||0;$('pPayT').value=r.payType||'미지급';$('pNote').value=r.note||'';$('pMoT').textContent='매입 수정';oMo('pMo')}
 function savePr(){const c=$('pCli').value.trim(),p=$('pProd').value.trim(),pr=+$('pPrice').value;if(!c){toast('거래처','err');return}if(!p){toast('품명','err');return}if(!pr){toast('단가','err');return}const id=$('pId').value||gid(),q=+$('pQty').value||1;const rec={id,dt:$('pDt').value,cli:c,prod:p,qty:q,price:pr,amt:q*pr,paid:+$('pPaid').value||0,payType:$('pPayT').value,note:$('pNote').value,cat:nw()};const ls=DB.g('purchase');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('purchase',ls);cMo('pMo');rPr();toast('저장','ok')}
@@ -105,10 +117,12 @@ function printPl(){const c=$('plTbl').innerHTML;const w=window.open('','_blank')
 
 /* === 세금계산서 === */
 function rTx(){
-  const mo=$('txMo').value||td().slice(0,7);if(!$('txMo').value)$('txMo').value=mo;
+  // 기간 필터 초기화
+  if(!$('txPrdBar').innerHTML)$('txPrdBar').innerHTML=periodFilterHTML('tx');
+  if(!_prdState['tx']){setPrd('tx','monthly',null);if(!$('txDtVal').value)$('txDtVal').value=td().slice(0,7)}
   const tp=$('txTp').value;const all=DB.g('taxInvoice');
-  const fl=all.filter(r=>{if(!r.dt.startsWith(mo))return false;if(tp&&r.type!==tp)return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
-  const ma=all.filter(r=>r.dt.startsWith(mo));
+  const ma=prdFilterData(all,'tx','dt');
+  const fl=ma.filter(r=>{if(tp&&r.type!==tp)return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
   $('txC').textContent=ma.length;$('txS').textContent=fmt(ma.reduce((s,r)=>s+(r.supply||0),0))+'원';
   $('txV').textContent=fmt(ma.reduce((s,r)=>s+(r.vat||0),0))+'원';
   $('txT').textContent=fmt(ma.reduce((s,r)=>s+(r.supply||0)+(r.vat||0),0))+'원';
@@ -119,7 +133,10 @@ function rTx(){
   };
   $('txTbl').querySelector('tbody').innerHTML=fl.map(r=>{const tot=(r.supply||0)+(r.vat||0);
     return `<tr><td>${r.dt}</td><td><span class="bd ${r.type==='매출'?'bd-p':'bd-o'}">${r.type}</span></td><td style="font-weight:700">${r.cli}</td><td>${r.item||'-'}</td><td style="text-align:right">${fmt(r.supply)}</td><td style="text-align:right">${fmt(r.vat)}</td><td style="text-align:right;font-weight:700">${fmt(tot)}</td><td>${stBadge(r.method||'종이')}</td><td><button class="btn btn-sm btn-o" onclick="eTxr('${r.id}')">수정</button>${r.method!=='전자발행'?' <button class="btn btn-sm" style="background:#1E40AF;color:#fff" onclick="reissueElecTx(\''+r.id+'\')">전자발행</button>':''} <button class="btn btn-sm btn-d" onclick="dTxr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="9" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+  // 엑셀 내보내기 데이터
+  _prdExportData['tx']={headers:['발행일','구분','거래처','품목','공급가액','세액','합계','발행방법'],rows:fl.map(r=>[r.dt,r.type,r.cli,r.item||'',r.supply||0,r.vat||0,(r.supply||0)+(r.vat||0),r.method||'종이']),sheetName:'세금계산서',fileName:'세금계산서'};
 }
+window._prdCb_tx=rTx;
 function toggleTxMethod(){
   var method=document.querySelector('input[name="txMethod"]:checked').value;
   var isElec=method==='electronic';
@@ -264,8 +281,8 @@ function reissueElecTx(id){
 
 /* 홈택스 일괄업로드용 엑셀 내보내기 */
 function expHometax(){
-  var mo=$('txMo').value||td().slice(0,7);
-  var data=DB.g('taxInvoice').filter(function(r){return r.dt&&r.dt.startsWith(mo)});
+  var all=DB.g('taxInvoice');
+  var data=prdFilterData(all,'tx','dt');
   if(!data.length){toast('해당 월에 세금계산서가 없습니다','err');return}
   var co=DB.g1('co')||{};
   // 홈택스 전자세금계산서 일괄발급 양식 (CSV)

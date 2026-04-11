@@ -401,11 +401,10 @@
   <div class="tb">
     <button class="btn btn-p" onclick="openSM()">+ 매출등록</button>
     <button class="btn btn-s btn-sm" onclick="openPay('sales')">입금처리</button>
-    <input type="month" id="slMo" onchange="rSl()">
-    <input type="text" id="slSch" placeholder="거래처 검색" oninput="rSl()">
+    <input type="text" id="slSch" placeholder="거래처 검색" oninput="rSl()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;font-size:13px">
     <label><input type="checkbox" id="slUO" onchange="rSl()"> 미수만</label>
-    <button class="btn btn-g btn-sm" onclick="expCSV('sales')">엑셀</button>
   </div>
+  <div id="slPrdBar"></div>
   <table class="dt" id="slTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>공급가액</th><th>부가세</th><th>합계</th><th>입금</th><th>미수금</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 
   <!-- 거래처별 미수금 현황 -->
@@ -426,15 +425,14 @@
   </div>
   <div class="fbar">
     <div class="fbar-row">
-      <input type="month" id="prMo" onchange="rPr()">
       <input type="text" id="prSch" placeholder="거래처로 검색" oninput="rPr()" class="fbar-grow">
       <label><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
       <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="expCSV('purchase')">엑셀</button>
       <button class="btn btn-s btn-sm" onclick="openPay('purchase')">지급처리</button>
       <button class="btn btn-p btn-sm" onclick="openPM()">+ 매입등록</button>
     </div>
   </div>
+  <div id="prPrdBar"></div>
   <table class="dt" id="prTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>매입액</th><th>지급</th><th>미지급</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
@@ -448,7 +446,6 @@
   </div>
   <div class="fbar">
     <div class="fbar-row">
-      <input type="month" id="txMo" onchange="rTx()">
       <select id="txTp" onchange="rTx()"><option value="">전체</option><option value="매출">매출</option><option value="매입">매입</option></select>
       <div class="fbar-spacer"></div>
       <button class="btn btn-sm" style="background:#065F46;color:#fff" onclick="expHometax()">홈택스 엑셀</button>
@@ -456,6 +453,7 @@
       <button class="btn btn-p btn-sm" onclick="openTxM()">+ 등록</button>
     </div>
   </div>
+  <div id="txPrdBar"></div>
   <table class="dt" id="txTbl"><thead><tr><th>발행일</th><th>구분</th><th>거래처</th><th>품목</th><th>공급가액</th><th>세액</th><th>합계</th><th>발행</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
@@ -814,12 +812,9 @@
 <!-- 품질검사 -->
 <div class="tc on" id="t-qc">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:15px;font-weight:700">불량 현황</span>
-      <input type="month" id="qcMonthSel" onchange="rQc()" class="u-select">
-    </div>
-    <button class="btn btn-gray btn-sm" onclick="expQcCSV()">엑셀 내보내기</button>
+    <span style="font-size:15px;font-weight:700">불량 현황</span>
   </div>
+  <div id="qcPrdBar"></div>
   <div class="sg" style="margin-bottom:16px">
     <div class="sb red" style="text-align:center"><div class="v" id="qcDfTotal">0</div><div class="l">금월 총 불량</div></div>
     <div class="sb orange" style="text-align:center"><div class="v" id="qcDfCnt">0건</div><div class="l">불량 발생 횟수</div></div>
@@ -1053,7 +1048,8 @@
 <div id="dashDateDisp" style="font-size:13px;color:#64748B"></div>
 </div>
 <!-- KPI 카드 (맨 위) -->
-<div id="dSum" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px"></div>
+<div id="dSum" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:10px"></div>
+<div id="dInsight" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
 <!-- Charts Row 1 -->
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px" id="dashCharts">
   <div class="dash-card"><div class="dash-card-header">공정별 작업 현황</div><div class="u-pad12"><canvas id="chartProc"></canvas></div></div>
@@ -1202,29 +1198,8 @@
 <div class="u-scroll-x"><table class="dt" id="shipReadyTbl"><thead><tr><th>지시번호</th><th>거래처</th><th>제품</th><th>완제품수량</th><th>완료수량</th><th>출고수량</th><th>잔량</th><th>출고예정</th><th>입고처</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div>
 </div></div>
 <div id="ship-hist" class="hidden">
+<div id="shHiPrdBar"></div>
 <div class="fbar">
-  <div class="fbar-row">
-    <div class="fbar-pills" id="shipPeriodBtns">
-      <button class="on" data-period="daily" data-period-fn="setShipPeriod">일별</button>
-      <button data-period="weekly" data-period-fn="setShipPeriod">주간</button>
-      <button data-period="monthly" data-period-fn="setShipPeriod">월별</button>
-      <button data-period="range" data-period-fn="setShipPeriod">기간</button>
-      <button data-period="all" data-period-fn="setShipPeriod">전체</button>
-    </div>
-    <div id="shipDateCtrl" class="fbar-date-nav">
-      <button onclick="shipDateNav(-1)">◀</button>
-      <input type="date" id="shipDateVal" onchange="rShipHist()">
-      <button onclick="shipDateNav(1)">▶</button>
-    </div>
-    <div id="shipRangeCtrl" class="fbar-date-nav" style="display:none">
-      <input type="date" id="shHistFrom" onchange="rShipHist()">
-      <span style="color:var(--txt3);padding:0 4px">~</span>
-      <input type="date" id="shHistTo" onchange="rShipHist()">
-    </div>
-    <span id="shipPeriodLabel" class="fbar-stat"></span>
-    <div class="fbar-spacer"></div>
-    <button class="btn btn-o btn-sm" onclick="exportShipCSV()">엑셀</button>
-  </div>
   <div class="fbar-row">
     <input type="text" id="shHistSch" placeholder="거래처 또는 제품명으로 검색" oninput="rShipHist()" class="fbar-grow">
   </div>
@@ -1234,14 +1209,8 @@
 <div class="card"><div class="u-scroll-x"><table class="dt" id="shipHistTbl"><thead><tr><th>출고일</th><th>거래처</th><th>제품</th><th>출고수량</th><th>검수</th><th>불량</th><th>배송</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="ship-stat" class="hidden">
-<div class="fbar">
-  <div class="fbar-row">
-    <span class="fbar-label">월 선택</span>
-    <input type="month" id="shStatM" onchange="rShipStat()">
-    <div class="fbar-spacer"></div>
-    <button class="btn btn-p btn-sm" onclick="printShipStat()">출력</button>
-  </div>
-</div>
+<div id="shStatPrdBar"></div>
+<div style="margin-bottom:8px"><button class="btn btn-p btn-sm" onclick="printShipStat()">출력</button></div>
 <div class="card"><div id="shipStatC"></div></div>
 </div>
 <div id="ship-claim" class="hidden">
@@ -1297,6 +1266,9 @@
       <button onclick="setCliView('gallery',this)">갤러리</button>
     </div>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">📥 엑셀 업로드</button>
+    <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
+    <button class="btn btn-o btn-sm" onclick="dlCliXlsxTemplate()">📋 양식 다운로드</button>
   </div>
 </div>
 <div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
@@ -1972,8 +1944,8 @@
 <!-- ===== 공정실적 ===== -->
 <div id="pg-mes-proc-log" class="module-page"><div class="card" style="padding:16px">
 <div class="card-t" style="margin-bottom:12px">공정별 실적 입력</div>
+<div id="plPrdBar"></div>
 <div class="fbar"><div class="fbar-row">
-<input type="date" id="plDate" onchange="rProcLog()">
 <select id="plProc" onchange="rProcLog()"><option value="">전체 공정</option></select>
 <div class="fbar-spacer"></div>
 <button class="btn btn-p btn-sm" onclick="openProcLogM()">+ 실적입력</button>
@@ -2270,6 +2242,17 @@
 <input type="month" id="ontimeMonth" onchange="rOntime()">
 </div></div>
 <div id="ontimeArea"></div>
+</div></div>
+
+<!-- ===== 월간보고서 ===== -->
+<div id="pg-biz-monthly" class="module-page"><div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">월간 경영보고서</div>
+<div class="fbar"><div class="fbar-row">
+<input type="month" id="monthlyRptMonth" onchange="rMonthlyReport()">
+<button class="btn btn-p btn-sm" onclick="rMonthlyReport()">조회</button>
+<button class="btn btn-s btn-sm" onclick="dlMonthlyPdf()">📥 PDF 다운로드</button>
+</div></div>
+<div id="monthlyRptArea"></div>
 </div></div>
 
 <!-- ===== 클레임 ===== -->

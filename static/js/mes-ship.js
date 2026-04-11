@@ -1,44 +1,4 @@
-// Ship history
-var _shipPeriod='daily';
-function setShipPeriod(p,btn){
-  _shipPeriod=p;
-  btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('on')});
-  btn.classList.add('on');
-  var dc=$('shipDateCtrl'),rc=$('shipRangeCtrl');
-  if(p==='range'){dc.style.display='none';rc.style.display='flex'}
-  else if(p==='all'){dc.style.display='none';rc.style.display='none'}
-  else{dc.style.display='flex';rc.style.display='none'}
-  if(!$('shipDateVal').value)$('shipDateVal').value=td();
-  rShipHist();
-}
-function shipDateNav(dir){
-  var v=$('shipDateVal').value;if(!v)v=td();
-  var d=new Date(v);
-  if(_shipPeriod==='daily')d.setDate(d.getDate()+dir);
-  else if(_shipPeriod==='weekly')d.setDate(d.getDate()+dir*7);
-  else if(_shipPeriod==='monthly')d.setMonth(d.getMonth()+dir);
-  $('shipDateVal').value=d.toISOString().slice(0,10);
-  rShipHist();
-}
-function _getShipDateRange(){
-  var p=_shipPeriod,v=$('shipDateVal').value||td();
-  if(p==='all')return{from:null,to:null,label:'전체 기간'};
-  if(p==='range'){
-    var f=$('shHistFrom').value,t=$('shHistTo').value;
-    return{from:f||null,to:t||null,label:(f||'')+'~'+(t||'')};
-  }
-  if(p==='daily')return{from:v,to:v,label:v};
-  if(p==='weekly'){
-    var ws=weekStart(v),we=weekEnd(v);
-    return{from:ws,to:we,label:ws+' ~ '+we};
-  }
-  if(p==='monthly'){
-    var ms=monthStart(v),me=monthEnd(v);
-    var d=new Date(v+'T00:00:00');
-    return{from:ms,to:me,label:d.getFullYear()+'년 '+(d.getMonth()+1)+'월'};
-  }
-  return{from:null,to:null,label:''};
-}
+// Ship history - uses universal period filter
 function _renderShipHeatmap(allLogs){
   var el=$('shipHeatmap');if(!el)return;
   // 최근 13주(91일) 일별 출고 건수
@@ -51,22 +11,21 @@ function _renderShipHeatmap(allLogs){
   el.innerHTML='<div class="heat"><div class="heat-hd"><div class="heat-title">최근 13주 출고 활동</div><div class="heat-legend">적음 <div class="heat-legend-cell" style="background:#F1F3F7"></div><div class="heat-legend-cell lv1"></div><div class="heat-legend-cell lv2"></div><div class="heat-legend-cell lv3"></div><div class="heat-legend-cell lv4"></div><div class="heat-legend-cell lv5"></div> 많음</div></div><div class="heat-grid">'+cells+'</div></div>';
 }
 function rShipHist(){
-  if(!$('shipDateVal').value)$('shipDateVal').value=td();
-  var range=_getShipDateRange();
-  $('shipPeriodLabel').textContent=range.label;
-  var f=range.from,t=range.to;
+  // 기간 필터 초기화
+  if(!$('shHiPrdBar').innerHTML)$('shHiPrdBar').innerHTML=periodFilterHTML('shHi');
+  if(!_prdState['shHi']){setPrd('shHi','daily',null);if(!$('shHiDtVal').value)$('shHiDtVal').value=td()}
   var s=($('shHistSch')?.value||'').toLowerCase();
   var allLogs=DB.g('shipLog');
   _renderShipHeatmap(allLogs);
-  var logs=allLogs.filter(function(r){
-    if(f&&r.dt<f)return false;
-    if(t&&r.dt>t)return false;
+  var filtered=prdFilterData(allLogs,'shHi','dt');
+  var logs=filtered.filter(function(r){
     if(s&&r.cnm.toLowerCase().indexOf(s)<0&&r.pnm.toLowerCase().indexOf(s)<0)return false;
     return true;
   }).sort(function(a,b){return b.dt>a.dt?1:-1});
   // 기간별 요약
   var ps=$('shipPeriodSum');
-  if(_shipPeriod!=='all'&&f){
+  var rng=getPrdRange('shHi');
+  if(rng.from){
     var tQty=0,tDef=0;logs.forEach(function(r){tQty+=r.qty||0;tDef+=r.defect||0});
     ps.innerHTML='<div class="sg" style="margin-bottom:10px">'+
       '<div class="sb blue" style="text-align:center"><div class="v">'+logs.length+'</div><div class="l">출고건수</div></div>'+
@@ -76,11 +35,17 @@ function rShipHist(){
       '</div>';
   }else{ps.innerHTML=''}
   $('shipHistTbl').querySelector('tbody').innerHTML=logs.length?logs.map(function(r){return '<tr><td>'+r.dt+'</td><td>'+r.cnm+'</td><td>'+r.pnm+'</td><td style="font-weight:700">'+r.qty+'</td><td>'+(r.good||r.qty)+'/'+r.qty+(r.defect?' <span style="color:var(--dan)">(불량'+r.defect+')</span>':'')+'</td><td>'+(r.defect||0)+'</td><td>'+(r.car?r.car+' ':'')+(r.driver||'')+'</td><td><button class="btn btn-sm btn-o" onclick="showShipDet(\''+r.id+'\')">상세</button> <button class="btn btn-sm btn-p" onclick="printShipOne(\''+r.id+'\')">명세표</button> <button class="btn btn-sm btn-s" onclick="printTransStatement(\''+r.id+'\')">거래명세서</button></td></tr>'}).join(''):'<tr><td colspan="8" class="empty-cell">출고 이력 없음</td></tr>';
+  // 엑셀 내보내기 데이터
+  _prdExportData['shHi']={headers:['출고일','거래처','제품','출고수량','양품','불량','차량','기사'],rows:logs.map(function(r){return[r.dt,r.cnm,r.pnm,r.qty,r.good||r.qty,r.defect||0,r.car||'',r.driver||'']}),sheetName:'출고이력',fileName:'출고이력'};
 }
+window._prdCb_shHi=rShipHist;
 function showShipDet(sid){const r=DB.g('shipLog').find(x=>x.id===sid);if(!r)return;$('shipDetC').innerHTML=`<div class="fr"><div class="fg"><label>출고일시</label><div style="font-weight:700">${r.tm||r.dt}</div></div><div class="fg"><label>지시번호</label><div>${r.wn||'-'}</div></div><div class="fg"><label>담당</label><div>${r.mgr||'-'}</div></div></div><div class="fr"><div class="fg"><label>거래처</label><div style="font-weight:700;font-size:15px">${r.cnm}</div></div><div class="fg"><label>제품</label><div style="font-weight:700;font-size:15px">${r.pnm}</div></div></div><div class="fr" style="margin-top:10px"><div class="fg"><label>출고수량</label><div style="font-weight:700;font-size:18px">${r.qty}</div></div><div class="fg"><label>양품</label><div style="color:var(--suc);font-weight:700;font-size:18px">${r.good||r.qty}</div></div><div class="fg"><label>불량</label><div style="color:var(--dan);font-weight:700;font-size:18px">${r.defect||0}</div></div></div>${r.inspNote?`<div class="fg" style="margin-top:10px"><label>검수메모</label><div style="background:var(--bg2);padding:8px">${r.inspNote}</div></div>`:''}<div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:10px"><div class="fr"><div class="fg"><label>차량번호</label><div>${r.car||'-'}</div></div><div class="fg"><label>기사</label><div>${r.driver||'-'}</div></div></div><div class="fg" style="margin-top:8px"><label>입고처</label><div>${r.dlv||'-'}</div></div>${r.memo?`<div class="fg" style="margin-top:8px"><label>배송메모</label><div style="background:var(--bg2);padding:8px">${r.memo}</div></div>`:''}</div>`;_shipDetId=sid;oMo('shipDetMo')}
 let _shipDetId=null;function printShipDocById(){if(_shipDetId)printShipOne(_shipDetId)}
 // Ship statistics
-function rShipStat(){if(!$('shStatM').value)$('shStatM').value=td().slice(0,7);const m=$('shStatM').value;const logs=DB.g('shipLog').filter(r=>r.dt.startsWith(m));const byCli={};let totQ=0,totD=0;logs.forEach(r=>{if(!byCli[r.cnm])byCli[r.cnm]={cnt:0,qty:0,defect:0};byCli[r.cnm].cnt++;byCli[r.cnm].qty+=r.qty;byCli[r.cnm].defect+=r.defect||0;totQ+=r.qty;totD+=r.defect||0});
+function rShipStat(){
+  if(!$('shStatPrdBar').innerHTML)$('shStatPrdBar').innerHTML=periodFilterHTML('shSt');
+  if(!_prdState['shSt']){setPrd('shSt','monthly',null);if(!$('shStDtVal').value)$('shStDtVal').value=td().slice(0,7)}
+  const logs=prdFilterData(DB.g('shipLog'),'shSt','dt');const byCli={};let totQ=0,totD=0;logs.forEach(r=>{if(!byCli[r.cnm])byCli[r.cnm]={cnt:0,qty:0,defect:0};byCli[r.cnm].cnt++;byCli[r.cnm].qty+=r.qty;byCli[r.cnm].defect+=r.defect||0;totQ+=r.qty;totD+=r.defect||0});
 $('shipStatC').innerHTML=
   '<div class="sg" style="margin-bottom:16px">'+
   `<div class="sb blue" style="text-align:center"><div class="v">${logs.length}</div><div class="l">총 출고건</div></div>`+
@@ -88,8 +53,12 @@ $('shipStatC').innerHTML=
   `<div class="sb ${totD>0?'red':''}" style="text-align:center"><div class="v">${fmt(totD)}</div><div class="l">총 불량</div></div>`+
   `<div class="sb orange" style="text-align:center"><div class="v">${totQ?((totD/totQ)*100).toFixed(1):0}%</div><div class="l">불량률</div></div>`+
   '</div>'+
-  `<table class="dt"><thead><tr><th>거래처</th><th>출고건수</th><th>출고량</th><th>불량</th><th>불량률</th></tr></thead><tbody>${Object.entries(byCli).sort((a,b)=>b[1].qty-a[1].qty).map(([k,v])=>`<tr><td style="font-weight:700">${k}</td><td>${v.cnt}건</td><td style="font-weight:700">${fmt(v.qty)}</td><td style="color:${v.defect>0?'#DC2626':'#94A3B8'};font-weight:${v.defect>0?700:400}">${v.defect}</td><td>${v.qty?((v.defect/v.qty)*100).toFixed(1):0}%</td></tr>`).join('')||'<tr><td colspan="5" class="empty-cell">이번 달 출고 기록 없음</td></tr>'}</tbody></table>`}
-function printShipStat(){const c=$('shipStatC').innerHTML;if(!c)return;const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>출고통계</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.sb{border:1px solid #ccc;padding:10px}.sb .l{font-size:10px}.sb .v{font-size:16px;font-weight:700}@media print{@page{size:A4;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px;font-size:16px">이노패키지 월별 출고 통계 (${$('shStatM').value})</h2>${c}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
+  `<table class="dt"><thead><tr><th>거래처</th><th>출고건수</th><th>출고량</th><th>불량</th><th>불량률</th></tr></thead><tbody>${Object.entries(byCli).sort((a,b)=>b[1].qty-a[1].qty).map(([k,v])=>`<tr><td style="font-weight:700">${k}</td><td>${v.cnt}건</td><td style="font-weight:700">${fmt(v.qty)}</td><td style="color:${v.defect>0?'#DC2626':'#94A3B8'};font-weight:${v.defect>0?700:400}">${v.defect}</td><td>${v.qty?((v.defect/v.qty)*100).toFixed(1):0}%</td></tr>`).join('')||'<tr><td colspan="5" class="empty-cell">출고 기록 없음</td></tr>'}</tbody></table>`;
+  // 엑셀 내보내기 데이터
+  _prdExportData['shSt']={headers:['거래처','출고건수','출고량','불량','불량률'],rows:Object.entries(byCli).sort((a,b)=>b[1].qty-a[1].qty).map(([k,v])=>[k,v.cnt,v.qty,v.defect,v.qty?((v.defect/v.qty)*100).toFixed(1)+'%':'0%']),sheetName:'출고통계',fileName:'출고통계'};
+}
+window._prdCb_shSt=rShipStat;
+function printShipStat(){const c=$('shipStatC').innerHTML;if(!c)return;var rng=getPrdRange('shSt');const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>출고통계</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.sb{border:1px solid #ccc;padding:10px}.sb .l{font-size:10px}.sb .v{font-size:16px;font-weight:700}@media print{@page{size:A4;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px;font-size:16px">이노패키지 출고 통계 (${rng.label})</h2>${c}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
 function exportShipCSV(){const logs=DB.g('shipLog');let csv='\uFEFF출고일,거래처,제품,출고수량,양품,불량,차량,기사,입고처\n';logs.forEach(r=>{csv+=`${r.dt},${r.cnm},${r.pnm},${r.qty},${r.good||r.qty},${r.defect||0},${r.car||''},${r.driver||''},${r.dlv||''}\n`});const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='출고이력_'+td()+'.csv';a.click();toast('엑셀 내보내기','ok')}
 // Print ship document (거래명세표)
 function printShipDoc(){const woId=$('smWoId').value;const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};const qty=+$('smQty').value||0;const defect=+$('smDefect').value||0;doPrintShipDoc(co,o,qty,defect,$('smDlv').value,$('smCar').value,$('smDriver').value,$('smMemo').value)}
@@ -1567,7 +1536,6 @@ function exportOrderCSV(){
 /* 메인 렌더 */
 function rOrder(){
   if(!$('orderDateVal').value)$('orderDateVal').value=td();
-  if(!$('shipDateVal').value)$('shipDateVal').value=td();
   orderSub('list');
 }
 

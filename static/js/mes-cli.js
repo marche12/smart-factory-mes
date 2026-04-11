@@ -191,6 +191,17 @@ function dMold(id){if(!confirm('삭제?'))return;DB.s('mold',DB.g('mold').filter
 
 // ===== 엑셀 업로드 (품목/목형) =====
 var XLSX_FIELD_MAP={
+  cli:{
+    nm:['거래처명','거래처','업체명','업체','회사명','company','client','name'],
+    biz:['사업자번호','사업자','사업자등록번호','bizno','business no'],
+    ceo:['대표자','대표','ceo','representative'],
+    tel:['전화','전화번호','연락처','tel','phone'],
+    fax:['팩스','fax'],
+    addr:['주소','address','사업장주소'],
+    email:['이메일','email','e-mail'],
+    cType:['유형','구분','type','거래유형'],
+    note:['비고','메모','note','memo','설명']
+  },
   prod:{
     code:['품목코드','코드','품번','자재코드','code','item code','품목번호'],
     nm:['품목명','품명','제품명','자재명','name','item','품목 이름','품목별칭'],
@@ -301,4 +312,59 @@ function impMoldXlsx(inp){
     var ms=DB.g('mold');DB.s('mold',ms.concat(items));rMold();
     toast(items.length+'개 목형 등록 완료','ok');
   });
+}
+// 거래처 엑셀 업로드
+function impCliXlsx(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  _xlsxReadFile(f,function(rows){
+    if(!rows.length){toast('빈 파일','err');return}
+    var hdr=_xlsxFindHeaderRow(rows,XLSX_FIELD_MAP.cli);
+    if(!hdr.map.nm){toast('거래처명 컬럼을 찾을 수 없음','err');return}
+    var items=[];
+    for(var i=hdr.idx+1;i<rows.length;i++){
+      var r=rows[i];if(!r||!r.length)continue;
+      var nm=String(r[hdr.map.nm]||'').trim();
+      if(!nm)continue;
+      var get=function(k){return hdr.map[k]!=null?r[hdr.map[k]]:''};
+      var typeRaw=String(get('cType')||'').trim().toLowerCase();
+      var cType='sales';
+      if(typeRaw.indexOf('매입')>=0||typeRaw==='purchase')cType='purchase';
+      else if(typeRaw.indexOf('양쪽')>=0||typeRaw==='both'||typeRaw.indexOf('매출매입')>=0)cType='both';
+      items.push({
+        id:gid(),nm:nm,
+        biz:String(get('biz')||'').trim(),
+        ceo:String(get('ceo')||'').trim(),
+        tel:String(get('tel')||'').trim(),
+        fax:String(get('fax')||'').trim(),
+        addr:String(get('addr')||'').trim(),
+        email:String(get('email')||'').trim(),
+        cType:cType,
+        note:String(get('note')||'').trim()
+      });
+    }
+    if(!items.length){toast('등록할 데이터가 없음','err');return}
+    // 중복 체크
+    var existing=DB.g('cli');
+    var existNames=existing.map(function(c){return c.nm});
+    var dupes=items.filter(function(it){return existNames.indexOf(it.nm)>=0});
+    var newItems=items.filter(function(it){return existNames.indexOf(it.nm)<0});
+    var msg=newItems.length+'개 거래처를 등록합니다.';
+    if(dupes.length)msg+='\n(중복 '+dupes.length+'개 제외: '+dupes.slice(0,3).map(function(d){return d.nm}).join(', ')+(dupes.length>3?' 외':'')+ ')';
+    if(!newItems.length){toast('모두 중복 — 등록할 거래처 없음','err');return}
+    if(!confirm(msg))return;
+    DB.s('cli',existing.concat(newItems));rCli();
+    toast(newItems.length+'개 거래처 등록 완료','ok');
+  });
+}
+// 거래처 엑셀 양식 다운로드
+function dlCliXlsxTemplate(){
+  if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로드 실패','err');return}
+  var headers=['거래처명','사업자번호','대표자','전화번호','팩스','주소','이메일','유형(매출/매입/양쪽)','비고'];
+  var sample=['(주)샘플','123-45-67890','홍길동','02-1234-5678','02-1234-5679','서울시 강남구','sample@test.com','매출','기존거래처'];
+  var ws=XLSX.utils.aoa_to_sheet([headers,sample]);
+  ws['!cols']=headers.map(function(){return{wch:18}});
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'거래처');
+  XLSX.writeFile(wb,'거래처_등록양식.xlsx');
+  toast('양식 다운로드 완료','ok');
 }

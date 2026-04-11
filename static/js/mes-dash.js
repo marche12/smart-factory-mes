@@ -87,7 +87,7 @@ function rProdStat(){
   var allHs=DB.g('hist');
   // 상태별 분포
   var stNames=['대기','진행중','완료','출고완료','보류','취소'];
-  var stColors=['#D97706','#2563EB','#059669','#10B981','#7C3AED','#94A3B8'];
+  var stColors=['#4F6CFF','#4F6CFF','#059669','#059669','#DC2626','#94A3B8'];
   var stData=stNames.map(function(s){var cnt=0;os.forEach(function(o){var st=o.status||'대기';if(st===s||(s==='대기'&&!o.status))cnt++});return cnt});
   var fL=[],fD=[],fC=[];
   stNames.forEach(function(s,i){if(stData[i]>0){fL.push(s);fD.push(stData[i]);fC.push(stColors[i])}});
@@ -107,14 +107,14 @@ function rProdStat(){
   os.forEach(function(o){if(o.status==='취소')return;if(!cliQty[o.cnm])cliQty[o.cnm]=0;cliQty[o.cnm]+=(o.fq||0)});
   var cL=Object.keys(cliQty).sort(function(a,b){return cliQty[b]-cliQty[a]}).slice(0,8);
   var cD=cL.map(function(c){return cliQty[c]});
-  var cC=['#2563EB','#059669','#D97706','#DC2626','#7C3AED','#EC4899','#0EA5E9','#F97316'];
+  var cC=['#4F6CFF','#4F6CFF','#4F6CFF','#4F6CFF','#4F6CFF','#4F6CFF','#4F6CFF','#4F6CFF'];
   setTimeout(function(){drawHBarChart('rptChartClient',cL,cD,cC)},50);
   // 공정별 작업 품목
   var procItems={};
   os.forEach(function(o){if(o.status==='취소')return;if(!o.procs)return;o.procs.forEach(function(p){if(!procItems[p.nm])procItems[p.nm]=0;procItems[p.nm]++})});
   var eL=Object.keys(procItems).sort(function(a,b){return procItems[b]-procItems[a]});
   var eD=eL.map(function(l){return procItems[l]});
-  var eC=eL.map(function(l){var m={'인쇄':'#3B82F6','코팅':'#7B61FF','합지':'#F59E0B','톰슨':'#EF4444','접착':'#10B981','외주가공':'#9333EA'};return m[l]||'#64748B'});
+  var eC=eL.map(function(){return '#4F6CFF'});
   setTimeout(function(){drawHBarChart('rptChartEfficiency',eL,eD,eC)},50);
 }
 
@@ -693,7 +693,7 @@ pns.forEach(function(pn,idx){
 var pq=getProcQueue(pn);
 var w=pq.wait.length,k=pq.ing.length,d=pq.done.length;
 var tt=w+k+d,pct=tt>0?Math.round(d/tt*100):0;
-var bgColor=k>=3?'#EF4444':k>=1?'#3B82F6':tt===0?'#374151':'#10B981';
+var bgColor=k>=3?'#DC2626':k>=1?'#4F6CFF':tt===0?'#94A3B8':'#059669';
 pipeH+='<div class="pipe-node" onclick="showProcDet(\''+pn+'\')">';
 pipeH+='<div class="pipe-node-nm">'+pn+'</div>';
 pipeH+='<div class="pipe-tags">';
@@ -728,7 +728,7 @@ pcH+='<div class="pc-stat"><div class="num orange">'+w+'</div><div class="lbl">�
 pcH+='<div class="pc-stat"><div class="num green">'+d+'</div><div class="lbl">완료</div></div>';
 pcH+='</div>';
 }else{
-var barColor=k>=3?'#DC2626':k>=1?'#2563EB':tt===0?'#94A3B8':'#059669';
+var barColor=k>=3?'#DC2626':k>=1?'#4F6CFF':tt===0?'#94A3B8':'#059669';
 var isExtProc=(pn==='인쇄'||pn==='외주가공');
 pcH+='<div class="pc">';
 pcH+='<div class="pc-hdr"><span class="pc-hdr-nm">'+pn+'</span><span class="pc-hdr-pct">'+pct+'%</span></div>';

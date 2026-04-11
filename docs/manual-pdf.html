@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>팩플로우 ERP+MES 사용설명서</title>
+<style>
+@page{size:A4;margin:20mm 18mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#1E293B;line-height:1.75;font-size:11pt}
+.page-break{page-break-before:always}
+
+/* Cover */
+.cover{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#1E3A5F,#2563EB);color:#fff;margin:-20mm -18mm;padding:40mm}
+.cover h1{font-size:36pt;margin-bottom:8px;letter-spacing:-1px}
+.cover .sub{font-size:14pt;opacity:.85;margin-bottom:30px}
+.cover .info{font-size:10pt;opacity:.6;margin-top:40px;line-height:2}
+
+/* TOC */
+.toc{padding:20px 0}
+.toc h2{font-size:18pt;color:#1E40AF;border-bottom:3px solid #2563EB;padding-bottom:8px;margin-bottom:20px}
+.toc-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dotted #CBD5E1;font-size:11pt}
+.toc-item.main{font-weight:700;margin-top:10px;font-size:12pt;border-bottom:none}
+.toc-item.sub{padding-left:20px;font-size:10pt;color:#475569}
+
+/* Chapter */
+h2.ch{font-size:18pt;color:#1E40AF;border-bottom:3px solid #2563EB;padding-bottom:8px;margin:0 0 16px}
+h3{font-size:13pt;color:#1E293B;margin:20px 0 8px;padding-left:10px;border-left:4px solid #3B82F6}
+h4{font-size:11pt;color:#475569;margin:14px 0 6px;font-weight:700}
+p{margin-bottom:8px}
+ul,ol{padding-left:20px;margin-bottom:8px}
+li{margin-bottom:3px;font-size:10.5pt}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10pt}
+th{background:#EFF6FF;padding:7px 10px;text-align:left;border:1px solid #BFDBFE;font-weight:700;color:#1E40AF}
+td{padding:7px 10px;border:1px solid #E2E8F0;vertical-align:top}
+tr:nth-child(even){background:#F8FAFC}
+
+/* Boxes */
+.step{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:14px 16px;margin:10px 0}
+.step .st{font-weight:800;color:#1E40AF;margin-bottom:6px;font-size:11pt}
+.step ol{padding-left:18px}
+
+.tip{background:#F0FDF4;border-left:4px solid #22C55E;padding:10px 14px;margin:8px 0;font-size:10pt;color:#166534}
+.warn{background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 14px;margin:8px 0;font-size:10pt;color:#92400E}
+
+.sync{background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:14px 16px;margin:10px 0}
+.sync .sync-t{font-weight:800;color:#7C3AED;margin-bottom:6px;font-size:11pt}
+.sync ul{padding-left:18px}
+.sync li{color:#5B21B6}
+
+/* Flow */
+.flow{text-align:center;margin:12px 0;padding:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px}
+.flow .node{display:inline-block;background:#DBEAFE;border:2px solid #3B82F6;border-radius:8px;padding:5px 14px;font-weight:700;font-size:10pt;color:#1E40AF;margin:3px}
+.flow .arr{color:#94A3B8;font-weight:700;margin:0 4px}
+
+/* Badge */
+.bd{display:inline-block;padding:1px 8px;border-radius:4px;font-size:9pt;font-weight:700}
+.bd-b{background:#DBEAFE;color:#1E40AF}
+.bd-g{background:#DCFCE7;color:#166534}
+.bd-o{background:#FED7AA;color:#9A3412}
+.bd-r{background:#FEE2E2;color:#991B1B}
+.bd-gr{background:#F1F5F9;color:#475569}
+
+.footer{text-align:center;font-size:9pt;color:#94A3B8;margin-top:30px;padding-top:10px;border-top:1px solid #E2E8F0}
+</style>
+</head>
+<body>
+
+<!-- ==================== 표지 ==================== -->
+<div class="cover">
+  <h1>팩플로우 ERP+MES</h1>
+  <div class="sub">패키지 제조업 통합 생산관리 시스템<br>사용설명서</div>
+  <div class="info">
+    Version 1.0<br>
+    2026년 4월<br>
+    InnoPackage
+  </div>
+</div>
+
+<!-- ==================== 목차 ==================== -->
+<div class="page-break"></div>
+<div class="toc">
+<h2>목차</h2>
+<div class="toc-item main">1. 시작하기</div>
+<div class="toc-item sub">로그인 / 화면 구성 / 처음 설정 순서</div>
+<div class="toc-item main">2. 영업관리</div>
+<div class="toc-item sub">견적관리 / 수주관리 / 출고관리 / 클레임</div>
+<div class="toc-item main">3. 생산관리</div>
+<div class="toc-item sub">생산현황 / 생산계획 / 작업지시서 / 공정실적 / 외주관리</div>
+<div class="toc-item main">4. 품질/설비</div>
+<div class="toc-item sub">검사관리 / 불량관리 / 설비관리</div>
+<div class="toc-item main">5. 자재/구매</div>
+<div class="toc-item sub">재고관리 / 구매관리 / BOM·MRP</div>
+<div class="toc-item main">6. 회계/인사</div>
+<div class="toc-item sub">매출·매입 / 세금계산서 / 채권·자금 / 인사관리 / 급여관리</div>
+<div class="toc-item main">7. 시스템</div>
+<div class="toc-item sub">마스터관리 / 전자결재 / 권한관리 / 시스템관리 / 경영분석</div>
+<div class="toc-item main">8. 인쇄 양식</div>
+<div class="toc-item main">9. 전체 업무 흐름도</div>
+<div class="toc-item main">10. 모듈 간 연동·동기화 전체 맵</div>
+</div>
+
+<!-- ==================== 1. 시작하기 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">1. 시작하기</h2>
+
+<h3>1-1. 로그인</h3>
+<div class="step">
+<div class="st">로그인 방법</div>
+<ol>
+  <li>브라우저에서 <b>http://localhost:8080</b> 접속</li>
+  <li>사용자 선택 → 본인 계정 선택</li>
+  <li>비밀번호 입력 (초기: <b>1234</b>)</li>
+  <li><b>로그인</b> 클릭</li>
+</ol>
+</div>
+
+<h3>1-2. 화면 구성</h3>
+<table>
+<tr><th width="25%">영역</th><th>설명</th></tr>
+<tr><td><b>왼쪽 사이드바</b></td><td>6개 카테고리 메뉴 (영업관리, 생산관리, 품질/설비, 자재/구매, 회계/인사, 시스템). 카테고리 클릭 → 하위 메뉴 펼침 → 클릭 시 오른쪽에 해당 화면 표시</td></tr>
+<tr><td><b>상단 헤더</b></td><td>현재 위치 표시 (카테고리 > 메뉴명), 퀵 버튼들, 그룹탭</td></tr>
+<tr><td><b>오른쪽 콘텐츠</b></td><td>선택한 메뉴의 실제 내용 — KPI 카드, 데이터 테이블, 등록/수정 기능</td></tr>
+</table>
+
+<h4>상단 퀵 버튼</h4>
+<table>
+<tr><th>버튼</th><th>기능</th></tr>
+<tr><td>+ 작업지시서</td><td>어느 화면에서든 바로 작업지시서 생성</td></tr>
+<tr><td>알림 (종)</td><td>안전재고 부족, 납기 임박 등 시스템 알림</td></tr>
+<tr><td>거래처 / 품목 / 목형</td><td>빠른 등록·검색 팝업</td></tr>
+<tr><td>KPI</td><td>실시간 경영 지표 화면 이동</td></tr>
+<tr><td>납기</td><td>납기 3일 이내 수주 긴급 확인</td></tr>
+</table>
+
+<h4>그룹탭</h4>
+<p>메뉴 이름 옆에 표시되는 탭 버튼입니다. 관련 기능 간 빠른 전환이 가능합니다.</p>
+<p>예) 설비관리 진입 시: <span class="bd bd-b">설비대장</span> <span class="bd bd-gr">예방보전</span> <span class="bd bd-gr">고장이력</span> <span class="bd bd-gr">비가동</span> <span class="bd bd-gr">OEE</span> <span class="bd bd-gr">금형이력</span></p>
+
+<h3>1-3. 처음 사용할 때 — 기초 데이터 등록 순서</h3>
+<div class="warn"><b>기초 데이터가 없으면 작업지시서, 견적, 출고 등에서 거래처/품목을 선택할 수 없습니다.</b> 반드시 아래 순서대로 먼저 등록하세요.</div>
+
+<div class="flow">
+<span class="node">1. 회사정보</span><span class="arr">→</span>
+<span class="node">2. 직원 등록</span><span class="arr">→</span>
+<span class="node">3. 거래처 등록</span><span class="arr">→</span>
+<span class="node">4. 품목 등록</span><span class="arr">→</span>
+<span class="node">5. 목형 등록</span><span class="arr">→</span>
+<span class="node">6. 설비 등록</span>
+</div>
+
+<table>
+<tr><th>순서</th><th>위치</th><th>입력 내용</th></tr>
+<tr><td>1. 회사정보</td><td>시스템 > 시스템관리 > 설정</td><td>회사명, 대표자명, 사업자등록번호, 업태, 종목 (세금계산서에 사용됨)</td></tr>
+<tr><td>2. 직원</td><td>회계/인사 > 인사관리</td><td>이름, 부서(현장/사무), 직급, 담당공정(코팅/합지/톰슨/접착/인쇄), 기본급</td></tr>
+<tr><td>3. 거래처</td><td>시스템 > 마스터관리 > 거래처</td><td>거래처명, 사업자등록번호, 연락처, 주소, 유형(납품처/매입처)</td></tr>
+<tr><td>4. 품목</td><td>시스템 > 마스터관리 > 품목</td><td>품목명, 규격, 재질, 단가 (예: "피자박스 / 400x300x50 / E골 / 350원")</td></tr>
+<tr><td>5. 목형</td><td>시스템 > 마스터관리 > 목형</td><td>목형명, 거래처, 사이즈, 상태 (톰슨 공정에 사용하는 금형)</td></tr>
+<tr><td>6. 설비</td><td>품질/설비 > 설비관리 > 설비대장</td><td>설비명(코팅기 1호 등), 제조사, 구매일, 상태</td></tr>
+</table>
+
+<!-- ==================== 2. 영업관리 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">2. 영업관리</h2>
+<p>고객 문의부터 견적 → 수주 → 출고까지의 전체 영업 흐름을 관리합니다.</p>
+
+<div class="flow">
+<span class="node">견적 작성</span><span class="arr">→</span>
+<span class="node">수주 확정</span><span class="arr">→</span>
+<span class="node">작업지시서 생성</span><span class="arr">→</span>
+<span class="node">생산 완료</span><span class="arr">→</span>
+<span class="node">출고 처리</span>
+</div>
+
+<h3>2-1. 견적관리</h3>
+<p>거래처에서 제품 제작 문의가 오면 견적을 작성합니다.</p>
+
+<div class="step">
+<div class="st">견적 등록 순서</div>
+<ol>
+  <li>영업관리 > 견적관리 이동</li>
+  <li><b>+ 견적등록</b> 클릭 → 견적번호 자동 부여 (QT-20260411-001)</li>
+  <li><b>거래처</b>: 요청한 거래처 (자동완성 지원)</li>
+  <li><b>제품명</b>: 만들 제품 이름 (예: "피자박스 대")</li>
+  <li><b>수량</b>: 주문 수량 (매 단위)</li>
+  <li><b>확정 공급가</b>: 최종 판매 단가 (마진 포함)</li>
+  <li><b>클로드 견적 내용</b>: AI 원가 계산 결과 붙여넣기 (선택사항)</li>
+  <li><b>저장</b></li>
+</ol>
+</div>
+
+<h4>견적 상태 흐름</h4>
+<table>
+<tr><th>상태</th><th>의미</th><th>다음 행동</th></tr>
+<tr><td><span class="bd bd-gr">작성중</span></td><td>아직 거래처에 미전달</td><td>내용 확인 후 거래처에 전달</td></tr>
+<tr><td><span class="bd bd-b">발송</span></td><td>거래처에 견적서 전달 완료</td><td>거래처 회신 대기</td></tr>
+<tr><td><span class="bd bd-g">수주</span></td><td>거래처가 주문 확정</td><td>→ 작업지시서 전환 버튼 클릭</td></tr>
+<tr><td><span class="bd bd-r">실주</span></td><td>수주 실패</td><td>원인 기록 후 종료</td></tr>
+</table>
+
+<h4>"클로드 견적 내용" 칸이란?</h4>
+<p>AI(클로드)에게 "E골 400x300x50 박스 1000매 원가 계산해줘"라고 물어본 결과를 통째로 복사해서 붙여넣는 곳입니다. 원지비, 코팅비, 합지비, 톰슨비, 접착비 등의 원가 breakdown이 기록으로 남습니다.</p>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>견적 → 수주</b>: 상태를 "수주"로 변경하면 수주관리에 자동 등록</li>
+  <li><b>견적 → 작업지시서</b>: "작업지시서 전환" 버튼으로 견적 정보가 작업지시서에 자동 복사</li>
+  <li><b>견적 → 인쇄</b>: "인쇄" 버튼으로 공식 견적서 양식 출력</li>
+</ul>
+</div>
+
+<h3>2-2. 수주관리</h3>
+<p>확정된 주문을 관리합니다.</p>
+
+<table>
+<tr><th>그룹탭</th><th>기능</th></tr>
+<tr><td><span class="bd bd-b">수주목록</span></td><td>전체 수주 현황. 상태별 필터링 (진행중/완료/취소)</td></tr>
+<tr><td><span class="bd bd-gr">진행추적</span></td><td>수주별 현재 단계 추적 — 생산 진행률, 출고 여부 확인</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>수주 → 작업지시서</b>: 수주에서 바로 작업지시서 생성 가능</li>
+  <li><b>수주 → 납기관리</b>: 납기일 기반 알림 자동 생성 (3일 전 경고)</li>
+  <li><b>수주 → 출고</b>: 해당 작업지시서 완료 시 출고 가능 목록에 연결</li>
+</ul>
+</div>
+
+<h3>2-3. 출고관리</h3>
+<p>생산 완료된 제품을 거래처에 납품합니다.</p>
+
+<table>
+<tr><th>그룹탭</th><th>기능</th></tr>
+<tr><td><span class="bd bd-b">출고</span></td><td>작업지시서 "완료" 건만 표시. 출고 수량/차량번호 기록</td></tr>
+<tr><td><span class="bd bd-gr">부분출고</span></td><td>전체 수량 중 일부만 먼저 출고 (예: 1000개 중 700개만)</td></tr>
+<tr><td><span class="bd bd-gr">반품</span></td><td>거래처 반품 처리. 사유/수량 기록</td></tr>
+</table>
+
+<div class="step">
+<div class="st">출고 처리 순서</div>
+<ol>
+  <li>출고관리 > 출고 탭 이동</li>
+  <li>출고 가능 목록에서 해당 건 확인</li>
+  <li><b>출고</b> 버튼 → 수량/차량번호 확인</li>
+  <li><b>거래명세서 인쇄</b> → 제품과 함께 전달</li>
+</ol>
+</div>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>작업지시서(완료) → 출고</b>: 작업지시서가 완료되어야 출고 가능 목록에 표시</li>
+  <li><b>출고 → 매출</b>: 출고 후 매출 등록 시 출고 내역 참조</li>
+  <li><b>출고 → 세금계산서</b>: 출고 기반으로 세금계산서 발행</li>
+  <li><b>출고 → 재고</b>: 출고 시 완제품 재고 자동 차감</li>
+  <li><b>출고 → 거래명세서 인쇄</b>: 거래명세서 자동 생성</li>
+</ul>
+</div>
+
+<h3>2-4. 클레임</h3>
+<p>거래처 불만/불량 접수를 기록하고 처리 과정을 관리합니다.</p>
+
+<div class="step">
+<div class="st">클레임 등록</div>
+<ol>
+  <li>거래처, 품목, 유형(인쇄불량/치수불량/포장불량 등) 선택</li>
+  <li><b>내용</b>: 어떤 문제인지 상세 기록</li>
+  <li><b>원인</b>: 왜 발생했는지 (조사 후 기록)</li>
+  <li><b>대책</b>: 재발 방지 조치 사항</li>
+  <li>상태: <span class="bd bd-r">미처리</span> → <span class="bd bd-o">처리중</span> → <span class="bd bd-g">완료</span></li>
+</ol>
+</div>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>클레임 → 경영분석</b>: 클레임 건수/추이가 KPI에 반영</li>
+  <li><b>클레임 → 불량관리</b>: 클레임 원인이 불량 분석 데이터로 활용</li>
+</ul>
+</div>
+
+<!-- ==================== 3. 생산관리 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">3. 생산관리</h2>
+<p>작업지시서를 중심으로 생산 계획, 공정 진행, 실적을 관리합니다. <b>작업지시서가 이 시스템의 핵심축</b>입니다.</p>
+
+<div class="flow">
+<span class="node">작업지시서 생성</span><span class="arr">→</span>
+<span class="node">자재 확인(BOM)</span><span class="arr">→</span>
+<span class="node">공정 진행</span><span class="arr">→</span>
+<span class="node">실적 입력</span><span class="arr">→</span>
+<span class="node">품질 검사</span><span class="arr">→</span>
+<span class="node">완료</span>
+</div>
+
+<h3>3-1. 생산현황 (대시보드)</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">대시보드</span></td><td>공장 전체 현황 한눈에 보기 — 오늘 작업 건수, 공정별 진행률(코팅/합지/톰슨/접착/인쇄), 완료/지연 건수, 일별 생산량 차트</td></tr>
+<tr><td><span class="bd bd-gr">작업자현황</span></td><td>각 작업자의 현재 작업 내용, 오늘 실적(생산수량/불량수량)</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>작업지시서/공정실적 → 대시보드</b>: 모든 데이터가 실시간 집계되어 KPI 카드와 차트에 표시</li>
+  <li><b>공정실적 → 작업자현황</b>: 작업자별 실적 입력 내역이 자동 집계</li>
+</ul>
+</div>
+
+<h3>3-2. 생산계획</h3>
+<p>월/주 단위로 생산 일정을 계획합니다. 캘린더 형태로 작업을 배치하고, 납기일 기준으로 역산하여 각 공정의 시작일을 설정합니다.</p>
+
+<h3>3-3. 작업지시서 (핵심 기능)</h3>
+<p><b>모든 생산 활동의 중심입니다.</b> 수주 → 작업지시서 → 공정 실적 → 완료 → 출고의 전체 흐름을 연결합니다.</p>
+
+<div class="step">
+<div class="st">작업지시서 등록</div>
+<ol>
+  <li>생산관리 > 작업지시서 또는 상단 <b>+ 작업지시서</b> 버튼</li>
+  <li><b>거래처</b> 선택 (자동완성)</li>
+  <li><b>품목</b> 선택</li>
+  <li><b>목형</b> 선택 (톰슨 공정 금형)</li>
+  <li><b>수량</b> 입력</li>
+  <li><b>납기일</b> 설정</li>
+  <li><b>공정</b> 설정: 필요한 공정을 순서대로 체크 (예: 코팅 → 합지 → 톰슨 → 접착)</li>
+  <li><b>저장</b></li>
+</ol>
+</div>
+
+<h4>작업지시서 상태 흐름</h4>
+<div class="flow">
+<span class="node"><span class="bd bd-gr">대기</span></span><span class="arr">→</span>
+<span class="node"><span class="bd bd-b">진행중</span></span><span class="arr">→</span>
+<span class="node"><span class="bd bd-o">완료대기</span></span><span class="arr">→</span>
+<span class="node"><span class="bd bd-g">완료</span></span>
+</div>
+
+<table>
+<tr><th>상태</th><th>의미</th><th>전환 조건</th></tr>
+<tr><td><span class="bd bd-gr">대기</span></td><td>생산 미시작</td><td>등록 직후 기본값</td></tr>
+<tr><td><span class="bd bd-b">진행중</span></td><td>공정 진행 중</td><td>작업 시작 또는 첫 공정 실적 입력 시</td></tr>
+<tr><td><span class="bd bd-o">완료대기</span></td><td>모든 공정 완료, 확인 대기</td><td>마지막 공정 실적 입력 시</td></tr>
+<tr><td><span class="bd bd-g">완료</span></td><td>생산 완료, 출고 가능</td><td>완료 처리 버튼 클릭</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화 (작업지시서 중심)</div>
+<ul>
+  <li><b>견적/수주 → 작업지시서</b>: 견적 수주 확정 시 자동 생성</li>
+  <li><b>작업지시서 → BOM/MRP</b>: 작업지시서의 품목/수량으로 필요 자재 자동 계산</li>
+  <li><b>작업지시서 → 공정실적</b>: 작업지시서 선택 → 각 공정별 실적 입력</li>
+  <li><b>작업지시서 → 대시보드</b>: 진행 상태가 실시간으로 대시보드에 반영</li>
+  <li><b>작업지시서(완료) → 출고</b>: 완료된 지시서만 출고 가능 목록에 표시</li>
+  <li><b>작업지시서 → 인쇄</b>: 현장 게시용 작업지시서 인쇄</li>
+  <li><b>작업지시서 → 목형 사용이력</b>: 사용한 목형의 사용 횟수 자동 증가</li>
+  <li><b>작업지시서 → 납기관리</b>: 납기일 기반 자동 알림</li>
+</ul>
+</div>
+
+<h3>3-4. 공정실적</h3>
+<p>현장 작업자가 각 공정 완료 시 실적을 입력합니다.</p>
+
+<table>
+<tr><th>그룹탭</th><th>기능</th></tr>
+<tr><td><span class="bd bd-b">실적입력</span></td><td>작업지시서 선택 → 공정/작업자/생산수량/불량수량/작업시간 입력</td></tr>
+<tr><td><span class="bd bd-gr">로트추적</span></td><td>로트번호로 "이 제품이 어떤 원자재로, 어떤 공정을, 누가 작업했는지" 역추적</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>공정실적 → 작업지시서 상태</b>: 실적 입력에 따라 작업지시서 진행률 자동 갱신</li>
+  <li><b>공정실적 → 불량관리</b>: 불량수량 입력 시 불량관리에 자동 반영</li>
+  <li><b>공정실적 → 대시보드</b>: 공정별 생산량/불량률 실시간 집계</li>
+  <li><b>공정실적 → OEE</b>: 작업시간 데이터가 설비 OEE 계산에 사용</li>
+  <li><b>공정실적 → 작업자현황</b>: 작업자별 오늘 실적 자동 집계</li>
+</ul>
+</div>
+
+<h3>3-5. 외주관리</h3>
+<p>인쇄 등 자체 설비가 없는 공정을 외부 인쇄소에 맡기는 과정을 관리합니다.</p>
+
+<div class="step">
+<div class="st">외주 발주 ~ 입고</div>
+<ol>
+  <li>생산관리 > 외주관리 > <b>+ 외주발주</b></li>
+  <li>인쇄소 선택 (마스터에 등록된 인쇄소)</li>
+  <li>작업지시서/품목/수량/납기 입력</li>
+  <li>인쇄소에서 완성품 도착 → <b>입고 처리</b></li>
+</ol>
+</div>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>외주 → 작업지시서</b>: 외주 공정 완료 시 작업지시서 진행률에 반영</li>
+  <li><b>외주 → 매입</b>: 외주비가 매입으로 연결</li>
+  <li><b>외주 → 인쇄소 마스터</b>: 등록된 인쇄소 목록에서 선택</li>
+</ul>
+</div>
+
+<!-- ==================== 4. 품질/설비 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">4. 품질/설비</h2>
+<p>제품 품질 검사, 불량 관리, 공장 설비 유지보수를 관리합니다.</p>
+
+<h3>4-1. 검사관리</h3>
+<table>
+<tr><th>그룹탭</th><th>언제 사용</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">수입검사</span></td><td>원자재 입고 시</td><td>원지/잉크 등 원자재가 들어올 때 품질 기준(평량/수분/색상 등)에 맞는지 검사. 합격/불합격 판정</td></tr>
+<tr><td><span class="bd bd-gr">출하검사</span></td><td>제품 출고 전</td><td>거래처에 보내기 전 최종 품질 체크. 치수/인쇄 상태/접착 강도/외관 검사</td></tr>
+<tr><td><span class="bd bd-gr">검사성적서</span></td><td>거래처 요청 시</td><td>공식 검사 성적서 발행. 거래처에 품질 증빙으로 제출하는 문서</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>입고 → 수입검사</b>: 자재 입고 시 수입검사 대상으로 등록</li>
+  <li><b>작업지시서(완료) → 출하검사</b>: 생산 완료 건이 출하검사 대상으로 연결</li>
+  <li><b>검사 → 출고</b>: 출하검사 합격 후 출고 처리 가능</li>
+</ul>
+</div>
+
+<h3>4-2. 불량관리</h3>
+<p>공정 중 발생한 불량을 기록하고 분석합니다. <b>검사관리와의 차이점:</b></p>
+
+<table>
+<tr><th></th><th>검사관리</th><th>불량관리</th></tr>
+<tr><td><b>시점</b></td><td>입고/출고 시 (관문 역할)</td><td>생산 공정 중 (실시간)</td></tr>
+<tr><td><b>목적</b></td><td>"기준에 맞는가?" 합격/불합격 판정</td><td>"왜 불량이 났는가?" 원인 분석·대책 수립</td></tr>
+<tr><td><b>대상</b></td><td>원자재(수입검사) / 완성품(출하검사)</td><td>생산 중 발생한 불량품</td></tr>
+<tr><td><b>예시</b></td><td>원지 입고 → 평량 검사 → 합격</td><td>톰슨 공정에서 20개 치수불량 → 칼날 마모 원인 → 칼날 교체 대책</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>공정실적(불량수량) → 불량관리</b>: 실적 입력 시 불량 자동 기록</li>
+  <li><b>불량 → 경영분석</b>: 불량률이 KPI에 반영, 불량 추이 분석</li>
+  <li><b>불량 → 설비관리</b>: 설비 원인 불량 시 고장이력/예방보전에 참조</li>
+</ul>
+</div>
+
+<h3>4-3. 설비관리</h3>
+<p>공장 기계(코팅기, 합지기, 톰슨기, 접착기 등)를 관리합니다.</p>
+
+<table>
+<tr><th>그룹탭 (6개)</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">설비대장</span></td><td>보유 설비 목록. 설비명/제조사/구매일/현재상태(가동/정지/점검)</td></tr>
+<tr><td><span class="bd bd-gr">예방보전</span></td><td>정기 점검 스케줄 등록. 예: "톰슨기 매월 칼날 교체", "코팅기 분기별 롤러 점검"</td></tr>
+<tr><td><span class="bd bd-gr">고장이력</span></td><td>고장 발생 기록. 언제/어떤 설비/고장원인/수리내용/수리시간</td></tr>
+<tr><td><span class="bd bd-gr">비가동</span></td><td>기계 미가동 시간 기록. 사유: 고장/자재대기/세척/교대/계획정지</td></tr>
+<tr><td><span class="bd bd-gr">OEE</span></td><td>설비종합효율 자동 계산 (아래 상세 설명)</td></tr>
+<tr><td><span class="bd bd-gr">금형이력</span></td><td>목형(톰슨금형)의 사용 횟수, 수리 이력 관리. 수명 예측용</td></tr>
+</table>
+
+<h4>OEE (설비종합효율) 계산법</h4>
+<table>
+<tr><th>항목</th><th>계산식</th><th>예시</th></tr>
+<tr><td>가동률</td><td>실제 가동시간 / 계획 가동시간</td><td>8시간 중 7시간 = 87.5%</td></tr>
+<tr><td>성능률</td><td>실제 생산량 / 이론 생산량</td><td>이론 1000개, 실제 800개 = 80%</td></tr>
+<tr><td>양품률</td><td>양품 수량 / 총 생산량</td><td>800개 중 760개 양품 = 95%</td></tr>
+<tr><td><b>OEE</b></td><td>가동률 x 성능률 x 양품률</td><td>87.5% x 80% x 95% = <b>66.5%</b></td></tr>
+</table>
+<div class="tip">세계적 수준의 OEE는 85% 이상입니다. 60% 미만이면 개선이 필요합니다.</div>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>공정실적(작업시간/생산량) → OEE</b>: 공정 실적 데이터로 OEE 자동 계산</li>
+  <li><b>비가동 → OEE</b>: 비가동 시간이 가동률에 반영</li>
+  <li><b>작업지시서(목형) → 금형이력</b>: 작업지시서 완료 시 목형 사용횟수 자동 증가</li>
+  <li><b>고장이력 → 예방보전</b>: 고장 패턴 분석으로 예방보전 스케줄 최적화</li>
+</ul>
+</div>
+
+<!-- ==================== 5. 자재/구매 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">5. 자재/구매</h2>
+<p>원자재 입출고, 재고, 구매 발주, BOM/MRP를 관리합니다.</p>
+
+<h3>5-1. 재고관리</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">재고현황</span></td><td>현재 보유 자재 목록과 수량. 안전재고 이하면 빨간색 경고 표시</td></tr>
+<tr><td><span class="bd bd-gr">입고</span></td><td>구매한 자재 도착 시 입고 처리. 자재명/수량/단가/거래처/입고일 기록</td></tr>
+<tr><td><span class="bd bd-gr">안전재고</span></td><td>자재별 최소 보유량 설정. 이 수량 아래로 떨어지면 알림 발생</td></tr>
+<tr><td><span class="bd bd-gr">재고실사</span></td><td>실제 창고 수량과 시스템 수량 대조. 차이 발생 시 조정</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>발주(입고) → 재고현황</b>: 입고 처리 시 재고 수량 자동 증가</li>
+  <li><b>안전재고 → 알림</b>: 재고가 안전재고 아래로 떨어지면 상단 알림 종에 경고</li>
+  <li><b>입고 → 수입검사</b>: 입고된 자재가 수입검사 대상으로 연결</li>
+  <li><b>재고 → MRP</b>: 현재 재고량이 MRP 부족량 계산에 사용</li>
+</ul>
+</div>
+
+<h3>5-2. 구매관리</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">발주서</span></td><td>원자재 주문서 작성/발행. 거래처/품목/수량/단가/납기 지정</td></tr>
+<tr><td><span class="bd bd-gr">단가이력</span></td><td>거래처별 자재 단가 변동 추적. 가격 협상 근거 자료</td></tr>
+</table>
+
+<h3>5-3. BOM / MRP</h3>
+
+<h4>BOM (Bill of Materials, 자재명세서)</h4>
+<p>제품 하나를 만드는 데 필요한 자재 목록입니다.</p>
+<p><b>예시 — "피자박스 1000매"의 BOM:</b></p>
+<table>
+<tr><th>자재</th><th>소요량</th></tr>
+<tr><td>E골 원지</td><td>500장</td></tr>
+<tr><td>인쇄 잉크</td><td>2L</td></tr>
+<tr><td>접착제</td><td>1kg</td></tr>
+<tr><td>코팅 필름</td><td>50m</td></tr>
+</table>
+
+<h4>MRP (Material Requirements Planning, 자재소요계획)</h4>
+<p>작업지시서의 생산 수량과 BOM을 바탕으로 <b>부족한 자재를 자동 계산</b>합니다.</p>
+<div class="flow">
+<span class="node">작업지시서 수량</span><span class="arr">x</span>
+<span class="node">BOM 소요량</span><span class="arr">=</span>
+<span class="node">필요 자재량</span><span class="arr">-</span>
+<span class="node">현재 재고</span><span class="arr">=</span>
+<span class="node" style="background:#FEE2E2;border-color:#EF4444;color:#991B1B">부족량 (발주 필요)</span>
+</div>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>작업지시서 → MRP</b>: 작업지시서 품목/수량이 MRP 계산의 입력값</li>
+  <li><b>BOM → MRP</b>: BOM에 등록된 소요량으로 필요 자재량 계산</li>
+  <li><b>재고현황 → MRP</b>: 현재 재고를 빼서 부족량 산출</li>
+  <li><b>MRP → 발주서</b>: 부족 자재를 바로 발주서로 생성 가능</li>
+</ul>
+</div>
+
+<!-- ==================== 6. 회계/인사 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">6. 회계/인사</h2>
+
+<h3>6-1. 매출/매입</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">매출</span></td><td>거래처에 제품 판매 금액. 거래처/품명/수량/단가/입금액/결제방법(미수/현금/계좌/어음/카드)</td></tr>
+<tr><td><span class="bd bd-gr">매입</span></td><td>원자재/외주비 등 지출. 거래처/품명/수량/단가/지급액/결제방법</td></tr>
+<tr><td><span class="bd bd-gr">원가분석</span></td><td>제품별 실제 원가(자재비+인건비+외주비) 분석. 수익성 확인</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>출고 → 매출</b>: 출고 내역을 참조하여 매출 등록</li>
+  <li><b>매출/매입 → 세금계산서</b>: 매출/매입 건에 대해 세금계산서 발행</li>
+  <li><b>매출(미수) → 채권관리</b>: 입금액이 매출액보다 적으면 미수금으로 자동 집계</li>
+  <li><b>매입(미지급) → 채권관리</b>: 지급액이 매입액보다 적으면 미지급금으로 집계</li>
+  <li><b>매출/매입 → 경영분석</b>: 매출/매입 데이터가 KPI, 추이, 수익성 분석에 사용</li>
+</ul>
+</div>
+
+<h3>6-2. 세금계산서</h3>
+<p><b>종이</b>와 <b>전자</b> 두 가지 방식을 지원합니다.</p>
+
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">세금계산서</span></td><td>전체 세금계산서 목록 (종이+전자 모두). 등록/인쇄/전자발행</td></tr>
+<tr><td><span class="bd bd-gr">전자세금계산서</span></td><td>전자 발행 건만 모아보기. 국세청 전송 상태 확인</td></tr>
+</table>
+
+<h4>종이 세금계산서</h4>
+<div class="step">
+<div class="st">종이 발행 순서</div>
+<ol>
+  <li><b>+ 등록</b> > 발행방식: <span class="bd bd-gr">종이 (인쇄)</span> 선택</li>
+  <li>발행일, 구분(매출/매입), 거래처, 사업자번호, 품목 입력</li>
+  <li>수량 x 단가 → 공급가액 자동 계산, 세액(10%) 자동</li>
+  <li><b>저장</b> 후 <b>종이 인쇄</b> 버튼으로 인쇄</li>
+</ol>
+</div>
+
+<h4>전자 세금계산서 (팝빌 API)</h4>
+<div class="step">
+<div class="st">전자 발행 순서</div>
+<ol>
+  <li><b>+ 등록</b> > 발행방식: <span class="bd bd-b">전자 (국세청)</span> 선택</li>
+  <li>모든 필드 입력 (대표자명, 주소 필수)</li>
+  <li><b>저장</b> → 상태: <span class="bd bd-o">전자대기</span></li>
+  <li><b>전자발행</b> 버튼 → 팝빌 API로 국세청 전송</li>
+  <li>성공 시 → <span class="bd bd-g">전자발행</span> 상태로 변경</li>
+</ol>
+</div>
+
+<h4>홈택스 엑셀 내보내기 (무료 방법)</h4>
+<p>세금계산서 목록에서 <b>홈택스 엑셀</b> 버튼 → CSV 다운로드 → 홈택스(hometax.go.kr)에 업로드하면 무료로 전자세금계산서 발행 가능</p>
+
+<div class="tip"><b>팝빌</b>: 건당 100원, 자동 전송. <b>홈택스</b>: 무료, 수동 업로드. 발행 건수가 적으면 홈택스, 많으면 팝빌이 편합니다.</div>
+
+<h4>팝빌 API 설정</h4>
+<p>시스템 > 시스템관리 > 설정 > <b>팝빌 전자세금계산서 API 설정</b>에서 LinkID, SecretKey, 사업자번호를 입력합니다. (popbill.com에서 회원가입 후 발급)</p>
+
+<h3>6-3. 채권/자금</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">미수미지급</span></td><td>거래처별 미수금(받을 돈) / 미지급금(줄 돈) 현황. 입금/지급 처리 버튼</td></tr>
+<tr><td><span class="bd bd-gr">입출금</span></td><td>실제 통장 입출금 내역 기록</td></tr>
+<tr><td><span class="bd bd-gr">외상마감</span></td><td>월말 거래처별 외상 정리 (매출/매입/입금/미수 한눈에 정리)</td></tr>
+<tr><td><span class="bd bd-gr">채권Aging</span></td><td>미수금 기간별 분류 (아래 표 참조)</td></tr>
+</table>
+
+<h4>채권Aging 구간</h4>
+<table>
+<tr><th>구간</th><th>의미</th><th>대응</th></tr>
+<tr><td>30일 이내</td><td>정상</td><td>대기</td></tr>
+<tr><td>30~60일</td><td>주의</td><td>입금 독촉 전화</td></tr>
+<tr><td>60~90일</td><td>위험</td><td>공식 독촉장 발송</td></tr>
+<tr><td>90일 초과</td><td>부실</td><td>법적 조치 검토</td></tr>
+</table>
+
+<h3>6-4. 인사관리</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">직원</span></td><td>직원 목록. 이름/부서/직급/담당공정/연락처/기본급/시급/연차</td></tr>
+<tr><td><span class="bd bd-gr">출퇴근</span></td><td>일별 출퇴근 기록. 지각/조퇴/결근 표시. 수정 가능</td></tr>
+<tr><td><span class="bd bd-gr">연차</span></td><td>직원별 총연차/사용/잔여 확인. 연차 신청/승인</td></tr>
+</table>
+
+<h3>6-5. 급여관리</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">급여</span></td><td>월급 계산. 기본급 + 야근수당 + 특근수당 - 공제 = 실지급액</td></tr>
+<tr><td><span class="bd bd-gr">교대스케줄</span></td><td>2교대/3교대 근무표. 주간/야간/비번 배정</td></tr>
+<tr><td><span class="bd bd-gr">4대보험</span></td><td>국민연금/건강보험/고용보험/산재보험 관리</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>출퇴근 → 급여</b>: 출퇴근 기록이 근무시간/야근 계산에 사용</li>
+  <li><b>교대스케줄 → 출퇴근</b>: 스케줄 기반으로 출퇴근 정상/이상 판별</li>
+  <li><b>직원(담당공정) → 작업자현황</b>: 담당공정 기반으로 작업자 현황 표시</li>
+</ul>
+</div>
+
+<!-- ==================== 7. 시스템 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">7. 시스템</h2>
+
+<h3>7-1. 마스터관리</h3>
+<p>시스템 전체에서 사용하는 기초 데이터를 관리합니다.</p>
+
+<table>
+<tr><th>그룹탭</th><th>등록 내용</th><th>사용처</th></tr>
+<tr><td><span class="bd bd-b">거래처</span></td><td>거래처명, 사업자번호, 연락처, 주소</td><td>수주/출고/매출/세금계산서 등 전체</td></tr>
+<tr><td><span class="bd bd-gr">인쇄소</span></td><td>외주 인쇄소 정보</td><td>외주관리에서 선택</td></tr>
+<tr><td><span class="bd bd-gr">품목</span></td><td>제품명, 규격, 재질, 단가</td><td>작업지시서/수주/BOM 등</td></tr>
+<tr><td><span class="bd bd-gr">목형</span></td><td>톰슨 금형 정보</td><td>작업지시서에서 선택</td></tr>
+<tr><td><span class="bd bd-gr">공통코드</span></td><td>시스템 전체 코드값</td><td>드롭다운 선택 항목</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>마스터 → 전체 모듈</b>: 거래처/품목/목형은 모든 모듈에서 참조. 마스터를 먼저 등록해야 다른 기능 사용 가능</li>
+  <li><b>거래처 → 자동완성</b>: 모든 거래처 입력 필드에서 자동완성 검색 지원</li>
+</ul>
+</div>
+
+<h3>7-2. 전자결재</h3>
+<p>사내 결재가 필요한 건(구매품의서, 출고승인 등)을 등록하고 승인/반려 처리합니다.</p>
+
+<h3>7-3. 권한관리</h3>
+<p>직원별로 접근 가능한 메뉴를 제한합니다.</p>
+<table>
+<tr><th>역할 예시</th><th>접근 가능 메뉴</th></tr>
+<tr><td>관리자</td><td>전체</td></tr>
+<tr><td>현장 작업자</td><td>생산현황, 공정실적, 작업지시서</td></tr>
+<tr><td>경리</td><td>매출/매입, 세금계산서, 채권/자금, 인사, 급여</td></tr>
+<tr><td>영업</td><td>견적, 수주, 출고, 클레임</td></tr>
+</table>
+
+<h3>7-4. 시스템관리</h3>
+<table>
+<tr><th>그룹탭</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">백업/복원</span></td><td>데이터 백업 목록. 수동 백업 버튼. 과거 백업에서 복원. <b>24시간마다 자동 백업</b> (30일 보관)</td></tr>
+<tr><td><span class="bd bd-gr">감사로그</span></td><td>누가 언제 어떤 데이터를 변경했는지 기록 — 문제 발생 시 원인 추적</td></tr>
+<tr><td><span class="bd bd-gr">설정</span></td><td>회사정보, 팝빌 API 설정, 데이터 초기화</td></tr>
+</table>
+
+<div class="warn"><b>데이터 초기화</b>는 모든 업무 데이터를 삭제합니다 (기초 데이터는 유지). 테스트 데이터를 지우고 실제 운영을 시작할 때 사용하세요. 초기화 전 자동으로 백업이 생성됩니다.</div>
+
+<h3>7-5. 경영분석</h3>
+<table>
+<tr><th>그룹탭 (6개)</th><th>내용</th></tr>
+<tr><td><span class="bd bd-b">KPI</span></td><td>실시간 핵심 지표 — 매출, 생산량, 불량률, 납기준수율, 미수금</td></tr>
+<tr><td><span class="bd bd-gr">추이</span></td><td>월별 매출/생산/불량 추이 그래프</td></tr>
+<tr><td><span class="bd bd-gr">순위</span></td><td>거래처별/품목별 매출 순위</td></tr>
+<tr><td><span class="bd bd-gr">수익성</span></td><td>제품별 수익성 (매출 - 원가 = 이익)</td></tr>
+<tr><td><span class="bd bd-gr">납기준수율</span></td><td>납기 약속 이행 비율</td></tr>
+<tr><td><span class="bd bd-gr">보고서</span></td><td>일일/주간/월간 종합 보고서</td></tr>
+</table>
+
+<div class="sync">
+<div class="sync-t">연동·동기화</div>
+<ul>
+  <li><b>전체 모듈 → 경영분석</b>: 매출/생산/불량/출고/클레임 등 모든 데이터가 KPI와 차트에 자동 집계</li>
+  <li><b>작업지시서(납기) → 납기준수율</b>: 납기일 대비 실제 출고일로 자동 계산</li>
+</ul>
+</div>
+
+<!-- ==================== 8. 인쇄 양식 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">8. 인쇄 양식</h2>
+<p>각 화면에서 <b>인쇄</b> 버튼 클릭 → 새 창이 열리고 프린터로 인쇄됩니다.</p>
+
+<table>
+<tr><th>양식</th><th>위치</th><th>용도</th></tr>
+<tr><td><b>견적서</b></td><td>견적관리 > 인쇄</td><td>거래처에 견적 제출</td></tr>
+<tr><td><b>작업지시서</b></td><td>작업지시서 상세 > 인쇄</td><td>현장에 게시, 작업자에게 전달</td></tr>
+<tr><td><b>거래명세서</b></td><td>출고관리 > 거래명세서</td><td>제품 납품 시 동봉</td></tr>
+<tr><td><b>세금계산서</b></td><td>세금계산서 > 종이 인쇄</td><td>공급자/공급받는자 정보 포함 공식 세금계산서</td></tr>
+<tr><td><b>검사성적서</b></td><td>검사관리 > 검사성적서</td><td>거래처에 품질 증빙 제출</td></tr>
+</table>
+
+<div class="tip">인쇄 양식에는 회사정보(회사명, 대표자, 사업자번호)가 자동 입력됩니다. 시스템관리 > 설정에서 정확히 입력해두세요.</div>
+
+<!-- ==================== 9. 전체 업무 흐름도 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">9. 전체 업무 흐름도</h2>
+
+<h3>일일 업무 흐름</h3>
+<table>
+<tr><th width="15%">시간대</th><th>업무</th><th>사용 메뉴</th></tr>
+<tr><td>출근</td><td>출퇴근 기록, 오늘 작업 확인</td><td>인사 > 출퇴근 / 생산현황 > 대시보드</td></tr>
+<tr><td>오전</td><td>작업지시서 확인, 자재 준비</td><td>작업지시서 / 재고관리</td></tr>
+<tr><td>작업 중</td><td>각 공정 완료 시 실적 입력</td><td>공정실적 > 실적입력</td></tr>
+<tr><td>오후</td><td>완료 제품 검사, 출고 처리</td><td>검사관리 > 출하검사 / 출고관리</td></tr>
+<tr><td>퇴근 전</td><td>일일 실적 확인</td><td>생산현황 대시보드</td></tr>
+</table>
+
+<h3>월간 업무</h3>
+<table>
+<tr><th width="15%">시기</th><th>업무</th><th>사용 메뉴</th></tr>
+<tr><td>월초</td><td>전월 마감, 급여 계산</td><td>외상마감 / 급여관리</td></tr>
+<tr><td>매주</td><td>안전재고 확인, 발주</td><td>안전재고 / 발주서</td></tr>
+<tr><td>수시</td><td>세금계산서 발행</td><td>세금계산서</td></tr>
+<tr><td>월말</td><td>재고실사, 경영분석</td><td>재고실사 / 경영분석</td></tr>
+<tr><td>월말</td><td>설비 정기 점검</td><td>예방보전</td></tr>
+</table>
+
+<h3>전체 데이터 흐름</h3>
+<div class="flow" style="padding:20px">
+<div style="margin-bottom:8px">
+<span class="node">견적</span><span class="arr">→</span>
+<span class="node">수주</span><span class="arr">→</span>
+<span class="node" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E">작업지시서</span>
+</div>
+<div style="margin-bottom:8px"><span class="arr">↓</span></div>
+<div style="margin-bottom:8px">
+<span class="node" style="background:#DCFCE7;border-color:#22C55E;color:#166534">BOM → MRP</span><span class="arr">→</span>
+<span class="node" style="background:#DCFCE7;border-color:#22C55E;color:#166534">자재 발주/입고</span>
+</div>
+<div style="margin-bottom:8px"><span class="arr">↓</span></div>
+<div style="margin-bottom:8px">
+<span class="node" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E">공정실적</span><span class="arr">→</span>
+<span class="node" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E">품질검사</span><span class="arr">→</span>
+<span class="node" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E">생산완료</span>
+</div>
+<div style="margin-bottom:8px"><span class="arr">↓</span></div>
+<div>
+<span class="node">출고</span><span class="arr">→</span>
+<span class="node" style="background:#E0E7FF;border-color:#6366F1;color:#4338CA">매출등록</span><span class="arr">→</span>
+<span class="node" style="background:#E0E7FF;border-color:#6366F1;color:#4338CA">세금계산서</span><span class="arr">→</span>
+<span class="node" style="background:#E0E7FF;border-color:#6366F1;color:#4338CA">입금확인</span>
+</div>
+</div>
+
+<!-- ==================== 10. 연동 전체 맵 ==================== -->
+<div class="page-break"></div>
+<h2 class="ch">10. 모듈 간 연동·동기화 전체 맵</h2>
+<p>모든 모듈이 서로 어떻게 데이터를 주고받는지 한눈에 정리한 표입니다.</p>
+
+<table>
+<tr><th>출발 모듈</th><th>도착 모듈</th><th>전달 데이터</th></tr>
+<tr><td>견적</td><td>수주</td><td>수주 확정 시 견적 정보 자동 복사</td></tr>
+<tr><td>견적/수주</td><td>작업지시서</td><td>거래처/품목/수량/납기 자동 복사</td></tr>
+<tr><td>작업지시서</td><td>공정실적</td><td>작업지시서별 공정 목록 제공</td></tr>
+<tr><td>작업지시서</td><td>BOM/MRP</td><td>품목/수량으로 필요 자재 계산</td></tr>
+<tr><td>작업지시서</td><td>대시보드</td><td>진행 상태 실시간 표시</td></tr>
+<tr><td>작업지시서(완료)</td><td>출고</td><td>출고 가능 목록에 추가</td></tr>
+<tr><td>작업지시서</td><td>금형이력</td><td>사용 목형 횟수 증가</td></tr>
+<tr><td>공정실적</td><td>불량관리</td><td>불량수량 자동 등록</td></tr>
+<tr><td>공정실적</td><td>OEE</td><td>작업시간/생산량 → OEE 계산</td></tr>
+<tr><td>공정실적</td><td>작업자현황</td><td>작업자별 오늘 실적 집계</td></tr>
+<tr><td>MRP(부족)</td><td>발주서</td><td>부족 자재 발주서 자동 생성</td></tr>
+<tr><td>발주(입고)</td><td>재고현황</td><td>재고 수량 증가</td></tr>
+<tr><td>입고</td><td>수입검사</td><td>입고 자재 검사 대상 등록</td></tr>
+<tr><td>재고</td><td>알림</td><td>안전재고 미만 시 경고</td></tr>
+<tr><td>출고</td><td>매출</td><td>출고 내역 → 매출 등록 참조</td></tr>
+<tr><td>매출/매입</td><td>세금계산서</td><td>거래 정보 → 세금계산서 발행</td></tr>
+<tr><td>매출(미수)</td><td>채권관리</td><td>미수금 자동 집계</td></tr>
+<tr><td>출퇴근</td><td>급여</td><td>근무시간/야근 → 급여 계산</td></tr>
+<tr><td>전체 모듈</td><td>경영분석</td><td>모든 데이터 → KPI/차트/보고서 집계</td></tr>
+<tr><td>전체 모듈</td><td>감사로그</td><td>모든 데이터 변경 이력 자동 기록</td></tr>
+<tr><td>마스터</td><td>전체 모듈</td><td>거래처/품목/목형 → 모든 입력 필드에서 참조</td></tr>
+</table>
+
+<div class="footer">
+  <p>팩플로우 ERP+MES 사용설명서 v1.0 | InnoPackage | 2026년 4월</p>
+</div>
+
+</body>
+</html>

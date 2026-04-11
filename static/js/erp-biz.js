@@ -252,7 +252,7 @@ function renderProductivity() {
     '<div class="sb green"><div class="l">총 생산수량</div><div class="v">' + fmt(totalQty) + '</div></div>' +
     '<div class="sb orange"><div class="l">활성 공정수</div><div class="v">' + procs.length + '</div></div>';
 
-  var procColors = ['#1E40AF', '#16A34A', '#EA580C', '#DC2626', '#7B61FF', '#EC4899'];
+  var procColors = ['#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF'];
 
   if (procs.length === 0) {
     $('prodChart').innerHTML = emptyHtml('', 'MES 작업 이력이 없습니다',

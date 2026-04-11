@@ -39,7 +39,7 @@
 <div style="margin-bottom:16px"><div style="font-size:16px;font-weight:800;color:#16A34A;padding:8px 12px;background:#DCFCE7;border-left:4px solid #16A34A;margin-bottom:8px">금일 완료 <span id="wCntDone" style="font-size:13px;color:#6B7280"></span></div><div id="wQueueDone"></div></div>
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
-<div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div style="flex:1;overflow-y:auto">
+<div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div id="sbDate" style="padding:0 22px 14px;font-size:12px;color:#64748B;font-weight:600;letter-spacing:.3px;border-bottom:1px solid rgba(255,255,255,.08)"></div><div style="flex:1;overflow-y:auto">
 <div class="sb-group open" role="button" aria-expanded="true">영업관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-order">수주관리</button>
@@ -88,7 +88,7 @@
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
 <div class="main-area"><div class="main-header">
 <button onclick="var s=document.getElementById('sidebar');s.classList.toggle('open');this.setAttribute('aria-expanded',s.classList.contains('open'))" class="mob-toggle" aria-label="메뉴 열기" aria-expanded="false">≡</button>
-<span id="mainBreadcrumb" style="font-size:13px;color:var(--txt3);font-weight:400">MES</span><span style="font-size:13px;color:var(--txt3);margin:0 6px">›</span><h2 id="mainTitle" style="font-size:17px;font-weight:600;color:var(--txt)">생산현황</h2>
+<span id="mainBreadcrumb" style="font-size:13px;color:var(--txt3);font-weight:400">MES</span><span style="font-size:13px;color:var(--txt3);margin:0 6px">›</span><h2 id="mainTitle" style="font-size:18px;font-weight:700;color:var(--txt);margin-right:8px">생산현황</h2><div id="groupTabBar" style="display:none;gap:4px;align-items:center;flex-wrap:nowrap"></div>
 <div style="display:flex;align-items:center;margin-left:auto;gap:4px">
 <div style="position:relative" id="notiWrap">
 <button class="noti-bell" onclick="toggleNotiPanel()" aria-label="알림">
@@ -100,9 +100,7 @@
 <div class="noti-list" id="notiList"></div>
 </div>
 </div>
-<button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ 작업지시서</button><button onclick="goMod('biz-kpi')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">KPI</button><button onclick="goMod('mes-order-track')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">납기</button><div class="header-right"><span id="headerDate"></span></div>
-</div>
-<div id="groupTabBar" style="display:none;gap:4px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-wrap:wrap"></div>
+<button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="openQuickMold()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">목형</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ 작업지시서</button><button onclick="goMod('mes-order-track')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">납기</button></div>
 </div>
 <div class="main-content" role="main">
 <div class="module-page" id="pg-mes-admin"></div>
@@ -911,7 +909,7 @@
 </div></div>
 
 <!-- 견적서 모달 -->
-<div class="mo-bg hidden" id="qtMo2" onclick="event.target===this&&cMo('qtMo2')"><div class="mo" style="width:700px;max-height:90vh;overflow-y:auto">
+<div class="mo-bg hidden" id="qtMo2" onclick="event.target===this&&cMo('qtMo2')"><div class="mo" style="width:700px;max-height:90vh;overflow-y:auto;overflow-x:hidden">
   <div class="mo-t" id="qtMoT">견적 등록</div><input type="hidden" id="qtId">
   <div class="fr">
     <div class="fg"><label>견적번호</label><input type="text" id="qtNum" readonly style="background:var(--bg2)"></div>

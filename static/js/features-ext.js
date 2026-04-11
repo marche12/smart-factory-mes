@@ -1126,6 +1126,122 @@ function restoreBackup(f){
 }
 
 /* ================================================================
+   30-1. 인쇄 양식 — 거래명세서 / 작업지시서 / 견적서
+   ================================================================ */
+function _printStyle(){
+  return 'body{font-family:"Malgun Gothic",sans-serif;padding:30px 40px;color:#222;font-size:13px;line-height:1.6}'
+  +'table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #555;padding:6px 8px;text-align:left}'
+  +'th{background:#f0f0f0;font-weight:700;font-size:12px}td{font-size:12px}'
+  +'.hdr{text-align:center;margin-bottom:20px;border-bottom:3px double #333;padding-bottom:14px}'
+  +'.hdr h1{font-size:22px;font-weight:900;letter-spacing:2px;margin:0 0 6px}'
+  +'.hdr .co{font-size:14px;color:#555}'
+  +'.hdr .dt{font-size:11px;color:#999;margin-top:4px}'
+  +'.sig{display:flex;justify-content:flex-end;gap:40px;margin-top:40px}'
+  +'.sig-box{text-align:center;width:120px}'
+  +'.sig-box .label{font-size:11px;color:#888;margin-bottom:4px}'
+  +'.sig-box .line{border-bottom:1px solid #333;height:50px}'
+  +'.total{text-align:right;font-size:15px;font-weight:900;margin:16px 0}'
+  +'.note{margin-top:20px;padding:10px;background:#fafafa;border:1px solid #ddd;border-radius:4px;font-size:12px}'
+  +'@page{margin:15mm 12mm}'
+  +'.footer{position:fixed;bottom:10mm;left:0;right:0;text-align:center;font-size:9px;color:#aaa}';
+}
+function _openPW(title,html){
+  var w=window.open('','_blank','width=800,height=900');
+  w.document.write('<html><head><title>'+title+'</title><style>'+_printStyle()+'</style></head><body>'+html+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},300);
+}
+function _co(){return DB.g1('co')||{nm:'InnoPackage',addr:'',tel:'',fax:''}}
+
+/* 거래명세서 — 출고 기록 기반 */
+function printTransStatement(shipId){
+  var logs=DB.g('shipLog');var s=logs.find(function(x){return x.id===shipId});
+  if(!s){toast('출고 데이터 없음','err');return}
+  var co=_co();var wo=DB.g('wo').find(function(w){return w.id===s.woId})||{};
+  var prod=DB.g('prod').find(function(p){return p.nm===s.pnm})||{};
+  var price=prod.price||0;var amt=price*(s.good||s.qty||0);
+  var vat=Math.round(amt*0.1);
+  var h='<div class="hdr"><h1>거 래 명 세 서</h1><div class="co">'+co.nm+'</div><div class="dt">발행일: '+s.dt+'</div></div>';
+  h+='<table><tr><th style="width:90px">거래처</th><td colspan="3">'+(s.cnm||'-')+'</td></tr>';
+  h+='<tr><th>주소</th><td colspan="3">'+(co.addr||'-')+'</td></tr>';
+  h+='<tr><th>전화</th><td>'+(co.tel||'-')+'</td><th style="width:90px">팩스</th><td>'+(co.fax||'-')+'</td></tr></table>';
+  h+='<table><thead><tr><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th></tr></thead><tbody>';
+  h+='<tr><td>'+(s.pnm||'-')+'</td><td>'+(wo.spec||'-')+'</td><td style="text-align:right">'+(s.good||s.qty||0).toLocaleString()+'</td>';
+  h+='<td style="text-align:right">'+price.toLocaleString()+'</td><td style="text-align:right">'+amt.toLocaleString()+'</td><td style="text-align:right">'+vat.toLocaleString()+'</td></tr>';
+  h+='</tbody></table>';
+  h+='<div class="total">합계: ₩ '+(amt+vat).toLocaleString()+'</div>';
+  h+='<table><tr><th style="width:90px">운송</th><td>'+(s.car||'-')+'</td><th style="width:90px">기사</th><td>'+(s.driver||'-')+'</td></tr>';
+  h+='<tr><th>비고</th><td colspan="3">'+(s.memo||'-')+'</td></tr></table>';
+  h+='<div class="sig"><div class="sig-box"><div class="label">공급자</div><div class="line"></div><div style="font-size:11px;margin-top:4px">(인)</div></div>';
+  h+='<div class="sig-box"><div class="label">공급받는자</div><div class="line"></div><div style="font-size:11px;margin-top:4px">(인)</div></div></div>';
+  h+='<div class="footer">'+co.nm+' · '+co.tel+'</div>';
+  _openPW('거래명세서',h);
+}
+
+/* 작업지시서 인쇄 */
+function printWorkOrder(woId){
+  var wo=DB.g('wo').find(function(w){return w.id===woId});
+  if(!wo){toast('작업지시서 없음','err');return}
+  var co=_co();
+  var h='<div class="hdr"><h1>작 업 지 시 서</h1><div class="co">'+co.nm+'</div><div class="dt">발행일: '+(wo.dt||td())+'</div></div>';
+  h+='<table><tr><th style="width:90px">지시번호</th><td>'+(wo.wn||'-')+'</td><th style="width:90px">상태</th><td>'+(wo.status||'-')+'</td></tr>';
+  h+='<tr><th>거래처</th><td>'+(wo.cnm||'-')+'</td><th>납기일</th><td>'+(wo.sd||'-')+'</td></tr>';
+  h+='<tr><th>품명</th><td>'+(wo.pnm||'-')+'</td><th>규격</th><td>'+(wo.spec||'-')+'</td></tr>';
+  h+='<tr><th>지시수량</th><td style="font-weight:700;font-size:15px">'+(wo.fq||0).toLocaleString()+' 매</td><th>납품방법</th><td>'+(wo.dlv||'-')+'</td></tr></table>';
+  // 공정표
+  if(wo.procs&&wo.procs.length){
+    h+='<h3 style="margin:20px 0 8px;font-size:14px">공정 상세</h3>';
+    h+='<table><thead><tr><th>순서</th><th>공정명</th><th>유형</th><th>재료/방식</th><th>외주처</th><th>상태</th><th>수량</th></tr></thead><tbody>';
+    wo.procs.forEach(function(p,i){
+      h+='<tr><td style="text-align:center">'+(i+1)+'</td><td>'+p.nm+'</td><td>'+(p.tp==='out'?'외주':'내부')+'</td>';
+      h+='<td>'+(p.mt||'-')+'</td><td>'+(p.vd||'-')+'</td><td>'+p.st+'</td><td style="text-align:right">'+(p.qty||0).toLocaleString()+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  if(wo.note)h+='<div class="note"><b>비고:</b> '+wo.note+'</div>';
+  h+='<div class="sig"><div class="sig-box"><div class="label">지시자</div><div class="line"></div></div>';
+  h+='<div class="sig-box"><div class="label">확인자</div><div class="line"></div></div></div>';
+  h+='<div class="footer">'+co.nm+' · 작업지시서</div>';
+  _openPW('작업지시서 - '+wo.wn,h);
+}
+
+/* 견적서 인쇄 */
+function printQuote(quoteId){
+  var quotes=DB.g('quotes');var q=quotes.find(function(x){return x.id===quoteId});
+  if(!q){toast('견적서 없음','err');return}
+  var co=_co();
+  var h='<div class="hdr"><h1>견 적 서</h1><div class="co">'+co.nm+'</div><div class="dt">견적일: '+(q.dt||td())+'</div></div>';
+  h+='<table><tr><th style="width:90px">견적번호</th><td>'+(q.no||q.id.slice(-6).toUpperCase())+'</td><th style="width:90px">유효기간</th><td>'+(q.valid||'발행일로부터 30일')+'</td></tr>';
+  h+='<tr><th>거래처</th><td colspan="3">'+(q.cnm||'-')+'</td></tr>';
+  h+='<tr><th>담당자</th><td>'+(q.mgr||'-')+'</td><th>연락처</th><td>'+(q.tel||'-')+'</td></tr></table>';
+  // 항목
+  var items=q.items||[];var total=0;
+  if(items.length){
+    h+='<table><thead><tr><th>No</th><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>';
+    items.forEach(function(it,i){
+      var amt=(it.qty||0)*(it.price||0);total+=amt;
+      h+='<tr><td style="text-align:center">'+(i+1)+'</td><td>'+it.nm+'</td><td>'+(it.spec||'-')+'</td>';
+      h+='<td style="text-align:right">'+(it.qty||0).toLocaleString()+'</td><td style="text-align:right">'+(it.price||0).toLocaleString()+'</td><td style="text-align:right">'+amt.toLocaleString()+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  } else {
+    // 단일 품목
+    var amt2=(q.qty||0)*(q.price||0);total=amt2;
+    h+='<table><thead><tr><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>';
+    h+='<tr><td>'+(q.pnm||'-')+'</td><td>'+(q.spec||'-')+'</td><td style="text-align:right">'+(q.qty||0).toLocaleString()+'</td>';
+    h+='<td style="text-align:right">'+(q.price||0).toLocaleString()+'</td><td style="text-align:right">'+amt2.toLocaleString()+'</td></tr>';
+    h+='</tbody></table>';
+  }
+  var vat=Math.round(total*0.1);
+  h+='<div class="total">공급가액: ₩ '+total.toLocaleString()+' &nbsp;|&nbsp; 부가세: ₩ '+vat.toLocaleString()+' &nbsp;|&nbsp; <span style="color:#E53E3E">합계: ₩ '+(total+vat).toLocaleString()+'</span></div>';
+  if(q.note)h+='<div class="note"><b>비고:</b> '+q.note+'</div>';
+  h+='<div style="margin-top:30px;font-size:12px;color:#666;text-align:center">위 금액으로 견적을 제출합니다.</div>';
+  h+='<div class="sig"><div class="sig-box"><div class="label">공급자</div><div class="line"></div><div style="font-size:11px;margin-top:4px">'+co.nm+'</div></div></div>';
+  h+='<div class="footer">'+co.nm+' · '+(co.tel||'')+'</div>';
+  _openPW('견적서',h);
+}
+
+/* ================================================================
    31. 감사 로그
    ================================================================ */
 function rAuditLog(){

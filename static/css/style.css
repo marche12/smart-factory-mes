@@ -582,6 +582,19 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
   .mo-x{min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
   .sb-group{min-height:44px;display:flex;align-items:center}
   .bd{min-height:28px;padding:4px 10px}
+  /* 테이블 행 터치 여백 */
+  .dt td{padding:10px 8px}
+  .dt th{padding:10px 8px}
+  /* 스크롤 관성 */
+  .main-content,.sidebar,.my,.mo-b{-webkit-overflow-scrolling:touch}
+  /* 탭/필터 바 스크롤 */
+  #groupTabBar{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap!important}
+  #groupTabBar button{flex-shrink:0}
+  /* 카드 간격 확대 */
+  .card{margin-bottom:12px}
+  /* 입력 필드 간격 */
+  .fg{margin-bottom:6px}
+  .fr{gap:12px}
   .u-tab-btn{min-height:44px;min-width:44px}
   .u-input-sm,.u-input-md,.u-input-md13,.u-input-pill,.u-select,.u-select-sm,.u-input-bdr,.u-input-bdr6{min-height:44px}
   [id="sbShipBadge"]{min-width:24px;min-height:24px}

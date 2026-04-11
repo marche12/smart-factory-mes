@@ -1534,14 +1534,18 @@
 </div>
 </div>
 <input type="file" id="impF" class="hidden" accept=".json" onchange="impData(this)">
-<div style="margin-top:10px;padding:8px 12px;background:#FEF3C7;border-radius:8px;font-size:11px;color:#92400E">
-현재 데이터는 브라우저에만 저장됩니다. 캐시 삭제 시 데이터가 사라질 수 있으니 <b>매일 백업</b>을 권장합니다.<br>
-나중에 NAS 서버로 이전하면 자동 저장됩니다.
+<div style="margin-top:10px;padding:8px 12px;background:#D1FAE5;border-radius:8px;font-size:11px;color:#065F46">
+데이터는 서버 SQLite DB에 저장됩니다. 매일 자동 백업이 실행되며 30일간 보관됩니다.<br>
+추가로 수동 백업을 받아 안전하게 보관하세요.
 </div>
 </div>
 <div class="card"><div class="card-t">시뮬레이션</div>
 <p style="font-size:13px;color:var(--txt2);margin-bottom:10px">테스트용 거래처 4개, 품목 4개, 목형 4개, 인쇄소 2개, 작업지시서 4건을 자동으로 생성합니다.</p>
 <button class="btn btn-s" onclick="genSim()">시뮬레이션 데이터 생성</button>
+</div>
+<div class="card"><div class="card-t">데이터 초기화</div>
+<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">모든 업무 데이터(거래처, 품목, 작업지시서, 출고, 매출, 재고 등)를 삭제합니다.<br>사용자 계정과 회사 정보는 유지됩니다. 초기화 전 자동으로 백업이 생성됩니다.</p>
+<button class="btn" style="background:#DC2626;color:#fff" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
 </div>
 </div>
 </div>
@@ -1802,7 +1806,7 @@
 <div id="shipDetMo" class="mo hidden"><div class="mb" style="width:600px">
 <div class="mh"><h3>출고 상세</h3><button class="mc" onclick="cMo('shipDetMo')">&times;</button></div>
 <div class="my" id="shipDetC"></div>
-<div class="mf"><button class="btn btn-o" onclick="cMo('shipDetMo')">닫기</button><button class="btn btn-p" onclick="printShipDocById()">거래명세표 출력</button></div>
+<div class="mf"><button class="btn btn-o" onclick="cMo('shipDetMo')">닫기</button><button class="btn btn-p" onclick="printShipDocById()">간이출력</button><button class="btn btn-s" onclick="if(_shipDetId)printTransStatement(_shipDetId)">거래명세서 인쇄</button></div>
 </div></div>
 
 <div id="cautPopup" class="caut-popup hidden">

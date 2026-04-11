@@ -2,6 +2,7 @@ import os
 import json
 import secrets
 import hashlib
+import threading
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -35,14 +36,29 @@ app.add_middleware(
 
 
 # Initialize database on startup
+def _auto_backup_loop():
+    """Background thread: run daily backup every 24 hours."""
+    while True:
+        try:
+            threading.Event().wait(timeout=86400)  # 24h
+            db.ensure_daily_backup()
+            print(f"[AutoBackup] {datetime.now().strftime('%Y-%m-%d %H:%M')} — daily backup completed")
+        except Exception as e:
+            print(f"[AutoBackup] error: {e}")
+
+
 @app.on_event("startup")
 def startup():
     db.init_db()
     db.init_auth_tables()
     db.cleanup_expired_tokens()
     db.ensure_daily_backup()
+    # Start background auto-backup scheduler
+    t = threading.Thread(target=_auto_backup_loop, daemon=True)
+    t.start()
     print("=" * 50)
     print("  InnoPackage MES Server Started")
+    print("  Auto-backup: enabled (24h interval, 30-day retention)")
     print("  http://localhost:8080")
     print("=" * 50)
 
@@ -346,6 +362,21 @@ def get_audit_logs(user_id: str = None, action: str = None, from_dt: str = None,
 @app.get("/api/backups")
 def list_backups(user=Depends(require_admin)):
     return JSONResponse(content={"backups": db.list_backups()})
+
+
+@app.get("/api/backup-status")
+def backup_status(user=Depends(require_admin)):
+    backups = db.list_backups()
+    today = datetime.now().strftime('%Y-%m-%d')
+    today_backup = any(b["filename"].startswith(today) for b in backups)
+    return JSONResponse(content={
+        "auto_backup": True,
+        "interval": "24h",
+        "retention_days": 30,
+        "total_backups": len(backups),
+        "today_backup": today_backup,
+        "latest": backups[0]["filename"] if backups else None
+    })
 
 
 @app.post("/api/backups/now")

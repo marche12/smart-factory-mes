@@ -162,6 +162,7 @@ function rQt(){
       +'<td style="display:flex;gap:4px;flex-wrap:wrap">'
       +'<button class="btn btn-s btn-sm" onclick="eQt(\''+r.id+'\')">보기/수정</button>'
       +'<button class="btn btn-sm" style="background:#EFF6FF;color:#3182F6;border:1px solid #BFDBFE" onclick="qtToWODirect(\''+r.id+'\')">→작업지시</button>'
+      +'<button class="btn btn-sm btn-p" onclick="printQuote(\''+r.id+'\')">인쇄</button>'
       +'<button class="btn btn-sm" style="color:var(--dan)" onclick="dQt(\''+r.id+'\')">삭제</button>'
       +'</td></tr>';
   }).join(''):'<tr><td colspan="7" class="empty-cell">견적 내역이 없습니다</td></tr>';

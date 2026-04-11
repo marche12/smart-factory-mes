@@ -94,6 +94,29 @@ function genSim(){
   if(typeof rProd==='function')rProd();
 }
 
+/* ===== 테스트 데이터 초기화 ===== */
+function resetAllData(){
+  if(!confirm('⚠️ 모든 업무 데이터를 삭제합니다.\n(사용자 계정, 회사정보는 유지됩니다)\n\n정말 진행하시겠습니까?'))return;
+  if(!confirm('최종 확인: 거래처, 품목, 작업지시서, 출고, 매출, 재고 등\n모든 업무 데이터가 영구 삭제됩니다.\n\n정말 삭제하시겠습니까?'))return;
+  // 먼저 백업 생성
+  authFetch('/api/backups/now',{method:'POST'}).then(function(r){return r.json()}).then(function(){
+    toast('안전 백업 완료','ok');
+    // 초기화할 키 목록 (사용자/회사정보 제외)
+    var resetKeys=['wo','cli','prod','mold','done','hist','logs','shipLog','claims','incLog',
+      'vendors','qcRecords','stock','bom','income','po','sales','purchase','defectLog',
+      'certs','quotes','approval','outsource','moldHist','downtime','equipments',
+      'pmSchedule','breakdownLog','safetyStock','mrp','matAudit','matPrice',
+      'payroll','attendance','leave','shift','insurance','cashflow','aging','etax'];
+    var promises=resetKeys.map(function(k){
+      return authFetch('/api/data/ino_'+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:'[]'})});
+    });
+    Promise.all(promises).then(function(){
+      toast('데이터 초기화 완료 — 새로고침합니다','ok');
+      setTimeout(function(){location.reload()},1500);
+    }).catch(function(){toast('초기화 중 오류 발생','err')});
+  }).catch(function(){toast('안전 백업 실패 — 초기화를 취소합니다','err')});
+}
+
 // ===== SHIPPING MANAGEMENT =====
 function getShipped(woId){return DB.g('shipLog').filter(s=>s.woId===woId).reduce((sum,s)=>sum+s.qty,0)}
 function isAllProcsDone(o){

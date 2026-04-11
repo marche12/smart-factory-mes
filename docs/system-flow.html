@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>팩플로우 시스템 연동 다이어그램</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#0F172A;color:#E2E8F0;overflow:hidden;height:100vh}
+#canvas{width:100%;height:100vh}
+
+/* Controls */
+.controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;background:rgba(15,23,42,.9);padding:12px 20px;border-radius:16px;border:1px solid #334155;backdrop-filter:blur(10px)}
+.ctrl-btn{background:#1E293B;color:#94A3B8;border:1px solid #334155;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.ctrl-btn:hover{background:#334155;color:#fff}
+.ctrl-btn.active{background:#3B82F6;color:#fff;border-color:#3B82F6}
+.ctrl-btn.play{background:#10B981;color:#fff;border-color:#10B981;min-width:80px}
+.ctrl-btn.play:hover{background:#059669}
+
+/* Info Panel */
+.info{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);padding:16px 32px;border-radius:12px;border:1px solid #334155;text-align:center;z-index:100;backdrop-filter:blur(10px);min-width:500px}
+.info h1{font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:4px}
+.info p{font-size:13px;color:#94A3B8}
+.info .step-title{font-size:15px;color:#60A5FA;font-weight:600;margin-top:8px;min-height:20px}
+
+/* Legend */
+.legend{position:fixed;top:20px;right:20px;background:rgba(15,23,42,.95);padding:14px 18px;border-radius:12px;border:1px solid #334155;z-index:100;font-size:12px}
+.legend h3{font-size:13px;margin-bottom:8px;color:#CBD5E1}
+.leg-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;color:#94A3B8}
+.leg-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* Speed Control */
+.speed{position:fixed;bottom:20px;right:20px;background:rgba(15,23,42,.95);padding:10px 14px;border-radius:10px;border:1px solid #334155;z-index:100;font-size:12px;color:#94A3B8}
+</style>
+</head>
+<body>
+
+<div class="info">
+  <h1>팩플로우 MES+ERP 시스템 연동 다이어그램</h1>
+  <p>모듈 간 데이터 흐름과 동기화 과정을 시각화합니다</p>
+  <div class="step-title" id="stepTitle"></div>
+</div>
+
+<div class="legend">
+  <h3>카테고리</h3>
+  <div class="leg-item"><div class="leg-dot" style="background:#3B82F6"></div> 영업</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#10B981"></div> 생산</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#F59E0B"></div> 품질/설비</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#8B5CF6"></div> 자재/회계</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#EC4899"></div> 인사</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#06B6D4"></div> 경영분석</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#F97316"></div> 작업자</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#EF4444"></div> 시스템/마스터</div>
+  <div style="margin-top:8px;border-top:1px solid #334155;padding-top:8px">
+    <div class="leg-item"><div style="width:20px;height:2px;background:#3B82F6"></div> 데이터 흐름</div>
+    <div class="leg-item"><div style="width:20px;height:2px;background:#F59E0B;border-top:2px dashed #F59E0B;height:0"></div> 참조</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn play" id="playBtn" onclick="togglePlay()">▶ 재생</button>
+  <button class="ctrl-btn" onclick="goStep(-1)">◀ 이전</button>
+  <button class="ctrl-btn" onclick="goStep(1)">다음 ▶</button>
+  <button class="ctrl-btn" onclick="showAll()">전체보기</button>
+  <button class="ctrl-btn" onclick="resetView()">초기화</button>
+</div>
+
+<div class="speed">속도: <input type="range" id="speedRange" min="500" max="3000" value="1500" style="width:80px;vertical-align:middle"> <span id="speedVal">1.5s</span></div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var W, H;
+var playing = false;
+var currentStep = -1;
+var animFrame;
+var particles = [];
+var activeFlows = [];
+var highlightNodes = [];
+var time = 0;
+var selectedNode = null; // clicked node id
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ============ NODE DEFINITIONS ============
+var nodes = [
+  // 영업 (blue) - left area
+  {id:'order', label:'수주관리', cat:'sales', color:'#3B82F6', x:0.08, y:0.25},
+  {id:'wo', label:'작업지시서', cat:'sales', color:'#3B82F6', x:0.08, y:0.42},
+  {id:'ship', label:'출고관리', cat:'sales', color:'#3B82F6', x:0.08, y:0.59},
+  {id:'quote', label:'견적', cat:'sales', color:'#3B82F6', x:0.08, y:0.76},
+
+  // 작업자 (orange) - between 영업 and 생산
+  {id:'worker', label:'작업자 화면', cat:'worker', color:'#F97316', x:0.18, y:0.50},
+
+  // 생산 (green) - center-left
+  {id:'dash', label:'생산현황', cat:'prod', color:'#10B981', x:0.30, y:0.20},
+  {id:'plan', label:'생산계획', cat:'prod', color:'#10B981', x:0.30, y:0.36},
+  {id:'proc', label:'공정실적', cat:'prod', color:'#10B981', x:0.30, y:0.52},
+  {id:'outsource', label:'외주관리', cat:'prod', color:'#10B981', x:0.30, y:0.68},
+  {id:'monitor', label:'현장모니터', cat:'prod', color:'#10B981', x:0.30, y:0.84},
+
+  // 품질/설비 (yellow) - center
+  {id:'inspect', label:'검사관리', cat:'qc', color:'#F59E0B', x:0.48, y:0.22},
+  {id:'defect', label:'불량관리', cat:'qc', color:'#F59E0B', x:0.48, y:0.38},
+  {id:'equip', label:'설비관리', cat:'qc', color:'#F59E0B', x:0.48, y:0.54},
+  {id:'claim', label:'클레임', cat:'qc', color:'#F59E0B', x:0.48, y:0.70},
+
+  // 자재/회계 (purple) - center-right
+  {id:'stock', label:'재고관리', cat:'mat', color:'#8B5CF6', x:0.68, y:0.22},
+  {id:'purchase', label:'구매관리', cat:'mat', color:'#8B5CF6', x:0.68, y:0.38},
+  {id:'bom', label:'BOM/MRP', cat:'mat', color:'#8B5CF6', x:0.68, y:0.54},
+  {id:'account', label:'회계관리', cat:'mat', color:'#8B5CF6', x:0.68, y:0.70},
+
+  // 인사 (pink) - right
+  {id:'hr', label:'인사/급여', cat:'hr', color:'#EC4899', x:0.88, y:0.30},
+
+  // 경영분석 (cyan) - right
+  {id:'kpi', label:'경영분석', cat:'biz', color:'#06B6D4', x:0.88, y:0.50},
+
+  // 시스템 (red) - right-bottom
+  {id:'master', label:'마스터관리', cat:'sys', color:'#EF4444', x:0.88, y:0.70},
+  {id:'system', label:'시스템', cat:'sys', color:'#EF4444', x:0.88, y:0.86},
+];
+
+// ============ FLOW DEFINITIONS ============
+// Each flow: {from, to, label, data, type:'write'|'read'}
+var allFlows = [
+  // 수주 → 작업지시서
+  {from:'order',to:'wo',label:'수주→작업지시 생성',data:'orders→wo',type:'write'},
+  // 작업지시서 → 생산현황
+  {from:'wo',to:'dash',label:'작업지시→생산현황 반영',data:'wo.status',type:'write'},
+  // 작업지시서 → 생산계획
+  {from:'wo',to:'plan',label:'작업지시→생산계획 배정',data:'wo.procs, wo.sd',type:'write'},
+  // 작업지시서 → 공정실적
+  {from:'wo',to:'proc',label:'작업지시→공정실적 기록',data:'wo→procLog',type:'write'},
+  // 작업지시서 → 외주관리
+  {from:'wo',to:'outsource',label:'외주공정→외주발주',data:'wo.procs(외주)',type:'write'},
+  // 작업지시서 → 출고
+  {from:'wo',to:'ship',label:'생산완료→출고 대기',data:'wo.status=완료',type:'write'},
+  // 작업지시서 → 검사
+  {from:'wo',to:'inspect',label:'공정검사 기록',data:'wo→qcRecords',type:'write'},
+  // 작업지시서 → 불량
+  {from:'wo',to:'defect',label:'불량 발생 기록',data:'wo→defectLog',type:'write'},
+  // 작업지시서 → 설비
+  {from:'wo',to:'equip',label:'설비 사용이력',data:'wo.procs→equip',type:'read'},
+  // 작업지시서 → 원가분석
+  {from:'wo',to:'account',label:'작업지시→원가계산',data:'wo.fq, wo.price',type:'read'},
+
+  // 출고 → 매출
+  {from:'ship',to:'account',label:'출고→매출/세금계산서',data:'shipLog→sales',type:'write'},
+  // 출고 → 재고 차감
+  {from:'ship',to:'stock',label:'출고→재고 차감',data:'shipLog→stock(-)',type:'write'},
+  // 출고 → 수주 상태 갱신
+  {from:'ship',to:'order',label:'출고→수주상태 갱신',data:'shipLog→orders.status',type:'write'},
+
+  // 반품 → 재고
+  {from:'ship',to:'stock',label:'반품→재고 복원',data:'returns→stock(+)',type:'write'},
+  // 클레임 → 출고
+  {from:'claim',to:'ship',label:'클레임→반품 처리',data:'claims→returns',type:'read'},
+
+  // 입고 → 재고
+  {from:'purchase',to:'stock',label:'입고→재고 증가',data:'income→stock(+)',type:'write'},
+  // 발주 → 입고
+  {from:'purchase',to:'stock',label:'발주→입고 대기',data:'po→income',type:'write'},
+
+  // BOM → MRP → 재고
+  {from:'bom',to:'stock',label:'MRP→소요량 계산',data:'bom+wo→stock 비교',type:'read'},
+  // BOM → 구매
+  {from:'bom',to:'purchase',label:'MRP→자동 발주 제안',data:'부족분→po',type:'write'},
+  // BOM → 작업지시
+  {from:'bom',to:'wo',label:'BOM→자재 소요량',data:'bom→wo.materials',type:'read'},
+
+  // 마스터 → 여러 모듈
+  {from:'master',to:'order',label:'거래처→수주',data:'cli',type:'read'},
+  {from:'master',to:'wo',label:'거래처/품목→작업지시',data:'cli, prod',type:'read'},
+  {from:'master',to:'ship',label:'거래처→출고',data:'cli',type:'read'},
+  {from:'master',to:'purchase',label:'거래처→구매',data:'cli, vendors',type:'read'},
+  {from:'master',to:'equip',label:'설비마스터',data:'equip',type:'read'},
+
+  // 공정실적 → 생산현황
+  {from:'proc',to:'dash',label:'실적→현황 반영',data:'procLog→대시보드',type:'write'},
+  // 공정실적 → KPI
+  {from:'proc',to:'kpi',label:'실적→KPI 집계',data:'procLog→생산량',type:'read'},
+
+  // 불량 → KPI
+  {from:'defect',to:'kpi',label:'불량→불량률 KPI',data:'defects→불량률',type:'read'},
+
+  // 출고 → KPI (납기준수율)
+  {from:'ship',to:'kpi',label:'출고→납기준수율',data:'shipLog+wo.sd',type:'read'},
+
+  // 매출 → KPI
+  {from:'account',to:'kpi',label:'매출→매출 KPI',data:'sales→매출액',type:'read'},
+
+  // 설비 → 비가동 → OEE
+  {from:'equip',to:'kpi',label:'OEE→설비효율 KPI',data:'downtime+procLog',type:'read'},
+
+  // 인사 → 급여 → 원가
+  {from:'hr',to:'account',label:'급여→인건비 원가',data:'payroll→labor cost',type:'read'},
+
+  // 견적 → 수주
+  {from:'quote',to:'order',label:'견적확정→수주전환',data:'quotes→orders',type:'write'},
+
+  // 외주 → 원가
+  {from:'outsource',to:'account',label:'외주비→원가',data:'outsource cost',type:'read'},
+
+  // 생산현황 → 현장모니터
+  {from:'dash',to:'monitor',label:'현황→모니터 표시',data:'wo status, procLog',type:'read'},
+
+  // 출하검사 → 출고
+  {from:'inspect',to:'ship',label:'출하검사→출고승인',data:'shipInspect→ship',type:'write'},
+
+  // 시스템 → 감사로그
+  {from:'system',to:'kpi',label:'감사로그→활동분석',data:'auditLog',type:'read'},
+
+  // ===== 작업자 화면 연동 =====
+  // 작업지시서 → 작업자 (대기목록 배정)
+  {from:'wo',to:'worker',label:'작업 배정/대기목록',data:'wo.procs→작업자큐',type:'write'},
+  // 작업자 → 작업지시서 (공정 시작/완료 상태변경)
+  {from:'worker',to:'wo',label:'공정 시작/완료 상태변경',data:'procs[].st, t1, t2',type:'write'},
+  // 작업자 → 공정실적 (수량 기록)
+  {from:'worker',to:'proc',label:'실적 수량 기록',data:'qty→procLog',type:'write'},
+  // 작업자 → 불량관리 (불량 수량 보고)
+  {from:'worker',to:'defect',label:'불량 수량 보고',data:'defQty→defectLog',type:'write'},
+  // 작업자 → 생산현황 (작업현황 반영)
+  {from:'worker',to:'dash',label:'작업현황 반영',data:'worker status→대시보드',type:'write'},
+  // 작업자 → 현장모니터 (실시간 작업현황)
+  {from:'worker',to:'monitor',label:'실시간 작업현황',data:'진행중/완료 현황',type:'write'},
+  // 외주관리 → 작업자 (외주 입고확인)
+  {from:'outsource',to:'worker',label:'외주 입고확인',data:'외주완료→입고확인',type:'write'},
+];
+
+// ============ STEP SCENARIOS ============
+var steps = [
+  {
+    title: '1단계: 견적 → 수주 등록',
+    desc: '고객에게 견적을 보내고, 확정되면 수주로 전환됩니다',
+    flows: [4,33], // quote→order index... let me use from/to
+    highlight: ['quote','order','master'],
+    flowIds: [{from:'quote',to:'order'},{from:'master',to:'order'}]
+  },
+  {
+    title: '2단계: 수주 → 작업지시서 생성',
+    desc: '수주가 등록되면 작업지시서를 생성하고, 거래처/품목 마스터를 참조합니다',
+    highlight: ['order','wo','master'],
+    flowIds: [{from:'order',to:'wo'},{from:'master',to:'wo'},{from:'bom',to:'wo'}]
+  },
+  {
+    title: '3단계: 작업지시서 → 생산 시작',
+    desc: '작업지시가 내려가면 생산현황, 생산계획, 현장모니터에 반영됩니다',
+    highlight: ['wo','dash','plan','monitor','proc'],
+    flowIds: [{from:'wo',to:'dash'},{from:'wo',to:'plan'},{from:'wo',to:'proc'},{from:'dash',to:'monitor'}]
+  },
+  {
+    title: '4단계: 작업자 화면 — 작업 수행/실적 기록',
+    desc: '작업자가 대기목록에서 작업을 시작하고, 완료 시 수량/불량을 기록합니다. 실적이 생산현황에 즉시 반영됩니다',
+    highlight: ['wo','worker','proc','defect','dash','monitor','outsource'],
+    flowIds: [{from:'wo',to:'worker'},{from:'worker',to:'wo'},{from:'worker',to:'proc'},{from:'worker',to:'defect'},{from:'worker',to:'dash'},{from:'worker',to:'monitor'},{from:'outsource',to:'worker'}]
+  },
+  {
+    title: '5단계: 공정실적/외주/불량 상세',
+    desc: '공정별 실적을 기록하고, 외주 공정은 외주관리로, 불량은 불량관리로 기록됩니다',
+    highlight: ['wo','proc','outsource','defect','equip'],
+    flowIds: [{from:'wo',to:'proc'},{from:'wo',to:'outsource'},{from:'wo',to:'defect'},{from:'wo',to:'equip'}]
+  },
+  {
+    title: '6단계: 품질검사',
+    desc: '공정검사/출하검사 기록, 불량 발생 시 클레임 연결',
+    highlight: ['wo','inspect','defect','claim'],
+    flowIds: [{from:'wo',to:'inspect'},{from:'wo',to:'defect'},{from:'claim',to:'ship'}]
+  },
+  {
+    title: '7단계: 자재 흐름 — BOM → MRP → 구매 → 입고 → 재고',
+    desc: 'BOM 기반 소요량 계산 → 부족분 자동 발주 제안 → 입고 시 재고 증가',
+    highlight: ['bom','purchase','stock','master'],
+    flowIds: [{from:'bom',to:'stock'},{from:'bom',to:'purchase'},{from:'purchase',to:'stock'},{from:'master',to:'purchase'}]
+  },
+  {
+    title: '8단계: 생산완료 → 출하검사 → 출고',
+    desc: '생산이 완료되면 출하검사 후 출고 처리. 출고 시 재고 차감, 수주 상태 갱신',
+    highlight: ['wo','inspect','ship','stock','order'],
+    flowIds: [{from:'wo',to:'ship'},{from:'inspect',to:'ship'},{from:'ship',to:'stock'},{from:'ship',to:'order'}]
+  },
+  {
+    title: '9단계: 출고 → 매출/세금계산서/채권',
+    desc: '출고가 완료되면 매출 기록, 세금계산서 발행, 미수금(채권) 등록',
+    highlight: ['ship','account','kpi'],
+    flowIds: [{from:'ship',to:'account'},{from:'ship',to:'kpi'},{from:'account',to:'kpi'}]
+  },
+  {
+    title: '10단계: 원가 집계 — 자재비 + 외주비 + 인건비',
+    desc: '작업지시서의 자재비, 외주관리의 외주비, 급여의 인건비가 원가분석으로 모입니다',
+    highlight: ['wo','outsource','hr','account'],
+    flowIds: [{from:'wo',to:'account'},{from:'outsource',to:'account'},{from:'hr',to:'account'}]
+  },
+  {
+    title: '11단계: 경영분석 — 모든 데이터 종합',
+    desc: '생산량, 불량률, 납기준수율, 매출, OEE 등 KPI 대시보드에 종합 표시',
+    highlight: ['proc','defect','ship','account','equip','kpi'],
+    flowIds: [{from:'proc',to:'kpi'},{from:'defect',to:'kpi'},{from:'ship',to:'kpi'},{from:'account',to:'kpi'},{from:'equip',to:'kpi'}]
+  },
+  {
+    title: '12단계: 반품/클레임 처리',
+    desc: '고객 클레임 접수 → 반품 처리 → 재고 복원 → 원인 분석',
+    highlight: ['claim','ship','stock','defect'],
+    flowIds: [{from:'claim',to:'ship'},{from:'ship',to:'stock'}]
+  }
+];
+
+// ============ RENDERING ============
+function getNodePos(n){
+  return {x: n.x * W, y: n.y * H};
+}
+
+function drawNode(n, highlight, pulse){
+  var p = getNodePos(n);
+  var w = 90, h = 40;
+  var isHi = highlight;
+  var alpha = isHi ? 1 : 0.3;
+
+  ctx.save();
+
+  // Subtle glow
+  if(isHi && pulse){
+    ctx.shadowColor = n.color;
+    ctx.shadowBlur = 8;
+  }
+
+  // Box
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = isHi ? n.color+'22' : '#1E293B';
+  ctx.strokeStyle = isHi ? n.color : '#334155';
+  ctx.lineWidth = isHi ? 2.5 : 1;
+  roundRect(ctx, p.x-w/2, p.y-h/2, w, h, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = isHi ? '#F8FAFC' : '#64748B';
+  ctx.font = (isHi?'700':'500') + ' 12px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(n.label, p.x, p.y);
+
+  ctx.restore();
+}
+
+function drawFlow(f, active){
+  var fromNode = nodes.find(function(n){return n.id===f.from});
+  var toNode = nodes.find(function(n){return n.id===f.to});
+  if(!fromNode||!toNode) return;
+
+  var p1 = getNodePos(fromNode);
+  var p2 = getNodePos(toNode);
+  var alpha = active ? 0.8 : 0.06;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Straight line
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.strokeStyle = active ? fromNode.color : '#334155';
+  ctx.lineWidth = active ? 2 : 0.8;
+  if(f.type==='read'){
+    ctx.setLineDash([5,5]);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arrow at 85% along the line
+  if(active){
+    var ax = p1.x + (p2.x-p1.x)*0.85;
+    var ay = p1.y + (p2.y-p1.y)*0.85;
+    var angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+
+    ctx.fillStyle = fromNode.color;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax-9*Math.cos(angle-0.4), ay-9*Math.sin(angle-0.4));
+    ctx.lineTo(ax-9*Math.cos(angle+0.4), ay-9*Math.sin(angle+0.4));
+    ctx.fill();
+
+    // Label at midpoint
+    ctx.globalAlpha = 0.9;
+    ctx.font = '600 10px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    var lx = (p1.x+p2.x)/2;
+    var ly = (p1.y+p2.y)/2;
+    var tw = ctx.measureText(f.label).width + 8;
+    ctx.fillStyle = 'rgba(15,23,42,0.85)';
+    ctx.fillRect(lx-tw/2, ly-8, tw, 16);
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillText(f.label, lx, ly+1);
+
+    // Data tag
+    if(f.data){
+      ctx.font = '400 9px "Segoe UI", sans-serif';
+      ctx.fillStyle = fromNode.color+'99';
+      ctx.fillText(f.data, lx, ly+13);
+    }
+  }
+
+  ctx.restore();
+
+  // Particles (straight line)
+  if(active){
+    spawnParticle(p1, p2, fromNode.color);
+  }
+}
+
+function spawnParticle(p1, p2, color){
+  if(Math.random()>0.03) return;
+  particles.push({
+    p1:p1, p2:p2,
+    t: 0, speed: 0.008 + Math.random()*0.006,
+    color: color, size: 3
+  });
+}
+
+function updateParticles(){
+  for(var i=particles.length-1;i>=0;i--){
+    var p = particles[i];
+    p.t += p.speed;
+    if(p.t>1){particles.splice(i,1);continue}
+    var t=p.t;
+    var x = p.p1.x + (p.p2.x-p.p1.x)*t;
+    var y = p.p1.y + (p.p2.y-p.p1.y)*t;
+
+    ctx.save();
+    ctx.globalAlpha = 1-t*0.5;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(x, y, p.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+// ============ MAIN LOOP ============
+function render(){
+  time += 0.016;
+  ctx.clearRect(0,0,W,H);
+
+  // Draw grid dots
+  ctx.save();
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = '#64748B';
+  for(var gx=0;gx<W;gx+=30){
+    for(var gy=0;gy<H;gy+=30){
+      ctx.fillRect(gx,gy,1,1);
+    }
+  }
+  ctx.restore();
+
+  // Determine active nodes and flows
+  var hiNodes = {};
+  var hiFlows = {};
+
+  if(selectedNode){
+    // Node click mode — show only flows connected to selectedNode
+    hiNodes[selectedNode] = true;
+    allFlows.forEach(function(f){
+      if(f.from===selectedNode||f.to===selectedNode){
+        hiFlows[f.from+'→'+f.to]=true;
+        hiNodes[f.from]=true;
+        hiNodes[f.to]=true;
+      }
+    });
+  } else if(currentStep >= 0 && currentStep < steps.length){
+    var step = steps[currentStep];
+    step.highlight.forEach(function(id){hiNodes[id]=true});
+    step.flowIds.forEach(function(f){hiFlows[f.from+'→'+f.to]=true});
+  } else if(currentStep === -2){
+    // Show all
+    nodes.forEach(function(n){hiNodes[n.id]=true});
+    allFlows.forEach(function(f){hiFlows[f.from+'→'+f.to]=true});
+  }
+
+  // Draw inactive flows first
+  allFlows.forEach(function(f){
+    var key = f.from+'→'+f.to;
+    if(!hiFlows[key]) drawFlow(f, false);
+  });
+
+  // Draw active flows
+  allFlows.forEach(function(f){
+    var key = f.from+'→'+f.to;
+    if(hiFlows[key]) drawFlow(f, true);
+  });
+
+  // Draw particles
+  updateParticles();
+
+  // Draw nodes
+  nodes.forEach(function(n){
+    var isHi = hiNodes[n.id] || currentStep===-1;
+    drawNode(n, isHi, hiNodes[n.id]);
+  });
+
+  animFrame = setTimeout(render, 33);
+}
+render();
+
+// ============ CONTROLS ============
+var playTimer = null;
+
+function togglePlay(){
+  playing = !playing;
+  document.getElementById('playBtn').textContent = playing ? '⏸ 일시정지' : '▶ 재생';
+  document.getElementById('playBtn').classList.toggle('active', playing);
+  if(playing){
+    if(currentStep < 0 || currentStep >= steps.length-1) currentStep = -1;
+    nextStep();
+  } else {
+    clearTimeout(playTimer);
+  }
+}
+
+function nextStep(){
+  if(!playing) return;
+  currentStep++;
+  if(currentStep >= steps.length){
+    currentStep = 0;
+  }
+  updateStepUI();
+  var speed = +document.getElementById('speedRange').value;
+  playTimer = setTimeout(nextStep, speed);
+}
+
+function goStep(dir){
+  playing = false;
+  document.getElementById('playBtn').textContent = '▶ 재생';
+  document.getElementById('playBtn').classList.remove('active');
+  clearTimeout(playTimer);
+
+  currentStep += dir;
+  if(currentStep < 0) currentStep = steps.length-1;
+  if(currentStep >= steps.length) currentStep = 0;
+  updateStepUI();
+}
+
+function showAll(){
+  playing = false;
+  selectedNode = null;
+  document.getElementById('playBtn').textContent = '▶ 재생';
+  document.getElementById('playBtn').classList.remove('active');
+  clearTimeout(playTimer);
+  currentStep = -2;
+  document.getElementById('stepTitle').textContent = '전체 연동 구조 — 모든 데이터 흐름 표시';
+}
+
+function resetView(){
+  playing = false;
+  selectedNode = null;
+  document.getElementById('playBtn').textContent = '▶ 재생';
+  document.getElementById('playBtn').classList.remove('active');
+  clearTimeout(playTimer);
+  currentStep = -1;
+  particles = [];
+  document.getElementById('stepTitle').textContent = '';
+}
+
+function updateStepUI(){
+  if(currentStep >= 0 && currentStep < steps.length){
+    var step = steps[currentStep];
+    document.getElementById('stepTitle').innerHTML = step.title + '<br><span style="font-size:12px;color:#94A3B8;font-weight:400">' + step.desc + '</span>';
+  }
+}
+
+document.getElementById('speedRange').addEventListener('input', function(){
+  document.getElementById('speedVal').textContent = (this.value/1000).toFixed(1)+'s';
+});
+
+// ============ NODE CLICK ============
+canvas.addEventListener('click', function(e){
+  var rect = canvas.getBoundingClientRect();
+  var mx = e.clientX - rect.left;
+  var my = e.clientY - rect.top;
+  var clicked = null;
+  var nw = 90, nh = 40;
+
+  for(var i=0;i<nodes.length;i++){
+    var n = nodes[i];
+    var p = getNodePos(n);
+    if(mx >= p.x-nw/2 && mx <= p.x+nw/2 && my >= p.y-nh/2 && my <= p.y+nh/2){
+      clicked = n;
+      break;
+    }
+  }
+
+  if(clicked){
+    // Stop auto-play
+    playing = false;
+    document.getElementById('playBtn').textContent = '▶ 재생';
+    document.getElementById('playBtn').classList.remove('active');
+    clearTimeout(playTimer);
+    currentStep = -1;
+    particles = [];
+
+    if(selectedNode === clicked.id){
+      // Toggle off
+      selectedNode = null;
+      document.getElementById('stepTitle').textContent = '';
+    } else {
+      selectedNode = clicked.id;
+      // Count connected flows
+      var inFlows = allFlows.filter(function(f){return f.to===clicked.id});
+      var outFlows = allFlows.filter(function(f){return f.from===clicked.id});
+      var info = clicked.label + ' 연동 구조';
+      var detail = '수신 ' + inFlows.length + '개 / 송신 ' + outFlows.length + '개 데이터 흐름';
+      document.getElementById('stepTitle').innerHTML = '<span style="color:'+clicked.color+';font-weight:700">'+info+'</span><br><span style="font-size:12px;color:#94A3B8;font-weight:400">'+detail+'</span>';
+    }
+  } else {
+    // Click empty area — deselect
+    if(selectedNode){
+      selectedNode = null;
+      document.getElementById('stepTitle').textContent = '';
+    }
+  }
+});
+
+// Hover cursor
+canvas.addEventListener('mousemove', function(e){
+  var rect = canvas.getBoundingClientRect();
+  var mx = e.clientX - rect.left;
+  var my = e.clientY - rect.top;
+  var nw = 90, nh = 40;
+  var over = false;
+  for(var i=0;i<nodes.length;i++){
+    var p = getNodePos(nodes[i]);
+    if(mx >= p.x-nw/2 && mx <= p.x+nw/2 && my >= p.y-nh/2 && my <= p.y+nh/2){
+      over = true; break;
+    }
+  }
+  canvas.style.cursor = over ? 'pointer' : 'default';
+});
+</script>
+</body>
+</html>

@@ -256,6 +256,7 @@ var allFlows = [
   {from:'wo',to:'print',label:'작업지시서 인쇄',data:'wo→작업지시서',type:'read'},
   {from:'quote',to:'print',label:'견적서 인쇄',data:'quotes→견적서',type:'read'},
   {from:'inspect',to:'print',label:'검사성적서 인쇄',data:'certs→성적서',type:'read'},
+  {from:'account',to:'print',label:'세금계산서 인쇄/전자발행',data:'taxInvoice→종이/팝빌API',type:'write'},
 
   // ===== 시스템/백업 연동 =====
   {from:'system',to:'master',label:'마스터 데이터 관리',data:'cli,prod,mold',type:'read'},

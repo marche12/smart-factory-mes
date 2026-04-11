@@ -465,7 +465,7 @@ updateShipBadge();
 }
 
 /* ===== DAILY PRODUCTION PLAN ===== */
-function rPlanList(){/* 호환용 stub — rPlan()이 실제 렌더링 처리 */}
+function rPlanList(){/* 호환용 stub — rPlan()이 실제 렌더링 처리. index.html 버튼 및 mes-wo.js에서 호출됨 */}
 // === 공정별 대기열 화살표 순서 변경 ===
 
 function rPlan(){
@@ -606,7 +606,7 @@ function rPlan(){
   gH+='</div>';
   $('planGrid').innerHTML=gH;
 
-  }catch(e){var _pg=$('planGrid');if(_pg)_pg.innerHTML='<div style="padding:20px;color:red;font-size:13px">오류: '+e.message+'</div>';console.error('rPlan error:',e);}
+  }catch(e){var _pg=$('planGrid');if(_pg){_pg.textContent='';var _ed=document.createElement('div');_ed.style.cssText='padding:20px;color:red;font-size:13px';_ed.textContent='오류: '+e.message;_pg.appendChild(_ed);}console.error('rPlan error:',e);}
 }
 // 섹션 렌더 헬퍼 (border-right 여부 포함)
 function _planSection(title,color,items,rowFn,hasBorderRight){
@@ -1017,7 +1017,7 @@ function rOrderList(){
 
   // WO 날짜 맵 (woId → dt)
   var woDateMap={};
-  try{DB.g('wo').forEach(function(w){if(w.id)woDateMap[w.id]=w.dt||''})}catch(e){}
+  try{DB.g('wo').forEach(function(w){if(w.id)woDateMap[w.id]=w.dt||''})}catch(e){/* WO store may not exist yet on first load — safe to ignore */}
 
   var tb=$('orderTbl').querySelector('tbody');
   if(!filtered.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--txt3)">수주 내역이 없습니다</td></tr>';return}

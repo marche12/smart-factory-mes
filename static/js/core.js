@@ -149,7 +149,7 @@ var DB={
   },
   _deleteFromServer:function(storeKey){
     if(!DB._serverOk)return;
-    authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'DELETE'}).catch(function(){});
+    authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'DELETE'}).catch(function(e){console.warn('Delete failed:',storeKey)});
   },
   g:function(k,mo){
     if(k==='wo'){return DB._gWO(mo)}
@@ -442,7 +442,6 @@ MR['hr-payhist']=function(){$('payHistArea').innerHTML=renderPayHistory()};
 MR['mes-sched']=function(){renderSchedBoard()};
 /* ===== 확장 모듈 라우팅 ===== */
 MR['mes-order-track']=function(){if(typeof rOrderTrack==='function')rOrderTrack()};
-MR['mes-due']=function(){if(typeof rDueManage==='function')rDueManage()};
 MR['mes-proc-log']=function(){if(typeof rProcLog==='function'){fillProcSelect('plProc',true);$('plDate').value=td();rProcLog()}};
 MR['mes-lot']=function(){if(typeof rLotTrace==='function')rLotTrace()};
 MR['mes-downtime']=function(){if(typeof rDowntime==='function'){_equipSelect('dtEquip');rDowntime()}};

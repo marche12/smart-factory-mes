@@ -201,9 +201,22 @@ async def auth_refresh(request: Request):
         db.delete_refresh_token(rt_hash)
         raise HTTPException(status_code=401, detail="Refresh token expired")
 
+    # Look up the user's actual role from the database
+    users_raw = db.get_data("ino_users")
+    users = json.loads(users_raw) if users_raw else []
+    if not users:
+        users = [{"id": "admin", "nm": "관리자", "un": "admin", "role": "admin", "pw": "1234"}]
+    user_obj = None
+    for u in users:
+        if u.get("id") == token_row["user_id"]:
+            user_obj = u
+            break
+    role = user_obj.get("role", "admin") if user_obj else "admin"
+    perms = user_obj.get("perms") if user_obj else None
+
     # Issue new access token
     access_token = create_access_token(
-        token_row["user_id"], token_row["user_name"], "admin"
+        token_row["user_id"], token_row["user_name"], role, perms
     )
 
     return JSONResponse(content={"access_token": access_token})

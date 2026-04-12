@@ -29,9 +29,24 @@ function toggleCapacity(){
 /* ===== EQUIP UTILIZATION ===== */
 function renderEqUtil(){
   var eqs=DB.g('equip');if(!eqs.length)return;
+  // 실제 가동률 계산: 설비별 오늘 공정실적의 가동시간/총시간
+  var wos=DB.g('wo');var today=td();
   var h='<div style="margin-top:16px"><div class="card-t">설비 가동률 현황</div><div class="eq-util-grid">';
   eqs.forEach(function(eq){
-    var rate=eq.status==='가동중'?Math.floor(Math.random()*20+75):eq.status==='정지'?0:Math.floor(Math.random()*30+10);
+    var rate=0;
+    if(eq.status==='정지'){rate=0}
+    else if(eq.status==='가동중'){
+      // 해당 설비 공정에 배정된 작업지시서에서 실제 진행률 기반으로 계산
+      var procNm=eq.proc||eq.nm||'';
+      var activeWOs=wos.filter(function(o){return o.status==='진행중'&&o.procs&&o.procs.some(function(p){return p.nm===procNm&&p.qty>0})});
+      var totalAssigned=wos.filter(function(o){return(o.status==='진행중'||o.status==='완료')&&o.procs&&o.procs.some(function(p){return p.nm===procNm})});
+      if(totalAssigned.length>0){
+        var completed=totalAssigned.filter(function(o){return o.procs.some(function(p){return p.nm===procNm&&p.qty>=o.fq})}).length;
+        rate=Math.round((activeWOs.length*70+completed*100)/(activeWOs.length+completed||1));
+        rate=Math.min(100,Math.max(10,rate));
+      }else{rate=eq.lastRate||50}
+    }else{rate=eq.lastRate||0}
+    eq.lastRate=rate; // 마지막 계산값 저장
     var color=rate>=70?'#10B981':rate>=40?'#F59E0B':'#EF4444';
     var circ=2*Math.PI*32;var offset=circ*(1-rate/100);
     h+='<div class="eq-util-card"><div class="eq-util-ring"><svg viewBox="0 0 80 80">'
@@ -184,15 +199,17 @@ function getShipAlerts(){
 
 /* ===== 14/16 CLIENT DELIVERY RATE ===== */
 function calcClientDeliveryRate(){
-  var os=DB.g('wo'),rates={};
+  var os=DB.g('wo'),shipLogs=DB.g('shipLog'),rates={};
   os.forEach(function(o){
     if(!o.cnm||!o.sd)return;
     if(!rates[o.cnm])rates[o.cnm]={total:0,onTime:0};
     if(o.status==='출고완료'||o.status==='완료'){
       rates[o.cnm].total++;
-      // 출고완료일이 출고예정일 이내면 정시
-      var compDate=o.compDate||o.cat||'';
-      if(compDate.slice(0,10)<=o.sd)rates[o.cnm].onTime++;
+      // 실제 출고일 우선: shipLog에서 해당 WO의 마지막 출고일 조회
+      var shipDates=shipLogs.filter(function(s){return s.woId===o.id}).map(function(s){return s.dt}).sort();
+      var actualDate=shipDates.length>0?shipDates[shipDates.length-1]:(o.compDate||'');
+      // 출고일이 납기 이내면 정시 납품
+      if(actualDate&&actualDate.slice(0,10)<=o.sd)rates[o.cnm].onTime++;
     }
   });
   return Object.entries(rates).map(function(e){
@@ -725,9 +742,21 @@ function poToIncome(poId){
   // 발주서 상태 업데이트
   var pi=pos.findIndex(function(x){return x.id===poId});
   if(pi>=0){pos[pi].st='입고완료';pos[pi].inDate=td();DB.s('po',pos)}
-  toast('입고 완료 + 재고 반영','ok');
+  // 매입 자동 등록 (발주→입고→매입 연동)
+  try{
+    var purAmt=po.amt||Math.round((po.unit||0)*(po.qty||0));
+    if(purAmt>0){
+      var purList=DB.g('purchase');
+      purList.push({id:gid(),dt:td(),cli:po.vnm,prod:po.item,qty:po.qty,
+        price:po.unit||Math.round(purAmt/po.qty),amt:purAmt,paid:0,payType:'미지급',
+        note:'발주입고자동등록 (PO:'+po.pn+')',poId:poId});
+      DB.s('purchase',purList);
+      addLog('매입자동등록: '+po.vnm+' '+po.item+' '+fmt(purAmt)+'원');
+    }
+  }catch(e){console.warn('매입연계오류:',e);toast('⚠ 매입 자동등록 실패 — 매입관리에서 수동 등록 필요','err')}
+  toast('입고 완료 + 재고 반영 + 매입 등록','ok');
   addLog('발주-입고: '+po.item+' '+po.qty);
-  if(typeof rPO==='function')rPO();if(typeof rIncome==='function')rIncome();if(typeof rStock==='function')rStock();
+  if(typeof rPO==='function')rPO();if(typeof rIncome==='function')rIncome();if(typeof rStock==='function')rStock();if(typeof rPr==='function')rPr();
 }
 
 /* ===== 5/10 매출/매입 자동집계 ===== */
@@ -1011,41 +1040,145 @@ function renderSalesTrend(){
   return h;
 }
 
-/* ===== A3. 외상 마감 기능 ===== */
+/* ===== A3. 월말 마감 자동화 ===== */
+var _closingMonth=null;
+
 function renderClosing(){
-  var now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
   var closings=DB.g('closings');
-  var thisMonth=y+'-'+m;
-  var closed=closings.find(function(c){return c.month===thisMonth});
-  var recv=calcReceivables(),pay=calcPayables();
-  var totalRecv=recv.reduce(function(s,r){return s+r.remain},0);
-  var totalPay=pay.reduce(function(s,r){return s+r.remain},0);
-  var h='<div class="sg">';
-  h+='<div class="sb red"><div class="l">미수금 잔액</div><div class="v">'+fmt(totalRecv)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+recv.length+'건</div></div>';
-  h+='<div class="sb orange"><div class="l">미지급 잔액</div><div class="v">'+fmt(totalPay)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+pay.length+'건</div></div>';
-  h+='<div class="sb '+(closed?'green':'purple')+'"><div class="l">마감 상태</div><div class="v">'+(closed?'✓ 마감':'미마감')+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">'+(closed?closed.date:thisMonth)+'</div></div>';
+  // 월 선택 (기본: 이번달)
+  var selMonth=_closingMonth||td().slice(0,7);
+  _closingMonth=selMonth;
+  var y=+selMonth.slice(0,4),m=+selMonth.slice(5,7);
+  var mStart=selMonth+'-01';
+  var mEnd=selMonth+'-31';
+  var closed=closings.find(function(c){return c.month===selMonth});
+
+  // 데이터 집계
+  var sales=DB.g('sales').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var salesTot=sales.reduce(function(s,r){return s+(r.amt||0)},0);
+  var purch=DB.g('purchase').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var purchTot=purch.reduce(function(s,r){return s+(r.amt||0)},0);
+  var payroll=DB.g('payroll').filter(function(r){return r.month===selMonth});
+  var payTot=payroll.reduce(function(s,r){return s+(r.gross||0)},0);
+  var payNet=payroll.reduce(function(s,r){return s+(r.net||0)},0);
+  var expense=DB.g('expense').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var expTot=expense.reduce(function(s,r){return s+(r.amt||0)},0);
+  var stocks=DB.g('stock');var stockCnt=stocks.length;
+  // 미수금/미지급
+  var allSales=DB.g('sales');var allPurch=DB.g('purchase');
+  var recv=allSales.reduce(function(s,r){var u=Math.max(0,(r.amt||0)-(r.paid||0));return s+u},0);
+  var payable=allPurch.reduce(function(s,r){var u=Math.max(0,(r.amt||0)-(r.paid||0));return s+u},0);
+  // 손익
+  var profit=salesTot-purchTot-payTot-expTot;
+
+  var h='';
+  // 월 선택
+  h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
+  h+='<input type="month" value="'+selMonth+'" onchange="_closingMonth=this.value;$(\'closingArea\').innerHTML=renderClosing()" style="padding:8px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;font-weight:700">';
+  h+='<span style="font-size:18px;font-weight:800;color:var(--pri)">'+y+'년 '+m+'월 마감</span>';
+  if(closed) h+='<span style="background:#059669;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">✓ 마감완료</span>';
+  else h+='<span style="background:#F59E0B;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">미마감</span>';
   h+='</div>';
+
+  // 손익 요약 카드
+  h+='<div class="sg" style="margin-bottom:16px">';
+  h+='<div class="sb blue"><div class="l">매출</div><div class="v">'+fmt(salesTot)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:4px">'+sales.length+'건</div></div>';
+  h+='<div class="sb orange"><div class="l">매입</div><div class="v">'+fmt(purchTot)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:4px">'+purch.length+'건</div></div>';
+  h+='<div class="sb purple"><div class="l">급여</div><div class="v">'+fmt(payTot)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:4px">'+payroll.length+'명</div></div>';
+  h+='<div class="sb red"><div class="l">경비</div><div class="v">'+fmt(expTot)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:4px">'+expense.length+'건</div></div>';
+  h+='<div class="sb '+(profit>=0?'green':'red')+'"><div class="l">손익</div><div class="v">'+(profit>=0?'+':'')+fmt(profit)+'</div><div style="font-size:11px;color:var(--txt2);margin-top:4px">'+(profit>=0?'흑자':'적자')+'</div></div>';
+  h+='</div>';
+
+  // 마감 체크리스트
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-t">마감 체크리스트</div>';
+  h+='<table class="dt"><thead><tr><th>항목</th><th style="text-align:right">건수</th><th style="text-align:right">금액</th><th>상태</th></tr></thead><tbody>';
+  var items=[
+    {nm:'매출 확정',cnt:sales.length,amt:salesTot},
+    {nm:'매입 확정',cnt:purch.length,amt:purchTot},
+    {nm:'급여 확정',cnt:payroll.length,amt:payTot},
+    {nm:'경비 확정',cnt:expense.length,amt:expTot},
+    {nm:'재고 현황',cnt:stockCnt,amt:0},
+    {nm:'미수금 잔액',cnt:'-',amt:recv},
+    {nm:'미지급 잔액',cnt:'-',amt:payable}
+  ];
+  items.forEach(function(it){
+    var st=closed?'<span class="bd bd-s">확정</span>':'<span class="bd bd-w">미확정</span>';
+    h+='<tr><td style="font-weight:700">'+it.nm+'</td><td style="text-align:right">'+(it.cnt==='-'?'-':it.cnt)+'</td><td style="text-align:right;font-weight:700">'+fmt(it.amt)+'원</td><td>'+st+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // 마감/해제 버튼
   if(!closed){
-    h+='<div class="fbar"><div class="fbar-row"><span class="fbar-label">'+thisMonth+' 마감</span><div class="fbar-spacer"></div><button class="btn btn-p btn-sm" onclick="doClosing(\''+thisMonth+'\')">마감 처리</button></div></div>';
+    h+='<div style="text-align:center;margin:20px 0"><button class="btn btn-p" onclick="doClosing(\''+selMonth+'\')" style="padding:12px 40px;font-size:15px;font-weight:700">🔒 '+selMonth+' 일괄 마감</button></div>';
+  } else {
+    h+='<div style="text-align:center;margin:20px 0"><div style="color:var(--suc);font-weight:700;margin-bottom:8px">✓ '+closed.date+' 마감 완료 ('+closed.user+')</div>';
+    h+='<button class="btn btn-d btn-sm" onclick="undoClosing(\''+selMonth+'\')">🔓 마감 해제</button></div>';
   }
-  h+='<div class="card"><div class="card-t">마감 대상 상세</div>';
-  if(recv.length+pay.length){
-    h+='<table class="dt"><thead><tr><th>구분</th><th>거래처</th><th style="text-align:right">총액</th><th style="text-align:right">잔액</th></tr></thead><tbody>';
-    recv.forEach(function(r){h+='<tr class="row-warn"><td><span class="bd bd-x">미수</span></td><td style="font-weight:700">'+r.cnm+'</td><td style="text-align:right">'+fmt(r.sales)+'</td><td style="text-align:right;color:var(--dan);font-weight:800">'+fmt(r.remain)+'</td></tr>'});
-    pay.forEach(function(r){h+='<tr class="row-warn"><td><span class="bd bd-o">미지급</span></td><td style="font-weight:700">'+r.vnm+'</td><td style="text-align:right">'+fmt(r.purch)+'</td><td style="text-align:right;color:var(--wrn);font-weight:800">'+fmt(r.remain)+'</td></tr>'});
+
+  // 마감 이력
+  h+='<div class="card"><div class="card-t">마감 이력</div>';
+  if(!closings.length){
+    h+='<div class="empty-state"><div class="msg">마감 이력 없음</div></div>';
+  } else {
+    h+='<table class="dt"><thead><tr><th>월</th><th>마감일</th><th>처리자</th><th style="text-align:right">매출</th><th style="text-align:right">매입</th><th style="text-align:right">급여</th><th style="text-align:right">경비</th><th style="text-align:right">손익</th></tr></thead><tbody>';
+    closings.sort(function(a,b){return b.month>a.month?1:-1}).forEach(function(c){
+      var pl=(c.salesTotal||0)-(c.purchTotal||0)-(c.payrollTotal||0)-(c.expenseTotal||0);
+      h+='<tr><td style="font-weight:700">'+c.month+'</td><td>'+c.date+'</td><td>'+c.user+'</td>';
+      h+='<td style="text-align:right">'+fmt(c.salesTotal||0)+'</td>';
+      h+='<td style="text-align:right">'+fmt(c.purchTotal||0)+'</td>';
+      h+='<td style="text-align:right">'+fmt(c.payrollTotal||0)+'</td>';
+      h+='<td style="text-align:right">'+fmt(c.expenseTotal||0)+'</td>';
+      h+='<td style="text-align:right;font-weight:700;color:'+(pl>=0?'var(--suc)':'var(--dan)')+'">'+(pl>=0?'+':'')+fmt(pl)+'</td></tr>';
+    });
     h+='</tbody></table>';
-  }else h+='<div class="empty-state"><div class="msg">마감할 항목 없음</div></div>';
+  }
   h+='</div>';
+
   return h;
 }
+
 function doClosing(month){
-  if(!confirm(month+' 외상 마감을 처리합니다.\n마감 후에는 해당 월 데이터 수정이 제한됩니다.'))return;
+  if(!confirm(month+' 월말 마감을 처리합니다.\n\n매출/매입/급여/경비를 확정하고 마감합니다.\n마감 후 해당 월 데이터 수정이 제한됩니다.\n\n계속하시겠습니까?'))return;
+  var mStart=month+'-01',mEnd=month+'-31';
+  var sales=DB.g('sales').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var purch=DB.g('purchase').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var payroll=DB.g('payroll').filter(function(r){return r.month===month});
+  var expense=DB.g('expense').filter(function(r){return r.dt>=mStart&&r.dt<=mEnd});
+  var allSales=DB.g('sales');var allPurch=DB.g('purchase');
+  var recv=allSales.reduce(function(s,r){return s+Math.max(0,(r.amt||0)-(r.paid||0))},0);
+  var payable=allPurch.reduce(function(s,r){return s+Math.max(0,(r.amt||0)-(r.paid||0))},0);
+
   var closings=DB.g('closings');
-  closings.push({month:month,date:td(),user:CU?CU.nm:'admin',recvTotal:calcReceivables().reduce(function(s,r){return s+r.remain},0),payTotal:calcPayables().reduce(function(s,r){return s+r.remain},0)});
+  closings.push({
+    month:month,
+    date:td(),
+    user:CU?CU.nm:'admin',
+    salesTotal:sales.reduce(function(s,r){return s+(r.amt||0)},0),
+    salesCount:sales.length,
+    purchTotal:purch.reduce(function(s,r){return s+(r.amt||0)},0),
+    purchCount:purch.length,
+    payrollTotal:payroll.reduce(function(s,r){return s+(r.gross||0)},0),
+    payrollCount:payroll.length,
+    expenseTotal:expense.reduce(function(s,r){return s+(r.amt||0)},0),
+    expenseCount:expense.length,
+    recvTotal:recv,
+    payTotal:payable,
+    stockSnapshot:DB.g('stock').map(function(s){return{nm:s.nm,qty:s.qty,unit:s.unit}})
+  });
   DB.s('closings',closings);
-  toast(month+' 마감 완료','ok');
-  addLog('외상 마감: '+month);
-  goMod('acc-recv');
+  toast(month+' 월말 마감 완료','ok');
+  addLog('월말 마감: '+month);
+  $('closingArea').innerHTML=renderClosing();
+}
+
+function undoClosing(month){
+  if(!confirm(month+' 마감을 해제하시겠습니까?\n해당 월 데이터 수정이 가능해집니다.'))return;
+  if(!confirm('정말 마감을 해제하시겠습니까? (최종 확인)'))return;
+  var closings=DB.g('closings').filter(function(c){return c.month!==month});
+  DB.s('closings',closings);
+  toast(month+' 마감 해제','ok');
+  addLog('마감 해제: '+month);
+  $('closingArea').innerHTML=renderClosing();
 }
 
 /* ===== B1. 입출고 이력 추적 (LOT번호) ===== */

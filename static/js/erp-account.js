@@ -86,16 +86,31 @@ function doPay(){
 }
 
 /* === 손익 === */
+/* === 경비 CRUD === */
+function openExpM(){$('expId').value='';$('expDt').value=td();$('expCat').value='임대료';$('expAmt').value='';$('expNote').value='';oMo('expMo')}
+function saveExp(){
+  const dt=$('expDt').value,cat=$('expCat').value,amt=+$('expAmt').value;
+  if(!dt){toast('날짜 필요','err');return}if(!amt||amt<=0){toast('금액 필요','err');return}
+  const id=$('expId').value||gid();
+  const rec={id,dt,cat,amt,note:$('expNote').value};
+  const ls=DB.g('expense');const idx=ls.findIndex(x=>x.id===id);
+  if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('expense',ls);cMo('expMo');rPl();toast('저장','ok');
+}
+function eExp(id){const r=DB.g('expense').find(x=>x.id===id);if(!r)return;$('expId').value=r.id;$('expDt').value=r.dt;$('expCat').value=r.cat;$('expAmt').value=r.amt;$('expNote').value=r.note||'';oMo('expMo')}
+function dExp(id){if(!confirm('삭제?'))return;DB.s('expense',DB.g('expense').filter(x=>x.id!==id));rPl();toast('삭제','ok')}
+
 function rPl(){
   const y=$('plY').value||new Date().getFullYear();
-  const sl=DB.g('sales'),pr=DB.g('purchase'),pay=DB.g('payroll');
+  const sl=DB.g('sales'),pr=DB.g('purchase'),pay=DB.g('payroll'),exp=DB.g('expense');
   const cm=td().slice(0,7);
   const cms=sl.filter(r=>r.dt.startsWith(cm));const cmp=pr.filter(r=>r.dt.startsWith(cm));
-  const cml=pay.filter(r=>r.month===cm);
+  const cml=pay.filter(r=>r.month===cm);const cme=exp.filter(r=>r.dt.startsWith(cm));
   $('plS').textContent=fmt(cms.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('plP').textContent=fmt(cmp.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('plL').textContent=fmt(cml.reduce((s,r)=>s+(r.total||0),0))+'원';
-  const profit=cms.reduce((s,r)=>s+(r.amt||0),0)-cmp.reduce((s,r)=>s+(r.amt||0),0)-cml.reduce((s,r)=>s+(r.total||0),0);
+  const expAmt=cme.reduce((s,r)=>s+(r.amt||0),0);
+  if($('plE'))$('plE').textContent=fmt(expAmt)+'원';
+  const profit=cms.reduce((s,r)=>s+(r.amt||0),0)-cmp.reduce((s,r)=>s+(r.amt||0),0)-cml.reduce((s,r)=>s+(r.total||0),0)-expAmt;
   $('plN').textContent=fmt(profit)+'원';$('plN').style.color=profit>=0?'var(--suc)':'var(--dan)';
 
   let rows='',maxVal=1,data=[];
@@ -104,14 +119,20 @@ function rPl(){
     const sAmt=sl.filter(r=>r.dt.startsWith(mk)).reduce((s,r)=>s+(r.amt||0),0);
     const pAmt=pr.filter(r=>r.dt.startsWith(mk)).reduce((s,r)=>s+(r.amt||0),0);
     const lAmt=pay.filter(r=>r.month===mk).reduce((s,r)=>s+(r.total||0),0);
-    const net=sAmt-pAmt-lAmt;const rate=sAmt?Math.round(net/sAmt*100):0;
-    data.push({m,sAmt,pAmt,lAmt,net,rate});
+    const eAmt=exp.filter(r=>r.dt.startsWith(mk)).reduce((s,r)=>s+(r.amt||0),0);
+    const net=sAmt-pAmt-lAmt-eAmt;const rate=sAmt?Math.round(net/sAmt*100):0;
+    data.push({m,sAmt,pAmt,lAmt,eAmt,net,rate});
     maxVal=Math.max(maxVal,sAmt,pAmt);
-    rows+=`<tr><td>${m}월</td><td style="text-align:right">${fmt(sAmt)}</td><td style="text-align:right">${fmt(pAmt)}</td><td style="text-align:right">${fmt(lAmt)}</td><td style="text-align:right">-</td><td style="text-align:right;font-weight:700;color:${net>=0?'var(--suc)':'var(--dan)'}">${fmt(net)}</td><td style="text-align:right;color:${rate>=0?'var(--suc)':'var(--dan)'}">${rate}%</td></tr>`;
+    rows+=`<tr><td>${m}월</td><td style="text-align:right">${fmt(sAmt)}</td><td style="text-align:right">${fmt(pAmt)}</td><td style="text-align:right">${fmt(lAmt)}</td><td style="text-align:right">${fmt(eAmt)}</td><td style="text-align:right;font-weight:700;color:${net>=0?'var(--suc)':'var(--dan)'}">${fmt(net)}</td><td style="text-align:right;color:${rate>=0?'var(--suc)':'var(--dan)'}">${rate}%</td></tr>`;
   }
   $('plTbl').querySelector('tbody').innerHTML=rows;
   // 차트
   $('plChart').innerHTML=`<div class="bar-wrap">${data.map(d=>`<div class="bar-g"><div style="display:flex;gap:2px;align-items:flex-end;height:100%"><div class="bar" style="height:${Math.max(2,d.sAmt/maxVal*160)}px;background:var(--pri);width:12px" title="매출 ${fmt(d.sAmt)}"></div><div class="bar" style="height:${Math.max(2,d.pAmt/maxVal*160)}px;background:var(--wrn);width:12px" title="매입 ${fmt(d.pAmt)}"></div></div><div class="bar-lb">${d.m}월</div></div>`).join('')}</div><div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px"><span style="color:var(--pri)">■ 매출</span><span style="color:var(--wrn)">■ 매입</span></div>`;
+  // 경비 내역 테이블
+  const yExp=exp.filter(r=>r.dt.startsWith(y)).sort((a,b)=>b.dt>a.dt?1:-1);
+  if($('plExpTbl'))$('plExpTbl').querySelector('tbody').innerHTML=yExp.map(r=>{
+    return `<tr><td>${r.dt}</td><td style="font-weight:600">${r.cat}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}원</td><td>${r.note||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eExp('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dExp('${r.id}')">삭제</button></td></tr>`;
+  }).join('')||'<tr><td colspan="5" class="empty-cell">등록된 경비가 없습니다</td></tr>';
 }
 function printPl(){const c=$('plTbl').innerHTML;const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>손익현황</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px">이노패키지 ${$('plY').value}년 손익현황</h2><table>${c}</table></body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
 

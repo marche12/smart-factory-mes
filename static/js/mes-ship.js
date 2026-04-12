@@ -434,7 +434,7 @@ updateShipBadge();
 }
 
 /* ===== DAILY PRODUCTION PLAN ===== */
-function rPlanList(){/* 호환용 stub — rPlan()이 실제 렌더링 처리. index.html 버튼 및 mes-wo.js에서 호출됨 */}
+function rPlanList(){if(typeof rPlan==='function')rPlan()}
 // === 공정별 대기열 화살표 순서 변경 ===
 
 function rPlan(){

@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "packflow",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "process.chdir('/Users/shoon/Documents/팩플로우/static');const http=require('http'),fs=require('fs'),path=require('path');const types={'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml'};http.createServer((req,res)=>{let p=decodeURIComponent(req.url.split('?')[0]);if(p.endsWith('/'))p+='index.html';const fp=path.join('/Users/shoon/Documents/팩플로우/static',p);fs.readFile(fp,(e,d)=>{if(e){res.writeHead(404);res.end('404');return;}res.writeHead(200,{'Content-Type':types[path.extname(fp)]||'application/octet-stream'});res.end(d);});}).listen(3100);console.log('listening 3100');"],
-      "port": 3100
+      "name": "mes-server",
+      "runtimeExecutable": "/c/Users/hushk/AppData/Local/Programs/Python/Python313/python.exe",
+      "runtimeArgs": ["server.py"],
+      "port": 8080
     }
   ]
 }

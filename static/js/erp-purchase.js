@@ -113,6 +113,20 @@ function saveIncome(){
   // 재고에 자동 반영 (입고 시 재고 증가)
   if(idx<0) autoUpdateStock(rec);
 
+  // 매입 자동 등록 (입고 → 매입 연동, 신규 입고 시에만)
+  if(idx<0){
+    try{
+      const amt=rec.qty*rec.price;
+      if(amt>0){
+        const purList=DB.g('purchase');
+        purList.push({id:gid(),dt:rec.dt,cli:rec.vd,prod:rec.nm,qty:rec.qty,price:rec.price,
+          amt:amt,paid:0,payType:'미지급',note:'입고자동등록 ('+rec.cat+'/'+rec.nm+')',incId:rec.id});
+        DB.s('purchase',purList);
+        if(typeof addLog==='function') addLog('매입자동등록: '+rec.vd+' '+rec.nm+' '+fmt(amt)+'원');
+      }
+    }catch(e){console.warn('매입연계오류:',e);toast('⚠ 매입 자동등록 실패 — 매입관리에서 수동 등록 필요','err')}
+  }
+
   cMo('incMo');rIncome();toast('저장 완료','ok');
 }
 
@@ -139,7 +153,20 @@ function confirmInc(id){
 
 function dIncome(id){
   if(!confirm('삭제하시겠습니까?'))return;
-  DB.s('income',DB.g('income').filter(x=>x.id!==id));rIncome();toast('삭제','ok');
+  // 삭제 전 해당 입고 데이터로 재고 차감
+  const rec=DB.g('income').find(x=>x.id===id);
+  if(rec&&rec.qty){
+    const stocks=DB.g('stock');
+    const si=stocks.find(s=>s.nm===rec.nm&&s.cat===rec.cat);
+    if(si){si.qty=Math.max(0,(si.qty||0)-rec.qty);si.updated=nw();DB.s('stock',stocks)}
+  }
+  // 연동된 매입 데이터도 삭제
+  const purs=DB.g('purchase');
+  const purLinked=purs.filter(p=>p.incId===id);
+  if(purLinked.length){DB.s('purchase',purs.filter(p=>p.incId!==id))}
+  DB.s('income',DB.g('income').filter(x=>x.id!==id));
+  rIncome();if(typeof rStock==='function')rStock();if(typeof rPr==='function')rPr();
+  toast('삭제 (재고/매입 반영)','ok');
 }
 
 function exportIncCSV(){

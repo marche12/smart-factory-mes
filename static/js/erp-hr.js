@@ -66,15 +66,46 @@ function expAttCSV(){
 }
 
 /* === 급여 === */
+
+/* 2026년 4대보험 요율 (근로자 부담분) */
+const INS_RATE={
+  nps:0.045,    // 국민연금 4.5%
+  hi:0.03545,   // 건강보험 3.545%
+  ltc:0.1295,   // 장기요양 (건강보험의 12.95%)
+  ei:0.009      // 고용보험 0.9%
+};
+/* 근로소득 간이세액표 기반 소득세 근사 계산 (월급 기준, 부양가족 1인) */
+function calcIncomeTax(monthlyPay){
+  const ann=monthlyPay*12;
+  if(ann<=14000000) return 0;
+  if(ann<=50000000) return Math.round((ann*0.06-840000)/12);  // 6% 구간 근사
+  if(ann<=88000000) return Math.round((ann*0.15-5100000)/12); // 15% 구간 근사
+  return Math.round((ann*0.24-12940000)/12); // 24% 구간 근사
+}
+/* 4대보험+소득세 공제 계산 */
+function calcDeductions(grossPay){
+  const nps=Math.round(grossPay*INS_RATE.nps);          // 국민연금
+  const hi=Math.round(grossPay*INS_RATE.hi);             // 건강보험
+  const ltc=Math.round(hi*INS_RATE.ltc);                 // 장기요양
+  const ei=Math.round(grossPay*INS_RATE.ei);             // 고용보험
+  const itx=Math.max(0,calcIncomeTax(grossPay));         // 소득세
+  const ltx=Math.round(itx*0.1);                        // 지방소득세 (소득세의 10%)
+  const total=nps+hi+ltc+ei+itx+ltx;
+  return {nps,hi,ltc,ei,itx,ltx,total};
+}
+
 function rPay(){
   const mo=$('payMo').value||td().slice(0,7);if(!$('payMo').value)$('payMo').value=mo;
   const ls=DB.g('payroll').filter(r=>r.month===mo);
-  $('payTotal').textContent=fmt(ls.reduce((s,r)=>s+(r.total||0),0))+'원';
+  const grossSum=ls.reduce((s,r)=>s+(r.gross||r.base+r.ot+(r.etc||0)),0);
+  $('payTotal').textContent=fmt(ls.reduce((s,r)=>s+(r.net||r.total||0),0))+'원';
   $('payBase').textContent=fmt(ls.reduce((s,r)=>s+(r.base||0),0))+'원';
   $('payAllow').textContent=fmt(ls.reduce((s,r)=>s+(r.ot||0)+(r.etc||0),0))+'원';
   $('payDeduct').textContent=fmt(ls.reduce((s,r)=>s+(r.ded||0),0))+'원';
   $('payTbl').querySelector('tbody').innerHTML=ls.map(r=>{
-    return `<tr><td style="font-weight:700">${r.nm}</td><td>${r.dept}</td><td style="text-align:center">${r.days||0}</td><td style="text-align:right">${fmt(r.base)}</td><td style="text-align:right;color:var(--wrn)">${fmt(r.ot)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.etc)}</td><td style="text-align:right;color:var(--dan)">${fmt(r.ded)}</td><td style="text-align:right;font-weight:800;font-size:14px">${fmt(r.total)}</td><td><button class="btn btn-sm btn-o" onclick="editPay('${r.id}')">수정</button> <button class="btn btn-sm btn-p" onclick="printPayOne('${r.id}')">명세서</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 급여 내역이 없습니다. [급여 자동계산] 버튼을 클릭하세요.</td></tr>';
+    const dedDetail=r.dedDetail||{};
+    const dedTip=dedDetail.nps?`국민연금:${fmt(dedDetail.nps)} 건강:${fmt(dedDetail.hi)} 장기요양:${fmt(dedDetail.ltc)} 고용:${fmt(dedDetail.ei)} 소득세:${fmt(dedDetail.itx)} 지방세:${fmt(dedDetail.ltx)}`:'상세 없음';
+    return `<tr><td style="font-weight:700">${r.nm}</td><td>${r.dept}</td><td style="text-align:center">${r.days||0}</td><td style="text-align:right">${fmt(r.base)}</td><td style="text-align:right;color:var(--wrn)">${fmt(r.ot)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.etc||0)}</td><td style="text-align:right;color:var(--dan);cursor:help" title="${dedTip}">${fmt(r.ded)}</td><td style="text-align:right;font-weight:800;font-size:14px">${fmt(r.net||r.total)}</td><td><button class="btn btn-sm btn-o" onclick="editPay('${r.id}')">수정</button> <button class="btn btn-sm btn-p" onclick="printPayOne('${r.id}')">명세서</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 급여 내역이 없습니다. [급여 자동계산] 버튼을 클릭하세요.</td></tr>';
 }
 function genPay(){
   const mo=$('payMo').value;if(!mo){toast('월 선택','err');return}
@@ -86,37 +117,91 @@ function genPay(){
     const myAtt=atts.filter(a=>a.empId===e.id&&a.inTime);
     const days=myAtt.length;
     const otHours=myAtt.reduce((s,a)=>{if(!a.outTime)return s;const h=calcHours(a.inTime,a.outTime);return s+Math.max(0,h-9)},0);
-    const base=e.base||0;const ot=Math.round(otHours*(e.hourly||0)*1.5);
-    const total=base+ot;
-    payList.push({id:gid(),empId:e.id,nm:e.nm,dept:e.dept,month:mo,days,base,ot,etc:0,ded:0,total});
+    const base=e.base||0;
+    const ot=Math.round(otHours*(e.hourly||0)*1.5);
+    const etc=0; // 기타수당 (수동 입력용)
+    const gross=base+ot+etc; // 총지급액
+    const dedDetail=calcDeductions(gross); // 4대보험+소득세 자동계산
+    const ded=dedDetail.total;
+    const net=gross-ded; // 실수령액
+    payList.push({id:gid(),empId:e.id,nm:e.nm,dept:e.dept,month:mo,days,base,ot,etc,gross,dedDetail,ded,net,total:net});
   });
-  // 기존 제거 후 새로 저장
+  // 기존 해당월 제거 후 새로 계산한 데이터 병합 저장
   const existing=DB.g('payroll').filter(r=>r.month!==mo);
-  DB.s('payroll',[]);rPay();toast(`${emps.length}명 급여 계산 완료`,'ok');
+  DB.s('payroll',existing.concat(payList));rPay();toast(`${emps.length}명 급여 계산 완료 (4대보험+소득세 자동공제)`,'ok');
 }
 function editPay(id){
   const r=DB.g('payroll').find(x=>x.id===id);if(!r)return;
   $('peId').value=r.id;$('peNm').textContent=r.nm;$('peDays').value=r.days;$('peBase').value=r.base;
-  $('peOT').value=r.ot;$('peEtc').value=r.etc||0;$('peDed').value=r.ded||0;calcPe();oMo('payEditMo');
+  $('peOT').value=r.ot;$('peEtc').value=r.etc||0;$('peDed').value=r.ded||0;
+  // 공제 상세 표시
+  const dd=r.dedDetail||{};
+  const dedInfo=$('peDedInfo');
+  if(dedInfo){
+    dedInfo.innerHTML=dd.nps!=null?`<div style="font-size:11px;color:#6B7280;margin-top:4px;line-height:1.8">
+      국민연금 <b>${fmt(dd.nps)}</b> | 건강보험 <b>${fmt(dd.hi)}</b> | 장기요양 <b>${fmt(dd.ltc)}</b><br>
+      고용보험 <b>${fmt(dd.ei)}</b> | 소득세 <b>${fmt(dd.itx)}</b> | 지방세 <b>${fmt(dd.ltx)}</b></div>`:'<div style="font-size:11px;color:#94A3B8;margin-top:4px">자동계산 전 데이터</div>';
+  }
+  calcPe();oMo('payEditMo');
 }
-function calcPe(){const b=+$('peBase').value||0,o=+$('peOT').value||0,e=+$('peEtc').value||0,d=+$('peDed').value||0;$('peNet').value=fmt(b+o+e-d)+'원'}
+function calcPe(){
+  const b=+$('peBase').value||0,o=+$('peOT').value||0,e=+$('peEtc').value||0;
+  const gross=b+o+e;
+  const dd=calcDeductions(gross);
+  const d=dd.total;
+  $('peDed').value=d;
+  $('peNet').value=fmt(gross-d)+'원';
+  // 공제 상세 실시간 업데이트
+  const dedInfo=$('peDedInfo');
+  if(dedInfo){
+    dedInfo.innerHTML=`<div style="font-size:11px;color:#6B7280;margin-top:4px;line-height:1.8">
+      국민연금 <b>${fmt(dd.nps)}</b> | 건강보험 <b>${fmt(dd.hi)}</b> | 장기요양 <b>${fmt(dd.ltc)}</b><br>
+      고용보험 <b>${fmt(dd.ei)}</b> | 소득세 <b>${fmt(dd.itx)}</b> | 지방세 <b>${fmt(dd.ltx)}</b></div>`;
+  }
+}
 function savePayEdit(){
   const id=$('peId').value;const ls=DB.g('payroll');const idx=ls.findIndex(x=>x.id===id);if(idx<0)return;
   ls[idx].days=+$('peDays').value||0;ls[idx].base=+$('peBase').value||0;ls[idx].ot=+$('peOT').value||0;
-  ls[idx].etc=+$('peEtc').value||0;ls[idx].ded=+$('peDed').value||0;
-  ls[idx].total=ls[idx].base+ls[idx].ot+ls[idx].etc-ls[idx].ded;
+  ls[idx].etc=+$('peEtc').value||0;
+  const gross=ls[idx].base+ls[idx].ot+ls[idx].etc;
+  ls[idx].gross=gross;
+  ls[idx].dedDetail=calcDeductions(gross);
+  ls[idx].ded=ls[idx].dedDetail.total;
+  ls[idx].net=gross-ls[idx].ded;
+  ls[idx].total=ls[idx].net;
   DB.s('payroll',ls);cMo('payEditMo');rPay();toast('저장','ok');
 }
 function printPayOne(id){
   let r;if(typeof id==='string'){r=DB.g('payroll').find(x=>x.id===id)}else{r=DB.g('payroll').find(x=>x.id===$('peId').value)}
   if(!r){toast('급여 데이터 없음','err');return}
   const co=DB.g1('co')||{nm:'이노패키지'};
+  const dd=r.dedDetail||{nps:0,hi:0,ltc:0,ei:0,itx:0,ltx:0};
+  const gross=r.gross||(r.base+r.ot+(r.etc||0));
+  const net=r.net||r.total||0;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>급여명세서</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;padding:20mm;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:8px}th{background:#E5E7EB;font-weight:700}.title{text-align:center;font-size:20px;font-weight:800;margin-bottom:20px}@media print{@page{size:A4;margin:15mm}}</style></head><body>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>급여명세서</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;padding:20mm;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:8px}th{background:#E5E7EB;font-weight:700;text-align:left}.title{text-align:center;font-size:20px;font-weight:800;margin-bottom:20px}.sec{font-size:14px;font-weight:800;margin:16px 0 8px;padding:6px 0;border-bottom:2px solid #333}@media print{@page{size:A4;margin:15mm}}</style></head><body>
   <div class="title">급 여 명 세 서</div>
   <div style="text-align:right;margin-bottom:12px">${co.nm} | ${r.month}</div>
   <table><tr><th>성명</th><td>${r.nm}</td><th>부서</th><td>${r.dept}</td><th>근무일수</th><td>${r.days}일</td></tr></table>
-  <table style="margin-top:12px"><tr><th>기본급</th><td style="text-align:right">${fmt(r.base)} 원</td></tr><tr><th>야근수당</th><td style="text-align:right">${fmt(r.ot)} 원</td></tr><tr><th>기타수당</th><td style="text-align:right">${fmt(r.etc||0)} 원</td></tr><tr><th>공제</th><td style="text-align:right;color:red">-${fmt(r.ded||0)} 원</td></tr><tr><th style="font-size:16px">실수령액</th><td style="text-align:right;font-size:20px;font-weight:800">${fmt(r.total)} 원</td></tr></table>
+  <div class="sec">지급 내역</div>
+  <table>
+    <tr><th style="width:40%">기본급</th><td style="text-align:right">${fmt(r.base)} 원</td></tr>
+    <tr><th>야근수당 (1.5배)</th><td style="text-align:right">${fmt(r.ot)} 원</td></tr>
+    <tr><th>기타수당</th><td style="text-align:right">${fmt(r.etc||0)} 원</td></tr>
+    <tr style="background:#F0F9FF"><th style="font-size:14px">총 지급액</th><td style="text-align:right;font-weight:800;font-size:14px">${fmt(gross)} 원</td></tr>
+  </table>
+  <div class="sec">공제 내역</div>
+  <table>
+    <tr><th style="width:40%">국민연금 (4.5%)</th><td style="text-align:right;color:#DC2626">${fmt(dd.nps)} 원</td></tr>
+    <tr><th>건강보험 (3.545%)</th><td style="text-align:right;color:#DC2626">${fmt(dd.hi)} 원</td></tr>
+    <tr><th>장기요양보험 (건강의 12.95%)</th><td style="text-align:right;color:#DC2626">${fmt(dd.ltc)} 원</td></tr>
+    <tr><th>고용보험 (0.9%)</th><td style="text-align:right;color:#DC2626">${fmt(dd.ei)} 원</td></tr>
+    <tr><th>소득세</th><td style="text-align:right;color:#DC2626">${fmt(dd.itx)} 원</td></tr>
+    <tr><th>지방소득세 (소득세의 10%)</th><td style="text-align:right;color:#DC2626">${fmt(dd.ltx)} 원</td></tr>
+    <tr style="background:#FEF2F2"><th style="font-size:14px">총 공제액</th><td style="text-align:right;font-weight:800;font-size:14px;color:#DC2626">${fmt(r.ded||0)} 원</td></tr>
+  </table>
+  <table style="margin-top:16px;border:3px solid #1E3A5F"><tr style="background:#EFF6FF"><th style="font-size:18px;text-align:center;border:none;padding:14px">실 수 령 액</th><td style="text-align:center;font-size:24px;font-weight:900;border:none;padding:14px">${fmt(net)} 원</td></tr></table>
+  <div style="margin-top:40px;text-align:right;font-size:11px;color:#6B7280">위 금액을 정히 지급합니다. &nbsp;&nbsp; ${co.nm}</div>
   </body></html>`);w.document.close();setTimeout(()=>w.print(),300);
 }
 function printPayAll(){
@@ -125,8 +210,8 @@ function printPayAll(){
 }
 function expPayCSV(){
   const mo=$('payMo').value||td().slice(0,7);const ls=DB.g('payroll').filter(r=>r.month===mo);
-  let csv='\uFEFF이름,부서,근무일,기본급,야근,기타,공제,실수령\n';
-  ls.forEach(r=>{csv+=`${r.nm},${r.dept},${r.days},${r.base},${r.ot},${r.etc||0},${r.ded||0},${r.total}\n`});
+  let csv='\uFEFF이름,부서,근무일,기본급,야근수당,기타수당,총지급액,국민연금,건강보험,장기요양,고용보험,소득세,지방소득세,총공제,실수령\n';
+  ls.forEach(r=>{const dd=r.dedDetail||{nps:0,hi:0,ltc:0,ei:0,itx:0,ltx:0};const gross=r.gross||(r.base+r.ot+(r.etc||0));csv+=`${r.nm},${r.dept},${r.days},${r.base},${r.ot},${r.etc||0},${gross},${dd.nps},${dd.hi},${dd.ltc},${dd.ei},${dd.itx},${dd.ltx},${r.ded||0},${r.net||r.total}\n`});
   const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='급여_'+mo+'.csv';a.click();toast('내보내기','ok');
 }
 

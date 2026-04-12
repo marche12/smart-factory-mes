@@ -878,4 +878,137 @@ function confirmIncoming(){
 // Calendar
 function renderCal(){var now=new Date();var y=now.getFullYear(),m=now.getMonth();var first=new Date(y,m,1).getDay();var last=new Date(y,m+1,0).getDate();var os=DB.g('wo');var h='<div class="wcal-header"><div class="wcal-title">'+y+'년 '+(m+1)+'월</div></div>';h+='<div class="wcal-grid">';var dayNames=['일','월','화','수','목','금','토'];dayNames.forEach(function(d,i){h+='<div class="wcal-day-hd'+(i===0?' wcal-sun':'')+(i===6?' wcal-sat':'')+'">'+d+'</div>'});for(var e=0;e<first;e++)h+='<div class="wcal-cell wcal-empty"></div>';for(var d=1;d<=last;d++){var ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');var isT=ds===td();var dow=new Date(y,m,d).getDay();var cellCls='wcal-cell'+(isT?' wcal-today':'')+(dow===0?' wcal-sun':'')+(dow===6?' wcal-sat':'');h+='<div class="'+cellCls+'">';h+='<div class="wcal-num">'+d+'</div>';var ships=os.filter(function(o){return o.sd===ds&&o.status!=='출고완료'});ships.slice(0,2).forEach(function(o){var isLt=o.sd&&o.sd<td()&&o.status!=='완료';h+='<div class="wcal-chip'+(isLt?' wc-late':' wc-ship')+'" onclick="showDet(\''+o.id+'\')" title="'+o.cnm+' '+o.pnm+'">'+o.cnm.slice(0,4)+'</div>'});var starts=os.filter(function(o){return o.dt===ds});starts.slice(0,1).forEach(function(o){h+='<div class="wcal-chip wc-start" onclick="showDet(\''+o.id+'\')" title="'+o.pnm+'">'+o.pnm.slice(0,5)+'</div>'});var dones=os.filter(function(o){return o.compDate===ds});dones.slice(0,1).forEach(function(o){h+='<div class="wcal-chip wc-done" title="'+o.pnm+'">'+o.pnm.slice(0,5)+'</div>'});if(ships.length>2)h+='<div style="font-size:9px;color:var(--txt3);text-align:center">+'+(ships.length-2)+'건</div>';h+='</div>'}h+='</div>';$('dCal').innerHTML=h}
 
+/* ===== 현장모니터 ===== */
+var _monTimer=null;
+function rMonitor(){
+  // 시계
+  var now=new Date();
+  var ck=$('monClock');if(ck)ck.textContent=now.toLocaleTimeString('ko-KR');
+  // 자동 갱신 (30초)
+  if(_monTimer)clearInterval(_monTimer);
+  _monTimer=setInterval(function(){rMonitor()},30000);
+
+  var wos=DB.g('wo');
+  var active=wos.filter(function(o){return o.status==='진행중'});
+  var waiting=wos.filter(function(o){return o.status==='대기'||o.status==='계획'});
+  var done=wos.filter(function(o){return o.status==='완료'||o.status==='출고완료'});
+  var late=wos.filter(function(o){return o.sd&&o.sd<td()&&o.status!=='완료'&&o.status!=='출고완료'});
+
+  // 요약 카드
+  var sh=$('monSummary');
+  if(sh) sh.innerHTML=
+    '<div class="sb blue"><div class="l">진행중</div><div class="v" style="font-size:32px">'+active.length+'</div></div>'+
+    '<div class="sb orange"><div class="l">대기</div><div class="v" style="font-size:32px">'+waiting.length+'</div></div>'+
+    '<div class="sb '+(late.length>0?'red':'green')+'"><div class="l">납기지연</div><div class="v" style="font-size:32px">'+late.length+'</div></div>'+
+    '<div class="sb green"><div class="l">금일완료</div><div class="v" style="font-size:32px">'+done.filter(function(o){return o.compDate===td()}).length+'</div></div>';
+
+  // 공정별 현황 카드
+  var procNames=['인쇄','코팅','톰슨','접착','검사'];
+  var ph=$('monProcs');
+  if(ph){
+    var html='';
+    procNames.forEach(function(pn){
+      var inProc=active.filter(function(o){
+        if(!o.procs)return false;
+        var cur=null;
+        for(var i=0;i<o.procs.length;i++){
+          if(!o.procs[i].qty||o.procs[i].qty<o.fq){cur=o.procs[i];break}
+        }
+        return cur&&cur.nm===pn;
+      });
+      var totalQty=inProc.reduce(function(s,o){return s+o.fq},0);
+      var doneQty=inProc.reduce(function(s,o){
+        var p=o.procs.find(function(x){return x.nm===pn});
+        return s+(p?p.qty||0:0);
+      },0);
+      var pct=totalQty>0?Math.round(doneQty/totalQty*100):0;
+      var color=pct>=80?'#10B981':pct>=40?'#F59E0B':'#6B7280';
+      html+='<div style="background:#fff;border-radius:12px;padding:16px;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+        +'<span style="font-size:16px;font-weight:800;color:var(--pri)">'+pn+'</span>'
+        +'<span style="font-size:20px;font-weight:900;color:'+color+'">'+inProc.length+'건</span></div>'
+        +'<div style="background:#E5E7EB;border-radius:6px;height:10px;overflow:hidden;margin-bottom:8px">'
+        +'<div style="width:'+pct+'%;height:100%;background:'+color+';border-radius:6px;transition:width .3s"></div></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280">'
+        +'<span>완료 '+fmt(doneQty)+'</span><span>목표 '+fmt(totalQty)+'</span></div>';
+      // 각 공정 내 작업 리스트 (최대 3개)
+      if(inProc.length>0){
+        html+='<div style="margin-top:8px;border-top:1px solid #F3F4F6;padding-top:6px">';
+        inProc.slice(0,3).forEach(function(o){
+          var isLate=o.sd&&o.sd<td();
+          html+='<div style="font-size:11px;padding:3px 0;display:flex;justify-content:space-between">'
+            +'<span style="font-weight:600;'+(isLate?'color:#EF4444':'')+'">'+(o.cnm||'').slice(0,6)+'</span>'
+            +'<span style="color:#6B7280">'+(o.pnm||'').slice(0,8)+' '+fmt(o.fq)+'</span></div>';
+        });
+        if(inProc.length>3) html+='<div style="font-size:10px;color:#94A3B8;text-align:center">+'+(inProc.length-3)+'건 더</div>';
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    ph.innerHTML=html;
+  }
+
+  // 진행중 작업 테이블
+  var tbl=$('monWOTbl');
+  if(tbl){
+    tbl.querySelector('tbody').innerHTML=active.sort(function(a,b){
+      if(a.sd&&b.sd)return a.sd>b.sd?1:-1;return 0;
+    }).map(function(o){
+      // 현재 공정 찾기
+      var curProc='-';var pct=0;
+      if(o.procs&&o.procs.length){
+        var totalSteps=o.procs.length;var doneSteps=0;
+        for(var i=0;i<o.procs.length;i++){
+          if(o.procs[i].qty>=o.fq){doneSteps++}else{curProc=o.procs[i].nm;break}
+        }
+        if(doneSteps===totalSteps)curProc='완료';
+        pct=Math.round(doneSteps/totalSteps*100);
+      }
+      var isLate=o.sd&&o.sd<td();
+      var barColor=pct>=80?'#10B981':pct>=40?'#F59E0B':'#3B82F6';
+      return '<tr'+(isLate?' style="background:#FEF2F2"':'')+'>'
+        +'<td style="font-weight:700">'+o.wn+'</td><td>'+o.cnm+'</td><td>'+o.pnm+'</td>'
+        +'<td style="text-align:right">'+fmt(o.fq)+'</td>'
+        +'<td style="font-weight:700;color:var(--pri)">'+curProc+'</td>'
+        +'<td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#E5E7EB;border-radius:4px;height:8px;overflow:hidden">'
+        +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:4px"></div></div>'
+        +'<span style="font-size:12px;font-weight:700;color:'+barColor+'">'+pct+'%</span></div></td>'
+        +'<td'+(isLate?' style="color:#EF4444;font-weight:700"':'')+'>'+o.sd+(isLate?' ⚠':'')+'</td>'
+        +'<td>'+(isLate?'<span class="bd bd-d">지연</span>':'<span class="bd bd-s">정상</span>')+'</td></tr>';
+    }).join('')||'<tr><td colspan="8" class="empty-cell">진행중인 작업이 없습니다</td></tr>';
+  }
+}
+function openMonitorFull(){
+  var w=window.open('','_blank','width=1920,height=1080');
+  var wos=DB.g('wo');
+  var active=wos.filter(function(o){return o.status==='진행중'});
+  var late=wos.filter(function(o){return o.sd&&o.sd<td()&&o.status!=='완료'&&o.status!=='출고완료'});
+  var procNames=['인쇄','코팅','톰슨','접착','검사'];
+  var procHTML='';
+  procNames.forEach(function(pn){
+    var inProc=active.filter(function(o){if(!o.procs)return false;for(var i=0;i<o.procs.length;i++){if(!o.procs[i].qty||o.procs[i].qty<o.fq)return o.procs[i].nm===pn}return false});
+    var bg=inProc.length>0?'#1E3A5F':'#64748B';
+    procHTML+='<div style="background:'+bg+';border-radius:16px;padding:24px;text-align:center">'
+      +'<div style="font-size:24px;font-weight:900;margin-bottom:8px">'+pn+'</div>'
+      +'<div style="font-size:48px;font-weight:900">'+inProc.length+'<span style="font-size:20px">건</span></div>'
+      +'<div style="margin-top:12px;font-size:14px">';
+    inProc.slice(0,4).forEach(function(o){procHTML+='<div style="padding:3px 0;opacity:0.9">'+o.cnm+' — '+o.pnm+'</div>'});
+    procHTML+='</div></div>';
+  });
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>현장 모니터</title>'
+    +'<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0F172A;color:#fff;font-family:sans-serif;padding:32px}'
+    +'</style></head><body>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">'
+    +'<div style="font-size:28px;font-weight:900">팩플로우 현장 모니터</div>'
+    +'<div style="font-size:24px;font-weight:700;font-feature-settings:tnum">'+new Date().toLocaleString('ko-KR')+'</div></div>'
+    +'<div style="display:flex;gap:16px;margin-bottom:24px">'
+    +'<div style="flex:1;background:#1E40AF;border-radius:12px;padding:20px;text-align:center"><div style="font-size:16px">진행중</div><div style="font-size:48px;font-weight:900">'+active.length+'</div></div>'
+    +'<div style="flex:1;background:'+(late.length>0?'#DC2626':'#059669')+';border-radius:12px;padding:20px;text-align:center"><div style="font-size:16px">납기지연</div><div style="font-size:48px;font-weight:900">'+late.length+'</div></div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">'+procHTML+'</div>'
+    +'<div style="margin-top:16px;font-size:10px;color:#64748B;text-align:center">30초마다 자동 새로고침 | 브라우저에서 F11로 전체화면</div>'
+    +'<script>setInterval(function(){location.reload()},30000)<\/script>'
+    +'</body></html>');
+  w.document.close();
+}
+
 // WORK ORDER CRUD

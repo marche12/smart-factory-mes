@@ -145,7 +145,12 @@ var DB={
   },
   _syncToServer:function(storeKey,json){
     if(!DB._serverOk)return;
-    authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:json})}).catch(function(e){console.warn('Sync failed:',storeKey)});
+    var _retries=0;var _maxRetry=2;var _doSync=function(){
+      authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:json})}).catch(function(e){
+        _retries++;if(_retries<=_maxRetry){console.warn('Sync retry '+_retries+'/'+_maxRetry+':',storeKey);setTimeout(_doSync,2000*_retries)}
+        else{console.error('Sync failed after retries:',storeKey);if(typeof toast==='function')toast('서버 동기화 실패: '+storeKey,'err')}
+      });
+    };_doSync();
   },
   _deleteFromServer:function(storeKey){
     if(!DB._serverOk)return;
@@ -557,6 +562,7 @@ MR['mes-defect']=function(){if(typeof rDefect==='function')rDefect()};
 MR['mes-outsource']=function(){if(typeof rOutsource==='function'){_vendorSelect('osVendor');rOutsource()}};
 MR['mes-mold-hist']=function(){if(typeof rMoldHist==='function')rMoldHist()};
 MR['mes-oee']=function(){if(typeof rOEE==='function'){_equipSelect('oeeEquip');rOEE()}};
+MR['mes-monitor']=function(){if(typeof rMonitor==='function')rMonitor()};
 MR['ship-partial']=function(){if(typeof rShipPartial==='function')rShipPartial()};
 MR['ship-return']=function(){if(typeof rReturn==='function')rReturn()};
 MR['ship-inspect']=function(){if(typeof rShipInspect==='function')rShipInspect()};

@@ -180,7 +180,7 @@ try{
     DB.s('sales',sb);
     addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+fmt(salesAmt)+'원');
   }
-}catch(e){console.log('매출연계오류:',e)}
+}catch(e){console.warn('매출연계오류:',e);toast('⚠ 매출 자동등록 실패 — 매출관리에서 수동 등록 필요','err')}
 /* === 데이터 연계: 출고 → 품질검사 기록 === */
 try{
   if(defect>0){
@@ -188,7 +188,7 @@ try{
     qcRecs.push({id:gid(),dt:td(),prod:o.pnm,proc:'출고검수',sampleCnt:qty,defectCnt:defect,defectRate:((defect/qty)*100).toFixed(1),result:defect/qty>0.05?'불합격':'합격',action:rec.inspNote||'',mgr:CU?CU.nm:'',woId:woId});
     DB.s('qcRecords',qcRecs);
   }
-}catch(e){console.log('품질연계오류:',e)}
+}catch(e){console.warn('품질연계오류:',e);toast('⚠ 품질검사 기록 실패','err')}
 addLog(`출고: ${o.pnm} ${qty}매 → ${o.cnm}`);cMo('shipMo');rShipReady();if(typeof rDash==='function')rDash();if(typeof rWOList==='function')rWOList();if(typeof rPlan==='function')rPlan();if(typeof updateShipBadge==='function')updateShipBadge();toast(shipped+qty>=o.fq?'출고 완료!':'부분 출고 완료','ok')}
 
 // ===== 백업 관리 UI =====

@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>팩플로우 — 박스 설계 &amp; 견적</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard Variable','Pretendard',sans-serif;background:#F5F7FA;color:#111827;min-height:100vh}
+.bx-app{max-width:1400px;margin:0 auto;padding:24px}
+.bx-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.bx-logo{font-size:22px;font-weight:900;color:#1E3A5F;letter-spacing:-.5px}
+.bx-sub{font-size:12px;color:#6B7280;font-weight:600}
+
+/* Layout */
+.bx-grid{display:grid;grid-template-columns:320px 1fr 320px;gap:16px;align-items:start}
+@media(max-width:1100px){.bx-grid{grid-template-columns:1fr}}
+
+/* Cards */
+.bx-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);border:1px solid #E5E7EB;margin-bottom:12px}
+.bx-card-t{font-size:15px;font-weight:800;color:#1E3A5F;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.bx-card-t::before{content:'';width:3px;height:14px;background:#1E3A5F;border-radius:2px}
+
+/* Form */
+.bx-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.bx-row.full{grid-template-columns:1fr}
+.bx-row.tri{grid-template-columns:1fr 1fr 1fr;gap:8px}
+.bx-label{font-size:11px;font-weight:700;color:#6B7280;margin-bottom:3px;display:block}
+.bx-input{width:100%;padding:8px 10px;font-size:14px;font-weight:600;border:1px solid #E5E7EB;border-radius:8px;background:#FAFBFC;transition:all .2s}
+.bx-input:focus{border-color:#1E3A5F;box-shadow:0 0 0 3px rgba(30,58,95,.1);outline:none;background:#fff}
+select.bx-input{cursor:pointer}
+.bx-hint{font-size:10px;color:#94A3B8;margin-top:2px}
+
+/* FEFCO selector */
+.fefco-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
+.fefco-btn{padding:10px 6px;border:2px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;text-align:center;transition:all .15s;font-size:10px;font-weight:700;color:#6B7280;line-height:1.3}
+.fefco-btn:hover{border-color:#1E3A5F;color:#1E3A5F}
+.fefco-btn.on{border-color:#1E3A5F;background:#EFF6FF;color:#1E3A5F}
+.fefco-btn svg{display:block;margin:0 auto 4px;width:48px;height:36px}
+
+/* SVG area */
+.bx-svg-wrap{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);border:1px solid #E5E7EB;min-height:500px;display:flex;flex-direction:column}
+.bx-svg-tabs{display:flex;gap:4px;margin-bottom:12px}
+.bx-svg-tab{padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:12px;font-weight:700;color:#6B7280;cursor:pointer;transition:all .15s}
+.bx-svg-tab.on{background:#1E3A5F;color:#fff;border-color:#1E3A5F}
+.bx-svg-area{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto}
+.bx-svg-area svg{max-width:100%;max-height:100%}
+
+/* 3D preview */
+.bx-3d-area{perspective:600px;display:flex;align-items:center;justify-content:center;height:300px}
+.bx-3d-box{transform-style:preserve-3d;transform:rotateX(-20deg) rotateY(30deg);position:relative;transition:transform .5s}
+
+/* Results */
+.bx-result{margin-bottom:12px}
+.bx-result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
+.bx-result-row:last-child{border-bottom:none}
+.bx-result-label{color:#6B7280;font-weight:600}
+.bx-result-value{font-weight:800;color:#111827;font-feature-settings:"tnum"}
+.bx-result-value.green{color:#059669}
+.bx-result-value.red{color:#DC2626}
+.bx-result-value.navy{color:#1E3A5F}
+
+/* BOM table */
+.bx-bom{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}
+.bx-bom th{text-align:left;padding:6px 8px;background:#F9FAFB;font-weight:700;color:#6B7280;border-bottom:1px solid #E5E7EB;font-size:11px}
+.bx-bom td{padding:6px 8px;border-bottom:1px solid #F3F4F6;font-weight:500}
+.bx-bom tr:last-child td{border-bottom:none}
+.bx-bom .total{font-weight:800;background:#EFF6FF}
+
+/* Action */
+.bx-action{display:flex;gap:8px;margin-top:16px}
+.bx-btn{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;border:none}
+.bx-btn-navy{background:#1E3A5F;color:#fff}.bx-btn-navy:hover{background:#16304F}
+.bx-btn-green{background:#059669;color:#fff}.bx-btn-green:hover{background:#047857}
+.bx-btn-outline{background:#fff;color:#1E3A5F;border:1px solid #1E3A5F}.bx-btn-outline:hover{background:#EFF6FF}
+
+.bx-dim{font-size:14px;color:#94A3B8;text-align:center;padding:40px}
+.bx-legend{display:flex;gap:16px;padding:8px 12px;font-size:10px;font-weight:600;color:#6B7280;border-top:1px solid #F3F4F6;margin-top:8px}
+.bx-legend span{display:flex;align-items:center;gap:4px}
+.bx-legend i{width:20px;height:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="bx-app">
+  <div class="bx-header">
+    <div class="bx-logo">📦 팩플로우 박스 설계</div>
+    <div class="bx-sub">규격 입력 → 전개도 → 원가 → 견적</div>
+  </div>
+
+  <div class="bx-grid">
+    <!-- LEFT: 입력 -->
+    <div>
+      <div class="bx-card">
+        <div class="bx-card-t">박스 형태</div>
+        <div class="fefco-grid" id="fefcoGrid"></div>
+        <div id="boxTypeDesc" style="font-size:11px;color:#94A3B8;margin-top:4px;text-align:center"></div>
+      </div>
+
+      <div class="bx-card">
+        <div class="bx-card-t">규격 입력 (mm)</div>
+        <div class="bx-row">
+          <div><label class="bx-label">가로 (L)</label><input type="number" class="bx-input" id="boxL" value="300" oninput="calc()"></div>
+          <div><label class="bx-label">세로 (W)</label><input type="number" class="bx-input" id="boxW" value="200" oninput="calc()"></div>
+        </div>
+        <div class="bx-row">
+          <div><label class="bx-label">높이 (H)</label><input type="number" class="bx-input" id="boxH" value="150" oninput="calc()"></div>
+          <div><label class="bx-label">풀칠탭 (mm)</label><input type="number" class="bx-input" id="boxTab" value="15" oninput="calc()"></div>
+        </div>
+      </div>
+
+      <div class="bx-card">
+        <div class="bx-card-t">자재 정보</div>
+        <div class="bx-row full">
+          <div>
+            <label class="bx-label">지류</label>
+            <select class="bx-input" id="paperType" onchange="onPaperTypeChange()">
+              <option value="art">아트지 (일반지)</option>
+              <option value="ivory">아이보리</option>
+              <option value="kraft">크라프트</option>
+              <option value="corrugated">골판지</option>
+            </select>
+          </div>
+        </div>
+        <div class="bx-row" id="fluteRow" style="display:none">
+          <div>
+            <label class="bx-label">골종</label>
+            <select class="bx-input" id="fluteType" onchange="calc()">
+              <option value="E">E골 (1.5mm)</option>
+              <option value="B">B골 (3.0mm)</option>
+              <option value="C">C골 (3.7mm)</option>
+              <option value="A">A골 (4.8mm)</option>
+              <option value="EB">EB골 (4.5mm)</option>
+              <option value="BC">BC골 (6.5mm)</option>
+            </select>
+          </div>
+          <div>
+            <label class="bx-label">접는 공차 (mm)</label>
+            <input type="number" class="bx-input" id="foldTolerance" value="1.5" step="0.1" oninput="calc()" readonly>
+            <div class="bx-hint">골종 기준 자동 계산</div>
+          </div>
+        </div>
+        <div class="bx-row">
+          <div>
+            <label class="bx-label">평량 (g/m²)</label>
+            <input type="number" class="bx-input" id="gsm" value="350" oninput="calc()">
+          </div>
+          <div>
+            <label class="bx-label">지류 두께 (mm)</label>
+            <input type="number" class="bx-input" id="paperThick" value="0.45" step="0.01" oninput="calc()">
+          </div>
+        </div>
+        <div class="bx-row full">
+          <div>
+            <label class="bx-label">코팅</label>
+            <select class="bx-input" id="coatingType" onchange="calc()">
+              <option value="matte_lami">무광라미네이팅</option>
+              <option value="gloss_lami">유광라미네이팅</option>
+              <option value="water">수성코팅</option>
+              <option value="over">오바코팅</option>
+              <option value="uv">UV코팅</option>
+              <option value="custom">기타코팅</option>
+              <option value="none">없음</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="bx-card">
+        <div class="bx-card-t">생산 정보</div>
+        <div class="bx-row">
+          <div><label class="bx-label">주문수량</label><input type="number" class="bx-input" id="orderQty" value="1000" oninput="calc()"></div>
+          <div><label class="bx-label">인쇄도수 (색)</label><input type="number" class="bx-input" id="inkColors" value="4" min="0" max="8" oninput="calc()"></div>
+        </div>
+        <div class="bx-row">
+          <div>
+            <label class="bx-label">원지 규격</label>
+            <select class="bx-input" id="sheetSize" onchange="calc()">
+              <option value="788x1091">4x6 전지 (788x1091)</option>
+              <option value="636x939">4x6 반절 (636x939)</option>
+              <option value="765x1085">국전지 (765x1085)</option>
+              <option value="545x788">4x6 4절 (545x788)</option>
+              <option value="custom">직접 입력</option>
+            </select>
+          </div>
+          <div id="customSheetCol" style="display:none">
+            <label class="bx-label">가로x세로 (mm)</label>
+            <div style="display:flex;gap:4px">
+              <input type="number" class="bx-input" id="sheetW" value="788" style="width:50%" oninput="calc()">
+              <input type="number" class="bx-input" id="sheetH" value="1091" style="width:50%" oninput="calc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bx-card">
+        <div class="bx-card-t">단가 기준</div>
+        <div class="bx-row">
+          <div><label class="bx-label">원지 단가 (원/kg)</label><input type="number" class="bx-input" id="paperPrice" value="1200" oninput="calc()"></div>
+          <div><label class="bx-label">인쇄 단가 (원/도수/매)</label><input type="number" class="bx-input" id="printPrice" value="8" oninput="calc()"></div>
+        </div>
+        <div class="bx-row">
+          <div><label class="bx-label">코팅 단가 (원/㎡)</label><input type="number" class="bx-input" id="coatPrice" value="50" oninput="calc()"></div>
+          <div><label class="bx-label">톰슨 단가 (원/매)</label><input type="number" class="bx-input" id="diePrice" value="5" oninput="calc()"></div>
+        </div>
+        <div class="bx-row">
+          <div><label class="bx-label">접착 단가 (원/매)</label><input type="number" class="bx-input" id="gluePrice" value="3" oninput="calc()"></div>
+          <div><label class="bx-label">목형비 (원)</label><input type="number" class="bx-input" id="moldCost" value="150000" oninput="calc()"></div>
+        </div>
+        <div class="bx-row">
+          <div><label class="bx-label">손지율 (%)</label><input type="number" class="bx-input" id="wasteRate" value="5" min="0" max="30" oninput="calc()"></div>
+          <div><label class="bx-label">마진율 (%)</label><input type="number" class="bx-input" id="marginRate" value="25" min="0" max="100" oninput="calc()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: 전개도/3D -->
+    <div>
+      <div class="bx-svg-wrap">
+        <div class="bx-svg-tabs">
+          <button class="bx-svg-tab on" onclick="switchView('flat',this)">전개도</button>
+          <button class="bx-svg-tab" onclick="switchView('3d',this)">3D 미리보기</button>
+        </div>
+        <div class="bx-svg-area" id="svgArea"></div>
+        <div class="bx-legend">
+          <span><i style="background:#1E3A5F"></i> 절단선 (칼선)</span>
+          <span><i style="background:#DC2626;border-top:2px dashed #DC2626;height:0"></i> 접는선 (괘선)</span>
+          <span><i style="background:rgba(30,58,95,0.1);border:1px solid #1E3A5F;width:16px;height:10px"></i> 풀칠면</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div class="bx-card" style="flex:1;padding:12px 16px;margin-bottom:0">
+          <div style="font-size:11px;font-weight:600;color:#6B7280">전개도 크기</div>
+          <div style="font-size:16px;font-weight:800;color:#1E3A5F" id="flatSize">—</div>
+        </div>
+        <div class="bx-card" style="flex:1;padding:12px 16px;margin-bottom:0">
+          <div style="font-size:11px;font-weight:600;color:#6B7280">원지 취수</div>
+          <div style="font-size:16px;font-weight:800;color:#059669" id="sheetYield">—</div>
+        </div>
+        <div class="bx-card" style="flex:1;padding:12px 16px;margin-bottom:0">
+          <div style="font-size:11px;font-weight:600;color:#6B7280">사용률</div>
+          <div style="font-size:16px;font-weight:800;color:#1E3A5F" id="useRate">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 결과 -->
+    <div>
+      <div class="bx-card">
+        <div class="bx-card-t">원가 산출</div>
+        <div id="costResult"></div>
+      </div>
+
+      <div class="bx-card">
+        <div class="bx-card-t">BOM (자재명세서)</div>
+        <div id="bomResult"></div>
+      </div>
+
+      <div class="bx-card" style="background:#1E3A5F;border-color:#1E3A5F">
+        <div style="color:#7EB8E0;font-size:11px;font-weight:700;margin-bottom:8px">견적 요약</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><div style="color:#94A3B8;font-size:10px;font-weight:600">개당 원가</div><div style="color:#fff;font-size:18px;font-weight:800" id="unitCost">—</div></div>
+          <div><div style="color:#94A3B8;font-size:10px;font-weight:600">개당 판가</div><div style="color:#4ADE80;font-size:18px;font-weight:800" id="unitPrice">—</div></div>
+          <div><div style="color:#94A3B8;font-size:10px;font-weight:600">총 원가</div><div style="color:#fff;font-size:14px;font-weight:700" id="totalCost">—</div></div>
+          <div><div style="color:#94A3B8;font-size:10px;font-weight:600">총 견적가</div><div style="color:#4ADE80;font-size:14px;font-weight:700" id="totalPrice">—</div></div>
+        </div>
+      </div>
+
+      <div class="bx-action">
+        <button class="bx-btn bx-btn-navy" onclick="printEstimate()">견적서 출력</button>
+        <button class="bx-btn bx-btn-outline" onclick="exportCSV()">CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 7 Box Types ===== */
+var BOX_TYPES = [
+  {id:'mattuk',   name:'맞뚜껑',     desc:'FEFCO 0201 · RSC'},
+  {id:'cross',    name:'십자조립',    desc:'자동바닥 · 크래시락'},
+  {id:'3glue',    name:'삼면접착',    desc:'STE · 터크플랩'},
+  {id:'ssabari',  name:'싸바리',      desc:'상하짝 · 리지드'},
+  {id:'sleeve',   name:'슬리브',      desc:'토시 · 밴드'},
+  {id:'tray',     name:'트레이',      desc:'사방접이 · 오픈탑'},
+  {id:'handle',   name:'손잡이형',    desc:'핸들홀 · 캐리형'}
+];
+var selectedBox = 'mattuk';
+
+/* ===== Flute thickness map ===== */
+var FLUTE_THICK = {E:1.5, B:3.0, C:3.7, A:4.8, EB:4.5, BC:6.5};
+
+function initFefcoGrid(){
+  var h='';
+  BOX_TYPES.forEach(function(f){
+    h+='<button class="fefco-btn'+(f.id===selectedBox?' on':'')+'" data-id="'+f.id+'" onclick="selectBox(\''+f.id+'\',this)">';
+    h+=miniBoxIcon(f.id);
+    h+=f.name+'</button>';
+  });
+  document.getElementById('fefcoGrid').innerHTML=h;
+  updateDesc();
+}
+
+function miniBoxIcon(id){
+  var w=48,h=36;
+  var s='<svg viewBox="0 0 '+w+' '+h+'" fill="none" stroke="#1E3A5F" stroke-width="0.8">';
+  switch(id){
+    case 'mattuk':
+      s+='<rect x="4" y="4" width="40" height="28" rx="1"/>';
+      s+='<line x1="14" y1="4" x2="14" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="24" y1="4" x2="24" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="4" x2="34" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="4" y1="11" x2="44" y2="11" stroke-dasharray="2"/>';
+      s+='<line x1="4" y1="25" x2="44" y2="25" stroke-dasharray="2"/>';
+      break;
+    case 'cross':
+      s+='<rect x="4" y="8" width="40" height="16" rx="1"/>';
+      s+='<line x1="14" y1="8" x2="14" y2="24" stroke-dasharray="2"/>';
+      s+='<line x1="24" y1="8" x2="24" y2="24" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="8" x2="34" y2="24" stroke-dasharray="2"/>';
+      s+='<rect x="14" y="2" width="10" height="6" rx="1" stroke-dasharray="1.5"/>';
+      s+='<polygon points="6,24 12,24 14,32 4,32" stroke-dasharray="1.5"/>';
+      s+='<polygon points="26,24 32,24 34,32 24,32" stroke-dasharray="1.5"/>';
+      break;
+    case '3glue':
+      s+='<rect x="4" y="8" width="40" height="16" rx="1"/>';
+      s+='<line x1="14" y1="8" x2="14" y2="24" stroke-dasharray="2"/>';
+      s+='<line x1="24" y1="8" x2="24" y2="24" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="8" x2="34" y2="24" stroke-dasharray="2"/>';
+      s+='<rect x="14" y="2" width="10" height="6" rx="1"/>';
+      s+='<rect x="14" y="24" width="10" height="6" rx="1"/>';
+      s+='<rect x="6" y="9" width="6" height="14" rx="1" stroke-dasharray="1.5" opacity=".5"/>';
+      break;
+    case 'ssabari':
+      s+='<rect x="2" y="8" width="20" height="14" rx="1"/>';
+      s+='<line x1="6" y1="8" x2="6" y2="22" stroke-dasharray="2"/>';
+      s+='<line x1="18" y1="8" x2="18" y2="22" stroke-dasharray="2"/>';
+      s+='<line x1="2" y1="12" x2="22" y2="12" stroke-dasharray="2"/>';
+      s+='<line x1="2" y1="18" x2="22" y2="18" stroke-dasharray="2"/>';
+      s+='<rect x="26" y="8" width="18" height="14" rx="1"/>';
+      s+='<line x1="30" y1="8" x2="30" y2="22" stroke-dasharray="2"/>';
+      s+='<line x1="40" y1="8" x2="40" y2="22" stroke-dasharray="2"/>';
+      s+='<line x1="26" y1="12" x2="44" y2="12" stroke-dasharray="2"/>';
+      s+='<line x1="26" y1="18" x2="44" y2="18" stroke-dasharray="2"/>';
+      break;
+    case 'sleeve':
+      s+='<rect x="4" y="10" width="40" height="16" rx="1"/>';
+      s+='<line x1="14" y1="10" x2="14" y2="26" stroke-dasharray="2"/>';
+      s+='<line x1="24" y1="10" x2="24" y2="26" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="10" x2="34" y2="26" stroke-dasharray="2"/>';
+      break;
+    case 'tray':
+      s+='<rect x="8" y="8" width="32" height="20" rx="1"/>';
+      s+='<line x1="14" y1="8" x2="14" y2="28" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="8" x2="34" y2="28" stroke-dasharray="2"/>';
+      s+='<line x1="8" y1="14" x2="40" y2="14" stroke-dasharray="2"/>';
+      s+='<line x1="8" y1="22" x2="40" y2="22" stroke-dasharray="2"/>';
+      s+='<rect x="8" y="8" width="6" height="6" fill="rgba(30,58,95,0.15)"/>';
+      s+='<rect x="34" y="8" width="6" height="6" fill="rgba(30,58,95,0.15)"/>';
+      s+='<rect x="8" y="22" width="6" height="6" fill="rgba(30,58,95,0.15)"/>';
+      s+='<rect x="34" y="22" width="6" height="6" fill="rgba(30,58,95,0.15)"/>';
+      break;
+    case 'handle':
+      s+='<rect x="4" y="4" width="40" height="28" rx="1"/>';
+      s+='<line x1="14" y1="4" x2="14" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="24" y1="4" x2="24" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="34" y1="4" x2="34" y2="32" stroke-dasharray="2"/>';
+      s+='<line x1="4" y1="11" x2="44" y2="11" stroke-dasharray="2"/>';
+      s+='<line x1="4" y1="25" x2="44" y2="25" stroke-dasharray="2"/>';
+      s+='<ellipse cx="19" cy="7" rx="3" ry="1.5" fill="rgba(220,38,38,0.2)" stroke="#DC2626" stroke-width="0.5"/>';
+      s+='<ellipse cx="39" cy="7" rx="3" ry="1.5" fill="rgba(220,38,38,0.2)" stroke="#DC2626" stroke-width="0.5"/>';
+      break;
+  }
+  s+='</svg>';
+  return s;
+}
+
+function selectBox(id,el){
+  selectedBox=id;
+  document.querySelectorAll('.fefco-btn').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on');
+  updateDesc();
+  calc();
+}
+
+function updateDesc(){
+  var t=BOX_TYPES.find(function(b){return b.id===selectedBox});
+  document.getElementById('boxTypeDesc').textContent=t?t.desc:'';
+}
+
+/* ===== Paper Type Handler ===== */
+function onPaperTypeChange(){
+  var pt=document.getElementById('paperType').value;
+  var isCorrugated=(pt==='corrugated');
+  document.getElementById('fluteRow').style.display=isCorrugated?'grid':'none';
+  if(isCorrugated){
+    var flute=document.getElementById('fluteType').value;
+    var thick=FLUTE_THICK[flute]||1.5;
+    document.getElementById('paperThick').value=thick;
+    document.getElementById('foldTolerance').value=(thick*1).toFixed(1);
+  }else{
+    var g=+document.getElementById('gsm').value||350;
+    document.getElementById('paperThick').value=(g*0.0013).toFixed(2);
+  }
+  calc();
+}
+
+document.getElementById('fluteType').addEventListener('change',function(){
+  var thick=FLUTE_THICK[this.value]||1.5;
+  document.getElementById('paperThick').value=thick;
+  document.getElementById('foldTolerance').value=(thick*1).toFixed(1);
+  calc();
+});
+
+/* ===== Sheet Size ===== */
+document.getElementById('sheetSize').addEventListener('change',function(){
+  document.getElementById('customSheetCol').style.display=this.value==='custom'?'block':'none';
+});
+
+function getSheetSize(){
+  var sel=document.getElementById('sheetSize').value;
+  if(sel==='custom') return {w:+document.getElementById('sheetW').value, h:+document.getElementById('sheetH').value};
+  var parts=sel.split('x');
+  return {w:+parts[0], h:+parts[1]};
+}
+
+/* ===== Get paper thickness ===== */
+function getThick(){
+  return +document.getElementById('paperThick').value||0.45;
+}
+
+/* ===== Flat Dimensions (including tolerance) ===== */
+/* 공식 근거: ECMA/FEFCO 표준 + 한국 패키징 실무 관행
+   풀칠탭: 단상자 12~18mm(표준15), 골판지 25~40mm
+   외플랩(RSC): W/2 — 양쪽 합=W로 개구부 정확히 덮음
+   내플랩(RSC): W/2 - 10~15mm — 외플랩과 간섭 방지
+   터크플랩(STE): W×0.75~0.80 — 반대편 벽까지 닿아 고정
+   더스트플랩: W/2 - 1mm, 사다리꼴(각 변 3~5mm 축소) — 꼭짓점 간섭 방지
+   싸바리 클리어런스: 변당 0.75mm — 끼움 유격 + 싸개지 두께
+   트레이 귀: H×H — 벽 높이만큼이어야 강도 확보
+   손잡이홀: 80~120×25~35mm, R5이상 — 손가락 4개 + 찢어짐 방지 */
+function getFlatDimensions(L,W,H,tab){
+  var t=getThick();
+  var isCorrugated=(document.getElementById('paperType').value==='corrugated');
+  var glueTab=isCorrugated?Math.max(25,tab):tab; // 골판지 풀칠탭 최소 25mm
+  switch(selectedBox){
+    case 'mattuk': // RSC: glueTab+W+L+W+L × 외플랩(W/2)+H+외플랩(W/2)
+      var outerFlap=W/2;
+      return {w:glueTab+W+L+W+L, h:outerFlap+H+outerFlap, outerFlap:outerFlap, glueTab:glueTab, name:'맞뚜껑 (RSC)'};
+    case 'cross': // Auto-bottom: glueTab+W+L+W+L × tuck+dustH+H+lockH
+      var tuckH=Math.max(Math.round(W*0.75),10); // 터크=W×0.75, 최소10mm
+      var dustH_c=Math.max(W/2-1, 8); // 더스트플랩
+      var lockH=W; // L면 베이스플랩=W(바닥 완전 커버)
+      var lockEar=Math.min(6,W/4); // 잠금탭 돌출
+      return {w:glueTab+W+L+W+L, h:tuckH+H+lockH+lockEar, tuckH:tuckH, dustH:dustH_c, lockH:lockH, lockEar:lockEar, glueTab:glueTab, name:'십자조립 (크래시락)'};
+    case '3glue': // STE: glueTab+W+L+W+L × tuck+flapH+H+flapH+tuck
+      var dustFlap=Math.max(W/2-1, 8); // 더스트=W/2-1mm
+      var tuckFlap=Math.max(W-2, 10); // 터크=W-2mm (거의 전폭, 실제 생산 칼선 기준)
+      return {w:glueTab+W+L+W+L, h:tuckFlap+dustFlap+H+dustFlap+tuckFlap, dustFlap:dustFlap, tuckFlap:tuckFlap, glueTab:glueTab, name:'삼면접착 (STE)'};
+    case 'ssabari': // Rigid: 상짝(lid) + 하짝(base) 분리
+      var wallH=Math.max(H*0.4, 15); // 벽 높이=H의 40%, 최소 15mm
+      var cl=0.75; // 클리어런스 변당 0.75mm
+      var lidL=L+2*t+2*cl;
+      var lidW_=W+2*t+2*cl;
+      var baseL=L;
+      var baseW_=W;
+      return {w:lidL+2*wallH+30+baseL+2*wallH, h:Math.max(lidW_+2*wallH,baseW_+2*wallH), lidL:lidL, lidW:lidW_, baseL:baseL, baseW:baseW_, wallH:wallH, cl:cl, name:'싸바리 (상하짝)'};
+    case 'sleeve': // Sleeve: L+W+L+W+glueTab × H
+      return {w:L+W+L+W+glueTab, h:H, glueTab:glueTab, name:'슬리브 (토시)'};
+    case 'tray': // Tray: H+L+H × H+W+H, 귀=H×H
+      return {w:H+L+H, h:H+W+H, name:'트레이 (사방접이)'};
+    case 'handle': // Handle: RSC + 핸들홀
+      var outerF=W/2;
+      return {w:glueTab+W+L+W+L, h:outerF+H+outerF, outerFlap:outerF, glueTab:glueTab, name:'손잡이형 (핸들)'};
+    default:
+      return {w:glueTab+W+L+W+L, h:W/2+H+W/2, glueTab:glueTab, name:'박스'};
+  }
+}
+
+/* ===== SVG Drawing Helpers ===== */
+var _sc,_ox,_oy;
+
+function R(x,y,w,h){
+  return '<rect x="'+(_ox+x*_sc)+'" y="'+(_oy+y*_sc)+'" width="'+(w*_sc)+'" height="'+(h*_sc)+'" fill="none" stroke="#1E3A5F" stroke-width="1.5"/>';
+}
+function RF(x,y,w,h,fill){
+  return '<rect x="'+(_ox+x*_sc)+'" y="'+(_oy+y*_sc)+'" width="'+(w*_sc)+'" height="'+(h*_sc)+'" fill="'+(fill||'rgba(30,58,95,0.06)')+'" stroke="#1E3A5F" stroke-width="1"/>';
+}
+function D(x1,y1,x2,y2){
+  return '<line x1="'+(_ox+x1*_sc)+'" y1="'+(_oy+y1*_sc)+'" x2="'+(_ox+x2*_sc)+'" y2="'+(_oy+y2*_sc)+'" stroke="#DC2626" stroke-width="0.8" stroke-dasharray="4,3"/>';
+}
+function P(pts,fill,sw){
+  var s=pts.map(function(p){return (_ox+p[0]*_sc)+','+(_oy+p[1]*_sc)}).join(' ');
+  return '<polygon points="'+s+'" fill="'+(fill||'none')+'" stroke="#1E3A5F" stroke-width="'+(sw||1.5)+'"/>';
+}
+function T(x,y,t,size){
+  return '<text x="'+(_ox+x*_sc)+'" y="'+(_oy+y*_sc)+'" text-anchor="middle" font-size="'+(size||9)+'" fill="#94A3B8" font-weight="600" dominant-baseline="middle">'+t+'</text>';
+}
+function DH(x,y,w,label){
+  var sx=_ox+x*_sc, sy=_oy+y*_sc-12, ew=sx+w*_sc;
+  return '<line x1="'+sx+'" y1="'+sy+'" x2="'+ew+'" y2="'+sy+'" stroke="#6B7280" stroke-width="0.6" marker-end="url(#arr)" marker-start="url(#arr)"/>'
+    +'<text x="'+((sx+ew)/2)+'" y="'+(sy-4)+'" text-anchor="middle" font-size="10" fill="#1E3A5F" font-weight="700">'+label+'</text>';
+}
+function DV(x,y,h,label){
+  var sx=_ox+x*_sc+8, sy=_oy+y*_sc, eh=sy+h*_sc;
+  return '<line x1="'+sx+'" y1="'+sy+'" x2="'+sx+'" y2="'+eh+'" stroke="#6B7280" stroke-width="0.6" marker-end="url(#arr)" marker-start="url(#arr)"/>'
+    +'<text x="'+(sx+4)+'" y="'+((sy+eh)/2)+'" font-size="10" fill="#1E3A5F" font-weight="700" dominant-baseline="middle" writing-mode="tb">'+label+'</text>';
+}
+// Ellipse cutout (for handles)
+function EL(cx,cy,rx,ry){
+  return '<ellipse cx="'+(_ox+cx*_sc)+'" cy="'+(_oy+cy*_sc)+'" rx="'+(rx*_sc)+'" ry="'+(ry*_sc)+'" fill="#F5F7FA" stroke="#DC2626" stroke-width="1"/>';
+}
+
+/* ===== MAIN: Draw Flat Pattern ===== */
+function drawFlatPattern(L,W,H,tab){
+  var flat=getFlatDimensions(L,W,H,tab);
+  var fw=flat.w, fh=flat.h;
+
+  var maxW=620,maxH=460;
+  _sc=Math.min(maxW/fw, maxH/fh, 1.2);
+  var svgW=fw*_sc+80, svgH=fh*_sc+60;
+  _ox=35; _oy=30;
+
+  var svg='<svg width="'+svgW+'" height="'+svgH+'" viewBox="0 0 '+svgW+' '+svgH+'" xmlns="http://www.w3.org/2000/svg">';
+  svg+='<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#6B7280"/></marker></defs>';
+
+  switch(selectedBox){
+    case 'mattuk': svg+=drawMattuk(L,W,H,tab); break;
+    case 'cross':  svg+=drawCross(L,W,H,tab); break;
+    case '3glue':  svg+=drawSTE(L,W,H,tab); break;
+    case 'ssabari':svg+=drawSsabari(L,W,H,tab,flat); break;
+    case 'sleeve': svg+=drawSleeve(L,W,H,tab); break;
+    case 'tray':   svg+=drawTray(L,W,H,tab); break;
+    case 'handle': svg+=drawHandle(L,W,H,tab); break;
+  }
+
+  svg+='</svg>';
+  return svg;
+}
+
+/* ---------- 1. 맞뚜껑 (RSC) ---------- */
+/* 외플랩(L면)=W/2 — 양쪽 합=W → 개구부 완전 덮음
+   내플랩(W면)=외플랩-12mm — 외플랩과 간섭 방지 (실무 10~15mm 차이) */
+function drawMattuk(L,W,H,tab){
+  var s='';
+  var flat=getFlatDimensions(L,W,H,tab);
+  var gt=flat.glueTab;
+  var outerF=flat.outerFlap; // W/2
+  var innerF=Math.max(outerF-12, 15); // 외플랩-12mm, 최소 15mm
+  var y0=outerF;
+
+  // Glue tab (사다리꼴 — 위아래 약간 좁게)
+  var tabNarrow=gt*0.7;
+  s+=P([[0,y0],[gt,y0],[gt,y0+H],[0,y0+H]], 'rgba(30,58,95,0.08)');
+
+  // Body panels
+  var x1=gt, x2=gt+W, x3=gt+W+L, x4=gt+W+L+W;
+  s+=R(x1,y0,W,H);
+  s+=R(x2,y0,L,H);
+  s+=R(x3,y0,W,H);
+  s+=R(x4,y0,L,H);
+
+  // Top: 내플랩(W면) — 외플랩보다 12mm 짧음
+  s+=R(x1, y0-innerF, W, innerF);
+  s+=R(x3, y0-innerF, W, innerF);
+  // Top: 외플랩(L면) — W/2 높이로 중앙에서 만남
+  s+=R(x2, y0-outerF, L, outerF);
+  s+=R(x4, y0-outerF, L, outerF);
+
+  // Bottom: 동일 구조
+  s+=R(x1, y0+H, W, innerF);
+  s+=R(x3, y0+H, W, innerF);
+  s+=R(x2, y0+H, L, outerF);
+  s+=R(x4, y0+H, L, outerF);
+
+  // 접는선 (세로)
+  s+=D(x1, y0-outerF, x1, y0+H+outerF);
+  s+=D(x2, y0-outerF, x2, y0+H+outerF);
+  s+=D(x3, y0-outerF, x3, y0+H+outerF);
+  s+=D(x4, y0-outerF, x4, y0+H+outerF);
+
+  // 접는선 (가로)
+  s+=D(0, y0, x4+L, y0);
+  s+=D(0, y0+H, x4+L, y0+H);
+
+  // Labels
+  s+=T(x1+W/2, y0+H/2, 'W면');
+  s+=T(x2+L/2, y0+H/2, 'L면 (정면)');
+  s+=T(x3+W/2, y0+H/2, 'W면');
+  s+=T(x4+L/2, y0+H/2, 'L면 (후면)');
+  s+=T(gt/2, y0+H/2, '풀칠 '+gt, 7);
+  s+=T(x2+L/2, y0-outerF/2, '외플랩 '+outerF,8);
+  s+=T(x1+W/2, y0-innerF/2, '내플랩 '+innerF,8);
+  s+=T(x2+L/2, y0+H+outerF/2, '외플랩',8);
+  s+=T(x1+W/2, y0+H+innerF/2, '내플랩',8);
+
+  // Dimensions
+  s+=DH(x1, y0-outerF, W, 'W='+W);
+  s+=DH(x2, y0-outerF, L, 'L='+L);
+  s+=DV(x4+L, y0, H, 'H='+H);
+
+  return s;
+}
+
+/* ---------- 2. 십자조립 (Crash-lock bottom) ---------- */
+/* 상단: 터크=W×0.75 + 더스트=W/2-1(사다리꼴)
+   하단: W면 날개=W/2(사다리꼴), L면 베이스=W(바닥 완전 커버),
+         잠금플랩=W/2+6mm(잠금탭 돌출) */
+function drawCross(L,W,H,tab){
+  var s='';
+  var flat=getFlatDimensions(L,W,H,tab);
+  var gt=flat.glueTab;
+  var tuckH=flat.tuckH;
+  var dustH=flat.dustH;
+  var lockH=flat.lockH; // =W (베이스 플랩)
+  var lockEar=flat.lockEar;
+  var wingH=W/2; // W면 날개 플랩
+  var y0=tuckH;
+
+  var x1=gt, x2=gt+W, x3=gt+W+L, x4=gt+W+L+W;
+
+  // Glue tab
+  s+=P([[0,y0],[gt,y0],[gt,y0+H],[0,y0+H]], 'rgba(30,58,95,0.08)');
+
+  // Body panels
+  s+=R(x1,y0,W,H);
+  s+=R(x2,y0,L,H);
+  s+=R(x3,y0,W,H);
+  s+=R(x4,y0,L,H);
+
+  // TOP: 더스트플랩(W면, 사다리꼴) + 터크플랩(L면)
+  var dw1=W-2, dw2=W*0.65;
+  s+=P([[x1+1,y0],[x1+W-1,y0],[x1+(W+dw2)/2,y0-dustH],[x1+(W-dw2)/2,y0-dustH]]);
+  s+=P([[x3+1,y0],[x3+W-1,y0],[x3+(W+dw2)/2,y0-dustH],[x3+(W-dw2)/2,y0-dustH]]);
+  // L면 터크플랩
+  s+=R(x2, y0-tuckH, L, tuckH);
+  s+=T(x2+L/2, y0-tuckH/2, '터크 '+tuckH, 8);
+  s+=T(x1+W/2, y0-dustH/2, '더스트',7);
+
+  // BOTTOM: 자동조립 바닥
+  var botY=y0+H;
+  // W면 날개 플랩 (사다리꼴, 먼저 접힘)
+  s+=P([[x1+2,botY],[x1+W-2,botY],[x1+W-10,botY+wingH],[x1+10,botY+wingH]], 'rgba(30,58,95,0.04)');
+  s+=P([[x3+2,botY],[x3+W-2,botY],[x3+W-10,botY+wingH],[x3+10,botY+wingH]], 'rgba(30,58,95,0.04)');
+  // L면 베이스 플랩 (=W 높이, 바닥 완전 커버)
+  s+=R(x2, botY, L, lockH);
+  // L면 잠금 플랩 (=W/2+잠금탭)
+  var lockFlapH=wingH+lockEar;
+  s+=R(x4, botY, L, lockFlapH);
+  // 잠금탭 표시 (잠금플랩 끝의 돌출부)
+  var earW=L*0.3;
+  s+=RF(x4+L/2-earW/2, botY+lockFlapH-lockEar, earW, lockEar, 'rgba(220,38,38,0.08)');
+
+  // 접는선
+  s+=D(x1, y0-dustH, x1, botY+wingH);
+  s+=D(x2, y0-tuckH, x2, botY+lockH);
+  s+=D(x3, y0-dustH, x3, botY+wingH);
+  s+=D(x4, y0-tuckH, x4, botY+lockFlapH);
+  s+=D(0, y0, x4+L, y0);
+  s+=D(x1, botY, x4+L, botY);
+
+  // Labels
+  s+=T(x1+W/2, y0+H/2, 'W면');
+  s+=T(x2+L/2, y0+H/2, 'L면');
+  s+=T(x3+W/2, y0+H/2, 'W면');
+  s+=T(x4+L/2, y0+H/2, 'L면');
+  s+=T(x2+L/2, botY+lockH/2, '베이스 '+lockH,8);
+  s+=T(x1+W/2, botY+wingH/2, '날개 '+wingH,7);
+  s+=T(x4+L/2, botY+lockFlapH/2, '잠금 '+(wingH+lockEar),8);
+
+  s+=DH(x1,y0-tuckH,W,'W='+W);
+  s+=DH(x2,y0-tuckH,L,'L='+L);
+  s+=DV(x4+L,y0,H,'H='+H);
+
+  return s;
+}
+
+/* ---------- 3. 삼면접착 (STE) ---------- */
+/* 실제 생산 칼선(상떼 아줄렌 단상자) 참고하여 구현
+   터크 = 둥근 돔형 + 삽입탭 (W-2 길이, 거의 W 전체)
+   더스트 = 사다리꼴 (W/2-1, 각변 3~5mm 축소)
+   풀칠탭 = 사다리꼴 (안쪽이 좁음)
+   잠금 슬롯 = 터크 삽입 위치에 작은 칼집 */
+function drawSTE(L,W,H,tab){
+  var s='';
+  var flat=getFlatDimensions(L,W,H,tab);
+  var gt=flat.glueTab;
+  var dustF=flat.dustFlap; // W/2-1
+  var tuckF=flat.tuckFlap; // W-2 (거의 W 전체)
+  var y0=tuckF+dustF;
+  var x1=gt, x2=gt+W, x3=gt+W+L, x4=gt+W+L+W;
+
+  // 풀칠탭 (사다리꼴 — 안쪽이 좁음, 실제 도면과 동일)
+  var gtNarrow=gt*0.6;
+  s+=P([[0,y0+3],[gt,y0],[gt,y0+H],[0,y0+H-3]], 'rgba(30,58,95,0.08)');
+
+  // Body panels
+  s+=R(x1,y0,W,H);
+  s+=R(x2,y0,L,H);
+  s+=R(x3,y0,W,H);
+  s+=R(x4,y0,L,H);
+
+  // === TOP ===
+  var taper=Math.min(5, W*0.15); // 더스트 사다리꼴 축소량
+  // W면 더스트플랩 (사다리꼴)
+  s+=P([[x1,y0],[x1+W,y0],[x1+W-taper,y0-dustF],[x1+taper,y0-dustF]]);
+  s+=P([[x3,y0],[x3+W,y0],[x3+W-taper,y0-dustF],[x3+taper,y0-dustF]]);
+  // L면 뚜껑 패널 (높이=dustF)
+  s+=R(x2, y0-dustF, L, dustF);
+  s+=R(x4, y0-dustF, L, dustF);
+  // 터크플랩 (둥근 돔형 — SVG path 사용)
+  var tuckTop=function(cx,w,baseY){
+    var inset=2; // 양쪽 2mm 안쪽
+    var r=Math.min(w*0.15, 8); // 라운드 반경
+    var tipH=5; // 삽입탭 돌출
+    var tY=baseY-tuckF;
+    // 돔형 터크: 아래 넓고 위로 갈수록 라운드
+    var px=_ox, py=_oy, sc=_sc;
+    var x_l=px+(cx+inset)*sc, x_r=px+(cx+w-inset)*sc;
+    var y_b=py+baseY*sc, y_t=py+tY*sc;
+    var y_tip=py+(tY-tipH)*sc;
+    var rr=r*sc;
+    // 삽입탭 (작은 돌출)
+    var tabW=w*0.3*sc;
+    var tabCx=(x_l+x_r)/2;
+    s+='<path d="M'+x_l+','+y_b+' L'+x_l+','+(y_t+rr)+' Q'+x_l+','+y_t+' '+(x_l+rr)+','+y_t+' L'+(tabCx-tabW/2)+','+y_t+' L'+(tabCx-tabW*0.35)+','+y_tip+' L'+(tabCx+tabW*0.35)+','+y_tip+' L'+(tabCx+tabW/2)+','+y_t+' L'+(x_r-rr)+','+y_t+' Q'+x_r+','+y_t+' '+x_r+','+(y_t+rr)+' L'+x_r+','+y_b+' Z" fill="none" stroke="#1E3A5F" stroke-width="1.5"/>';
+  };
+  tuckTop(x2, L, y0-dustF);
+  tuckTop(x4, L, y0-dustF);
+
+  // === BOTTOM === (대칭)
+  var botY=y0+H;
+  s+=P([[x1,botY],[x1+W,botY],[x1+W-taper,botY+dustF],[x1+taper,botY+dustF]]);
+  s+=P([[x3,botY],[x3+W,botY],[x3+W-taper,botY+dustF],[x3+taper,botY+dustF]]);
+  s+=R(x2, botY, L, dustF);
+  s+=R(x4, botY, L, dustF);
+  // 하단 터크 (둥근 돔형, 아래 방향)
+  var tuckBot=function(cx,w,baseY){
+    var inset=2;
+    var r=Math.min(w*0.15, 8);
+    var tipH=5;
+    var tY=baseY+tuckF;
+    var px=_ox, py=_oy, sc=_sc;
+    var x_l=px+(cx+inset)*sc, x_r=px+(cx+w-inset)*sc;
+    var y_b=py+baseY*sc, y_t=py+tY*sc;
+    var y_tip=py+(tY+tipH)*sc;
+    var rr=r*sc;
+    var tabW=w*0.3*sc;
+    var tabCx=(x_l+x_r)/2;
+    s+='<path d="M'+x_l+','+y_b+' L'+x_l+','+(y_t-rr)+' Q'+x_l+','+y_t+' '+(x_l+rr)+','+y_t+' L'+(tabCx-tabW/2)+','+y_t+' L'+(tabCx-tabW*0.35)+','+y_tip+' L'+(tabCx+tabW*0.35)+','+y_tip+' L'+(tabCx+tabW/2)+','+y_t+' L'+(x_r-rr)+','+y_t+' Q'+x_r+','+y_t+' '+x_r+','+(y_t-rr)+' L'+x_r+','+y_b+' Z" fill="none" stroke="#1E3A5F" stroke-width="1.5"/>';
+  };
+  tuckBot(x2, L, botY+dustF);
+  tuckBot(x4, L, botY+dustF);
+
+  // 잠금 슬롯 (터크 삽입 위치 — 작은 칼집 표시)
+  var slotW=L*0.25;
+  s+='<line x1="'+(_ox+(x2+L/2-slotW/2)*_sc)+'" y1="'+(_oy+y0*_sc)+'" x2="'+(_ox+(x2+L/2+slotW/2)*_sc)+'" y2="'+(_oy+y0*_sc)+'" stroke="#DC2626" stroke-width="1.5"/>';
+  s+='<line x1="'+(_ox+(x4+L/2-slotW/2)*_sc)+'" y1="'+(_oy+(botY)*_sc)+'" x2="'+(_ox+(x4+L/2+slotW/2)*_sc)+'" y2="'+(_oy+(botY)*_sc)+'" stroke="#DC2626" stroke-width="1.5"/>';
+
+  // 접는선 (세로)
+  s+=D(x1, y0-dustF, x1, botY+dustF);
+  s+=D(x2, y0-dustF-tuckF-5, x2, botY+dustF+tuckF+5);
+  s+=D(x3, y0-dustF, x3, botY+dustF);
+  s+=D(x4, y0-dustF-tuckF-5, x4, botY+dustF+tuckF+5);
+  // 접는선 (가로)
+  s+=D(0, y0, x4+L, y0);
+  s+=D(x1, botY, x4+L, botY);
+  // 뚜껑-터크 경계선
+  s+=D(x2, y0-dustF, x4+L, y0-dustF);
+  s+=D(x2, botY+dustF, x4+L, botY+dustF);
+
+  // Labels
+  s+=T(x1+W/2, y0+H/2, 'W면');
+  s+=T(x2+L/2, y0+H/2, 'L면 (정면)');
+  s+=T(x3+W/2, y0+H/2, 'W면');
+  s+=T(x4+L/2, y0+H/2, 'L면 (후면)');
+  s+=T(gt/2, y0+H/2, '풀칠', 7);
+  s+=T(x1+W/2, y0-dustF/2, '더스트 '+dustF, 7);
+  s+=T(x2+L/2, y0-dustF/2, '뚜껑 '+dustF, 8);
+  s+=T(x2+L/2, y0-dustF-tuckF/2, '터크 '+tuckF, 7);
+
+  s+=DH(x1, y0-dustF-tuckF, W, 'W='+W);
+  s+=DH(x2, y0-dustF-tuckF, L, 'L='+L);
+  s+=DV(x4+L, y0, H, 'H='+H);
+
+  return s;
+}
+
+/* ---------- 4. 싸바리 (Rigid - Lid & Base) ---------- */
+/* 상짝 내치수 = 하짝 외치수 + 클리어런스(변당 0.75mm)
+   클리어런스 이유: 싸개지 두께(0.1~0.3mm) + 끼움 유격
+   벽높이 = H×0.4 (최소 15mm), 상하짝 벽 겹침 10~20mm
+   코너: 45도 마이터 커팅 */
+function drawSsabari(L,W,H,tab,flat){
+  var s='';
+  var wallH=flat.wallH;
+  var t=getThick();
+  var cl=flat.cl;
+  var lidL=flat.lidL;
+  var lidW_=flat.lidW;
+  var baseL=flat.baseL;
+  var baseW_=flat.baseW;
+
+  // === LID (상짝, 왼쪽) ===
+  var lx=0, ly=0;
+  // 중앙 패널 (뚜껑 상면)
+  s+=R(lx+wallH, ly+wallH, lidL, lidW_);
+  // 4면 벽
+  s+=R(lx, ly+wallH, wallH, lidW_);
+  s+=R(lx+wallH+lidL, ly+wallH, wallH, lidW_);
+  s+=R(lx+wallH, ly, lidL, wallH);
+  s+=R(lx+wallH, ly+wallH+lidW_, lidL, wallH);
+  // 코너 커팅 (45도 마이터 — X 표시)
+  var corners=[[lx,ly],[lx+wallH+lidL,ly],[lx,ly+wallH+lidW_],[lx+wallH+lidL,ly+wallH+lidW_]];
+  corners.forEach(function(c){
+    s+=RF(c[0], c[1], wallH, wallH, '#F5F7FA');
+    s+='<line x1="'+(_ox+c[0]*_sc)+'" y1="'+(_oy+c[1]*_sc)+'" x2="'+(_ox+(c[0]+wallH)*_sc)+'" y2="'+(_oy+(c[1]+wallH)*_sc)+'" stroke="#DC2626" stroke-width="0.8"/>';
+    s+='<line x1="'+(_ox+(c[0]+wallH)*_sc)+'" y1="'+(_oy+c[1]*_sc)+'" x2="'+(_ox+c[0]*_sc)+'" y2="'+(_oy+(c[1]+wallH)*_sc)+'" stroke="#DC2626" stroke-width="0.8"/>';
+  });
+  // 접는선
+  s+=D(lx+wallH, ly, lx+wallH, ly+wallH*2+lidW_);
+  s+=D(lx+wallH+lidL, ly, lx+wallH+lidL, ly+wallH*2+lidW_);
+  s+=D(lx, ly+wallH, lx+wallH*2+lidL, ly+wallH);
+  s+=D(lx, ly+wallH+lidW_, lx+wallH*2+lidL, ly+wallH+lidW_);
+
+  s+=T(lx+wallH+lidL/2, ly+wallH+lidW_/2, '상짝 (뚜껑)', 10);
+  s+=T(lx+wallH/2, ly+wallH+lidW_/2, '벽 '+wallH, 7);
+
+  // === BASE (하짝, 오른쪽) ===
+  var gap=30;
+  var bx=lidL+2*wallH+gap;
+  var totalLidH=lidW_+2*wallH;
+  var totalBaseH=baseW_+2*wallH;
+  var by=(totalLidH-totalBaseH)/2;
+
+  s+=R(bx+wallH, by+wallH, baseL, baseW_);
+  s+=R(bx, by+wallH, wallH, baseW_);
+  s+=R(bx+wallH+baseL, by+wallH, wallH, baseW_);
+  s+=R(bx+wallH, by, baseL, wallH);
+  s+=R(bx+wallH, by+wallH+baseW_, baseL, wallH);
+  var corners2=[[bx,by],[bx+wallH+baseL,by],[bx,by+wallH+baseW_],[bx+wallH+baseL,by+wallH+baseW_]];
+  corners2.forEach(function(c){
+    s+=RF(c[0], c[1], wallH, wallH, '#F5F7FA');
+    s+='<line x1="'+(_ox+c[0]*_sc)+'" y1="'+(_oy+c[1]*_sc)+'" x2="'+(_ox+(c[0]+wallH)*_sc)+'" y2="'+(_oy+(c[1]+wallH)*_sc)+'" stroke="#DC2626" stroke-width="0.8"/>';
+    s+='<line x1="'+(_ox+(c[0]+wallH)*_sc)+'" y1="'+(_oy+c[1]*_sc)+'" x2="'+(_ox+c[0]*_sc)+'" y2="'+(_oy+(c[1]+wallH)*_sc)+'" stroke="#DC2626" stroke-width="0.8"/>';
+  });
+  s+=D(bx+wallH, by, bx+wallH, by+wallH*2+baseW_);
+  s+=D(bx+wallH+baseL, by, bx+wallH+baseL, by+wallH*2+baseW_);
+  s+=D(bx, by+wallH, bx+wallH*2+baseL, by+wallH);
+  s+=D(bx, by+wallH+baseW_, bx+wallH*2+baseL, by+wallH+baseW_);
+
+  s+=T(bx+wallH+baseL/2, by+wallH+baseW_/2, '하짝 (바닥)', 10);
+  s+=T(bx+wallH/2, by+wallH+baseW_/2, '벽 '+wallH, 7);
+
+  // Dims — 상짝에 클리어런스 표시
+  s+=DH(lx+wallH, ly, lidL, '상짝L='+lidL.toFixed(1)+'(+'+cl*2+')');
+  s+=DV(lx+wallH*2+lidL, ly+wallH, lidW_, '상짝W='+lidW_.toFixed(1));
+  s+=DH(bx+wallH, by, baseL, '하짝L='+baseL);
+  s+=DV(bx+wallH*2+baseL, by+wallH, baseW_, '하짝W='+baseW_);
+
+  return s;
+}
+
+/* ---------- 5. 슬리브 (Sleeve) ---------- */
+/* 둘레=2(L+W)+풀칠탭, 높이=자유
+   타이트니스 여유: 각면 +0.5~1mm (코드에서는 입력 치수 그대로 사용, 사용자가 여유 포함) */
+function drawSleeve(L,W,H,tab){
+  var s='';
+  var flat=getFlatDimensions(L,W,H,tab);
+  var gt=flat.glueTab;
+  var x1=0, x2=L, x3=L+W, x4=L+W+L;
+
+  s+=R(x1, 0, L, H);
+  s+=R(x2, 0, W, H);
+  s+=R(x3, 0, L, H);
+  s+=R(x4, 0, W, H);
+  // 풀칠탭
+  s+=P([[x4+W,0],[x4+W+gt,0],[x4+W+gt,H],[x4+W,H]], 'rgba(30,58,95,0.08)');
+
+  s+=D(x2, 0, x2, H);
+  s+=D(x3, 0, x3, H);
+  s+=D(x4, 0, x4, H);
+  s+=D(x4+W, 0, x4+W, H);
+
+  s+=T(L/2, H/2, 'L면');
+  s+=T(L+W/2, H/2, 'W면');
+  s+=T(L+W+L/2, H/2, 'L면');
+  s+=T(L+W+L+W/2, H/2, 'W면');
+  s+=T(x4+W+gt/2, H/2, '풀칠 '+gt, 7);
+
+  s+=DH(0, 0, L, 'L='+L);
+  s+=DH(L, 0, W, 'W='+W);
+  s+=DV(x4+W+gt, 0, H, 'H='+H);
+
+  return s;
+}
+
+/* ---------- 6. 트레이 (Tray) ---------- */
+/* 귀(ear) = H×H — 벽 높이와 동일해야 인접 벽 안쪽 완전 커버
+   짧은면 벽 먼저 세우고, 귀를 안쪽으로 접고, 긴면 벽이 눌러 고정 */
+function drawTray(L,W,H,tab){
+  var s='';
+  var earW=H; // 귀 = 벽 높이와 동일
+
+  // Bottom panel (바닥)
+  s+=R(H, H, L, W);
+
+  // Side walls (4면 벽)
+  s+=R(0, H, H, W);        // 좌측벽
+  s+=R(H+L, H, H, W);      // 우측벽
+  s+=R(H, 0, L, H);        // 전면벽
+  s+=R(H, H+W, L, H);      // 후면벽
+
+  // 4개 귀 (H×H, 사다리꼴 — 접을때 간섭 방지)
+  var earTaper=Math.min(3, earW*0.15);
+  // 좌상
+  s+=P([[H-earW,0],[H,0],[H,H],[H-earW,H-earTaper]], 'rgba(30,58,95,0.06)');
+  // 우상
+  s+=P([[H+L,0],[H+L+earW,0],[H+L+earW,H-earTaper],[H+L,H]], 'rgba(30,58,95,0.06)');
+  // 좌하
+  s+=P([[H-earW,H+W+earTaper],[H,H+W],[H,H+W+H],[H-earW,H+W+H]], 'rgba(30,58,95,0.06)');
+  // 우하
+  s+=P([[H+L,H+W],[H+L+earW,H+W+earTaper],[H+L+earW,H+W+H],[H+L,H+W+H]], 'rgba(30,58,95,0.06)');
+
+  // 접는선
+  s+=D(H, 0, H, H*2+W);
+  s+=D(H+L, 0, H+L, H*2+W);
+  s+=D(0, H, H*2+L, H);
+  s+=D(0, H+W, H*2+L, H+W);
+
+  // Corner fold lines for ears
+  s+=D(H-earW, H, H-earW, 0);
+  s+=D(H+L+earW, H, H+L+earW, 0);
+  s+=D(H-earW, H+W, H-earW, H*2+W);
+  s+=D(H+L+earW, H+W, H+L+earW, H*2+W);
+
+  // Labels
+  s+=T(H+L/2, H+W/2, '바닥 (L x W)', 10);
+  s+=T(H/2, H+W/2, '측벽',8);
+  s+=T(H+L+H/2, H+W/2, '측벽',8);
+  s+=T(H+L/2, H/2, '전면벽',8);
+  s+=T(H+L/2, H+W+H/2, '후면벽',8);
+  s+=T(H-earW/2, H/2, '귀',7);
+
+  s+=DH(H, 0, L, 'L='+L);
+  s+=DV(H*2+L, H, W, 'W='+W);
+  s+=DH(0, 0, H, 'H='+H);
+
+  return s;
+}
+
+/* ---------- 7. 손잡이형 (Handle) ---------- */
+/* RSC 구조 + 상단 L면 외플랩에 손잡이홀
+   홀 크기: 80~120×25~35mm(R5이상) — 손가락 4개 + 찢어짐 방지
+   홀 위치: 접는선에서 15~20mm 이격 — 너무 가까우면 찢어짐 */
+function drawHandle(L,W,H,tab){
+  var s='';
+  var flat=getFlatDimensions(L,W,H,tab);
+  var gt=flat.glueTab;
+  var outerF=flat.outerFlap; // W/2
+  var innerF=Math.max(outerF-12, 15);
+  var y0=outerF;
+
+  var x1=gt, x2=gt+W, x3=gt+W+L, x4=gt+W+L+W;
+
+  // Glue tab
+  s+=P([[0,y0],[gt,y0],[gt,y0+H],[0,y0+H]], 'rgba(30,58,95,0.08)');
+
+  // Body panels
+  s+=R(x1,y0,W,H);
+  s+=R(x2,y0,L,H);
+  s+=R(x3,y0,W,H);
+  s+=R(x4,y0,L,H);
+
+  // Top: 내플랩(W면)
+  s+=R(x1, y0-innerF, W, innerF);
+  s+=R(x3, y0-innerF, W, innerF);
+  // Top: 외플랩(L면) + 손잡이홀
+  s+=R(x2, y0-outerF, L, outerF);
+  s+=R(x4, y0-outerF, L, outerF);
+
+  // 손잡이홀 — 크기: min(L*0.35, 120) × min(outerF*0.35, 35), 최소 80×25
+  var holeW=Math.max(Math.min(L*0.35, 120), 60);
+  var holeH=Math.max(Math.min(outerF*0.35, 35), 15);
+  var holeOffset=Math.max(18, outerF*0.25); // 접는선에서 이격
+  var holeCY=y0-outerF+holeOffset+holeH/2;
+  // L면 외플랩에 타원형 손잡이홀 (R5 이상 라운드)
+  s+=EL(x2+L/2, holeCY, holeW/2, holeH/2);
+  s+=EL(x4+L/2, holeCY, holeW/2, holeH/2);
+  s+=T(x2+L/2, holeCY, Math.round(holeW)+'x'+Math.round(holeH), 7);
+  s+=T(x4+L/2, holeCY, '손잡이홀', 7);
+
+  // Bottom: 동일 구조 (손잡이홀 없음)
+  s+=R(x1, y0+H, W, innerF);
+  s+=R(x3, y0+H, W, innerF);
+  s+=R(x2, y0+H, L, outerF);
+  s+=R(x4, y0+H, L, outerF);
+
+  // 접는선
+  s+=D(x1, y0-outerF, x1, y0+H+outerF);
+  s+=D(x2, y0-outerF, x2, y0+H+outerF);
+  s+=D(x3, y0-outerF, x3, y0+H+outerF);
+  s+=D(x4, y0-outerF, x4, y0+H+outerF);
+  s+=D(0, y0, x4+L, y0);
+  s+=D(0, y0+H, x4+L, y0+H);
+
+  // Labels
+  s+=T(x1+W/2, y0+H/2, 'W면');
+  s+=T(x2+L/2, y0+H/2, 'L면');
+  s+=T(x3+W/2, y0+H/2, 'W면');
+  s+=T(x4+L/2, y0+H/2, 'L면');
+  s+=T(gt/2, y0+H/2, '풀칠 '+gt, 7);
+
+  s+=DH(x1, y0-outerF, W, 'W='+W);
+  s+=DH(x2, y0-outerF, L, 'L='+L);
+  s+=DV(x4+L, y0, H, 'H='+H);
+
+  return s;
+}
+
+/* ===== 3D Box Preview ===== */
+function draw3DBox(L,W,H){
+  var sc=Math.min(180/Math.max(L,W,H),0.8);
+  var sl=L*sc, sw=W*sc, sh=H*sc;
+  var html='<div class="bx-3d-box" style="width:'+sl+'px;height:'+sh+'px">';
+  html+='<div style="position:absolute;width:'+sl+'px;height:'+sh+'px;background:rgba(30,58,95,.12);border:2px solid #1E3A5F;transform:translateZ('+(sw/2)+'px);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#1E3A5F">L x H<br>'+L+' x '+H+'</div>';
+  html+='<div style="position:absolute;width:'+sl+'px;height:'+sh+'px;background:rgba(30,58,95,.06);border:2px solid #1E3A5F;transform:rotateY(180deg) translateZ('+(sw/2)+'px)"></div>';
+  html+='<div style="position:absolute;width:'+sw+'px;height:'+sh+'px;background:rgba(5,150,105,.08);border:2px solid #059669;transform:rotateY(-90deg) translateZ(0px);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#059669">W x H<br>'+W+' x '+H+'</div>';
+  html+='<div style="position:absolute;width:'+sw+'px;height:'+sh+'px;background:rgba(5,150,105,.06);border:2px solid #059669;transform:rotateY(90deg) translateZ('+sl+'px)"></div>';
+  html+='<div style="position:absolute;width:'+sl+'px;height:'+sw+'px;background:rgba(220,38,38,.06);border:2px solid #DC2626;transform:rotateX(90deg) translateZ(0px);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#DC2626">L x W<br>'+L+' x '+W+'</div>';
+  html+='<div style="position:absolute;width:'+sl+'px;height:'+sw+'px;background:rgba(220,38,38,.04);border:2px solid #DC2626;transform:rotateX(-90deg) translateZ('+sh+'px)"></div>';
+  html+='</div>';
+  return html;
+}
+
+/* ===== View Switch ===== */
+var currentView='flat';
+function switchView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.bx-svg-tab').forEach(function(t){t.classList.remove('on')});
+  btn.classList.add('on');
+  calc();
+}
+
+/* ===== Main Calculation ===== */
+function calc(){
+  var L=+document.getElementById('boxL').value||1;
+  var W=+document.getElementById('boxW').value||1;
+  var H=+document.getElementById('boxH').value||1;
+  var tab=+document.getElementById('boxTab').value||15;
+  var qty=+document.getElementById('orderQty').value||1;
+  var colors=+document.getElementById('inkColors').value||0;
+  var gsm=+document.getElementById('gsm').value||350;
+  var sheet=getSheetSize();
+  var paperPrice=+document.getElementById('paperPrice').value||0;
+  var printPrice=+document.getElementById('printPrice').value||0;
+  var coatPrice=+document.getElementById('coatPrice').value||0;
+  var diePrice=+document.getElementById('diePrice').value||0;
+  var gluePrice=+document.getElementById('gluePrice').value||0;
+  var moldCost=+document.getElementById('moldCost').value||0;
+  var wasteRate=+document.getElementById('wasteRate').value||5;
+  var marginRate=+document.getElementById('marginRate').value||25;
+
+  var flat=getFlatDimensions(L,W,H,tab);
+
+  // Sheet yield
+  var yield1=Math.floor(sheet.w/flat.w)*Math.floor(sheet.h/flat.h);
+  var yield2=Math.floor(sheet.w/flat.h)*Math.floor(sheet.h/flat.w);
+  var bestYield=Math.max(yield1,yield2,1);
+  var useRate=((flat.w*flat.h*bestYield)/(sheet.w*sheet.h)*100);
+
+  var grossQty=Math.ceil(qty*(1+wasteRate/100));
+  var sheetsNeeded=Math.ceil(grossQty/bestYield);
+
+  // Cost
+  var sheetAreaM2=(sheet.w/1000)*(sheet.h/1000);
+  var sheetWeightKg=sheetAreaM2*(gsm/1000);
+  var paperCostPerSheet=sheetWeightKg*paperPrice;
+  var paperCostTotal=paperCostPerSheet*sheetsNeeded;
+
+  var flatAreaM2=(flat.w/1000)*(flat.h/1000);
+  var printCostTotal=colors*printPrice*grossQty;
+  var coatCostTotal=flatAreaM2*coatPrice*grossQty;
+  var dieCostTotal=diePrice*grossQty;
+  var glueCostTotal=gluePrice*grossQty;
+
+  var totalCost=paperCostTotal+printCostTotal+coatCostTotal+dieCostTotal+glueCostTotal+moldCost;
+  var unitCost=totalCost/qty;
+  var unitPrice=unitCost*(1+marginRate/100);
+  var totalPrice=unitPrice*qty;
+
+  // Render
+  var area=document.getElementById('svgArea');
+  if(currentView==='flat'){
+    area.innerHTML=drawFlatPattern(L,W,H,tab);
+  }else{
+    area.innerHTML='<div class="bx-3d-area">'+draw3DBox(L,W,H)+'</div>';
+  }
+
+  document.getElementById('flatSize').textContent=Math.round(flat.w)+'x'+Math.round(flat.h)+' mm';
+  document.getElementById('sheetYield').textContent=bestYield+'매/장';
+  document.getElementById('useRate').textContent=useRate.toFixed(1)+'%';
+
+  var fmt=function(n){return Math.round(n).toLocaleString()};
+  var coating=document.getElementById('coatingType');
+  var coatName=coating.options[coating.selectedIndex].text;
+
+  document.getElementById('costResult').innerHTML=
+    '<div class="bx-result">'+
+    row('원지비',fmt(paperCostTotal)+'원')+
+    row('인쇄비 ('+colors+'도)',fmt(printCostTotal)+'원')+
+    row('코팅비 ('+coatName+')',fmt(coatCostTotal)+'원')+
+    row('톰슨비',fmt(dieCostTotal)+'원')+
+    row('접착비',fmt(glueCostTotal)+'원')+
+    row('목형비',fmt(moldCost)+'원')+
+    '<div class="bx-result-row" style="border-top:2px solid #E5E7EB;padding-top:8px;margin-top:4px"><span class="bx-result-label" style="font-weight:800">합계</span><span class="bx-result-value navy" style="font-size:15px">'+fmt(totalCost)+'원</span></div>'+
+    '</div>';
+
+  var paperSel=document.getElementById('paperType');
+  var paperName=paperSel.options[paperSel.selectedIndex].text;
+  var thick=getThick();
+
+  document.getElementById('bomResult').innerHTML=
+    '<table class="bx-bom"><thead><tr><th>자재</th><th>규격</th><th>소요량</th></tr></thead><tbody>'+
+    '<tr><td>'+paperName+'</td><td>'+gsm+'g/m² '+sheet.w+'x'+sheet.h+' ('+thick+'mm)</td><td>'+sheetsNeeded+'장</td></tr>'+
+    '<tr><td>잉크</td><td>옵셋 '+colors+'도</td><td>'+colors+'색</td></tr>'+
+    (coatPrice>0?'<tr><td>'+coatName+'</td><td>—</td><td>'+(flatAreaM2*grossQty).toFixed(1)+'m2</td></tr>':'')+
+    '<tr><td>목형</td><td>'+Math.round(flat.w)+'x'+Math.round(flat.h)+'</td><td>1벌</td></tr>'+
+    '</tbody></table>';
+
+  document.getElementById('unitCost').textContent=fmt(unitCost)+'원';
+  document.getElementById('unitPrice').textContent=fmt(unitPrice)+'원';
+  document.getElementById('totalCost').textContent=fmt(totalCost)+'원';
+  document.getElementById('totalPrice').textContent=fmt(totalPrice)+'원';
+}
+
+function row(label,value){
+  return '<div class="bx-result-row"><span class="bx-result-label">'+label+'</span><span class="bx-result-value">'+value+'</span></div>';
+}
+
+/* ===== Print Estimate ===== */
+function printEstimate(){
+  var L=document.getElementById('boxL').value;
+  var W=document.getElementById('boxW').value;
+  var H=document.getElementById('boxH').value;
+  var flat=getFlatDimensions(+L,+W,+H,+document.getElementById('boxTab').value);
+  var qty=document.getElementById('orderQty').value;
+  var coating=document.getElementById('coatingType');
+  var coatName=coating.options[coating.selectedIndex].text;
+  var paperSel=document.getElementById('paperType');
+  var paperName=paperSel.options[paperSel.selectedIndex].text;
+  var w=window.open('','_blank','width=800,height=600');
+  w.document.write('<html><head><title>견적서</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Pretendard,sans-serif}body{padding:40px}h1{font-size:22px;margin-bottom:8px;color:#1E3A5F}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #ddd;padding:8px 12px;font-size:13px;text-align:left}th{background:#F9FAFB;font-weight:700}.r{text-align:right}@media print{body{padding:20px}}</style></head><body>');
+  w.document.write('<h1>팩플로우 견적서</h1>');
+  w.document.write('<p style="color:#6B7280;font-size:13px;margin-bottom:20px">발행일: '+new Date().toLocaleDateString('ko-KR')+'</p>');
+  w.document.write('<table><tr><th>항목</th><th>내용</th></tr>');
+  w.document.write('<tr><td>박스 형태</td><td>'+flat.name+'</td></tr>');
+  w.document.write('<tr><td>규격</td><td>'+L+' x '+W+' x '+H+' mm</td></tr>');
+  w.document.write('<tr><td>전개도</td><td>'+Math.round(flat.w)+' x '+Math.round(flat.h)+' mm</td></tr>');
+  w.document.write('<tr><td>지류</td><td>'+paperName+' / '+coatName+'</td></tr>');
+  w.document.write('<tr><td>수량</td><td>'+Number(qty).toLocaleString()+'매</td></tr>');
+  w.document.write('<tr><td>개당 원가</td><td class="r">'+document.getElementById('unitCost').textContent+'</td></tr>');
+  w.document.write('<tr><td><b>개당 판가</b></td><td class="r"><b>'+document.getElementById('unitPrice').textContent+'</b></td></tr>');
+  w.document.write('<tr><td>총 원가</td><td class="r">'+document.getElementById('totalCost').textContent+'</td></tr>');
+  w.document.write('<tr><td><b>총 견적가</b></td><td class="r"><b style="color:#059669;font-size:16px">'+document.getElementById('totalPrice').textContent+'</b></td></tr>');
+  w.document.write('</table>');
+  w.document.write('<p style="margin-top:24px;font-size:12px;color:#94A3B8">본 견적서는 팩플로우 MES에서 자동 생성되었습니다.</p>');
+  w.document.write('<script>setTimeout(function(){window.print()},300)<\/script></body></html>');
+  w.document.close();
+}
+
+/* ===== CSV Export ===== */
+function exportCSV(){
+  var L=document.getElementById('boxL').value;
+  var W=document.getElementById('boxW').value;
+  var H=document.getElementById('boxH').value;
+  var qty=document.getElementById('orderQty').value;
+  var csv='항목,값\n';
+  csv+='박스형태,'+BOX_TYPES.find(function(b){return b.id===selectedBox}).name+'\n';
+  csv+='규격,'+L+'x'+W+'x'+H+'mm\n';
+  csv+='수량,'+qty+'\n';
+  csv+='개당원가,'+document.getElementById('unitCost').textContent+'\n';
+  csv+='개당판가,'+document.getElementById('unitPrice').textContent+'\n';
+  csv+='총견적가,'+document.getElementById('totalPrice').textContent+'\n';
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='견적_'+L+'x'+W+'x'+H+'_'+qty+'매.csv';
+  a.click();
+}
+
+/* ===== Init ===== */
+initFefcoGrid();
+onPaperTypeChange();
+calc();
+</script>
+</body>
+</html>

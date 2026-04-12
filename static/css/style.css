@@ -170,20 +170,26 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .card-t{font-size:17px;font-weight:700;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bdr);color:var(--txt);letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
 .card-t::before{content:'';width:3px;height:16px;background:var(--pri);border-radius:2px;display:inline-block}
 
-/* ===== SUMMARY GRID — Glazey KPI ===== */
-.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}
-.sb{background:var(--card);border:1px solid var(--bdr);padding:20px 22px 18px;box-shadow:var(--sh-xs);border-radius:var(--r);transition:all .2s var(--ease);position:relative;overflow:hidden;cursor:default}
+/* ===== SUMMARY GRID — Compact Strip ===== */
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:8px;transition:all .2s var(--ease)}
+.sg.sg-hidden{display:none}
+.sb{background:var(--card);border:1px solid var(--bdr);padding:8px 12px 6px;box-shadow:var(--sh-xs);border-radius:var(--r-sm);transition:all .2s var(--ease);position:relative;overflow:hidden;cursor:default;height:44px;display:flex;flex-direction:column;justify-content:center}
 .sb::before{display:none}
-.sb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pri);opacity:0;transition:opacity .2s var(--ease)}
+.sb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pri);opacity:0;transition:opacity .2s var(--ease)}
 .sb:hover{box-shadow:var(--sh);border-color:var(--bdr2)}
 .sb:hover::after{opacity:1}
-.sb .l{font-size:13px;color:var(--txt2);margin-bottom:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-.sb .v{font-size:28px;font-weight:800;letter-spacing:-1.2px;line-height:1;font-feature-settings:"tnum","ss01";color:var(--txt)}
+.sb .l{font-size:11px;color:var(--txt2);margin-bottom:2px;font-weight:600;letter-spacing:.2px;text-transform:none;display:flex;align-items:center;gap:4px}
+.sb .v{font-size:15px;font-weight:700;letter-spacing:-.3px;line-height:1.2;font-feature-settings:"tnum","ss01";color:var(--txt)}
 .sb.blue::after{background:var(--pri);opacity:1}.sb.blue .v{color:var(--pri)}
 .sb.green::after{background:var(--suc);opacity:1}.sb.green .v{color:var(--suc)}
 .sb.red::after{background:var(--dan);opacity:1}.sb.red .v{color:var(--dan)}
 .sb.orange::after{background:var(--pri);opacity:1}.sb.orange .v{color:var(--txt)}
 .sb.purple::after{background:var(--pri);opacity:1}.sb.purple .v{color:var(--txt)}
+/* Toggle Button */
+.sg-toggle{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--txt3);background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r-full);cursor:pointer;margin-bottom:6px;transition:all .15s var(--ease);user-select:none}
+.sg-toggle:hover{color:var(--txt);background:var(--bg3);border-color:var(--bdr2)}
+.sg-toggle .sg-arrow{font-size:8px;transition:transform .2s var(--ease);display:inline-block}
+.sg-toggle.sg-open .sg-arrow{transform:rotate(90deg)}
 
 /* ===== TABLE — Glazey ===== */
 .dt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;border-radius:var(--r-sm)}
@@ -344,8 +350,8 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .module-page{display:none}.module-page.active{display:block}
 .module-page .card{margin-bottom:8px}
 .module-page .sg{margin-bottom:8px}
-.module-page .sb .l{font-size:14px;font-weight:700;color:var(--txt)}
-.module-page .sb .v{font-size:28px;font-weight:800}
+.module-page .sb .l{font-size:11px;font-weight:600;color:var(--txt2)}
+.module-page .sb .v{font-size:15px;font-weight:700}
 .module-page table.dt th{padding:10px 12px;font-size:14px;font-weight:800;text-transform:none;letter-spacing:.2px;color:var(--txt)}
 .module-page table.dt td{padding:10px 12px;font-size:15px;font-weight:500;color:#000000!important}
 .module-page .card-t{font-size:17px;font-weight:800;margin-bottom:6px;color:var(--txt)}

@@ -447,7 +447,25 @@ function wrapTablesForScroll(){
     p.insertBefore(w,t);w.appendChild(t);
   });
 }
-document.addEventListener('DOMContentLoaded',function(){setTimeout(wrapTablesForScroll,100);setTimeout(function(){if(typeof ContrastCheck!=='undefined')ContrastCheck.audit()},2000)});
+/* ===== Summary Grid Toggle (접기/펼치기) ===== */
+function initSgToggles(){
+  var sgs=document.querySelectorAll('.sg');
+  sgs.forEach(function(sg){
+    if(sg.closest('#t-dash'))return;
+    if(sg.previousElementSibling&&sg.previousElementSibling.classList.contains('sg-toggle'))return;
+    var btn=document.createElement('button');
+    btn.className='sg-toggle';
+    btn.innerHTML='<span class="sg-arrow">▶</span> 요약';
+    btn.onclick=function(){
+      var open=sg.classList.toggle('sg-hidden');
+      if(open){btn.classList.remove('sg-open');btn.querySelector('.sg-arrow').textContent='▶'}
+      else{btn.classList.add('sg-open');btn.querySelector('.sg-arrow').textContent='▼'}
+    };
+    sg.parentNode.insertBefore(btn,sg);
+    sg.classList.add('sg-hidden');
+  });
+}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(wrapTablesForScroll,100);setTimeout(initSgToggles,150);setTimeout(function(){if(typeof ContrastCheck!=='undefined')ContrastCheck.audit()},2000)});
 var _resizeTimer=null;
 function _onWindowResize(){
   if(_resizeTimer)clearTimeout(_resizeTimer);

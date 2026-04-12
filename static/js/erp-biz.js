@@ -117,7 +117,7 @@ function renderRank() {
 
   var totalAmt = sorted.reduce(function(s, x) { return s + x[1].amt; }, 0);
   var maxAmt = sorted.length ? sorted[0][1].amt : 1;
-  var colors = ['#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#DBEAFE', '#EFF6FF', '#F8FAFC', '#F8FAFC'];
+  var colors = ['#0F2240', '#1E3A5F', '#1E3A5F', '#5A8FBF', '#7EB8E0', '#B0C9E0', '#DCE8F5', '#EFF6FF', '#F8FAFC', '#F8FAFC'];
 
   $('rankTitle').textContent = '거래처별 ' + (type === 'sales' ? '매출' : '건수') + ' Top ' + sorted.length;
 
@@ -252,7 +252,7 @@ function renderProductivity() {
     '<div class="sb green"><div class="l">총 생산수량</div><div class="v">' + fmt(totalQty) + '</div></div>' +
     '<div class="sb orange"><div class="l">활성 공정수</div><div class="v">' + procs.length + '</div></div>';
 
-  var procColors = ['#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF', '#4F6CFF'];
+  var procColors = ['#1E3A5F', '#1E3A5F', '#1E3A5F', '#1E3A5F', '#1E3A5F', '#1E3A5F'];
 
   if (procs.length === 0) {
     $('prodChart').innerHTML = emptyHtml('', 'MES 작업 이력이 없습니다',
@@ -388,7 +388,7 @@ function dlMonthlyPdf(){
   if(!area){toast('보고서를 먼저 조회하세요','err');return}
   var w=window.open('','_blank');
   w.document.write('<html><head><title>월간 경영보고서</title>');
-  w.document.write('<style>@page{size:A4;margin:20mm}body{font-family:-apple-system,sans-serif;color:#111827;font-size:14px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:10px 12px;border-bottom:1px solid #E5E7EB;text-align:left;font-size:13px}th{background:#F9FAFB;font-weight:700}.card-t{font-size:16px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #4F6CFF}.sb{padding:16px;border:1px solid #E5E7EB;border-radius:10px;text-align:center}.sb .l{font-size:12px;color:#6B7280;margin-bottom:6px}.sb .v{font-size:22px;font-weight:800}</style>');
+  w.document.write('<style>@page{size:A4;margin:20mm}body{font-family:-apple-system,sans-serif;color:#111827;font-size:14px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th,td{padding:10px 12px;border-bottom:1px solid #E5E7EB;text-align:left;font-size:13px}th{background:#F9FAFB;font-weight:700}.card-t{font-size:16px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #1E3A5F}.sb{padding:16px;border:1px solid #E5E7EB;border-radius:10px;text-align:center}.sb .l{font-size:12px;color:#6B7280;margin-bottom:6px}.sb .v{font-size:22px;font-weight:800}</style>');
   w.document.write('</head><body>');
   w.document.write(area.innerHTML);
   w.document.write('</body></html>');

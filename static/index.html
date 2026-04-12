@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#3B82F6">
+<meta name="theme-color" content="#1E3A5F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="이노MES">
@@ -1040,30 +1040,24 @@
 </div>
 </div>
 
-<!-- TAB: Dashboard (A형 미션 컨트롤) -->
-<div id="t-dash" class="tc on">
+<!-- TAB: Dashboard (New Design) -->
+<div id="t-dash" class="tc on" style="background:#F5F7FA;padding:20px">
 <!-- 헤더 -->
-<div class="u-flex-between">
-<div style="font-size:18px;font-weight:800;color:#1E293B">금일현황</div>
-<div id="dashDateDisp" style="font-size:13px;color:#64748B"></div>
+<div class="u-flex-between" style="margin-bottom:16px">
+<div style="font-size:20px;font-weight:900;color:#1E293B">금일현황</div>
+<div id="dashDateDisp" style="font-size:13px;color:#94A3B8"></div>
 </div>
-<!-- KPI 카드 (맨 위) -->
-<div id="dSum" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:10px"></div>
-<div id="dInsight" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
-<!-- Charts Row 1 -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px" id="dashCharts">
-  <div class="dash-card"><div class="dash-card-header">공정별 작업 현황</div><div class="u-pad12"><canvas id="chartProc"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header">납기 준수율</div><div class="u-pad12"><canvas id="chartDelivery"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header" id="chartDailyTitle">일별 생산량</div><div class="u-pad12"><canvas id="chartDaily"></canvas></div></div>
-</div>
-<!-- Charts Row 2 -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px" id="dashCharts2">
-  <div class="dash-card"><div class="dash-card-header">미출고 잔량 (납기 임박순)</div><div class="u-pad12"><canvas id="chartPending"></canvas></div></div>
-  <div class="dash-card"><div class="dash-card-header">거래처별 수주량</div><div class="u-pad12"><canvas id="chartClient"></canvas></div></div>
-</div>
-<!-- 공정 파이프라인 (차트 아래) -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:12px" id="dProcCards"></div>
-<!-- 완료 확인 -->
+<!-- 근무 진행률 -->
+<div id="ndShift"></div>
+<!-- KPI 카드 -->
+<div id="ndKpi" class="nd-kpi"></div>
+<!-- 게이지 + 면적 차트 -->
+<div id="ndGaugeRow" class="nd-gauge-row"></div>
+<!-- 공정 파이프라인 -->
+<div id="ndPipeline"></div>
+<!-- 실시간 알림 -->
+<div id="ndFeed"></div>
+<!-- 완료 확인 (기존 유지) -->
 <div id="dCompleteSection" style="display:none;background:#fff;border-radius:14px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)">
 <div style="padding:10px 14px;background:#059669;display:flex;justify-content:space-between;align-items:center">
 <span style="font-size:13px;font-weight:700;color:#fff">완료 확인</span>
@@ -1421,7 +1415,7 @@
 <button class="cal-nav-btn" onclick="calNav(1)">▶</button>
 </div>
 <div class="cal-legend">
-<div class="cal-legend-item"><div class="cal-legend-dot" style="background:#3182F6"></div>작업시작</div>
+<div class="cal-legend-item"><div class="cal-legend-dot" style="background:#1E3A5F"></div>작업시작</div>
 <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#10B981"></div>출고예정</div>
 <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#EF4444"></div>지연</div>
 <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#94A3B8"></div>완료</div>
@@ -1479,7 +1473,7 @@
 <div class="u-mt10"><button class="btn btn-p" onclick="saveCo()">저장</button></div>
 </div>
 <div class="card"><div class="card-t">외부 API 연동</div>
-<div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:12px">국세청 사업자 조회 API 키 <a href="https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15081808" target="_blank" style="font-size:11px;color:#3B82F6">(발급 안내)</a></label><input id="sBizApiKey" placeholder="공공데이터포털 인증키 입력" style="font-family:monospace;font-size:12px"></div><button class="btn btn-p btn-sm" onclick="saveBizApiKey()" style="margin-bottom:1px;white-space:nowrap">저장</button></div>
+<div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:12px">국세청 사업자 조회 API 키 <a href="https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15081808" target="_blank" style="font-size:11px;color:#1E3A5F">(발급 안내)</a></label><input id="sBizApiKey" placeholder="공공데이터포털 인증키 입력" style="font-family:monospace;font-size:12px"></div><button class="btn btn-p btn-sm" onclick="saveBizApiKey()" style="margin-bottom:1px;white-space:nowrap">저장</button></div>
 <div style="font-size:11px;color:#94A3B8;margin-top:4px">거래처 등록 시 사업자번호 입력 후 [조회] 버튼으로 일반과세자/간이과세자/폐업 여부 확인</div>
 </div>
 <div class="card"><div class="card-t">수정 이력</div><div id="editLogList" style="max-height:200px;overflow-y:auto"></div></div>
@@ -1579,7 +1573,7 @@
 <div class="fr"><div class="fg"><label class="req">거래처명</label><input id="cmNm"></div><div class="fg"><label>사업자등록번호</label><div style="display:flex;gap:4px"><input id="cmBiz" placeholder="000-00-00000" oninput="fmtBiz(this)" style="flex:1;min-width:0"><button type="button" class="btn btn-o btn-sm" onclick="checkBizStatus()" style="white-space:nowrap;padding:6px 8px;font-size:12px">조회</button></div><div id="cmBizResult" style="font-size:11px;margin-top:3px;min-height:16px"></div></div></div>
 <div style="margin-top:10px;display:flex;align-items:center;gap:16px">
 <label style="font-size:13px;font-weight:700;color:#1E293B">유형:</label>
-<label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cmSales" checked style="width:16px;height:16px;accent-color:#3B82F6"> 매출처</label>
+<label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cmSales" checked style="width:16px;height:16px;accent-color:#1E3A5F"> 매출처</label>
 <label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="cmPurch" style="width:16px;height:16px;accent-color:#EF4444"> 매입처</label>
 </div>
 <div class="fr u-mt10"><div class="fg"><label>담당자</label><input id="cmPs"></div><div class="fg"><label>주소</label><input id="cmAd"></div></div>
@@ -1909,7 +1903,7 @@
 <div id="schedBoard"></div>
 <div class="sched-legend">
 <div class="sched-legend-item"><div class="sched-legend-dot" style="background:#9CA3AF"></div>대기</div>
-<div class="sched-legend-item"><div class="sched-legend-dot" style="background:#3B82F6"></div>진행중</div>
+<div class="sched-legend-item"><div class="sched-legend-dot" style="background:#1E3A5F"></div>진행중</div>
 <div class="sched-legend-item"><div class="sched-legend-dot" style="background:#10B981"></div>완료</div>
 <div class="sched-legend-item"><div class="sched-legend-dot" style="background:#EF4444"></div>지연</div>
 <div class="sched-legend-item"><div class="sched-legend-dot" style="background:#7B61FF"></div>외주</div>

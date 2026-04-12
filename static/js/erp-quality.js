@@ -146,7 +146,7 @@ function rQt(){
   $('qtCnt').textContent=ma.length;
   $('qtAmt').textContent=fmt(ma.reduce(function(s,r){return s+(r.price||0)},0))+'원';
   $('qtWon').textContent=ma.filter(function(r){return r.st==='수주'}).length;
-  var stColor={작성중:'#94A3B8',발송:'#3182F6',수주:'#10B981',실주:'#EF4444'};
+  var stColor={작성중:'#94A3B8',발송:'#1E3A5F',수주:'#10B981',실주:'#EF4444'};
   $('qtTbl').querySelector('tbody').innerHTML=fl.length?fl.map(function(r){
     var c=stColor[r.st]||'#94A3B8';
     return '<tr>'
@@ -158,7 +158,7 @@ function rQt(){
       +'<td><span class="bd" style="background:'+c+'20;color:'+c+';border-color:'+c+'40">'+r.st+'</span></td>'
       +'<td style="display:flex;gap:4px;flex-wrap:wrap">'
       +'<button class="btn btn-s btn-sm" onclick="eQt(\''+r.id+'\')">보기/수정</button>'
-      +'<button class="btn btn-sm" style="background:#EFF6FF;color:#3182F6;border:1px solid #BFDBFE" onclick="qtToWODirect(\''+r.id+'\')">→작업지시</button>'
+      +'<button class="btn btn-sm" style="background:#EFF6FF;color:#1E3A5F;border:1px solid #B0C9E0" onclick="qtToWODirect(\''+r.id+'\')">→작업지시</button>'
       +'<button class="btn btn-sm btn-p" onclick="printQuote(\''+r.id+'\')">인쇄</button>'
       +'<button class="btn btn-sm" style="color:var(--dan)" onclick="dQt(\''+r.id+'\')">삭제</button>'
       +'</td></tr>';
@@ -382,7 +382,7 @@ function toggleAI(){
         <button onclick="toggleAI()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">&times;</button>
       </div>
       <div id="aiMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px">
-        <div style="background:#F0F7FF;padding:10px 12px;border-radius:12px;font-size:13px;color:#1E40AF;max-width:90%">안녕하세요! MES 데이터를 기반으로 도움을 드립니다.<br><br>예시 질문:<br>• 현재 생산 현황 요약해줘<br>• 납기 임박한 작업 알려줘<br>• 이번주 생산 효율 분석해줘</div>
+        <div style="background:#F0F7FF;padding:10px 12px;border-radius:12px;font-size:13px;color:#0F2240;max-width:90%">안녕하세요! MES 데이터를 기반으로 도움을 드립니다.<br><br>예시 질문:<br>• 현재 생산 현황 요약해줘<br>• 납기 임박한 작업 알려줘<br>• 이번주 생산 효율 분석해줘</div>
       </div>
       <div style="padding:8px;border-top:1px solid #E5E7EB;display:flex;gap:6px;flex-shrink:0">
         <input id="aiInput" type="text" placeholder="질문을 입력하세요..." style="flex:1;padding:10px 14px;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendAI()">
@@ -447,7 +447,7 @@ async function sendAI(){
     if(data.error){
       var loading=$('aiLoading');if(loading)loading.remove();
       var errMsg='API 오류';
-      if(data.error.code===429)errMsg='API 한도 초과. 잠시 후 다시 시도하거나, 설정에서 새 API 키를 등록하세요.<br><br><button onclick="var k=prompt(\'Gemini API 키 입력:\');if(k){localStorage.setItem(\'gemini_key\',k);toast(\'API 키 저장\',\'ok\')}" style="padding:6px 12px;border-radius:6px;border:1px solid #3B82F6;background:#EFF6FF;color:#3B82F6;font-size:12px;cursor:pointer">API 키 변경</button>';
+      if(data.error.code===429)errMsg='API 한도 초과. 잠시 후 다시 시도하거나, 설정에서 새 API 키를 등록하세요.<br><br><button onclick="var k=prompt(\'Gemini API 키 입력:\');if(k){localStorage.setItem(\'gemini_key\',k);toast(\'API 키 저장\',\'ok\')}" style="padding:6px 12px;border-radius:6px;border:1px solid #1E3A5F;background:#EFF6FF;color:#1E3A5F;font-size:12px;cursor:pointer">API 키 변경</button>';
       else errMsg=data.error.message;
       msgs.innerHTML+='<div style="align-self:flex-start;background:#FEF2F2;padding:10px 12px;border-radius:12px;font-size:12px;color:#991B1B;max-width:90%">'+errMsg+'</div>';
       msgs.scrollTop=msgs.scrollHeight;

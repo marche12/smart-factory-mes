@@ -67,7 +67,7 @@ function getDefectStats(){
 function renderDefectChart(){
   var stats=getDefectStats();
   var max=Math.max.apply(null,Object.values(stats))||1;
-  var colors=['#3182F6','#10B981','#F59E0B','#EF4444','#EC4899','#7B61FF','#F97316','#64748B'];
+  var colors=['#1E3A5F','#10B981','#F59E0B','#EF4444','#EC4899','#7B61FF','#F97316','#64748B'];
   var h='<div style="margin-top:14px"><div class="card-t">불량 유형별 통계 (파레토)</div>';
   var sorted=Object.entries(stats).sort(function(a,b){return b[1]-a[1]});
   sorted.forEach(function(s,i){
@@ -343,7 +343,7 @@ function renderProcTimeStats(){
     var timeStr=d.avg>0?(hrs>0?hrs+'시간 ':'')+mins+'분':'데이터 없음';
     var barW=d.avg>0?Math.min(100,Math.round(d.avg/480*100)):0;
     h+='<div class="yield-row"><span style="font-size:12px;font-weight:700">'+d.proc+'</span>'
-      +'<div class="perf-bar"><div class="perf-bar-fill" style="width:'+barW+'%;background:#3182F6"></div></div>'
+      +'<div class="perf-bar"><div class="perf-bar-fill" style="width:'+barW+'%;background:#1E3A5F"></div></div>'
       +'<span style="font-size:11px;font-weight:700;color:var(--txt2);min-width:80px;text-align:right">'+timeStr+'</span></div>'});
   h+='</div>';return h;
 }
@@ -511,7 +511,7 @@ function rVendor(){
       h+='<div class="vd-card" onclick="showVendorWO(\''+v.nm+'\')">'
         +'<div class="vd-name">'+v.nm+' <span class="vd-badge">'+vos.length+'건</span></div>'
         +'<div class="vd-stat"><span class="vl">완료</span><span class="vv" style="color:#10B981">'+done+'</span></div>'
-        +'<div class="vd-stat"><span class="vl">진행중</span><span class="vv" style="color:#3182F6">'+ing+'</span></div>'
+        +'<div class="vd-stat"><span class="vl">진행중</span><span class="vv" style="color:#1E3A5F">'+ing+'</span></div>'
         +'<div class="vd-stat"><span class="vl">지연</span><span class="vv" style="color:'+(late>0?'#EF4444':'#10B981')+'">'+(late>0?late:'없음')+'</span></div>'
         +'<div class="vd-stat"><span class="vl">완료율</span><span class="vv" style="color:'+(rate>=80?'#10B981':'#F59E0B')+'">'+rate+'%</span></div>'
         +'</div>';
@@ -891,7 +891,7 @@ function renderCEODash(){
   var h='<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">';
   h+=kpiCard('이번달 매출','#10B981',fmt(moSales)+'원','전체 '+sales.length+'건');
   h+=kpiCard('이번달 매입','#F59E0B',fmt(moPurch)+'원','전체 '+purch.length+'건');
-  h+=kpiCard('손익','#3182F6',fmt(profit)+'원',profitRate+'% 수익률');
+  h+=kpiCard('손익','#1E3A5F',fmt(profit)+'원',profitRate+'% 수익률');
   h+=kpiCard('미수금','#EF4444',fmt(totalRecv)+'원',recv.length+'개 거래처');
   h+=kpiCard('생산 달성률','#7B61FF',rate+'%',doneWO+'/'+totalWO+'건 완료');
   h+=kpiCard('지연 작업','#EF4444',lateWO+'건',lateWO>0?'긴급 확인 필요':'양호');
@@ -941,7 +941,7 @@ function renderSalesMonthly(){
     h+='<tr><td><strong>'+m+'월</strong></td><td>'+fmt(p)+'</td><td style="font-weight:700">'+fmt(c)+'</td>';
     h+='<td style="color:'+color+'">'+arrow+' '+fmt(Math.abs(diff))+'</td>';
     h+='<td style="color:'+color+';font-weight:700">'+(diff>0?'+':'')+rate+'%</td>';
-    h+='<td style="width:150px"><div style="height:8px;background:#E5E7EB;border-radius:4px;position:relative;margin-bottom:2px"><div style="height:100%;width:'+barW+'%;background:#3B82F6;border-radius:4px"></div></div>';
+    h+='<td style="width:150px"><div style="height:8px;background:#E5E7EB;border-radius:4px;position:relative;margin-bottom:2px"><div style="height:100%;width:'+barW+'%;background:#1E3A5F;border-radius:4px"></div></div>';
     h+='<div style="height:6px;background:#E5E7EB;border-radius:3px"><div style="height:100%;width:'+barP+'%;background:#D1D5DB;border-radius:3px"></div></div></td></tr>';
   });
   var tDiff=totalCur-totalPrev,tRate=totalPrev>0?Math.round((tDiff/totalPrev)*100):0;
@@ -968,7 +968,7 @@ function renderSalesTrend(){
     var tb=Object.values(cliMap[b]).reduce(function(s,v){return s+v},0);
     return tb-ta;
   }).slice(0,5);
-  var colors=['#3B82F6','#10B981','#F59E0B','#EF4444','#7B61FF'];
+  var colors=['#1E3A5F','#10B981','#F59E0B','#EF4444','#7B61FF'];
   var maxVal=0;
   clients.forEach(function(c){Object.values(cliMap[c]).forEach(function(v){if(v>maxVal)maxVal=v})});
   var h='<div class="card-t" style="margin-bottom:12px">거래처별 매출 추이 (TOP 5)</div>';
@@ -1056,7 +1056,7 @@ function renderStockHistory(){
   // 입고 이력
   incomes.sort(function(a,b){return(b.date||'')>(a.date||'')?1:-1}).forEach(function(inc,i){
     var lot='LOT-'+((inc.date||'').replace(/-/g,''))+'-'+String(i+1).padStart(3,'0');
-    h+='<tr><td>'+(inc.date||'')+'</td><td><span style="font-family:monospace;background:#EFF6FF;padding:2px 6px;border-radius:4px;font-size:11px;color:#2563EB">'+lot+'</span></td>';
+    h+='<tr><td>'+(inc.date||'')+'</td><td><span style="font-family:monospace;background:#EFF6FF;padding:2px 6px;border-radius:4px;font-size:11px;color:#1E3A5F">'+lot+'</span></td>';
     h+='<td><strong>'+(inc.item||'')+'</strong></td><td><span class="bd bd-d">입고</span></td>';
     h+='<td>'+fmt(inc.qty||0)+'</td><td>'+(inc.vnm||'')+'</td><td>'+(inc.note||'')+'</td></tr>';
   });
@@ -1252,7 +1252,7 @@ function renderEmpCard(empId){
   h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">';
   h+='<div class="kpi-card" style="padding:10px"><div class="kpi-label">기본급</div><div class="kpi-value" style="font-size:14px">'+fmt(payInfo.base)+'</div></div>';
   h+='<div class="kpi-card" style="padding:10px"><div class="kpi-label">실수령</div><div class="kpi-value" style="font-size:14px;color:#10B981">'+fmt(payInfo.net)+'</div></div>';
-  h+='<div class="kpi-card" style="padding:10px"><div class="kpi-label">잔여연차</div><div class="kpi-value" style="font-size:14px;color:#3B82F6">'+(autoLeave-leaves.length)+'일</div></div>';
+  h+='<div class="kpi-card" style="padding:10px"><div class="kpi-label">잔여연차</div><div class="kpi-value" style="font-size:14px;color:#1E3A5F">'+(autoLeave-leaves.length)+'일</div></div>';
   h+='<div class="kpi-card" style="padding:10px"><div class="kpi-label">출근일</div><div class="kpi-value" style="font-size:14px">'+atts.length+'일</div></div></div>';
   // 경력/자격증
   h+='<div style="font-size:13px;margin-bottom:10px"><strong>경력사항</strong></div>';
@@ -1274,7 +1274,7 @@ function renderOrgChart(){
     if(!depts[d])depts[d]=[];
     depts[d].push(e);
   });
-  var deptColors={'생산':'#3B82F6','관리':'#10B981','영업':'#F59E0B','품질':'#7B61FF','기타':'#6B7280'};
+  var deptColors={'생산':'#1E3A5F','관리':'#10B981','영업':'#F59E0B','품질':'#7B61FF','기타':'#6B7280'};
   var h='<div style="text-align:center;margin-bottom:20px">';
   // CEO
   h+='<div style="display:inline-block;background:var(--pri);color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;margin-bottom:8px">이노패키지</div>';
@@ -1469,13 +1469,13 @@ function renderSchedBoard(){
       +'<div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#374151">이 주에 배치된 작업이 없습니다</div>'
       +'<div style="font-size:13px;margin-bottom:16px;color:#9CA3AF">이전/다음 버튼으로 다른 주를 확인하세요</div>'
       +'<div style="display:flex;gap:8px;justify-content:center">'
-      +'<button onclick="schedFindWork()" style="padding:8px 16px;border-radius:8px;border:none;background:#3B82F6;color:#fff;cursor:pointer;font-size:13px">작업 있는 주 찾기</button>'
+      +'<button onclick="schedFindWork()" style="padding:8px 16px;border-radius:8px;border:none;background:#1E3A5F;color:#fff;cursor:pointer;font-size:13px">작업 있는 주 찾기</button>'
       +'<button onclick="if(confirm(\'데이터를 초기화하시겠습니까?\'))resetSample()" style="padding:8px 16px;border-radius:8px;border:1px solid #D1D5DB;background:#fff;color:#6B7280;cursor:pointer;font-size:13px">데이터 초기화</button>'
       +'</div>'
       +'<div style="margin-top:12px;font-size:11px;color:#D1D5DB">WO: '+os.length+'건 | 주간: '+days[0].ds+' ~ '+endDs+'</div>'
       +'</div>';
   } else {
-    h+='<div style="text-align:center;padding:8px;font-size:12px;color:#9CA3AF">이번 주 작업 <b style="color:#3B82F6">'+_dbgTotal+'</b>건</div>';
+    h+='<div style="text-align:center;padding:8px;font-size:12px;color:#9CA3AF">이번 주 작업 <b style="color:#1E3A5F">'+_dbgTotal+'</b>건</div>';
   }
   $('schedBoard').innerHTML=h;
 }
@@ -1585,7 +1585,7 @@ function rPlanPriority(){
     sorted.forEach(function(o){
       var diff=dayDiff(o.sd);
       var urgLabel=diff<0?'D+'+Math.abs(diff)+' 지연':diff===0?'오늘 납기':diff===1?'내일 납기':o.sd?'D-'+diff:'납기미정';
-      var urgColor=diff<0?'#EF4444':diff<=1?'#F59E0B':diff<=3?'#3182F6':'#10B981';
+      var urgColor=diff<0?'#EF4444':diff<=1?'#F59E0B':diff<=3?'#1E3A5F':'#10B981';
       var urgBg=diff<0?'#FEF2F2':diff<=1?'#FFFBEB':diff<=3?'#EFF6FF':'#F0FDF4';
 
       // 공정 진행률
@@ -1624,7 +1624,7 @@ function rPlanPriority(){
       if(procs.length){
         cardsHtml+='<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
         procs.forEach(function(p){
-          var c=p.st==='완료'||p.st==='외주완료'?'#10B981':p.st==='진행중'||p.st==='외주진행중'?'#3182F6':p.st==='외주대기'?'#8B5CF6':'#94A3B8';
+          var c=p.st==='완료'||p.st==='외주완료'?'#10B981':p.st==='진행중'||p.st==='외주진행중'?'#1E3A5F':p.st==='외주대기'?'#8B5CF6':'#94A3B8';
           var bg=p.st==='완료'||p.st==='외주완료'?'#F0FDF4':p.st==='진행중'||p.st==='외주진행중'?'#EFF6FF':p.st==='외주대기'?'#F5F3FF':'#F8FAFC';
           cardsHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+c+';border:1px solid '+c+'40">'+p.nm+'</span>';
         });
@@ -1667,7 +1667,7 @@ function renderPlanProcLoad(wos){
     h+='<div style="display:flex;align-items:center;gap:6px">';
     h+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+'"></span>';
     h+='<span style="font-size:13px;font-weight:600">'+nm+'</span>';
-    if(d.inprog>0)h+='<span class="bd" style="background:#EFF6FF;color:#3182F6;border-color:#BFDBFE;font-size:10px">진행중 '+d.inprog+'건</span>';
+    if(d.inprog>0)h+='<span class="bd" style="background:#EFF6FF;color:#1E3A5F;border-color:#B0C9E0;font-size:10px">진행중 '+d.inprog+'건</span>';
     h+='</div>';
     h+='<span style="font-size:12px;font-weight:700;color:'+loadColor+'">대기 '+d.waiting+'건</span>';
     h+='</div>';

@@ -377,7 +377,7 @@ function rOEE(){
     h+='<div style="text-align:center;font-size:32px;font-weight:800;color:'+oeeColor+';margin:8px 0">'+oee.toFixed(1)+'%</div>';
     h+='<div style="font-size:11px;text-align:center;color:var(--txt3);margin-bottom:12px">OEE</div>';
     h+='<div style="display:flex;gap:8px;font-size:12px">';
-    h+='<div style="flex:1;text-align:center"><div style="font-weight:600">가동률</div><div style="font-size:16px;font-weight:700;color:#3B82F6">'+availability.toFixed(1)+'%</div></div>';
+    h+='<div style="flex:1;text-align:center"><div style="font-weight:600">가동률</div><div style="font-size:16px;font-weight:700;color:#1E3A5F">'+availability.toFixed(1)+'%</div></div>';
     h+='<div style="flex:1;text-align:center"><div style="font-weight:600">성능률</div><div style="font-size:16px;font-weight:700;color:#7B61FF">'+performance.toFixed(1)+'%</div></div>';
     h+='<div style="flex:1;text-align:center"><div style="font-weight:600">양품률</div><div style="font-size:16px;font-weight:700;color:#10B981">'+quality.toFixed(1)+'%</div></div>';
     h+='</div></div>';
@@ -841,13 +841,13 @@ function rKPI(){
   var monthSales=monthShips.reduce(function(s,sh){return s+(sh.amt||sh.totalAmt||0)},0);
   var h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">';
   var kpis=[
-    {label:'금월 생산량',value:fmt(totalProd),color:'#3B82F6'},
+    {label:'금월 생산량',value:fmt(totalProd),color:'#1E3A5F'},
     {label:'활성 작업지시',value:activeWOs,color:'#7B61FF'},
     {label:'금월 완료',value:doneWOs,color:'#10B981'},
     {label:'불량률',value:defectRate+'%',color:+defectRate>3?'#EF4444':'#10B981'},
     {label:'비가동시간',value:Math.round(dtMinutes/60*10)/10+'h',color:dtMinutes>480?'#EF4444':'#F59E0B'},
     {label:'납기 준수율',value:ontimeRate+'%',color:+ontimeRate>=90?'#10B981':'#EF4444'},
-    {label:'금월 출고건수',value:monthShips.length,color:'#3B82F6'},
+    {label:'금월 출고건수',value:monthShips.length,color:'#1E3A5F'},
     {label:'금월 매출',value:fmt(monthSales)+'원',color:'#10B981'}
   ];
   kpis.forEach(function(k){
@@ -1302,6 +1302,6 @@ function delCode(id){if(!confirm('삭제?'))return;DB.s('codes',DB.g('codes').fi
    ================================================================ */
 (function(){
   var st=document.createElement('style');
-  st.textContent='.prog-bar{width:100%;height:8px;background:var(--bg3,#E5E7EB);border-radius:4px;overflow:hidden}.prog-fill{height:100%;background:var(--pri,#4F6CFF);border-radius:4px;transition:width .3s}';
+  st.textContent='.prog-bar{width:100%;height:8px;background:var(--bg3,#E5E7EB);border-radius:4px;overflow:hidden}.prog-fill{height:100%;background:var(--pri,#1E3A5F);border-radius:4px;transition:width .3s}';
   document.head.appendChild(st);
 })();

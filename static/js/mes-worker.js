@@ -18,15 +18,15 @@ var canStart=works.length<maxIng;
 var waitH=isExt?'<div style="padding:20px;text-align:center;color:#9CA3AF">외주 공정 — 대기 없음</div>'
   :(waits.length?waits.map(({wo,p},idx)=>{
     var startBtn=canStart
-      ?`<button onclick="pqStart('${wo.id}',${wo.procs.findIndex(x=>x.nm===proc&&x.st==='대기')})" style="padding:8px 16px;border-radius:8px;border:none;background:#3B82F6;color:#fff;font-size:13px;font-weight:700;cursor:pointer">시작</button>`
+      ?`<button onclick="pqStart('${wo.id}',${wo.procs.findIndex(x=>x.nm===proc&&x.st==='대기')})" style="padding:8px 16px;border-radius:8px;border:none;background:#1E3A5F;color:#fff;font-size:13px;font-weight:700;cursor:pointer">시작</button>`
       :`<span style="padding:8px 10px;font-size:12px;color:#9CA3AF">진행중</span>`;
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)"><div style="font-size:13px;font-weight:800;color:#D1D5DB;min-width:20px">${idx+1}</div><div style="flex:1" onclick="showWkDet('${wo.id}')"><div style="font-size:14px;font-weight:700">${wo.pnm}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${wo.cnm} | 정매 ${getWQ(wo)}매 | 출고:${wo.sd}${wo.caut?' | <span style=color:#DC2626>주의</span>':''}</div></div><button onclick="showWkDet('${wo.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer">상세</button>${startBtn}</div>`;
   }).join(''):'<div style="padding:20px;text-align:center;color:#9CA3AF">대기 없음</div>');
 var workH=works.length?works.map(({wo,p})=>{
-  var machineTag=p.machine?`<span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#DBEAFE;color:#1D4ED8;font-weight:700;margin-right:4px">${p.machine}</span>`:'';
+  var machineTag=p.machine?`<span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#DCE8F5;color:#1D4ED8;font-weight:700;margin-right:4px">${p.machine}</span>`:'';
   var compLabel=isExt?'입고 확인':'완료';
   var compColor=isExt?'#F59E0B':'#10B981';
-  return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-left:4px solid #3B82F6;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)"><div style="flex:1" onclick="showWkDet('${wo.id}')"><div style="font-size:14px;font-weight:700">${machineTag}${wo.pnm}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${wo.cnm} | 시작: ${p.t1||'-'}</div></div><button onclick="showWkDet('${wo.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer">상세</button><button onclick="openComp('${wo.id}')" style="padding:8px 16px;border-radius:8px;border:none;background:${compColor};color:#fff;font-size:13px;font-weight:700;cursor:pointer">${compLabel}</button></div>`;
+  return `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-left:4px solid #1E3A5F;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)"><div style="flex:1" onclick="showWkDet('${wo.id}')"><div style="font-size:14px;font-weight:700">${machineTag}${wo.pnm}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${wo.cnm} | 시작: ${p.t1||'-'}</div></div><button onclick="showWkDet('${wo.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer">상세</button><button onclick="openComp('${wo.id}')" style="padding:8px 16px;border-radius:8px;border:none;background:${compColor};color:#fff;font-size:13px;font-weight:700;cursor:pointer">${compLabel}</button></div>`;
 }).join(''):'<div style="padding:20px;text-align:center;color:#9CA3AF">진행중 없음</div>';
 var doneH=dones.length?dones.map(({wo,p})=>`<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-left:4px solid #10B981;border-radius:10px;margin-bottom:6px;opacity:.7"><div style="flex:1"><div style="font-size:14px;font-weight:700">${wo.pnm}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${wo.cnm} | 수량:${p.qty}</div></div><div style="font-size:14px;font-weight:700;color:#10B981">완료</div></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9CA3AF">완료 없음</div>';
 // workerApp IDs
@@ -73,7 +73,7 @@ function rWorkerMonitor(proc){
     os.forEach(function(o){o.procs.forEach(function(p){
       if(p.nm===u.proc&&(p.st==='완료'||p.st==='외주완료'))dones.push({o:o,p:p});
     })});
-    var statusColor=works.length?'#3B82F6':waits.length?'#F59E0B':'#94A3B8';
+    var statusColor=works.length?'#1E3A5F':waits.length?'#F59E0B':'#94A3B8';
     var statusText=works.length?'작업중':waits.length?'대기중':'유휴';
     h+='<div style="background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">';
     h+='<div style="padding:14px 16px;background:linear-gradient(135deg,'+statusColor+'11,'+statusColor+'05);border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center">';
@@ -82,11 +82,11 @@ function rWorkerMonitor(proc){
     h+='</div>';
     h+='<div style="display:flex;gap:0;border-bottom:1px solid #F1F5F9">';
     h+='<div style="flex:1;text-align:center;padding:10px 0;border-right:1px solid #F1F5F9"><div style="font-size:20px;font-weight:800;color:#F59E0B">'+waits.length+'</div><div style="font-size:10px;color:#94A3B8">대기</div></div>';
-    h+='<div style="flex:1;text-align:center;padding:10px 0;border-right:1px solid #F1F5F9"><div style="font-size:20px;font-weight:800;color:#3B82F6">'+works.length+'</div><div style="font-size:10px;color:#94A3B8">진행</div></div>';
+    h+='<div style="flex:1;text-align:center;padding:10px 0;border-right:1px solid #F1F5F9"><div style="font-size:20px;font-weight:800;color:#1E3A5F">'+works.length+'</div><div style="font-size:10px;color:#94A3B8">진행</div></div>';
     h+='<div style="flex:1;text-align:center;padding:10px 0"><div style="font-size:20px;font-weight:800;color:#10B981">'+dones.length+'</div><div style="font-size:10px;color:#94A3B8">완료</div></div>';
     h+='</div>';
     h+='<div style="padding:10px 14px;max-height:200px;overflow-y:auto">';
-    if(works.length){works.forEach(function(o){h+='<div style="padding:6px 8px;margin-bottom:4px;background:#EFF6FF;border-radius:8px;font-size:12px;border-left:3px solid #3B82F6"><b>'+o.pnm+'</b> <span style="color:#64748B">'+o.cnm+' | 정매 '+getWQ(o)+'매</span></div>'})}
+    if(works.length){works.forEach(function(o){h+='<div style="padding:6px 8px;margin-bottom:4px;background:#EFF6FF;border-radius:8px;font-size:12px;border-left:3px solid #1E3A5F"><b>'+o.pnm+'</b> <span style="color:#64748B">'+o.cnm+' | 정매 '+getWQ(o)+'매</span></div>'})}
     if(waits.length){waits.forEach(function(o){h+='<div style="padding:6px 8px;margin-bottom:4px;background:#FFFBEB;border-radius:8px;font-size:12px;border-left:3px solid #F59E0B"><b>'+o.pnm+'</b> <span style="color:#64748B">'+o.cnm+' | 출고:'+o.sd+'</span></div>'})}
     if(!works.length&&!waits.length)h+='<div style="padding:8px;text-align:center;color:#CBD5E1;font-size:12px">현재 작업 없음</div>';
     h+='</div></div>';

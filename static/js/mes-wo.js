@@ -58,7 +58,7 @@ function pMove(i,dir){
   renP();
 }
 function renP(){
-$('selP').innerHTML=cProcs.length===0?'<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>':cProcs.map((p,i)=>`<span class="pt ${p.tp==='out'?'out':p.tp==='exc'?'exc':''}" style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-flex;flex-direction:column;gap:1px"><button onclick="pMove(${i},-1)" style="border:none;background:${i===0?'#E5E7EB':'#DBEAFE'};color:${i===0?'#D1D5DB':'#2563EB'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===0?'default':'pointer'}" ${i===0?'disabled':''}>▲</button><button onclick="pMove(${i},1)" style="border:none;background:${i===cProcs.length-1?'#E5E7EB':'#DBEAFE'};color:${i===cProcs.length-1?'#D1D5DB':'#2563EB'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===cProcs.length-1?'default':'pointer'}" ${i===cProcs.length-1?'disabled':''}>▼</button></span>${i+1}. ${p.nm}<span class="rm" onclick="rmP(${i})">&times;</span></span>`).join('');
+$('selP').innerHTML=cProcs.length===0?'<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>':cProcs.map((p,i)=>`<span class="pt ${p.tp==='out'?'out':p.tp==='exc'?'exc':''}" style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-flex;flex-direction:column;gap:1px"><button onclick="pMove(${i},-1)" style="border:none;background:${i===0?'#E5E7EB':'#DCE8F5'};color:${i===0?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===0?'default':'pointer'}" ${i===0?'disabled':''}>▲</button><button onclick="pMove(${i},1)" style="border:none;background:${i===cProcs.length-1?'#E5E7EB':'#DCE8F5'};color:${i===cProcs.length-1?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===cProcs.length-1?'default':'pointer'}" ${i===cProcs.length-1?'disabled':''}>▼</button></span>${i+1}. ${p.nm}<span class="rm" onclick="rmP(${i})">&times;</span></span>`).join('');
 $('pDet').innerHTML=cProcs.length===0?'':'<div style="font-size:13px;font-weight:700;margin-bottom:7px">공정별 상세</div>'+cProcs.map((p,i)=>{
 var bg=p.tp==='out'?'var(--out-l)':p.tp==='exc'?'var(--exc-l)':'var(--bg2)';
 var h='<div style="margin-bottom:7px;padding:10px;background:'+bg+';border-radius:10px"><div class="fr">';
@@ -297,7 +297,7 @@ function showQuickCliForm(){
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">팩스</label><input id="qcFx" placeholder="031-000-0000" style="width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;box-sizing:border-box"></div>';
   h+='</div>';
   h+='<div style="margin-bottom:8px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">주소</label><input id="qcAd" placeholder="주소" style="width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;box-sizing:border-box"></div>';
-  h+='<div style="margin-bottom:12px;display:flex;align-items:center;gap:14px"><label style="font-size:12px;font-weight:600">유형:</label><label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="qcSales" checked style="width:15px;height:15px;accent-color:#3B82F6"> 매출처</label><label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="qcPurch" style="width:15px;height:15px;accent-color:#EF4444"> 매입처</label></div>';
+  h+='<div style="margin-bottom:12px;display:flex;align-items:center;gap:14px"><label style="font-size:12px;font-weight:600">유형:</label><label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="qcSales" checked style="width:15px;height:15px;accent-color:#1E3A5F"> 매출처</label><label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="qcPurch" style="width:15px;height:15px;accent-color:#EF4444"> 매입처</label></div>';
   h+='<div style="display:flex;gap:8px;justify-content:flex-end">';
   h+='<button class="btn btn-o btn-sm" onclick="filterCliSearch()">취소</button>';
   h+='<button class="btn btn-p btn-sm" onclick="saveQuickCli()">저장 후 선택</button>';
@@ -412,7 +412,7 @@ function filterProdSearch(){
       var procStr=(p.procs||[]).map(function(x){return x.nm}).join(' → ');
       h+='<div onclick="pickProd(\''+p.id+'\')" style="padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
       h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-      h+='<div><div style="font-weight:600;font-size:14px">'+p.nm+(p.code?' <span style="font-size:11px;color:#3B82F6;font-weight:500">['+p.code+']</span>':'')+'</div>';
+      h+='<div><div style="font-weight:600;font-size:14px">'+p.nm+(p.code?' <span style="font-size:11px;color:#1E3A5F;font-weight:500">['+p.code+']</span>':'')+'</div>';
       h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px">'+p.cnm+(p.spec?' | '+p.spec:'')+(p.paper?' | '+p.paper:'')+'</div>';
       if(procStr)h+='<div style="font-size:11px;color:var(--txt3);margin-top:3px">공정: '+procStr+'</div>';
       h+='</div>';
@@ -488,7 +488,7 @@ if(!ps.length&&cliFiltered){
 if(!ps.length){l.innerHTML='<div style="padding:14px;text-align:center;color:var(--txt3);font-size:13px">등록된 품목이 없습니다</div>';l.classList.remove('hidden');return}
 let h='';
 if(cliFiltered){
-  h+='<div style="padding:8px 12px;font-size:12px;font-weight:600;background:#E8F3FF;color:#3182F6;border-bottom:1px solid var(--bdr);position:sticky;top:0">'+cn+' 품목 ('+ps.length+'건)</div>';
+  h+='<div style="padding:8px 12px;font-size:12px;font-weight:600;background:#EFF6FF;color:#1E3A5F;border-bottom:1px solid var(--bdr);position:sticky;top:0">'+cn+' 품목 ('+ps.length+'건)</div>';
   ps.forEach(p=>{h+=`<div class="ac-i" onclick="selProd('${p.id}')" style="font-weight:600"><span>${p.nm}</span><span style="float:right;font-size:11px;color:var(--txt2)">${p.spec||''}</span></div>`});
   // 다른 거래처 품목도 보기 버튼
   h+='<div style="padding:8px 12px;text-align:center;border-top:1px solid var(--bdr)"><button class="btn btn-sm btn-o" onclick="$(\'woCli\').value=\'\';acProd($(\'woProd\').value||\' \')" style="font-size:12px">전체 품목 보기</button></div>';
@@ -521,8 +521,8 @@ function showPastWOPanel(pnm,cnm){
   if(!box)return;
   var os=DB.g('wo').filter(function(o){return o.pnm===pnm||(cnm&&o.cnm===cnm&&o.pnm===pnm)}).sort(function(a,b){return b.cat>a.cat?1:-1});
   if(!os.length){box.innerHTML='';box.style.display='none';return}
-  var h='<div style="padding:12px;background:#E8F3FF;border-radius:12px;margin-top:10px">';
-  h+='<div style="font-size:13px;font-weight:600;color:#3182F6;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">이 품목의 이전 작업지시 ('+os.length+'건)<button class="btn btn-sm btn-o" onclick="$(\'woPastPanel\').style.display=\'none\'" style="font-size:11px;padding:3px 8px">닫기</button></div>';
+  var h='<div style="padding:12px;background:#EFF6FF;border-radius:12px;margin-top:10px">';
+  h+='<div style="font-size:13px;font-weight:600;color:#1E3A5F;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">이 품목의 이전 작업지시 ('+os.length+'건)<button class="btn btn-sm btn-o" onclick="$(\'woPastPanel\').style.display=\'none\'" style="font-size:11px;padding:3px 8px">닫기</button></div>';
   h+='<div style="max-height:180px;overflow-y:auto">';
   os.slice(0,10).forEach(function(o){
     var procStr=o.procs?o.procs.map(function(p){return p.nm}).join(' → '):'';
@@ -530,7 +530,7 @@ function showPastWOPanel(pnm,cnm){
     h+='<div><div style="font-weight:600">'+o.wn+' <span style="color:var(--txt3);font-weight:400">'+o.dt+'</span></div>';
     h+='<div style="font-size:11px;color:var(--txt2)">'+o.cnm+' | '+o.fq+'매 | '+(o.vendor||'자체')+'</div>';
     h+='<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+procStr+'</div></div>';
-    h+='<div style="font-size:12px;color:#3182F6;font-weight:600;white-space:nowrap;padding-left:10px">불러오기</div>';
+    h+='<div style="font-size:12px;color:#1E3A5F;font-weight:600;white-space:nowrap;padding-left:10px">불러오기</div>';
     h+='</div>';
   });
   h+='</div></div>';
@@ -874,7 +874,7 @@ td.val{font-size:11px}
 @media print{@page{size:A4;margin:0}body{padding:10mm 15mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none!important}}
 </style></head><body>
 <div class="no-print" style="position:fixed;top:10px;right:10px;display:flex;gap:8px;z-index:9999">
-<button onclick="window.print()" style="padding:10px 24px;font-size:14px;font-weight:700;background:#3B82F6;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)">인쇄</button>
+<button onclick="window.print()" style="padding:10px 24px;font-size:14px;font-weight:700;background:#1E3A5F;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)">인쇄</button>
 <button onclick="window.close()" style="padding:10px 16px;font-size:14px;font-weight:600;background:#E2E8F0;color:#475569;border:none;border-radius:8px;cursor:pointer">닫기</button>
 </div>
 ${h}</body></html>`);w.document.close()}
@@ -901,7 +901,7 @@ function openWoListPopup(filter){
     var rowBg=it.dday<0?'background:#FEF2F2;':it.dday===0?'background:#FFF7ED;':'';
     var procFlow='';
     var curColor=it.curSt==='진행중'?'#1D4ED8':'#B45309';
-    var curBg=it.curSt==='진행중'?'#DBEAFE':'#FEF3C7';
+    var curBg=it.curSt==='진행중'?'#DCE8F5':'#FEF3C7';
     var curLabel=it.curSt==='진행중'?'진행중':'대기';
     if(it.prevNm)procFlow='<span style="color:#059669;font-size:10px">'+it.prevNm+'</span> → ';
     procFlow+='<span style="padding:2px 8px;border-radius:4px;background:'+curBg+';color:'+curColor+';font-size:11px;font-weight:600">'+it.curNm+' '+curLabel+'</span>';
@@ -968,7 +968,7 @@ h+='<div style="font-size:13px;color:#64748B;margin-top:4px">'+o.cnm+' | '+o.wn+
 h+='</div>';
 h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
 h+='<div style="background:#F8FAFC;padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#64748B">완제품 수량</div><div style="font-size:20px;font-weight:800;color:#1E293B">'+o.fq+'</div></div>';
-h+='<div style="background:#F8FAFC;padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#64748B">공정 완료 수량</div><div style="font-size:20px;font-weight:800;color:#3B82F6">'+lastQty+'</div></div>';
+h+='<div style="background:#F8FAFC;padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:#64748B">공정 완료 수량</div><div style="font-size:20px;font-weight:800;color:#1E3A5F">'+lastQty+'</div></div>';
 h+='</div>';
 h+='<div class="fg" style="margin-bottom:8px"><label>최종 확인 수량</label><input type="number" id="compConfQty" value="'+lastQty+'" style="padding:10px;font-size:15px;font-weight:700;border:2px solid #10B981;border-radius:10px"></div>';
 h+='<div class="fg" style="margin-bottom:12px"><label>비고</label><input type="text" id="compConfNote" placeholder="특이사항 입력" style="padding:8px 10px;font-size:13px"></div>';
@@ -1094,7 +1094,7 @@ if(type==='day'){
   h+='<div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr><th>공정</th><th>작업자</th><th>제품</th><th>수량</th><th>세팅시간</th><th>작업시간</th><th>능률(매/h)</th></tr></thead><tbody>';
   if(effItems.length){
     effItems.forEach(function(it){
-      var effColor=it.eff>=1500?'#16A34A':it.eff>=800?'#3B82F6':'#DC2626';
+      var effColor=it.eff>=1500?'#16A34A':it.eff>=800?'#1E3A5F':'#DC2626';
       h+='<tr><td>'+it.proc+'</td><td>'+it.worker+'</td><td style="color:var(--pri);cursor:pointer;text-decoration:underline" onclick="showDet(&quot;'+it.woId+'&quot;)">'+it.pnm+'</td><td style="text-align:right">'+it.qty.toLocaleString()+'</td><td style="text-align:center;color:#8B5CF6">'+fmtTime(it.setupMin)+'</td><td style="text-align:center">'+fmtTime(it.workMin)+'</td><td style="text-align:right;font-weight:700;color:'+effColor+'">'+it.eff.toLocaleString()+'</td></tr>';
     });
     h+='<tr style="background:#F9FAFB;font-weight:700"><td colspan="3">일일 합계/평균</td><td style="text-align:right">'+tQ.toLocaleString()+'</td><td style="text-align:center;color:#8B5CF6">평균 '+fmtTime(avgSetup)+'</td><td style="text-align:center">평균 '+fmtTime(avgWork)+'</td><td style="text-align:right;color:var(--pri)">'+avgEff.toLocaleString()+'</td></tr>';
@@ -1117,8 +1117,8 @@ if(type==='day'){
       var w=e[0],v=e[1];
       var eff=v.workMin>0?Math.round(v.qty/(v.workMin/60)):0;
       var util=v.workMin+v.setupMin>0?Math.round(v.workMin/(v.workMin+v.setupMin)*100):0;
-      var utilColor=util>=90?'#16A34A':util>=70?'#3B82F6':'#DC2626';
-      var effColor=eff>=1500?'#16A34A':eff>=800?'#3B82F6':'#DC2626';
+      var utilColor=util>=90?'#16A34A':util>=70?'#1E3A5F':'#DC2626';
+      var effColor=eff>=1500?'#16A34A':eff>=800?'#1E3A5F':'#DC2626';
       var procStr=Object.keys(v.procs).join(', ');
       h+='<tr><td style="font-weight:700">'+w+'</td><td style="font-size:11px;color:#64748B">'+procStr+'</td><td style="text-align:center">'+v.cnt+'</td><td style="text-align:right">'+v.qty.toLocaleString()+'</td><td style="text-align:center">'+fmtTime(v.workMin)+'</td><td style="text-align:center;color:#8B5CF6">'+fmtTime(v.setupMin)+'</td><td style="text-align:center;font-weight:700;color:'+utilColor+'">'+util+'%</td><td style="text-align:right;font-weight:700;color:'+effColor+'">'+eff.toLocaleString()+'</td></tr>';
     });
@@ -1157,7 +1157,7 @@ else if(type==='week'){
       var avgS=v.c?v.setupMin/v.c:0;var avgW=v.c?v.workMin/v.c:0;
       var eff=v.workMin>0?Math.round(v.q/(v.workMin/60)):0;
       var util=v.workMin+v.setupMin>0?Math.round(v.workMin/(v.workMin+v.setupMin)*100):0;
-      var utilColor=util>=90?'#16A34A':util>=75?'#3B82F6':'#DC2626';
+      var utilColor=util>=90?'#16A34A':util>=75?'#1E3A5F':'#DC2626';
       wh+='<tr><td>'+k+'</td><td style="text-align:center">'+v.c+'</td><td style="text-align:right">'+v.q.toLocaleString()+'</td><td style="text-align:center;color:#8B5CF6">'+fmtTime(avgS)+'</td><td style="text-align:center">'+fmtTime(avgW)+'</td><td style="text-align:right;font-weight:700;color:var(--pri)">'+eff.toLocaleString()+'</td><td style="text-align:center;font-weight:700;color:'+utilColor+'">'+util+'%</td></tr>';
     });
   } else {wh+='<tr><td colspan="7" class="empty-cell">해당 주 데이터 없음</td></tr>';}
@@ -1177,8 +1177,8 @@ else if(type==='week'){
       var w=e[0],v=e[1];
       var eff=v.workMin>0?Math.round(v.qty/(v.workMin/60)):0;
       var util=v.workMin+v.setupMin>0?Math.round(v.workMin/(v.workMin+v.setupMin)*100):0;
-      var utilColor=util>=90?'#16A34A':util>=70?'#3B82F6':'#DC2626';
-      var effColor=eff>=1500?'#16A34A':eff>=800?'#3B82F6':'#DC2626';
+      var utilColor=util>=90?'#16A34A':util>=70?'#1E3A5F':'#DC2626';
+      var effColor=eff>=1500?'#16A34A':eff>=800?'#1E3A5F':'#DC2626';
       wh+='<tr><td style="font-weight:700">'+w+'</td><td style="font-size:11px;color:#64748B">'+Object.keys(v.procs).join(', ')+'</td><td style="text-align:center">'+v.cnt+'</td><td style="text-align:right">'+v.qty.toLocaleString()+'</td><td style="text-align:center">'+fmtTime(v.workMin)+'</td><td style="text-align:center;color:#8B5CF6">'+fmtTime(v.setupMin)+'</td><td style="text-align:center;font-weight:700;color:'+utilColor+'">'+util+'%</td><td style="text-align:right;font-weight:700;color:'+effColor+'">'+eff.toLocaleString()+'</td></tr>';
     });
     wh+='</tbody></table></div>';
@@ -1220,7 +1220,7 @@ else if(type==='month'){
       var avgS=v.c?v.setupMin/v.c:0;var avgW=v.c?v.workMin/v.c:0;
       var eff=v.workMin>0?Math.round(v.q/(v.workMin/60)):0;
       var util=v.workMin+v.setupMin>0?Math.round(v.workMin/(v.workMin+v.setupMin)*100):0;
-      var utilColor=util>=90?'#16A34A':util>=75?'#3B82F6':'#DC2626';
+      var utilColor=util>=90?'#16A34A':util>=75?'#1E3A5F':'#DC2626';
       // 전월 비교
       var prevEff=0;if(prevByP[k]&&prevByP[k].workMin>0)prevEff=Math.round(prevByP[k].q/(prevByP[k].workMin/60));
       var diff=prevEff>0?Math.round((eff-prevEff)/prevEff*100):0;
@@ -1251,8 +1251,8 @@ else if(type==='month'){
       var w=e[0],v=e[1];
       var eff=v.workMin>0?Math.round(v.qty/(v.workMin/60)):0;
       var util=v.workMin+v.setupMin>0?Math.round(v.workMin/(v.workMin+v.setupMin)*100):0;
-      var utilColor=util>=90?'#16A34A':util>=70?'#3B82F6':'#DC2626';
-      var effColor=eff>=1500?'#16A34A':eff>=800?'#3B82F6':'#DC2626';
+      var utilColor=util>=90?'#16A34A':util>=70?'#1E3A5F':'#DC2626';
+      var effColor=eff>=1500?'#16A34A':eff>=800?'#1E3A5F':'#DC2626';
       var prevEff=prevByWM[w]&&prevByWM[w].workMin>0?Math.round(prevByWM[w].qty/(prevByWM[w].workMin/60)):0;
       var diff=prevEff>0?Math.round((eff-prevEff)/prevEff*100):0;
       var diffTag=prevEff===0?'<span style="color:#9CA3AF">-</span>':diff>0?'<span style="color:#16A34A;font-weight:700">↑'+diff+'%</span>':diff<0?'<span style="color:#DC2626;font-weight:700">↓'+Math.abs(diff)+'%</span>':'<span style="color:#9CA3AF">→0%</span>';

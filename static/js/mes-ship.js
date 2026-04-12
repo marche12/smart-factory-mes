@@ -239,7 +239,7 @@ function rCal(){
     if((o.status==='완료'||o.status==='출고완료')&&o.cat&&o.cat.slice(0,7)===ym)mDone++;
     if(o.sd&&o.sd<todayStr&&o.status!=='완료'&&o.status!=='출고완료'&&o.sd.slice(0,7)===ym)mLate++;
   });
-  $('calStats').innerHTML='<div class="cal-stat"><div class="cal-stat-v" style="color:#3182F6">'+mStart+'</div><div class="cal-stat-l">작업등록</div></div>'
+  $('calStats').innerHTML='<div class="cal-stat"><div class="cal-stat-v" style="color:#1E3A5F">'+mStart+'</div><div class="cal-stat-l">작업등록</div></div>'
     +'<div class="cal-stat"><div class="cal-stat-v" style="color:#10B981">'+mShip+'</div><div class="cal-stat-l">출고예정</div></div>'
     +'<div class="cal-stat"><div class="cal-stat-v" style="color:#059669">'+mDone+'</div><div class="cal-stat-l">완료</div></div>'
     +'<div class="cal-stat"><div class="cal-stat-v" style="color:#EF4444">'+mLate+'</div><div class="cal-stat-l">지연</div></div>';
@@ -341,7 +341,7 @@ function rPerf(){
     +(results.length?'<div style="font-size:12px;color:var(--txt2);margin-bottom:12px">🏆 최고 생산량: <strong>'+topW+'</strong> ('+fmt(results[0][1].qty)+'매)</div>':'');
 
   // 작업자 카드
-  var colors=['#3182F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16'];
+  var colors=['#1E3A5F','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16'];
   var h='';
   results.forEach(function(entry,i){
     var nm=entry[0];var d=entry[1];
@@ -362,7 +362,7 @@ function rPerf(){
       +'</div>'
       +'<div class="perf-stats">'
       +'<div class="perf-stat"><div class="perf-stat-v" style="color:#059669">'+d.cnt+'</div><div class="perf-stat-l">완료건수</div></div>'
-      +'<div class="perf-stat"><div class="perf-stat-v" style="color:#3182F6">'+fmt(d.qty)+'</div><div class="perf-stat-l">생산량</div></div>'
+      +'<div class="perf-stat"><div class="perf-stat-v" style="color:#1E3A5F">'+fmt(d.qty)+'</div><div class="perf-stat-l">생산량</div></div>'
       +'<div class="perf-stat"><div class="perf-stat-v" style="color:#F59E0B">'+fmt(eff)+'</div><div class="perf-stat-l">매/시간</div></div>'
       +'<div class="perf-stat"><div class="perf-stat-v" style="color:'+(+defRate>3?'#EF4444':'#10B981')+'">'+defRate+'%</div><div class="perf-stat-l">불량률</div></div>'
       +'</div>'
@@ -651,11 +651,11 @@ function renderProcQueue(){
   var h='';
   // 진행중
   if(ing.length){
-    h+='<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2563EB;padding:6px 0;border-bottom:2px solid #3B82F6">진행중 ('+ing.length+')</div>';
+    h+='<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#1E3A5F;padding:6px 0;border-bottom:2px solid #1E3A5F">진행중 ('+ing.length+')</div>';
     ing.forEach(function(it){
-      var machineTag=it.machine?'<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:#DBEAFE;color:#1D4ED8;font-weight:700">'+it.machine+'</span> ':'';
+      var machineTag=it.machine?'<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:#DCE8F5;color:#1D4ED8;font-weight:700">'+it.machine+'</span> ':'';
       var btnLabel=isExt?'입고 확인':'완료';
-      var rowBg=isExt?'#FDF4FF':'#EFF6FF';var rowBdr=isExt?'#9333EA':'#3B82F6';
+      var rowBg=isExt?'#FDF4FF':'#EFF6FF';var rowBdr=isExt?'#9333EA':'#1E3A5F';
       h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin:4px 0;border-radius:8px;background:'+rowBg+';border-left:3px solid '+rowBdr+'">';
       h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+machineTag+it.pnm+'</div><div style="font-size:11px;color:#6B7280">'+it.cnm+' | '+fmt(it.qty)+'매'+(it.t1?' | 시작:'+it.t1:'')+'</div></div>';
       if(isExt&&(isWorker||isAdmin))h+='<button class="btn btn-s btn-sm" onclick="pqConfirmIn(\''+it.wid+'\','+it.pi+')" style="font-size:11px;background:#9333EA;color:#fff;border:none">입고 확인</button>';
@@ -680,8 +680,8 @@ function renderProcQueue(){
       // 관리자만 순서 화살표
       if(isAdmin){
         h+='<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">';
-        h+='<button onclick="wqMove('+idx+',-1)" style="border:none;background:'+(isFirst?'#E5E7EB':'#DBEAFE')+';color:'+(isFirst?'#D1D5DB':'#2563EB')+';font-size:10px;line-height:1;padding:3px 4px;border-radius:3px;cursor:'+(isFirst?'default':'pointer')+'" '+(isFirst?'disabled':'')+'>▲</button>';
-        h+='<button onclick="wqMove('+idx+',1)" style="border:none;background:'+(isLast?'#E5E7EB':'#DBEAFE')+';color:'+(isLast?'#D1D5DB':'#2563EB')+';font-size:10px;line-height:1;padding:3px 4px;border-radius:3px;cursor:'+(isLast?'default':'pointer')+'" '+(isLast?'disabled':'')+'>▼</button>';
+        h+='<button onclick="wqMove('+idx+',-1)" style="border:none;background:'+(isFirst?'#E5E7EB':'#DCE8F5')+';color:'+(isFirst?'#D1D5DB':'#1E3A5F')+';font-size:10px;line-height:1;padding:3px 4px;border-radius:3px;cursor:'+(isFirst?'default':'pointer')+'" '+(isFirst?'disabled':'')+'>▲</button>';
+        h+='<button onclick="wqMove('+idx+',1)" style="border:none;background:'+(isLast?'#E5E7EB':'#DCE8F5')+';color:'+(isLast?'#D1D5DB':'#1E3A5F')+';font-size:10px;line-height:1;padding:3px 4px;border-radius:3px;cursor:'+(isLast?'default':'pointer')+'" '+(isLast?'disabled':'')+'>▼</button>';
         h+='</div>';
       }
       h+='<div style="font-size:14px;font-weight:800;color:#D1D5DB;min-width:22px;text-align:center">'+(idx+1)+'</div>';
@@ -919,7 +919,7 @@ function _makeOrderRow(o,woDateMap,now){
   // 진행흐름
   var woDt=o.woId&&woDateMap[o.woId]?woDateMap[o.woId]:'';
   var flow='<div style="display:flex;align-items:center;gap:3px;font-size:11px">';
-  flow+='<span style="background:#DBEAFE;color:#1D4ED8;padding:1px 6px;border-radius:3px">수주 '+(o.dt?o.dt.slice(5):'')+'</span>';
+  flow+='<span style="background:#DCE8F5;color:#1D4ED8;padding:1px 6px;border-radius:3px">수주 '+(o.dt?o.dt.slice(5):'')+'</span>';
   if(woDt){
     flow+='<span style="color:#CBD5E1">→</span>';
     flow+='<span style="background:#EDE9FE;color:#6D28D9;padding:1px 6px;border-radius:3px">WO '+woDt.slice(5)+'</span>';
@@ -978,10 +978,10 @@ function rOrderList(){
   filtered.forEach(function(o){pAmt+=_orderAmt(o)});
   var ps=$('orderPeriodSum');
   if(_orderPeriod!=='all'&&range.from){
-    ps.innerHTML='<div style="display:flex;gap:12px;padding:8px 14px;background:#EFF6FF;border-radius:8px;border-left:4px solid #3B82F6;font-size:13px">'+
+    ps.innerHTML='<div style="display:flex;gap:12px;padding:8px 14px;background:#EFF6FF;border-radius:8px;border-left:4px solid #1E3A5F;font-size:13px">'+
       '<span style="font-weight:700;color:#1E293B">조회기간 합계</span>'+
       '<span>건수: <b>'+pCnt+'</b>건</span>'+
-      '<span>금액: <b style="color:#2563EB">'+fmt(pAmt)+'원</b></span></div>';
+      '<span>금액: <b style="color:#1E3A5F">'+fmt(pAmt)+'원</b></span></div>';
   }else{ps.innerHTML=''}
 
   // WO 날짜 맵 (woId → dt)
@@ -1027,7 +1027,7 @@ function rOrderList(){
     html+='<tr style="background:'+headerBg+';border-top:2px solid #E2E8F0">'+
       '<td colspan="8" style="padding:7px 12px;font-size:12px;font-weight:700;color:'+headerColor+'">'+
         d+' ('+dayName+')'+
-        (isToday?' <span style="background:#3B82F6;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':'')+
+        (isToday?' <span style="background:#1E3A5F;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':'')+
         ' <span style="font-weight:400;color:#94A3B8;margin-left:8px">'+
           (dayOrders.length?dayOrders.length+'건 · '+fmt(dayAmt)+'원':'내역 없음')+
         '</span>'+
@@ -1146,14 +1146,14 @@ function _askWOAfterOrder(o){
   el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:9999';
   el.innerHTML=
     '<div style="background:#fff;border-radius:16px;width:380px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden">'+
-      '<div style="background:#3B82F6;padding:16px 20px">'+
+      '<div style="background:#1E3A5F;padding:16px 20px">'+
         '<div style="font-size:15px;font-weight:700;color:#fff">수주 등록 완료</div>'+
-        '<div style="font-size:12px;color:#BFDBFE;margin-top:2px">'+o.no+' · '+(o.cli||'')+'</div>'+
+        '<div style="font-size:12px;color:#B0C9E0;margin-top:2px">'+o.no+' · '+(o.cli||'')+'</div>'+
       '</div>'+
       '<div style="padding:20px">'+
         '<div style="font-size:14px;color:#1E293B;margin-bottom:16px">작업지시서를 바로 작성하시겠습니까?</div>'+
         '<div style="display:flex;gap:8px">'+
-          '<button onclick="_doWONow(\''+o.id+'\')" style="flex:1;padding:10px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">지금 작성</button>'+
+          '<button onclick="_doWONow(\''+o.id+'\')" style="flex:1;padding:10px;background:#1E3A5F;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">지금 작성</button>'+
           '<button onclick="_skipWO()" style="flex:1;padding:10px;background:#F1F5F9;color:#64748B;border:none;border-radius:8px;font-size:14px;cursor:pointer">나중에</button>'+
         '</div>'+
       '</div>'+
@@ -1230,7 +1230,7 @@ function orderToWO(id){
     var listH=items.map(function(it,i){
       return '<div onclick="selectOrdItem(\''+id+'\','+i+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;transition:background .1s" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'\'">'
         +'<div><div style="font-weight:600;font-size:13px">'+(it.nm||'')+'</div><div style="font-size:11px;color:#64748B">'+(it.spec||'')+(it.qty?' | '+fmt(it.qty)+'매':'')+'</div></div>'
-        +'<span style="font-size:12px;color:#3B82F6;font-weight:600">선택 ›</span></div>';
+        +'<span style="font-size:12px;color:#1E3A5F;font-weight:600">선택 ›</span></div>';
     }).join('');
     el.innerHTML='<div style="background:#fff;border-radius:14px;width:420px;box-shadow:0 25px 50px rgba(0,0,0,.15)">'
       +'<div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">작업지시서 생성할 품목 선택</span><button onclick="document.getElementById(\'ordToWoMo\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>'
@@ -1323,14 +1323,14 @@ function rOrderMonthly(selMonth){
     var x=leftPad+i*(barW+gap);
     var y=topPad+innerH-barH;
     var isSel=m===_orderSelMonth;
-    var fill=isSel?'#3B82F6':d.cnt>0?'#93C5FD':'#E2E8F0';
+    var fill=isSel?'#1E3A5F':d.cnt>0?'#7EB8E0':'#E2E8F0';
     var stroke=isSel?'#1D4ED8':'none';
     var label=m.slice(5)+'월';
     return '<g onclick="openOrderMonthPopup(\''+m+'\')" style="cursor:pointer">'+
       '<rect x="'+x+'" y="'+(topPad+innerH-Math.max(barH,2))+'" width="'+barW+'" height="'+Math.max(barH,2)+'" rx="4" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/>'+
       (d.cnt>0?'<text x="'+(x+barW/2)+'" y="'+(topPad+innerH-barH-5)+'" text-anchor="middle" font-size="10" fill="'+(isSel?'#1D4ED8':'#64748B')+'">'+d.cnt+'</text>':'')+
       '<text x="'+(x+barW/2)+'" y="'+(topPad+innerH+15)+'" text-anchor="middle" font-size="11" fill="'+(isSel?'#1D4ED8':'#374151')+'" font-weight="'+(isSel?'700':'400')+'">'+label+'</text>'+
-      (d.amt>0?'<text x="'+(x+barW/2)+'" y="'+(topPad+innerH+26)+'" text-anchor="middle" font-size="9" fill="'+(isSel?'#3B82F6':'#94A3B8')+'">'+Math.round(d.amt/10000)+'만</text>':'')+
+      (d.amt>0?'<text x="'+(x+barW/2)+'" y="'+(topPad+innerH+26)+'" text-anchor="middle" font-size="9" fill="'+(isSel?'#1E3A5F':'#94A3B8')+'">'+Math.round(d.amt/10000)+'만</text>':'')+
       '</g>';
   }).join('');
 
@@ -1346,12 +1346,12 @@ function rOrderMonthly(selMonth){
     yLines+svgBars+'</svg></div>';
 
   // ── 월별 카드 그리드 ──
-  var stColors={수주:'#3B82F6',수주확정:'#8B5CF6',생산중:'#F59E0B',출고완료:'#10B981',취소:'#94A3B8'};
+  var stColors={수주:'#1E3A5F',수주확정:'#8B5CF6',생산중:'#F59E0B',출고완료:'#10B981',취소:'#94A3B8'};
   var cards=months.map(function(m){
     var d=mData[m];
     var isSel=m===_orderSelMonth;
     var yr=m.slice(0,4),mo=m.slice(5);
-    var border=isSel?'2px solid #3B82F6':'1px solid #E2E8F0';
+    var border=isSel?'2px solid #1E3A5F':'1px solid #E2E8F0';
     var bg=isSel?'#EFF6FF':'#fff';
     // 상태 미니바
     var total=d.cnt||1;
@@ -1362,9 +1362,9 @@ function rOrderMonthly(selMonth){
     return '<div onclick="openOrderMonthPopup(\''+m+'\')" style="border:'+border+';background:'+bg+';border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
         '<span style="font-size:13px;font-weight:700;color:'+(isSel?'#1D4ED8':'#1E293B')+'">'+yr+'년 '+mo+'월</span>'+
-        '<span style="font-size:12px;font-weight:600;color:'+(isSel?'#3B82F6':'#64748B')+'">'+d.cnt+'건</span>'+
+        '<span style="font-size:12px;font-weight:600;color:'+(isSel?'#1E3A5F':'#64748B')+'">'+d.cnt+'건</span>'+
       '</div>'+
-      '<div style="font-size:14px;font-weight:700;color:'+(isSel?'#2563EB':'#334155')+';margin-bottom:4px">'+fmt(d.amt)+'원</div>'+
+      '<div style="font-size:14px;font-weight:700;color:'+(isSel?'#1E3A5F':'#334155')+';margin-bottom:4px">'+fmt(d.amt)+'원</div>'+
       '<div style="font-size:11px;color:#94A3B8;margin-bottom:5px">수량: '+fmt(d.qty)+'</div>'+
       '<div style="display:flex;height:5px;border-radius:3px;overflow:hidden;background:#F1F5F9">'+stBar+'</div>'+
     '</div>';
@@ -1376,8 +1376,8 @@ function rOrderMonthly(selMonth){
       '<div style="font-size:14px;font-weight:700;margin-bottom:12px;color:#1E293B">월별 수주 추이 (최근 12개월)</div>'+
       chartSvg+
       '<div style="display:flex;gap:8px;margin-top:8px;font-size:11px;color:#94A3B8">'+
-        '<span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:10px;background:#3B82F6;border-radius:2px"></span> 선택된 월</span>'+
-        '<span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:10px;background:#93C5FD;border-radius:2px"></span> 수주 있음</span>'+
+        '<span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:10px;background:#1E3A5F;border-radius:2px"></span> 선택된 월</span>'+
+        '<span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:10px;background:#7EB8E0;border-radius:2px"></span> 수주 있음</span>'+
         '<span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:10px;background:#E2E8F0;border-radius:2px"></span> 수주 없음</span>'+
         '<span style="margin-left:8px">막대/카드 클릭 시 해당 월 수주 목록 보기</span>'+
       '</div>'+
@@ -1411,14 +1411,14 @@ function openOrderMonthPopup(month){
       o.items.forEach(function(it){amt+=(Number(it.qty)||0)*(Number(it.price)||0);qty+=Number(it.qty)||0});
       prodNm=o.items[0].nm+(o.items.length>1?' 외 '+(o.items.length-1)+'건':'');
     }else{amt=(Number(o.qty)||0)*(Number(o.price)||0);qty=Number(o.qty)||0;prodNm=o.prodNm||''}
-    var woLink=o.woNo?'<a href="#" onclick="cMo(\'ordMonthPopMo\');goMod(\'mes-wo\');return false" style="color:#3B82F6;font-weight:600">'+o.woNo+'</a>':'-';
-    return '<tr><td style="font-weight:600">'+(o.no||'-')+'</td><td>'+(o.cli||'-')+'</td><td>'+prodNm+'</td><td style="text-align:right">'+fmt(qty)+'</td><td style="text-align:right;font-weight:600;color:#2563EB">'+fmt(amt)+'원</td><td>'+(o.shipDt||'-')+'</td><td style="text-align:center">'+woLink+'</td><td>'+badge(o.status||'수주')+'</td></tr>';
+    var woLink=o.woNo?'<a href="#" onclick="cMo(\'ordMonthPopMo\');goMod(\'mes-wo\');return false" style="color:#1E3A5F;font-weight:600">'+o.woNo+'</a>':'-';
+    return '<tr><td style="font-weight:600">'+(o.no||'-')+'</td><td>'+(o.cli||'-')+'</td><td>'+prodNm+'</td><td style="text-align:right">'+fmt(qty)+'</td><td style="text-align:right;font-weight:600;color:#1E3A5F">'+fmt(amt)+'원</td><td>'+(o.shipDt||'-')+'</td><td style="text-align:center">'+woLink+'</td><td>'+badge(o.status||'수주')+'</td></tr>';
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#94A3B8">수주 내역이 없습니다</td></tr>';
   var h='<div class="cmb" style="width:780px;max-height:85vh;display:flex;flex-direction:column">';
   h+='<div class="mh" style="flex-shrink:0"><h3>'+yr+'년 '+mo+'월 수주 목록</h3><button class="mc" onclick="cMo(\'ordMonthPopMo\')">&times;</button></div>';
   h+='<div style="padding:8px 16px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;display:flex;gap:16px">';
   h+='<span style="font-size:13px;color:#64748B">총 <b style="color:#1E293B">'+selOrders.length+'건</b></span>';
-  h+='<span style="font-size:13px;color:#64748B">총액 <b style="color:#2563EB">'+fmt(totalAmt)+'원</b></span></div>';
+  h+='<span style="font-size:13px;color:#64748B">총액 <b style="color:#1E3A5F">'+fmt(totalAmt)+'원</b></span></div>';
   h+='<div style="padding:12px;overflow-y:auto;flex:1"><div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr><th>수주번호</th><th>거래처</th><th>제품</th><th>수량</th><th>금액</th><th>납기일</th><th>작업지시</th><th>상태</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';
   var old=document.getElementById('ordMonthPopMo');if(old)old.remove();
   var el=document.createElement('div');el.id='ordMonthPopMo';el.className='mo-bg';el.innerHTML=h;

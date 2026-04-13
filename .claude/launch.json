@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "mes-server",
-      "runtimeExecutable": "/c/Users/hushk/AppData/Local/Programs/Python/Python313/python.exe",
+      "runtimeExecutable": "C:/Users/승훈/AppData/Local/Programs/Python/Python312/python.exe",
       "runtimeArgs": ["server.py"],
       "port": 8080
     }

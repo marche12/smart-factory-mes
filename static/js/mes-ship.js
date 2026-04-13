@@ -735,8 +735,8 @@ function wqMove(idx,dir){
 // 대기→시작
 var _pqStartWid=null,_pqStartPi=null;
 function pqStart(wid,pi){
-  // 작업자만 시작 가능
-  if(!CU||CU.role!=='worker'){toast('작업자만 시작할 수 있습니다','err');return;}
+  // 작업자 또는 관리자 시작 가능
+  if(!CU||(CU.role!=='worker'&&CU.role!=='admin')){toast('권한이 없습니다','err');return;}
   var os=DB.g('wo');var o=os.find(function(x){return x.id===wid});
   if(!o)return;
   var p=o.procs[pi];
@@ -744,18 +744,20 @@ function pqStart(wid,pi){
   for(var j=0;j<pi;j++){
     var prev=o.procs[j];
     if(prev.tp==='out'||prev.tp==='exc')continue;
+    // 기계코팅은 인쇄 완료 시 자동 완료 → 스킵
+    if(prev.nm==='코팅'&&prev.mt==='기계코팅'){
+      var printP=o.procs.find(function(x){return x.nm==='인쇄'});
+      if(printP&&(printP.st==='완료'||printP.st==='외주완료')){prev.st='완료';prev.qty=printP.qty||0;prev.t2=prev.t2||nw();DB.s('wo',os);continue}
+    }
     if(prev.st!=='완료'&&prev.st!=='외주완료'&&prev.st!=='스킵'){toast('이전 공정('+prev.nm+') 미완료','err');return}
   }
-  // 톰슨: 기계 선택 모달
+  // 톰슨: 기계 자동 배정
   if(p.nm==='톰슨'){
     var t1Busy=os.some(function(x){return x.procs&&x.procs.some(function(q){return q.nm==='톰슨'&&q.st==='진행중'&&q.machine==='톰슨1'})});
     var t2Busy=os.some(function(x){return x.procs&&x.procs.some(function(q){return q.nm==='톰슨'&&q.st==='진행중'&&q.machine==='톰슨2'})});
     if(t1Busy&&t2Busy){toast('톰슨1, 톰슨2 모두 진행 중입니다','err');return;}
-    _pqStartWid=wid;_pqStartPi=pi;
-    var b1=$('tomsonM1Btn'),b2=$('tomsonM2Btn');
-    if(b1){b1.disabled=t1Busy;b1.style.opacity=t1Busy?'.4':'1';}
-    if(b2){b2.disabled=t2Busy;b2.style.opacity=t2Busy?'.4':'1';}
-    $('tomsonSelectMo').classList.remove('hidden');
+    var machine=!t1Busy?'톰슨1':'톰슨2';
+    _doStart(wid,pi,machine);
     return;
   }
   // 일반 공정: 이미 진행중 1개면 차단
@@ -776,6 +778,7 @@ function _doStart(wid,pi,machine){
   if(typeof rPlan==='function')rPlan();
   if(typeof rWQ==='function')rWQ();
   if(typeof rDash==='function')rDash();
+  if(typeof rWorkerMonitor==='function')rWorkerMonitor();
 }
 function selectTomsonMachine(machine){
   $('tomsonSelectMo').classList.add('hidden');
@@ -790,7 +793,8 @@ function pqConfirmIn(wid,pi){
   compItem={woId:wid,pIdx:pi,newSt:'외주완료'};
   $('compNm').textContent=o.pnm;
   $('compInf').textContent=o.cnm+' | 인쇄 입고확인 | '+(p.vd||'외주');
-  $('compQty').value=getWQ(o)||'';
+  var _isLast2=(pi===o.procs.length-1)||o.procs.slice(pi+1).every(function(x){return x.st==='완료'||x.st==='외주완료'||x.st==='스킵'});
+  $('compQty').value=_isLast2?(o.fq||getWQ(o)):(getWQ(o)||'');
   var compBtn=$('compSubmitBtn');if(compBtn)compBtn.textContent='입고 확인';
   $('compMo').classList.remove('hidden');
   $('compQty').focus();
@@ -801,8 +805,8 @@ function pqComplete(wid,pi){
   if(!o)return;
   var p=o.procs[pi];
   var isExt=typeof isExternalProc==='function'&&isExternalProc(p.nm);
-  // 작업자만 완료, 관리자는 외주입고만 가능
-  if(!CU||(CU.role!=='worker'&&!(isAdm&&isExt))){toast('작업자만 완료 처리할 수 있습니다','err');return;}
+  // 작업자 또는 관리자 완료 가능
+  if(!CU||(CU.role!=='worker'&&CU.role!=='admin')){toast('권한이 없습니다','err');return;}
   var os=DB.g('wo');var o=os.find(function(x){return x.id===wid});
   if(!o)return;
   var p=o.procs[pi];
@@ -811,7 +815,8 @@ function pqComplete(wid,pi){
   compItem={woId:wid,pIdx:pi,newSt:'완료'};
   $('compNm').textContent=o.pnm;
   $('compInf').textContent=o.cnm+' | '+p.nm+(isExt?' (외주 입고)':'');
-  $('compQty').value=getWQ(o)||'';
+  var _isLast=(pi===o.procs.length-1)||o.procs.slice(pi+1).every(function(x){return x.st==='완료'||x.st==='외주완료'||x.st==='스킵'});
+  $('compQty').value=_isLast?(o.fq||getWQ(o)):(getWQ(o)||'');
   // 외주공정은 버튼 텍스트 '입고 확인'
   var compBtn=$('compSubmitBtn');
   if(compBtn)compBtn.textContent=isExt?'입고 확인':'완료';

@@ -42,16 +42,16 @@
 <div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div id="sbDate" style="padding:0 22px 14px;font-size:12px;color:#64748B;font-weight:600;letter-spacing:.3px;border-bottom:1px solid rgba(255,255,255,.08)"></div><div style="flex:1;overflow-y:auto">
 <div class="sb-group open" role="button" aria-expanded="true">영업관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-order">수주관리</button>
 <button class="sb-item" data-mod="qc-quote">견적관리</button>
-<button class="sb-item" data-mod="mes-ship">출고관리<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="mes-wo">작업지시서</button>
+<button class="sb-item" data-mod="mes-order">수주관리</button>
 <button class="sb-item" data-mod="qc-claim">클레임</button>
 </div>
 <div class="sb-group open" role="button" aria-expanded="true">생산관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-dash">생산현황</button>
 <button class="sb-item" data-mod="mes-plan">생산계획</button>
-<button class="sb-item" data-mod="mes-wo">작업지시서</button>
+<button class="sb-item" data-mod="mes-dash">생산현황</button>
+<button class="sb-item" data-mod="mes-ship">출고관리<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 <button class="sb-item" data-mod="mes-proc-log">공정실적</button>
 <button class="sb-item" data-mod="mes-outsource">외주관리</button>
 <button class="sb-item" data-mod="mes-monitor">현장모니터</button>
@@ -1110,7 +1110,7 @@
 <div style="display:flex;gap:5px;align-items:center">
 <button class="btn btn-o btn-sm" onclick="resetWO()">초기화</button>
 <button class="btn btn-p btn-sm" onclick="saveWO()">저장</button>
-<button class="btn btn-s btn-sm" onclick="saveWO()&&printWO(lastSavedId)">저장+출력</button>
+<button class="btn btn-s btn-sm" onclick="if(saveWO())setTimeout(function(){printWO(lastSavedId)},300)">저장+출력</button>
 <button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt2);line-height:1;padding:0 4px" onclick="cMo('woFormOv')">×</button>
 </div>
 </div>
@@ -1144,15 +1144,15 @@
 <input type="hidden" id="woPaper"><input type="hidden" id="woSpec"><input type="hidden" id="woQM"><input type="hidden" id="woQE">
 <input type="hidden" id="woFabric"><input type="hidden" id="woFabricSpec"><input type="hidden" id="woFabricQty"><input type="hidden" id="woFabricExtra">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>목형번호</label><input id="woMoldDisplay" placeholder="톰슨 공정에서 검색" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
+<div class="fg"><label>목형번호</label><div style="display:flex;gap:4px"><input id="woMoldDisplay" placeholder="목형 선택" readonly style="cursor:pointer;padding:6px 8px;font-size:12px;flex:1" onclick="openMoldSearch()"><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearch()" style="padding:6px 8px;font-size:12px;white-space:nowrap">검색</button></div></div>
 <div class="fg"><label>인쇄사양</label><input id="woPrint" placeholder="4도/전면" class="u-input-md"></div>
-<div class="fg"><label>손잡이</label><input id="woHand" class="u-input-md"></div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label class="req">완제품수량</label><input type="number" id="woFQ" min="0" class="u-input-md" oninput="_updateWoAmt()"></div>
-<div class="fg"><label class="req">출고일</label><input type="date" id="woShip" class="u-input-md"></div>
-<div class="fg"><label>단가 (원)</label><input type="number" id="woPrice" min="0" placeholder="0" class="u-input-md" oninput="_updateWoAmt()"></div>
-<div class="fg" id="woAmtBox" style="display:flex;flex-direction:column;justify-content:flex-end"><label style="color:var(--txt2)">수주금액</label><div id="woAmtDisplay" style="padding:6px 8px;font-size:12px;background:#F3F4F6;border-radius:8px;border:1px solid var(--bdr);color:#1D4ED8;font-weight:600">-</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;margin-bottom:6px">
+<div class="fg" style="margin:0"><label class="req" style="font-size:10px">수량</label><input type="number" id="woFQ" min="0" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box" oninput="_updateWoAmt()"></div>
+<div class="fg" style="margin:0"><label class="req" style="font-size:10px">출고일</label><input type="date" id="woShip" style="padding:5px 3px;font-size:11px;width:100%;box-sizing:border-box"></div>
+<div class="fg" style="margin:0"><label style="font-size:10px">손잡이</label><input id="woHand" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box"></div>
+<div class="fg" style="margin:0"><label style="font-size:10px">단가</label><input type="number" id="woPrice" min="0" placeholder="0" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box" oninput="_updateWoAmt()"></div>
+<div class="fg" style="margin:0"><label style="font-size:10px;color:var(--txt2)">금액</label><div id="woAmtDisplay" style="padding:5px 4px;font-size:11px;background:#F3F4F6;border-radius:6px;border:1px solid var(--bdr);color:#1D4ED8;font-weight:600">-</div></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
 <div class="fg"><label>입고처</label><input id="woDlv" class="u-input-md"></div>
@@ -1726,10 +1726,10 @@
 
 <div id="compMo" class="cm hidden"><div class="cmb">
 <h3 id="compNm">제품명</h3>
-<div style="margin-bottom:10px;font-size:14px;color:var(--txt2)" id="compInf"></div>
-<div id="compHistWarn"></div>
 <label style="font-size:14px;font-weight:700;display:block;margin-bottom:5px">생산 수량</label>
 <input type="number" id="compQty" min="0" placeholder="수량 입력">
+<div style="margin:10px 0;font-size:14px;color:var(--txt2)" id="compInf"></div>
+<div id="compHistWarn"></div>
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:10px">
 <div><label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">불량 수량</label>
 <input type="number" id="compDefect" min="0" value="0" placeholder="0" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;box-sizing:border-box"></div>

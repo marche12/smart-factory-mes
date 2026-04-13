@@ -1506,7 +1506,7 @@ function renderSchedBoard(){
   var procs=procFilter==='all'?allProcs:[procFilter];
   var procIcons={'인쇄':'','코팅':'','합지':'','톰슨':'','접착':'','외주가공':'','생산완료':''};
   // 작업 데이터 매핑
-  var os=DB.g('wo');
+  var os=DB.g('wo').filter(function(o){return o.status!=='취소'&&o.status!=='출고완료'});
   if(statusFilter==='active')os=os.filter(function(o){return o.status==='진행중'});
   else if(statusFilter==='wait')os=os.filter(function(o){return o.status==='대기'||o.status==='진행중'});
   // 공정별/날짜별 배치 계산

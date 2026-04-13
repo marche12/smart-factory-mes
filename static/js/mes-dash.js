@@ -9,7 +9,7 @@ function gWN(){const d=td().replace(/-/g,'');const n=DB.g('wo').filter(o=>o.wn&&
 // 
 function isLate(o){return o.status!=='완료'&&o.status!=='출고완료'&&o.sd&&o.sd<=td()}
 function dLeft(o){if(!o.sd)return 999;return Math.ceil((new Date(o.sd)-new Date(td()))/864e5)}
-function curP(o){if(!o||!o.procs)return null;for(let i=0;i<o.procs.length;i++)if(o.procs[i].st!=='완료'&&o.procs[i].st!=='외주완료'&&o.procs[i].st!=='스킵')return o.procs[i];return null}
+function curP(o){if(!o||!o.procs)return null;for(let i=0;i<o.procs.length;i++){var p=o.procs[i];if(p.st==='완료'||p.st==='외주완료'||p.st==='스킵')continue;if(p.nm==='코팅'&&p.mt==='기계코팅'&&p.st==='대기'){var printP=o.procs.find(function(x){return x.nm==='인쇄'});if(printP&&(printP.st==='완료'||printP.st==='외주완료')){p.st='완료';p.qty=printP.qty||0;p.t2=nw();continue}}return p}return null}
 function progBar(o){if(!o||!o.procs)return'<div style="font-size:11px;color:var(--txt3)">0/0</div>';const t=o.procs.length,d=o.procs.filter(p=>p.st==='완료'||p.st==='외주완료'||p.st==='스킵').length;const pct=t?Math.round(d/t*100):0;return`<div><div class="prog-bar"><div class="track"><div class="fill" style="width:${pct}%"></div></div></div><div style="font-size:11px;color:var(--txt2);margin-top:2px">${d}/${t} (${pct}%)</div></div>`}
 function addLog(msg){const logs=DB.g('logs');logs.unshift({t:nw(),m:msg});if(logs.length>100)logs.length=100;DB.s('logs',logs)}
 
@@ -691,7 +691,7 @@ var _now=new Date(),_days=['일','월','화','수','목','금','토'];
 if($('dashDateDisp'))$('dashDateDisp').textContent=_now.getFullYear()+'.'+String(_now.getMonth()+1).padStart(2,'0')+'.'+String(_now.getDate()).padStart(2,'0')+' ('+_days[_now.getDay()]+')';
 var allOs=DB.g('wo');
 var os=allOs.filter(function(o){return o.status!=='취소'});
-var tot=os.length,dn=os.filter(function(o){return o.status==='완료'||o.status==='출고완료'}).length;
+var tot=os.length,dn=os.filter(function(o){return o.status==='완료'||o.status==='출고완료'||o.status==='완료대기'}).length;
 var pg=os.filter(function(o){return o.status==='진행중'}).length;
 var dl=os.filter(function(o){return isLate(o)}).length;
 var rate=tot>0?Math.round(dn/tot*100):0;
@@ -718,8 +718,8 @@ function _delta(cur,prev){if(prev===0&&cur===0)return{cls:'flat',txt:'— 동일
 var prodDelta=prevQ>0?{cls:curQ>=prevQ?'up':'down',txt:(curQ>=prevQ?'▲':'▼')+' '+Math.abs(Math.round((curQ-prevQ)/prevQ*100))+'% '+(curQ>=prevQ?'개선':'감소')}:{cls:'flat',txt:'— 비교없음'};
 var kpis=[
   {val:tot,label:'전체 작업',cls:'nd-navy',icon:'📦',delta:_delta(tot,prevTot),filter:'all',spark:false},
-  {val:dn,label:'완료 '+rate+'%',cls:'nd-green',icon:'✅',delta:prodDelta,filter:'done',spark:true},
   {val:pg,label:'진행중',cls:'nd-navy',icon:'⚡',delta:{cls:'flat',txt:'— 동일'},filter:'ing',spark:false},
+  {val:dn,label:'완료 '+rate+'%',cls:'nd-green',icon:'✅',delta:prodDelta,filter:'done',spark:true},
   {val:dl,label:'출고 지연',cls:'nd-red',icon:'🚨',delta:_delta(dl,0),filter:'late',spark:false},
   {val:hold+rework,label:'보류/재작업',cls:'nd-red',icon:'⏸️',delta:_delta(hold+rework,prevHold),filter:'hold',spark:false}
 ];
@@ -788,14 +788,15 @@ recentDone.forEach(function(h){feeds.push({cls:'nd-f-green',icon:'✅',msg:(h.pn
 var recentLogs=DB.g('logs').slice(0,3);
 recentLogs.forEach(function(l){if(feeds.length<6)feeds.push({cls:'nd-f-navy',icon:'📋',msg:l.m,time:l.t?l.t.slice(11,16):''})});
 if(feeds.length===0)feeds.push({cls:'nd-f-green',icon:'✅',msg:'현재 특이사항 없음',time:''});
-var fdH='<div class="nd-feed"><div class="nd-feed-title">실시간 알림</div>';
-feeds.slice(0,6).forEach(function(f){fdH+='<div class="nd-feed-item '+f.cls+'">'+f.icon+' '+f.msg+(f.time?'<div class="nd-feed-time">'+f.time+'</div>':'')+'</div>'});
-fdH+='</div>';
+var fdH='<div class="nd-feed"><div class="nd-feed-title">실시간 알림 <span style="font-size:11px;color:var(--txt2);font-weight:400">(최근 5건)</span></div>';
+fdH+='<div style="max-height:220px;overflow-y:auto">';
+feeds.slice(0,5).forEach(function(f){fdH+='<div class="nd-feed-item '+f.cls+'">'+f.icon+' '+f.msg+(f.time?'<div class="nd-feed-time">'+f.time+'</div>':'')+'</div>'});
+fdH+='</div></div>';
 if($('ndFeed'))$('ndFeed').innerHTML=fdH;
 // === 완료 확인 대기 (기존 유지) ===
 var compWait=os.filter(function(o){return o.status==='완료대기'});
 if(compWait.length){
-var cwH='';compWait.forEach(function(o){
+var cwH='<div style="max-height:200px;overflow-y:auto">';compWait.slice(0,5).forEach(function(o){
 var lastQty=0;for(var _i=o.procs.length-1;_i>=0;_i--){if(o.procs[_i].qty>0){lastQty=o.procs[_i].qty;break}}
 cwH+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:4px;background:var(--bg2);border-radius:var(--r-sm)">';
 cwH+='<div style="display:flex;align-items:center;gap:10px;flex:1">';
@@ -805,6 +806,7 @@ cwH+='<span style="font-size:12px;color:var(--suc);font-weight:600">전 공정 �
 cwH+='<span style="font-size:12px;color:var(--txt);font-weight:600">수량: '+(lastQty||'-')+'</span>';
 cwH+='</div><span class="tag tag-orange">확인대기</span></div>';
 });
+cwH+='</div>';
 $('dCompleteList').innerHTML=cwH;$('dCompleteCount').textContent=compWait.length+'건';$('dCompleteSection').style.display='';
 }else{$('dCompleteSection').style.display='none'}
 genNotifications();renderCal();populateVendorDropdowns();backfillHist();

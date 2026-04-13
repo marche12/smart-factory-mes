@@ -23,7 +23,7 @@ function rCli(page){
   const s=($('cliSch')?.value||'').toLowerCase();var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';
   var cs;
   if(tf==='vendor'){
-    cs=DB.g('vendors').filter(v=>!s||(v.nm||'').toLowerCase().includes(s)||(v.tel||'').includes(s));
+    cs=DB.g('cli').filter(c=>c.isVendor&&(!s||(c.nm||'').toLowerCase().includes(s)||(c.tel||'').includes(s)));
   }else{
     cs=DB.g('cli').filter(c=>!s||c.nm.toLowerCase().includes(s)||((c.biz||'').includes(s)));
     if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
@@ -43,7 +43,7 @@ function rCli(page){
   var pg=paginate(cs,_cliPage);var vis=pg.items;
   if(_cliView==='table'){
     if(tf==='vendor'){
-      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(c=>`<tr><td style="font-weight:700">${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>-</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td>${c.note||'-'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">인쇄소 없음</td></tr>';
+      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(c=>`<tr><td style="font-weight:700">${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">인쇄소 없음</td></tr>';
     }else{
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
     }

@@ -390,6 +390,8 @@ function getProcQueue(proc){
     var cp=curP(o);
     o.procs.forEach(function(p,pi){
       if(p.nm!==proc)return;
+      // 기계코팅은 대기열에 넣지 않음 (인쇄 완료 시 자동 처리)
+      if(p.nm==='코팅'&&p.mt==='기계코팅'&&p.st==='대기')return;
       var dl=o.sd?Math.round((new Date(o.sd)-new Date(td()))/864e5):999;
       var item={wid:o.id,pi:pi,pnm:o.pnm,cnm:o.cnm,qty:p.qty||o.fq||0,sd:o.sd,dday:dl,st:p.st,vd:p.vd||'',df:p.df||0,pri:o.pri||999,tp:p.tp,t1:p.t1,t2:p.t2,machine:p.machine||''};
       // 완료된 공정: 당일 완료분만

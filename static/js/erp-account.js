@@ -134,7 +134,7 @@ function rPl(){
     return `<tr><td>${r.dt}</td><td style="font-weight:600">${r.cat}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}원</td><td>${r.note||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eExp('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dExp('${r.id}')">삭제</button></td></tr>`;
   }).join('')||'<tr><td colspan="5" class="empty-cell">등록된 경비가 없습니다</td></tr>';
 }
-function printPl(){const c=$('plTbl').innerHTML;const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>손익현황</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px">이노패키지 ${$('plY').value}년 손익현황</h2><table>${c}</table></body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
+function printPl(){const c=$('plTbl').innerHTML;const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>손익현황</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}@media print{@page{size:A4 landscape;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px">팩플로우 ${$('plY').value}년 손익현황</h2><table>${c}</table></body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
 
 /* === 세금계산서 === */
 function rTx(){
@@ -182,7 +182,7 @@ function dTxr(id){if(!confirm('삭제?'))return;DB.s('taxInvoice',DB.g('taxInvoi
 function printTx(){
   const c=$('txCli').value.trim(),s=+$('txSup').value;
   if(!c||!s){toast('거래처/공급가액 필요','err');return}
-  const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};
+  const co=DB.g1('co')||{nm:'팩플로우',addr:'',tel:'',fax:''};
   const v=Math.round(s*0.1);
   const qty=$('txQty')?$('txQty').value:'1';
   const price=$('txPrice')?$('txPrice').value:s;

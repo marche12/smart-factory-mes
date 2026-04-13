@@ -58,11 +58,11 @@ $('shipStatC').innerHTML=
   _prdExportData['shSt']={headers:['거래처','출고건수','출고량','불량','불량률'],rows:Object.entries(byCli).sort((a,b)=>b[1].qty-a[1].qty).map(([k,v])=>[k,v.cnt,v.qty,v.defect,v.qty?((v.defect/v.qty)*100).toFixed(1)+'%':'0%']),sheetName:'출고통계',fileName:'출고통계'};
 }
 window._prdCb_shSt=rShipStat;
-function printShipStat(){const c=$('shipStatC').innerHTML;if(!c)return;var rng=getPrdRange('shSt');const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>출고통계</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.sb{border:1px solid #ccc;padding:10px}.sb .l{font-size:10px}.sb .v{font-size:16px;font-weight:700}@media print{@page{size:A4;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px;font-size:16px">이노패키지 출고 통계 (${rng.label})</h2>${c}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
+function printShipStat(){const c=$('shipStatC').innerHTML;if(!c)return;var rng=getPrdRange('shSt');const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>출고통계</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Nanum Gothic',sans-serif;font-size:11px;padding:15mm}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px;font-size:10px}th{background:#E5E7EB;font-weight:700}.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.sb{border:1px solid #ccc;padding:10px}.sb .l{font-size:10px}.sb .v{font-size:16px;font-weight:700}@media print{@page{size:A4;margin:10mm}}</style></head><body><h2 style="text-align:center;margin-bottom:12px;font-size:16px">팩플로우 출고 통계 (${rng.label})</h2>${c}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
 function exportShipCSV(){const logs=DB.g('shipLog');let csv='\uFEFF출고일,거래처,제품,출고수량,양품,불량,차량,기사,입고처\n';logs.forEach(r=>{csv+=`${r.dt},${r.cnm},${r.pnm},${r.qty},${r.good||r.qty},${r.defect||0},${r.car||''},${r.driver||''},${r.dlv||''}\n`});const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='출고이력_'+td()+'.csv';a.click();toast('엑셀 내보내기','ok')}
 // Print ship document (거래명세표)
-function printShipDoc(){const woId=$('smWoId').value;const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};const qty=+$('smQty').value||0;const defect=+$('smDefect').value||0;doPrintShipDoc(co,o,qty,defect,$('smDlv').value,$('smCar').value,$('smDriver').value,$('smMemo').value)}
-function printShipOne(sid){const r=DB.g('shipLog').find(x=>x.id===sid);if(!r)return;const o=DB.g('wo').find(x=>x.id===r.woId);const co=DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};doPrintShipDoc(co,o||{cnm:r.cnm,pnm:r.pnm,spec:'',paper:''},r.qty,r.defect||0,r.dlv||'',r.car||'',r.driver||'',r.memo||'')}
+function printShipDoc(){const woId=$('smWoId').value;const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;const co=DB.g1('co')||{nm:'팩플로우',addr:'',tel:'',fax:''};const qty=+$('smQty').value||0;const defect=+$('smDefect').value||0;doPrintShipDoc(co,o,qty,defect,$('smDlv').value,$('smCar').value,$('smDriver').value,$('smMemo').value)}
+function printShipOne(sid){const r=DB.g('shipLog').find(x=>x.id===sid);if(!r)return;const o=DB.g('wo').find(x=>x.id===r.woId);const co=DB.g1('co')||{nm:'팩플로우',addr:'',tel:'',fax:''};doPrintShipDoc(co,o||{cnm:r.cnm,pnm:r.pnm,spec:'',paper:''},r.qty,r.defect||0,r.dlv||'',r.car||'',r.driver||'',r.memo||'')}
 function doPrintShipDoc(co,o,qty,defect,dlv,car,driver,memo){
 const h=`<h2 style="text-align:center;font-size:18px;letter-spacing:8px;margin-bottom:12px;font-weight:800">거 래 명 세 표</h2>
 <div style="display:flex;justify-content:space-between;font-size:10px;border-bottom:1px solid #999;padding-bottom:5px;margin-bottom:8px"><div><strong>${co.nm}</strong> | ${co.addr} | TEL:${co.tel} | FAX:${co.fax}</div><div>발행일: ${td()}</div></div>
@@ -395,7 +395,7 @@ function exportPDF(title,contentId){
   var dateStr=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   var w=window.open('','_blank','width=900,height=700');
   if(!w){toast('팝업이 차단되었습니다','err');return}w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-  w.document.write('<title>'+(title||'이노패키지 보고서')+'</title>');
+  w.document.write('<title>'+(title||'팩플로우 보고서')+'</title>');
   w.document.write('<style>');
   w.document.write('*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}');
   w.document.write('body{font-family:Pretendard,Apple SD Gothic Neo,sans-serif;color:#111;padding:24px;font-size:13px;line-height:1.5}');
@@ -424,9 +424,9 @@ function exportPDF(title,contentId){
   w.document.write('button,.btn,.s-tab,.noti-bell,.toast{display:none!important}');
   w.document.write('@media print{@page{margin:15mm}}');
   w.document.write('</style></head><body>');
-  w.document.write('<div class="print-header"><h1>'+(title||'이노패키지 보고서')+'</h1><div class="co">이노패키지 ERP+MES</div><div class="dt">출력일시: '+dateStr+'</div></div>');
+  w.document.write('<div class="print-header"><h1>'+(title||'팩플로우 보고서')+'</h1><div class="co">팩플로우 ERP+MES</div><div class="dt">출력일시: '+dateStr+'</div></div>');
   w.document.write(content);
-  w.document.write('<div class="print-footer">이노패키지 | 경기도 파주시 | 본 문서는 시스템에서 자동 생성되었습니다.</div>');
+  w.document.write('<div class="print-footer">팩플로우 | 경기도 파주시 | 본 문서는 시스템에서 자동 생성되었습니다.</div>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(function(){w.print()},500);

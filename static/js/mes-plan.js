@@ -706,7 +706,7 @@ function genTradeStatement(saleId){
   w.document.write('</style></head><body>');
   w.document.write('<div class="header"><h1>거 래 명 세 서</h1><p>'+td()+'</p></div>');
   w.document.write('<div class="info"><div class="info-box"><h3>공급자</h3>');
-  w.document.write('<div class="info-row"><span>상호</span><span>이노패키지</span></div>');
+  w.document.write('<div class="info-row"><span>상호</span><span>팩플로우</span></div>');
   w.document.write('<div class="info-row"><span>주소</span><span>경기도 파주시</span></div>');
   w.document.write('</div><div class="info-box"><h3>공급받는자</h3>');
   w.document.write('<div class="info-row"><span>상호</span><span>'+(s.cnm||'-')+'</span></div>');
@@ -719,7 +719,7 @@ function genTradeStatement(saleId){
   w.document.write('</tbody></table>');
   var vat=Math.round(amt*0.1);
   w.document.write('<div class="total">공급가액: '+fmt(amt)+'원 | 세액: '+fmt(vat)+'원 | <strong>합계: '+fmt(amt+vat)+'원</strong></div>');
-  w.document.write('<div class="footer">이노패키지 | 위 금액을 명세서와 같이 청구합니다</div>');
+  w.document.write('<div class="footer">팩플로우 | 위 금액을 명세서와 같이 청구합니다</div>');
   w.document.write('</body></html>');
   w.document.close();w.focus();
 }
@@ -1410,7 +1410,7 @@ function renderOrgChart(){
   var deptColors={'생산':'#1E3A5F','관리':'#10B981','영업':'#F59E0B','품질':'#7B61FF','기타':'#6B7280'};
   var h='<div style="text-align:center;margin-bottom:20px">';
   // CEO
-  h+='<div style="display:inline-block;background:var(--pri);color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;margin-bottom:8px">이노패키지</div>';
+  h+='<div style="display:inline-block;background:var(--pri);color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;margin-bottom:8px">팩플로우</div>';
   h+='<div style="width:2px;height:20px;background:var(--bdr);margin:0 auto"></div>';
   // 부서
   h+='<div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap">';

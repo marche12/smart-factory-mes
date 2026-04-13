@@ -73,7 +73,7 @@ DB.s('users',[
 // 빈 데이터 초기화
 DB.s('cli',[]);DB.s('prod',[]);DB.s('mold',[]);DB.s('vendors',[]);DB.s('wo',[]);DB.s('hist',[]);DB.s('shipLog',[]);DB.s('logs',[]);DB.s('incLog',[]);DB.s('qcRecords',[]);DB.s('sales',[]);DB.s('purchase',[]);DB.s('monthlyRpt',[]);
 // 회사 정보
-DB.s1('co',{nm:'이노패키지',addr:'경기도 파주시 월롱산로 89',tel:'031-957-5921',fax:'031-957-5925'});
+DB.s1('co',{nm:'팩플로우',addr:'경기도 파주시 월롱산로 89',tel:'031-957-5921',fax:'031-957-5925'});
 DB.s1('init',_DATA_VER);
 }
 

@@ -877,11 +877,11 @@ toast('작업지시서 삭제됨','ok');
 function exportCSV(){const os=DB.g('wo');let csv='\\uFEFF지시번호,작성일,거래처,제품명,정매,완제품,출고일,상태,진행률\\n';os.forEach(o=>{const t=o.procs.length,d=o.procs.filter(p=>p.st==='완료'||p.st==='외주완료').length;csv+=`${o.wn},${o.dt},${o.cnm},${o.pnm},${o.qm},${o.fq},${o.sd},${o.status},${d}/${t}\\n`});const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='작업지시목록_'+td()+'.csv';a.click();toast('엑셀 내보내기 완료','ok')}
 
 // A4 PRINT
-function printWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;const co=DB.g1('co')||{nm:'이노패키지',addr:'파주시 월롱산로89',tel:'031-957-5921',fax:'031-957-5925'};
+function printWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;const co=DB.g1('co')||{nm:'팩플로우',addr:'파주시 월롱산로89',tel:'031-957-5921',fax:'031-957-5925'};
 function pVal(nm){const p=o.procs.find(x=>x.nm===nm);return p?{mt:p.mt||'',vd:p.vd||'',tp:p.tp}:{mt:'',vd:'',tp:'n'}}
 const pi=pVal('인쇄'),pk=pVal('코팅'),psk=pVal('실크코팅'),pg=pVal('금박'),ph=pVal('합지'),pt=pVal('톰슨'),pj=pVal('접착'),phg=pVal('후가공'),pe=pVal('기타');
 const h=`
-<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:6px;padding:16px 0;border:3px solid #000;margin-bottom:12px">이노패키지 작업지시서</div>
+<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:6px;padding:16px 0;border:3px solid #000;margin-bottom:12px">${co.nm||'팩플로우'} 작업지시서</div>
 <table>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;수신: <b>${o.vendor||''}</b></td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">주소 : ${co.addr}</td></tr>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;전화 : ${o.tel||''} &nbsp; 팩스 : ${o.fax||''}</td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">전화 : ${co.tel}</td></tr>
@@ -1433,10 +1433,10 @@ function printRpt(type){
   if(!c){toast('먼저 보고서를 생성해주세요','err');return}
   var w=window.open('','_blank','width=1000,height=700');
   if(!w){toast('팝업이 차단되었습니다','err');return}
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>이노패키지 '+(titleMap[type]||'')+'보고서</title>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>팩플로우 '+(titleMap[type]||'')+'보고서</title>');
   w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{font-family:"Nanum Gothic","Malgun Gothic",sans-serif;font-size:11px;padding:15mm}h2{text-align:center;margin-bottom:14px;font-size:16px;letter-spacing:2px}table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{border:1px solid #CBD5E1;padding:4px 6px;font-size:10px}th{background:#F1F5F9;font-weight:700}.card{border:1px solid #E2E8F0;border-radius:8px;padding:12px;margin-bottom:12px}.card-t{font-weight:700;font-size:13px;margin-bottom:8px;color:#1E293B}@media print{@page{size:A4;margin:10mm}button{display:none}}</style>');
   w.document.write('</head><body>');
-  w.document.write('<h2>이노패키지 '+(titleMap[type]||'')+' 보고서</h2>');
+  w.document.write('<h2>팩플로우 '+(titleMap[type]||'')+' 보고서</h2>');
   w.document.write('<div style="text-align:right;font-size:10px;color:#64748B;margin-bottom:12px">출력일시: '+nw()+'</div>');
   w.document.write(c);
   w.document.write('</body></html>');

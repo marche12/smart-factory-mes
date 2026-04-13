@@ -174,7 +174,7 @@ function savePayEdit(){
 function printPayOne(id){
   let r;if(typeof id==='string'){r=DB.g('payroll').find(x=>x.id===id)}else{r=DB.g('payroll').find(x=>x.id===$('peId').value)}
   if(!r){toast('급여 데이터 없음','err');return}
-  const co=DB.g1('co')||{nm:'이노패키지'};
+  const co=DB.g1('co')||{nm:'팩플로우'};
   const dd=r.dedDetail||{nps:0,hi:0,ltc:0,ei:0,itx:0,ltx:0};
   const gross=r.gross||(r.base+r.ot+(r.etc||0));
   const net=r.net||r.total||0;

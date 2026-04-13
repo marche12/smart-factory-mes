@@ -403,7 +403,7 @@ function printPO(){
 }
 
 function printPODoc(r){
-  const co=DB.g1('ino_co')||DB.g1('co')||{nm:'이노패키지',addr:'',tel:'',fax:''};
+  const co=DB.g1('ino_co')||DB.g1('co')||{nm:'팩플로우',addr:'',tel:'',fax:''};
   let rows=r.items.map((it,i)=>`<tr><td>${i+1}</td><td>${it.nm}</td><td>${it.spec||''}</td><td>${it.unit||''}</td><td style="text-align:right">${fmt(it.qty)}</td><td style="text-align:right">${fmt(it.price)}</td><td style="text-align:right;font-weight:700">${fmt((it.qty||0)*(it.price||0))}</td></tr>`).join('');
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>발주서</title>

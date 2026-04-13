@@ -7,7 +7,7 @@ function printSection(id) {
     '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;font-size:11px;padding:15mm}' +
     'table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 6px}' +
     'th{background:#E5E7EB;font-weight:700}@media print{@page{size:A4 landscape;margin:10mm}}</style></head>' +
-    '<body><h2 style="text-align:center;margin-bottom:16px">이노패키지 경영분석</h2>' + el.innerHTML + '</body></html>');
+    '<body><h2 style="text-align:center;margin-bottom:16px">팩플로우 경영분석</h2>' + el.innerHTML + '</body></html>');
   w.document.close();
   setTimeout(function() { w.print(); }, 300);
 }

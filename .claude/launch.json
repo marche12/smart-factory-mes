@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "mes-server",
-      "runtimeExecutable": "C:/Users/승훈/AppData/Local/Programs/Python/Python312/python.exe",
-      "runtimeArgs": ["server.py"],
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-c", "import os;os.chdir('/Users/shoon/Documents/팩플로우');exec(open('server.py').read())"],
       "port": 8080
     }
   ]

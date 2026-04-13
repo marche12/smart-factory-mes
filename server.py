@@ -51,6 +51,8 @@ def _auto_backup_loop():
 def startup():
     db.init_db()
     db.init_auth_tables()
+    db.init_normalized_tables()
+    db.migrate_kv_to_tables()
     db.cleanup_expired_tokens()
     db.ensure_daily_backup()
     # Start background auto-backup scheduler

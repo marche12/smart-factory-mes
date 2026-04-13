@@ -274,8 +274,11 @@ def get_data(key: str, user=Depends(get_current_user)):
 
 @app.post("/api/data/{key:path}")
 async def set_data(key: str, request: Request, user=Depends(get_current_user)):
+    import json as _json
     body = await request.json()
     value = body.get("value", "")
+    if not isinstance(value, str):
+        value = _json.dumps(value, ensure_ascii=False)
     db.set_data(key, value)
     target = extract_target(key)
     db.add_audit_log(user.get("sub"), user.get("name"), "update", target, key, None, get_client_ip(request))

@@ -1155,6 +1155,16 @@ function _printStyle(){
 }
 function _openPW(title,html){
   var w=window.open('','_blank','width=800,height=900');
+  if(!w){
+    // 팝업 차단 시 iframe 모달로 대체
+    var pm=document.getElementById('printMo');
+    if(!pm){pm=document.createElement('div');pm.id='printMo';pm.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center';pm.onclick=function(e){if(e.target===pm)pm.remove()};document.body.appendChild(pm)}
+    pm.innerHTML='<div style="background:#fff;width:90vw;height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column"><div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd"><span style="font-weight:700">'+title+'</span><div style="display:flex;gap:8px"><button onclick="document.getElementById(\'pfIframe\').contentWindow.print()" style="padding:8px 20px;background:#1E3A5F;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">인쇄</button><button onclick="document.getElementById(\'printMo\').remove()" style="padding:8px 16px;background:#E2E8F0;border:none;border-radius:8px;cursor:pointer">닫기</button></div></div><iframe id="pfIframe" style="flex:1;border:none"></iframe></div>';
+    var pf=document.getElementById('pfIframe');
+    pf.contentDocument.write('<html><head><title>'+title+'</title><style>'+_printStyle()+'</style></head><body>'+html+'</body></html>');
+    pf.contentDocument.close();
+    return;
+  }
   w.document.write('<html><head><title>'+title+'</title><style>'+_printStyle()+'</style></head><body>'+html+'</body></html>');
   w.document.close();
   setTimeout(function(){w.print()},300);
@@ -1219,8 +1229,8 @@ function printQuote(quoteId){
   if(!q){toast('견적서 없음','err');return}
   var co=_co();
   var h='<div class="hdr"><h1>견 적 서</h1><div class="co">'+co.nm+'</div><div class="dt">견적일: '+(q.dt||td())+'</div></div>';
-  h+='<table><tr><th style="width:90px">견적번호</th><td>'+(q.no||q.id.slice(-6).toUpperCase())+'</td><th style="width:90px">유효기간</th><td>'+(q.valid||'발행일로부터 30일')+'</td></tr>';
-  h+='<tr><th>거래처</th><td colspan="3">'+(q.cnm||'-')+'</td></tr>';
+  h+='<table><tr><th style="width:90px">견적번호</th><td>'+(q.num||q.no||q.id.slice(-6).toUpperCase())+'</td><th style="width:90px">유효기간</th><td>'+(q.valid||'발행일로부터 30일')+'</td></tr>';
+  h+='<tr><th>거래처</th><td colspan="3">'+(q.cnm||q.cli||'-')+'</td></tr>';
   h+='<tr><th>담당자</th><td>'+(q.mgr||'-')+'</td><th>연락처</th><td>'+(q.tel||'-')+'</td></tr></table>';
   // 항목
   var items=q.items||[];var total=0;
@@ -1236,7 +1246,7 @@ function printQuote(quoteId){
     // 단일 품목
     var amt2=(q.qty||0)*(q.price||0);total=amt2;
     h+='<table><thead><tr><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>';
-    h+='<tr><td>'+(q.pnm||'-')+'</td><td>'+(q.spec||'-')+'</td><td style="text-align:right">'+(q.qty||0).toLocaleString()+'</td>';
+    h+='<tr><td>'+(q.pnm||q.prod||'-')+'</td><td>'+(q.spec||'-')+'</td><td style="text-align:right">'+(q.qty||0).toLocaleString()+'</td>';
     h+='<td style="text-align:right">'+(q.price||0).toLocaleString()+'</td><td style="text-align:right">'+amt2.toLocaleString()+'</td></tr>';
     h+='</tbody></table>';
   }

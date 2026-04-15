@@ -107,8 +107,47 @@ function openCliM(){['cmId','cmNm','cmBiz','cmCeo','cmBizType','cmEmail','cmPs',
 function eCli(id){const c=DB.g('cli').find(x=>x.id===id);if(!c)return;$('cmId').value=c.id;$('cmNm').value=c.nm;$('cmBiz').value=c.biz||'';$('cmCeo').value=c.ceo||'';$('cmBizType').value=c.bizType||'';$('cmEmail').value=c.email||'';$('cmPs').value=c.ps||'';$('cmAd').value=c.addr||'';$('cmTl').value=c.tel||'';$('cmFx').value=c.fax||'';$('cmNt').value=c.nt||'';$('cmSales').checked=(c.cType==='sales'||c.cType==='both'||!c.cType);$('cmPurch').checked=(c.cType==='purchase'||c.cType==='both');$('cliMoT').textContent='거래처 수정';oMo('cliMo')}
 function saveCli(){const nm=$('cmNm').value.trim();if(!nm){toast('거래처명 필요','err');return}var isSales=$('cmSales').checked,isPurch=$('cmPurch').checked;if(!isSales&&!isPurch){toast('매출처 또는 매입처를 선택해주세요','err');return}var cType=isSales&&isPurch?'both':isSales?'sales':'purchase';const id=$('cmId').value||gid();const cs=DB.g('cli');const ei=cs.findIndex(x=>x.id===id);const c={id,nm,biz:$('cmBiz').value,ceo:$('cmCeo').value,bizType:$('cmBizType').value,email:$('cmEmail').value,cType:cType,ps:$('cmPs').value,addr:$('cmAd').value,tel:$('cmTl').value,fax:$('cmFx').value,nt:$('cmNt').value,cat:ei>=0?cs[ei].cat:nw()};if(ei>=0)cs[ei]=c;else cs.push(c);DB.s('cli',cs);cMo('cliMo');rCli();toast('저장','ok')}
 function dCli(id){if(!confirm('삭제?'))return;DB.s('cli',DB.g('cli').filter(x=>x.id!==id));rCli();toast('삭제','ok')}
-// Client history
-function showCliHist(cid){const c=DB.g('cli').find(x=>x.id===cid);if(!c)return;const os=DB.g('wo').filter(o=>o.cid===cid||o.cnm===c.nm).sort((a,b)=>b.cat>a.cat?1:-1);$('cliHistT').textContent=c.nm+' 작업이력';$('cliHistC').innerHTML=os.length?`<table class="dt"><thead><tr><th>번호</th><th>제품</th><th>수량</th><th>출고일</th><th>진행</th><th>상태</th></tr></thead><tbody>${os.map(o=>`<tr><td>${o.wn}</td><td>${o.pnm}</td><td>${o.fq}</td><td>${o.sd}</td><td>${progBar(o)}</td><td>${badge(o.status)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty-state"><div class="msg">작업 이력 없음</div></div>';oMo('cliHistMo')}
+// Client history + 납품처
+function showCliHist(cid){
+  const c=DB.g('cli').find(x=>x.id===cid);if(!c)return;
+  const os=DB.g('wo').filter(o=>o.cid===cid||o.cnm===c.nm).sort((a,b)=>b.cat>a.cat?1:-1);
+  $('cliHistT').textContent=c.nm+' 상세';
+
+  // === 상단: 거래처 기본 정보 + 납품처 ===
+  var headerHtml='<div style="background:#F8FAFC;border-radius:10px;padding:14px 16px;margin-bottom:14px">';
+  headerHtml+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">';
+  headerHtml+='<div><span style="color:#64748B">담당자</span> <b>'+(c.contactNm||c.ceo||'-')+'</b></div>';
+  headerHtml+='<div><span style="color:#64748B">전화</span> <b>'+(c.tel||'-')+'</b></div>';
+  headerHtml+='<div style="grid-column:1/-1"><span style="color:#64748B">주소</span> <b>'+(c.addr||'-')+'</b></div>';
+  headerHtml+='</div></div>';
+
+  // === 상단: 납품처 리스트 ===
+  var dlvHtml='';
+  if(c.deliveries && c.deliveries.length>0){
+    dlvHtml='<div style="margin-bottom:14px"><div class="card-t" style="font-size:13px;margin-bottom:8px">📦 납품처 ('+c.deliveries.length+'곳)</div>';
+    dlvHtml+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+    c.deliveries.forEach(function(d){
+      dlvHtml+='<div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:12px;font-size:12px">';
+      dlvHtml+='<div style="font-weight:800;font-size:13px;margin-bottom:6px;color:#1E293B">'+(d.nm||'-')+'</div>';
+      if(d.addr)dlvHtml+='<div style="color:#475569;margin-bottom:4px">📍 '+d.addr+'</div>';
+      if(d.mgr)dlvHtml+='<div style="color:#64748B">👤 '+d.mgr+'</div>';
+      if(d.tel)dlvHtml+='<div style="color:#64748B">📞 '+d.tel+'</div>';
+      dlvHtml+='</div>';
+    });
+    dlvHtml+='</div></div>';
+  }
+
+  // === 작업 이력 ===
+  var histHtml='<div class="card-t" style="font-size:13px;margin-bottom:8px">📋 작업 이력 ('+os.length+'건)</div>';
+  histHtml+=os.length?
+    '<table class="dt"><thead><tr><th>번호</th><th>제품</th><th>수량</th><th>출고일</th><th>진행</th><th>상태</th></tr></thead><tbody>'+
+    os.map(function(o){return '<tr><td>'+o.wn+'</td><td>'+o.pnm+'</td><td>'+o.fq+'</td><td>'+o.sd+'</td><td>'+progBar(o)+'</td><td>'+badge(o.status)+'</td></tr>'}).join('')+
+    '</tbody></table>'
+    :'<div class="empty-state"><div class="msg">작업 이력 없음</div></div>';
+
+  $('cliHistC').innerHTML=headerHtml+dlvHtml+histHtml;
+  oMo('cliHistMo');
+}
 
 // PRODUCT
 let pProcs=[];

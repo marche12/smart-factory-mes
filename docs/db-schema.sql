@@ -286,10 +286,46 @@ CREATE TABLE IF NOT EXISTS users (
 -- 14. 회사정보
 CREATE TABLE IF NOT EXISTS company (
     id          INTEGER PRIMARY KEY DEFAULT 1,
-    name        TEXT DEFAULT '이노패키지',
+    name        TEXT DEFAULT '팩플로우',
     addr        TEXT DEFAULT '',
     tel         TEXT DEFAULT '',
     fax         TEXT DEFAULT ''
+);
+
+-- 15. 공통코드 카테고리
+CREATE TABLE IF NOT EXISTS code_categories (
+    id          TEXT PRIMARY KEY,                      -- 카테고리ID (PROC_TYPE, WO_STATUS 등)
+    name        TEXT NOT NULL,                         -- 카테고리명
+    description TEXT DEFAULT '',                       -- 설명
+    is_system   INTEGER DEFAULT 0,                     -- 시스템 카테고리 여부 (1=삭제불가)
+    ord         INTEGER DEFAULT 0                      -- 정렬순서
+);
+
+-- 16. 공통코드 아이템
+CREATE TABLE IF NOT EXISTS codes (
+    id          TEXT PRIMARY KEY,                      -- 코드ID
+    category_id TEXT NOT NULL REFERENCES code_categories(id),
+    code        TEXT NOT NULL,                         -- 코드값
+    name        TEXT NOT NULL,                         -- 표시명
+    value       TEXT DEFAULT '',                       -- 추가값 (세율 등)
+    color       TEXT DEFAULT '',                       -- 배지 색상
+    is_default  INTEGER DEFAULT 0,                     -- 기본값 여부
+    is_active   INTEGER DEFAULT 1,                     -- 활성 여부
+    ord         INTEGER DEFAULT 0,                     -- 정렬순서
+    UNIQUE(category_id, code)
+);
+
+-- 17. 문서 연결
+CREATE TABLE IF NOT EXISTS doc_links (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_type   TEXT NOT NULL,                         -- QUOTE, ORDER, WO, SHIP 등
+    from_id     TEXT NOT NULL,
+    from_no     TEXT DEFAULT '',                       -- 문서번호
+    to_type     TEXT NOT NULL,
+    to_id       TEXT NOT NULL,
+    to_no       TEXT DEFAULT '',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(from_type, from_id, to_type, to_id)
 );
 
 -- 인덱스
@@ -305,3 +341,6 @@ CREATE INDEX IF NOT EXISTS idx_ship_wo ON shipments(wo_id);
 CREATE INDEX IF NOT EXISTS idx_clients_type ON clients(c_type);
 CREATE INDEX IF NOT EXISTS idx_products_client ON products(client_id);
 CREATE INDEX IF NOT EXISTS idx_molds_no ON molds(mold_no);
+CREATE INDEX IF NOT EXISTS idx_codes_cat ON codes(category_id);
+CREATE INDEX IF NOT EXISTS idx_doclinks_from ON doc_links(from_type, from_id);
+CREATE INDEX IF NOT EXISTS idx_doclinks_to ON doc_links(to_type, to_id);

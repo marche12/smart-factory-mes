@@ -161,11 +161,100 @@ $('shipSum').innerHTML=
 $('shipReadyTbl').querySelector('tbody').innerHTML=ready.length?ready.sort((a,b)=>a.sd>b.sd?1:-1).map(o=>{const shipped=getShipped(o.id);const remain=o.fq-shipped;const late=o.sd&&o.sd<td();
 var compQty=o.procs&&o.procs.length?o.procs[o.procs.length-1].qty||0:0;if(!compQty){for(var _pi=o.procs.length-1;_pi>=0;_pi--){if(o.procs[_pi].qty>0){compQty=o.procs[_pi].qty;break}}}
 return`<tr ${late?'class="row-late"':''}><td>${o.wn}</td><td>${o.cnm}</td><td>${o.pnm}</td><td>${o.fq}</td><td style="color:var(--pri);font-weight:700">${compQty||'-'}</td><td style="color:var(--suc);font-weight:700">${shipped}</td><td style="color:${remain>0?'var(--dan)':'var(--suc)'};font-weight:700">${remain}</td><td ${late?'style="color:var(--dan);font-weight:700"':''}>${o.sd}</td><td>${o.dlv||'-'}</td><td>${remain<=0?badge('출고완료'):late?badge('지연'):badge('출고대기')}</td><td>${remain>0?`<button class="btn btn-sm btn-s" onclick="openShipM('${o.id}')">출고</button>`:''} <button class="btn btn-sm btn-o" onclick="showDet('${o.id}')">상세</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty-cell">출고 대기 없음</td></tr>'}
-function openShipM(woId){const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;$('smWoId').value=woId;$('smCli').textContent=o.cnm;$('smProd').textContent=o.pnm;$('smTotal').textContent=o.fq;const shipped=getShipped(woId);$('smShipped').textContent=shipped;$('smRemain').textContent=o.fq-shipped;$('smQty').value=o.fq-shipped;$('smDefect').value=0;$('smGood').textContent=o.fq-shipped;$('smInspNote').value='';$('smCar').value='';$('smDriver').value='';$('smDlv').value=o.dlv||'';$('smMemo').value='';$('shipMoT').textContent=shipped>0?'부분 출고':'출고 처리';oMo('shipMo')}
+function openShipM(woId){const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;$('smWoId').value=woId;$('smCli').innerHTML='<span id="smCliName">'+o.cnm+'</span>';$('smCliOverride').value='';$('smProd').textContent=o.pnm;$('smTotal').textContent=o.fq;const shipped=getShipped(woId);$('smShipped').textContent=shipped;$('smRemain').textContent=o.fq-shipped;$('smQty').value=o.fq-shipped;$('smDefect').value=0;$('smGood').textContent=o.fq-shipped;$('smInspNote').value='';$('smCar').value='';$('smDriver').value='';$('smDlv').value=o.dlv||'';$('smMemo').value='';$('shipMoT').textContent=shipped>0?'부분 출고':'출고 처리';oMo('shipMo')}
+/* === 출고 시 거래처 변경 (방안 A) === */
+function changeShipCli(){
+  var woId=$('smWoId').value;
+  var o=DB.g('wo').find(function(x){return x.id===woId});if(!o)return;
+  var h='<div class="mb" style="width:560px"><div class="mo-t">납품 거래처 변경<button class="mo-x" onclick="cMo(\'shipCliMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
+  h+='<div style="padding:14px 18px"><div style="font-size:13px;color:var(--txt2);margin-bottom:8px">원래 거래처: <b>'+o.cnm+'</b></div>';
+  h+='<div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:10px;margin-bottom:12px;font-size:12px;color:#92400E">⚠ 변경된 거래처는 매출/세금계산서/거래명세표에 반영됩니다</div>';
+  h+='<input id="shipCliSch" placeholder="거래처명 검색..." oninput="filterShipCliSch()" style="width:100%;padding:10px 12px;border:1px solid var(--bdr);border-radius:8px;margin-bottom:8px">';
+  // 얼마에요 CodeCategory 203 - 수정세금계산서 종류 6가지
+  h+='<select id="shipCliReason" style="width:100%;padding:10px;border:1px solid var(--bdr);border-radius:8px;margin-bottom:8px;font-size:13px">';
+  h+='<option value="4|기재사항의 착오 정정">4. 기재사항의 착오 정정 (잘못 입력)</option>';
+  h+='<option value="6|착오에 의한 이중 발급">6. 착오에 의한 이중 발급</option>';
+  h+='<option value="3|공급가액의 변동">3. 공급가액의 변동</option>';
+  h+='<option value="2|계약의 해제">2. 계약의 해제</option>';
+  h+='<option value="1|환입">1. 환입</option>';
+  h+='<option value="5|내국신용장 사후 개설">5. 내국신용장 사후 개설</option>';
+  h+='</select>';
+  h+='<div id="shipCliList" style="max-height:300px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:6px"></div></div></div>';
+  var el=document.createElement('div');el.id='shipCliMo';el.className='mo-bg';el.innerHTML=h;
+  el.onclick=function(e){if(e.target===el)cMo('shipCliMo')};
+  document.body.appendChild(el);
+  filterShipCliSch();
+  setTimeout(function(){$('shipCliSch').focus()},100);
+}
+function filterShipCliSch(){
+  var v=($('shipCliSch')?$('shipCliSch').value:'').toLowerCase();
+  var cs=DB.g('cli').filter(function(c){return !v||(c.nm||'').toLowerCase().includes(v)||(c.tel||'').includes(v)});
+  if(cs.length>50)cs=cs.slice(0,50);
+  var h='';
+  if(!cs.length){h='<div style="padding:18px;text-align:center;color:var(--txt3)">검색 결과 없음</div>';}
+  else{cs.forEach(function(c){
+    h+='<div onclick="pickShipCli(\''+c.id+'\')" style="padding:10px 12px;border-radius:6px;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
+    h+='<div style="font-weight:700">'+c.nm+'</div>';
+    h+='<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+(c.bizNo||'')+(c.addr?' | '+c.addr.slice(0,30):'')+'</div>';
+    h+='</div>';
+  })}
+  $('shipCliList').innerHTML=h;
+}
+function pickShipCli(cid){
+  var c=DB.g('cli').find(function(x){return x.id===cid});if(!c)return;
+  var reasonVal=$('shipCliReason').value;
+  // "4|기재사항의 착오 정정" → 코드와 사유명 분리
+  var parts=reasonVal.split('|');
+  var kindCode=parseInt(parts[0]);
+  var kindName=parts[1]||reasonVal;
+  $('smCliName').textContent=c.nm;
+  // 얼마에요 패턴 (AmendedKindCode + 거래처 변경 메타)
+  $('smCliOverride').value=JSON.stringify({
+    id:c.id, nm:c.nm,
+    amendedKindCode:kindCode,
+    reason:kindName,
+    changedAt:nw(),
+    changedBy:CU?CU.nm:''
+  });
+  $('smCli').innerHTML='<span id="smCliName" style="color:#D97706">'+c.nm+'</span> <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px" title="'+kindCode+'. '+kindName+'">변경 ('+kindCode+')</span>';
+  cMo('shipCliMo');
+  toast('거래처 변경: '+c.nm+' ('+kindCode+'. '+kindName+')','ok');
+}
 function calcDefect(){const q=+$('smQty').value||0,d=+$('smDefect').value||0;$('smGood').textContent=Math.max(0,q-d)}
 function doShip(){const woId=$('smWoId').value,qty=+$('smQty').value,defect=+$('smDefect').value||0;if(!qty||qty<=0){toast('출고수량 필요','err');return}const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;const shipped=getShipped(woId);const remain=o.fq-shipped;if(qty>remain&&!confirm(`잔량(${remain})보다 출고수량(${qty})이 많습니다. 계속?`))return;
-const rec={id:gid(),woId,wn:o.wn,cnm:o.cnm,pnm:o.pnm,qty,defect,good:qty-defect,inspNote:$('smInspNote').value,car:$('smCar').value,driver:$('smDriver').value,dlv:$('smDlv').value,memo:$('smMemo').value,dt:td(),tm:nw(),mgr:CU?CU.nm:''};
+/* 거래처 변경 적용 (방안 A) — 얼마에요 BookId 변경 패턴 */
+var _override=$('smCliOverride').value;
+var _shipCnm=o.cnm, _shipCid='', _changeMeta=null;
+if(_override){
+  try{var _ov=JSON.parse(_override);_shipCnm=_ov.nm;_shipCid=_ov.id;_changeMeta=_ov;}catch(e){}
+}
+const rec={
+  id:gid(),woId,wn:o.wn,
+  cnm:_shipCnm, origCnm:o.cnm,        // 얼마에요 BookId(변경) + OrigBookId(원본)
+  isCliChanged: !!_changeMeta,         // 거래처 변경 표시
+  amendedKindCode: _changeMeta?_changeMeta.amendedKindCode:0,  // 얼마에요 AmendedKindCode
+  pnm:o.pnm,qty,defect,good:qty-defect,
+  inspNote:$('smInspNote').value,car:$('smCar').value,
+  driver:$('smDriver').value,dlv:$('smDlv').value,
+  memo:$('smMemo').value,dt:td(),tm:nw(),mgr:CU?CU.nm:'',
+  changeMeta:_changeMeta
+};
+/* 거래처 변경 이력 기록 (얼마에요 EntityLog 패턴) */
+if(_changeMeta){
+  var _chgLog=DB.g('changeLog');
+  _chgLog.push({
+    id:gid(),dt:td(),tm:nw(),
+    type:'출고거래처변경',
+    target:'WO:'+o.wn,
+    amendedKindCode:_changeMeta.amendedKindCode,
+    amendedKindName:_changeMeta.reason,
+    from:o.cnm,to:_shipCnm,
+    by:CU?CU.nm:'',ref:rec.id
+  });
+  DB.s('changeLog',_chgLog);
+}
 const logs=DB.g('shipLog');logs.push(rec);DB.s('shipLog',logs);
+if(typeof DocTrace!=='undefined')DocTrace.link('WO',woId,'SHIP',rec.id,o.wn,'');
 if(shipped+qty>=o.fq){const all=DB.g('wo');const i=all.findIndex(x=>x.id===woId);if(i>=0){all[i].status='출고완료';DB.s('wo',all);
   // 수주 연동: WO 출고완료 → 수주도 출고완료
   if(o.ordId){var _ords=getOrders();var _ord=_ords.find(function(x){return x.id===o.ordId});if(_ord&&_ord.status!=='출고완료'){_ord.status='출고완료';saveOrders(_ords)}}
@@ -174,12 +263,12 @@ if(shipped+qty>=o.fq){const all=DB.g('wo');const i=all.findIndex(x=>x.id===woId)
 try{
   var unitPrice=o.price||(o.amt&&o.fq?Math.round(o.amt/o.fq):0);
   var salesAmt=Math.round(unitPrice*qty);
-  if(salesAmt>0){
-    var sb=DB.g('sales');
-    sb.push({id:gid(),dt:td(),cli:o.cnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id});
-    DB.s('sales',sb);
-    addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+fmt(salesAmt)+'원');
-  }
+  var sb=DB.g('sales');
+  var _saleId=gid();
+  sb.push({id:_saleId,dt:td(),cli:o.cnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id});
+  DB.s('sales',sb);
+  if(typeof DocTrace!=='undefined')DocTrace.link('SHIP',rec.id,'SALE',_saleId,'','');
+  addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+(salesAmt?fmt(salesAmt)+'원':'단가미입력'));
 }catch(e){console.warn('매출연계오류:',e);toast('⚠ 매출 자동등록 실패 — 매출관리에서 수동 등록 필요','err')}
 /* === 데이터 연계: 출고 → 품질검사 기록 === */
 try{
@@ -189,6 +278,15 @@ try{
     DB.s('qcRecords',qcRecs);
   }
 }catch(e){console.warn('품질연계오류:',e);toast('⚠ 품질검사 기록 실패','err')}
+/* === 데이터 연계: 출고 → 재고 자동 차감 (첫 출고 시 BOM 기반) === */
+try{
+  if(shipped===0){
+    if(typeof deductMaterialsWithLog==='function'){deductMaterialsWithLog(woId)}
+    else if(typeof deductMaterials==='function'){deductMaterials(woId)}
+    addLog('자재차감(출고연동): '+o.pnm);
+  }
+  if(typeof addStockLog==='function')addStockLog(o.pnm,'출고',qty,'WO:'+o.wn,'출고→'+o.cnm);
+}catch(e){console.warn('재고연계오류:',e)}
 addLog(`출고: ${o.pnm} ${qty}매 → ${o.cnm}`);cMo('shipMo');rShipReady();if(typeof rDash==='function')rDash();if(typeof rWOList==='function')rWOList();if(typeof rPlan==='function')rPlan();if(typeof updateShipBadge==='function')updateShipBadge();toast(shipped+qty>=o.fq?'출고 완료!':'부분 출고 완료','ok')}
 
 // ===== 백업 관리 UI =====

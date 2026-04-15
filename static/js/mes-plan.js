@@ -250,7 +250,7 @@ function showMRP(){
     h+='</tbody></table>';
   }
   h+='</div>';
-  oMo('mrpMo');$('mrpMo').innerHTML=h;
+  oMo('mrpMo');var _mrpInner=$('mrpMo').querySelector('.mo');if(_mrpInner)_mrpInner.innerHTML=h;else $('mrpMo').innerHTML='<div class="mo" style="max-width:600px">'+h+'</div>';
 }
 
 function autoCSV(){
@@ -717,7 +717,7 @@ function genTradeStatement(saleId){
   var amt=+s.amt||0;var qty=+s.qty||1;var unit=qty>0?Math.round(amt/qty):amt;
   w.document.write('<tr><td>'+(s.pnm||s.item||'-')+'</td><td>'+(s.spec||'-')+'</td><td>'+fmt(qty)+'</td><td>'+fmt(unit)+'</td><td>'+fmt(amt)+'</td></tr>');
   w.document.write('</tbody></table>');
-  var vat=Math.round(amt*0.1);
+  var vat=Math.round(amt*(typeof SysCode!=='undefined'?SysCode.vatRate():0.1));
   w.document.write('<div class="total">공급가액: '+fmt(amt)+'원 | 세액: '+fmt(vat)+'원 | <strong>합계: '+fmt(amt+vat)+'원</strong></div>');
   w.document.write('<div class="footer">팩플로우 | 위 금액을 명세서와 같이 청구합니다</div>');
   w.document.write('</body></html>');
@@ -754,6 +754,7 @@ function poToIncome(poId){
       addLog('매입자동등록: '+po.vnm+' '+po.item+' '+fmt(purAmt)+'원');
     }
   }catch(e){console.warn('매입연계오류:',e);toast('⚠ 매입 자동등록 실패 — 매입관리에서 수동 등록 필요','err')}
+  if(typeof addStockLog==='function')addStockLog(po.item,'입고',+po.qty||0,'PO:'+po.pn,'발주입고 '+po.vnm);
   toast('입고 완료 + 재고 반영 + 매입 등록','ok');
   addLog('발주-입고: '+po.item+' '+po.qty);
   if(typeof rPO==='function')rPO();if(typeof rIncome==='function')rIncome();if(typeof rStock==='function')rStock();if(typeof rPr==='function')rPr();
@@ -1814,5 +1815,430 @@ function renderPlanProcLoad(wos){
 
 // MR['mes-plan'] 등록은 core.js에서 activateMesAdmin('plan')으로 처리됨
 // rPlanPriority() — 납기 우선순위 카드뷰, 추후 생산계획 상단에 통합 예정
+
+/* ================================================================
+   Phase 2: 재고·자재 구조 강화
+   ================================================================ */
+
+/* === 2-1. 재고 입출고 이력 추적 === */
+function addStockLog(item,type,qty,ref,note){
+  var logs=DB.g('stockLog');
+  logs.push({id:gid(),dt:td(),tm:nw(),item:item,type:type,qty:qty,ref:ref||'',note:note||'',mgr:typeof CU!=='undefined'&&CU?CU.nm:''});
+  DB.s('stockLog',logs);
+}
+function rStockLog(){
+  var logs=DB.g('stockLog').sort(function(a,b){return b.tm>a.tm?1:-1}).slice(0,200);
+  var el=$('stockLogTbl');if(!el)return;
+  var typeBadge=function(t){
+    var colors={'입고':'#10B981','출고':'#EF4444','차감':'#F59E0B','실사':'#6366F1','반품':'#8B5CF6'};
+    return'<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:'+(colors[t]||'#E5E7EB')+'20;color:'+(colors[t]||'#6B7280')+'">'+t+'</span>';
+  };
+  el.querySelector('tbody').innerHTML=logs.length?logs.map(function(l){
+    return'<tr><td>'+l.dt+'</td><td>'+typeBadge(l.type)+'</td><td style="font-weight:700">'+l.item+'</td><td style="text-align:right;font-weight:700;color:'+(l.type==='입고'||l.type==='반품'?'#10B981':'#EF4444')+'">'+(l.type==='입고'||l.type==='반품'?'+':'-')+fmt(l.qty)+'</td><td>'+l.ref+'</td><td>'+l.mgr+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty-cell">입출고 이력 없음</td></tr>';
+}
+// 기존 deductMaterials 호출 시 이력도 함께 기록
+var _origDeductMaterials=typeof deductMaterials==='function'?deductMaterials:null;
+function deductMaterialsWithLog(woId){
+  var o=DB.g('wo').find(function(x){return x.id===woId});
+  var boms=DB.g('bom'),bom=boms.find(function(b){return b.prodId===(o&&o.pid)||b.pnm===(o&&o.pnm)});
+  if(bom&&bom.items){
+    bom.items.forEach(function(item){
+      var needed=(item.qty||0)*(o.qty||o.qm||1);
+      if(needed>0)addStockLog(item.nm,'차감',needed,'WO:'+(o.wn||''),'BOM자동차감');
+    });
+  }
+  if(_origDeductMaterials)_origDeductMaterials(woId);
+  else if(typeof deductMaterials==='function')deductMaterials(woId);
+}
+
+/* === 2-2. BOM 원가계산 연동 === */
+function calcBOMCost(prodId){
+  var boms=DB.g('bom'),stocks=DB.g('stock');
+  var bom=boms.find(function(b){return b.prodId===prodId||b.id===prodId});
+  if(!bom||!bom.items)return{materials:0,items:[]};
+  var total=0,details=[];
+  bom.items.forEach(function(item){
+    var stock=stocks.find(function(s){return s.nm===item.nm||s.id===item.id});
+    var unitPrice=stock?stock.avgPrice||stock.unit||0:0;
+    var cost=(item.qty||0)*unitPrice;
+    total+=cost;
+    details.push({nm:item.nm,qty:item.qty||0,unitPrice:unitPrice,cost:cost});
+  });
+  return{materials:total,items:details};
+}
+function calcWOCost(woId){
+  var o=DB.g('wo').find(function(x){return x.id===woId});
+  if(!o)return null;
+  var bom=calcBOMCost(o.pid);
+  var procCost=0;
+  (o.procs||[]).forEach(function(p){
+    if(p.tp==='out'&&p.cost)procCost+=+p.cost;
+  });
+  var paperCost=0;
+  (o.papers||[]).forEach(function(pp){
+    paperCost+=(+pp.qm||0)*(+pp.price||0);
+  });
+  var qty=o.fq||1;
+  var totalCost=bom.materials*qty+procCost+paperCost;
+  var unitCost=qty>0?Math.round(totalCost/qty):0;
+  var salePrice=o.price||0;
+  var margin=salePrice>0?Math.round((salePrice-unitCost)/salePrice*100):0;
+  return{woId:woId,pnm:o.pnm,cnm:o.cnm,qty:qty,materialCost:Math.round(bom.materials*qty),procCost:procCost,paperCost:paperCost,totalCost:Math.round(totalCost),unitCost:unitCost,salePrice:salePrice,margin:margin,details:bom.items};
+}
+
+/* === 2-4. 재고 일괄 재계산 (얼마에요 ReStockStatus 패턴) === */
+function recalcAllStock(){
+  var incomes=DB.g('income'),shipLogs=DB.g('shipLog'),stockLogs=DB.g('stockLog');
+  var boms=DB.g('bom'),wos=DB.g('wo');
+  var calc={};
+  // 입고 합산
+  incomes.forEach(function(inc){
+    var key=inc.item||inc.nm;if(!key)return;
+    if(!calc[key])calc[key]={nm:key,inQty:0,outQty:0};
+    calc[key].inQty+=(+inc.qty||0);
+  });
+  // BOM 기반 출고(생산소모) 합산
+  wos.forEach(function(o){
+    if(o.status!=='완료'&&o.status!=='출고완료'&&o.status!=='완료대기')return;
+    var bom=boms.find(function(b){return b.prodId===o.pid||b.pnm===o.pnm});
+    if(!bom||!bom.items)return;
+    var qty=o.fq||o.qm||1;
+    bom.items.forEach(function(item){
+      var key=item.nm;if(!key)return;
+      if(!calc[key])calc[key]={nm:key,inQty:0,outQty:0};
+      calc[key].outQty+=(item.qty||0)*qty;
+    });
+  });
+  // 재고 갱신
+  var stocks=DB.g('stock');
+  Object.values(calc).forEach(function(c){
+    var si=stocks.findIndex(function(s){return s.nm===c.nm});
+    var newQty=Math.max(0,c.inQty-c.outQty);
+    if(si>=0){stocks[si].qty=newQty;stocks[si].recalcDate=td()}
+    else if(c.inQty>0){stocks.push({id:gid(),nm:c.nm,cat:'원자재',qty:newQty,unit:0,min:0,updated:td(),recalcDate:td()})}
+  });
+  DB.s('stock',stocks);
+  addLog('재고 일괄 재계산 완료 ('+Object.keys(calc).length+'품목)');
+  toast('재고 일괄 재계산 완료','ok');
+  if(typeof rStock==='function')rStock();
+}
+
+/* === 2-5. 이동평균단가 계산 (얼마에요 GetMoveAveragePrice 패턴) === */
+function calcMovingAvgPrice(itemName){
+  var incomes=DB.g('income').filter(function(i){return i.item===itemName}).sort(function(a,b){return a.date>b.date?1:-1});
+  var totalQty=0,totalAmt=0,avgPrice=0;
+  var history=[];
+  incomes.forEach(function(inc){
+    var q=+inc.qty||0,amt=+inc.amt||0;
+    if(q<=0)return;
+    totalQty+=q;totalAmt+=amt;
+    avgPrice=totalQty>0?Math.round(totalAmt/totalQty):0;
+    history.push({dt:inc.date,qty:q,unitPrice:q>0?Math.round(amt/q):0,avgPrice:avgPrice,totalQty:totalQty});
+  });
+  // stock에 이동평균단가 저장
+  var stocks=DB.g('stock');
+  var si=stocks.findIndex(function(s){return s.nm===itemName});
+  if(si>=0){stocks[si].avgPrice=avgPrice;DB.s('stock',stocks)}
+  return{item:itemName,currentAvg:avgPrice,history:history};
+}
+function recalcAllAvgPrices(){
+  var stocks=DB.g('stock'),updated=0;
+  stocks.forEach(function(s){
+    var result=calcMovingAvgPrice(s.nm);
+    if(result.currentAvg>0)updated++;
+  });
+  toast(updated+'개 품목 이동평균단가 갱신','ok');
+  addLog('이동평균단가 일괄 계산: '+updated+'품목');
+}
+
+/* ================================================================
+   Phase 3: 회계·마감 고도화
+   ================================================================ */
+
+/* === 3-1. 자동채번 규칙 (얼마에요 Numbering 패턴) === */
+function genAutoNumber(prefix){
+  var nums=DB.g1('numbering')||{};
+  var yearMonth=td().slice(0,7).replace('-','');
+  var key=prefix+'_'+yearMonth;
+  var seq=(nums[key]||0)+1;
+  nums[key]=seq;
+  DB.s1('numbering',nums);
+  return prefix+'-'+yearMonth+'-'+String(seq).padStart(3,'0');
+}
+// 기존 WO 번호 생성에 자동채번 적용
+function genWONumber(){return genAutoNumber('WO')}
+function genOrderNumber(){return genAutoNumber('ORD')}
+function genShipNumber(){return genAutoNumber('SH')}
+function genEtaxNumber(){return genAutoNumber('TX')}
+
+/* === 3-2. 월마감 요약 리포트 자동 생성 (얼마에요 Closing_Fill 패턴) === */
+function generateMonthlyClosing(yearMonth){
+  var ym=yearMonth||td().slice(0,7);
+  var sales=DB.g('sales').filter(function(r){return r.dt&&r.dt.slice(0,7)===ym});
+  var purchase=DB.g('purchase').filter(function(r){return r.dt&&r.dt.slice(0,7)===ym});
+  var shipLogs=(DB.g('shipLog')||[]).filter(function(s){return s.dt&&s.dt.slice(0,7)===ym});
+  var payHist=DB.g('payHistory').filter(function(p){return p.dt&&p.dt.slice(0,7)===ym});
+  var totalSales=sales.reduce(function(s,r){return s+(r.amt||0)},0);
+  var totalPaid=sales.reduce(function(s,r){return s+(r.paid||0)},0);
+  var totalUnpaid=Math.max(0,totalSales-totalPaid);
+  var totalPurchase=purchase.reduce(function(s,r){return s+(r.amt||0)},0);
+  var totalPurPaid=purchase.reduce(function(s,r){return s+(r.paid||0)},0);
+  var totalPurUnpaid=Math.max(0,totalPurchase-totalPurPaid);
+  var grossProfit=totalSales-totalPurchase;
+  var profitRate=totalSales>0?Math.round(grossProfit/totalSales*100):0;
+  var expenses=DB.g('expenses').filter(function(e){return e.dt&&e.dt.slice(0,7)===ym});
+  var totalExpense=expenses.reduce(function(s,e){return s+(e.amt||0)},0);
+  var netProfit=grossProfit-totalExpense;
+  var shipCount=shipLogs.length;
+  var shipQty=shipLogs.reduce(function(s,l){return s+(l.qty||0)},0);
+  var defectQty=shipLogs.reduce(function(s,l){return s+(l.defect||0)},0);
+  var yieldRate=shipQty>0?Math.round((shipQty-defectQty)/shipQty*100):100;
+  // 전월 비교
+  var prevYm=function(){var y=+ym.slice(0,4),m=+ym.slice(5,7)-1;if(m<1){m=12;y--}return y+'-'+String(m).padStart(2,'0')}();
+  var prevSales=DB.g('sales').filter(function(r){return r.dt&&r.dt.slice(0,7)===prevYm}).reduce(function(s,r){return s+(r.amt||0)},0);
+  var salesGrowth=prevSales>0?Math.round((totalSales-prevSales)/prevSales*100):0;
+  var report={
+    id:gid(),ym:ym,createdAt:nw(),
+    salesTotal:totalSales,salesPaid:totalPaid,salesUnpaid:totalUnpaid,salesCount:sales.length,
+    purchTotal:totalPurchase,purchPaid:totalPurPaid,purchUnpaid:totalPurUnpaid,purchCount:purchase.length,
+    grossProfit:grossProfit,profitRate:profitRate,
+    expenseTotal:totalExpense,netProfit:netProfit,
+    shipCount:shipCount,shipQty:shipQty,defectQty:defectQty,yieldRate:yieldRate,
+    prevSales:prevSales,salesGrowth:salesGrowth,
+    payInCount:payHist.filter(function(p){return p.type==='입금'}).length,
+    payInAmt:payHist.filter(function(p){return p.type==='입금'}).reduce(function(s,p){return s+(p.amt||0)},0),
+    payOutCount:payHist.filter(function(p){return p.type==='지급'}).length,
+    payOutAmt:payHist.filter(function(p){return p.type==='지급'}).reduce(function(s,p){return s+(p.amt||0)},0)
+  };
+  var closings=DB.g('closings');
+  var ci=closings.findIndex(function(c){return c.ym===ym});
+  if(ci>=0)closings[ci]=report;else closings.push(report);
+  DB.s('closings',closings);
+  addLog('월마감 생성: '+ym+' 매출'+fmt(totalSales)+' 매입'+fmt(totalPurchase)+' 이익'+fmt(grossProfit));
+  toast(ym+' 월마감 리포트 생성 완료','ok');
+  return report;
+}
+
+/* === 3-3. 거래처 잔액 자동 정산 (얼마에요 CalculationSlipBalance 패턴) === */
+function recalcClientBalances(){
+  var sales=DB.g('sales'),purchase=DB.g('purchase'),clients=DB.g('cli');
+  var balances={};
+  // 매출: 미수금 집계
+  sales.forEach(function(s){
+    var cli=s.cli||s.cnm||'';if(!cli)return;
+    if(!balances[cli])balances[cli]={receivable:0,payable:0,salesTotal:0,purchTotal:0};
+    balances[cli].receivable+=Math.max(0,(s.amt||0)-(s.paid||0));
+    balances[cli].salesTotal+=(s.amt||0);
+  });
+  // 매입: 미지급금 집계
+  purchase.forEach(function(p){
+    var cli=p.cli||p.cnm||'';if(!cli)return;
+    if(!balances[cli])balances[cli]={receivable:0,payable:0,salesTotal:0,purchTotal:0};
+    balances[cli].payable+=Math.max(0,(p.amt||0)-(p.paid||0));
+    balances[cli].purchTotal+=(p.amt||0);
+  });
+  // 거래처 레코드에 잔액 반영
+  var updated=0;
+  clients.forEach(function(c){
+    var b=balances[c.nm];
+    if(b){c.receivable=b.receivable;c.payable=b.payable;c.salesTotal=b.salesTotal;c.purchTotal=b.purchTotal;c.balanceDate=td();updated++}
+    else{c.receivable=0;c.payable=0}
+  });
+  DB.s('cli',clients);
+  addLog('거래처 잔액 정산: '+updated+'건');
+  toast('거래처 잔액 정산 완료 ('+updated+'건)','ok');
+  return balances;
+}
+
+/* === 3-4. 입출금 유형 코드 체계 (얼마에요 IoCode 패턴) === */
+var IO_CODES={
+  SALE_CASH:'1001',SALE_CREDIT:'1002',SALE_ADVANCE:'1003',
+  PURCH_CASH:'2001',PURCH_CREDIT:'2002',PURCH_ADVANCE:'2003',
+  PAY_IN:'3001',PAY_OUT:'3002',
+  EXPENSE:'4001',REFUND:'5001',RETURN_IN:'5002'
+};
+function getIoCodeLabel(code){
+  var labels={'1001':'현금매출','1002':'외상매출','1003':'선수금','2001':'현금매입','2002':'외상매입','2003':'선급금','3001':'입금','3002':'지급','4001':'경비','5001':'환불','5002':'반품입고'};
+  return labels[code]||code;
+}
+function classifyTransaction(record){
+  if(!record)return IO_CODES.SALE_CASH;
+  var paid=record.paid||0,amt=record.amt||0;
+  if(record.payType==='현금')return IO_CODES.SALE_CASH;
+  if(record.payType==='선수금'||record.payType==='선급금')return IO_CODES.SALE_ADVANCE;
+  if(paid>=amt)return IO_CODES.SALE_CASH;
+  return IO_CODES.SALE_CREDIT;
+}
+
+/* === 3-5. 전표 삭제 시 연쇄 정리 (얼마에요 DeleteSlip 패턴) === */
+function deleteSalesCascade(saleId){
+  if(!saleId)return;
+  var sales=DB.g('sales'),sale=sales.find(function(s){return s.id===saleId});
+  if(!sale)return;
+  // 1. 연결된 세금계산서 해제
+  var etax=DB.g('etax');
+  etax.forEach(function(e){if(e.saleId===saleId){e.saleId='';e.note=(e.note||'')+' [매출삭제]'}});
+  DB.s('etax',etax);
+  // 2. 삭제 이력 보존
+  var trash=DB.g('salesTrash');
+  trash.push({deletedAt:nw(),record:sale,deletedBy:typeof CU!=='undefined'&&CU?CU.nm:''});
+  DB.s('salesTrash',trash);
+  // 3. 입금 이력에서 해당 매출 관련 메모 추가
+  addLog('매출삭제(연쇄): '+sale.cli+' '+sale.prod+' '+fmt(sale.amt)+'원');
+  // 4. DocTrace 연결 해제
+  if(typeof DocTrace!=='undefined'){
+    var links=DB.g('docLinks');
+    DB.s('docLinks',links.filter(function(l){return l.toId!==saleId&&l.fromId!==saleId}));
+  }
+  // 5. 실제 삭제
+  DB.s('sales',sales.filter(function(s){return s.id!==saleId}));
+}
+function deletePurchaseCascade(purchId){
+  if(!purchId)return;
+  var purs=DB.g('purchase'),pur=purs.find(function(p){return p.id===purchId});
+  if(!pur)return;
+  var trash=DB.g('purchTrash');
+  trash.push({deletedAt:nw(),record:pur,deletedBy:typeof CU!=='undefined'&&CU?CU.nm:''});
+  DB.s('purchTrash',trash);
+  addLog('매입삭제(연쇄): '+pur.cli+' '+pur.prod+' '+fmt(pur.amt)+'원');
+  DB.s('purchase',purs.filter(function(p){return p.id!==purchId}));
+}
+
+/* ================================================================
+   UI 렌더링 함수
+   ================================================================ */
+
+/* === UI-1: 재고현황 렌더링 === */
+function rStock(){
+  var stocks=DB.g('stock');
+  // KPI
+  var kpi=$('stockKpi');
+  if(kpi){
+    var totalItems=stocks.length;
+    var totalVal=stocks.reduce(function(s,st){return s+((st.qty||0)*(st.avgPrice||st.unit||0))},0);
+    var lowCount=stocks.filter(function(s){return s.min>0&&(s.qty||0)<=s.min}).length;
+    kpi.innerHTML='<div class="sb blue"><div class="l">자재 품목수</div><div class="v">'+totalItems+'</div></div>'
+      +'<div class="sb green"><div class="l">재고 총액</div><div class="v">'+fmt(totalVal)+'<span style="font-size:12px">원</span></div></div>'
+      +'<div class="sb '+(lowCount>0?'red':'orange')+'"><div class="l">안전재고 미달</div><div class="v">'+lowCount+'</div></div>';
+  }
+  // 테이블
+  var tbl=$('stockMainTbl');if(!tbl)return;
+  tbl.querySelector('tbody').innerHTML=stocks.length?stocks.map(function(s){
+    var val=(s.qty||0)*(s.avgPrice||s.unit||0);
+    var low=s.min>0&&(s.qty||0)<=s.min;
+    var stBadge=low?'<span class="bd bd-d">부족</span>':(s.qty||0)>0?'<span class="bd bd-s">정상</span>':'<span class="bd" style="background:#F3F4F6;color:#9CA3AF">없음</span>';
+    return'<tr'+(low?' class="row-warn"':'')+'><td style="font-weight:700">'+s.nm+'</td><td>'+(s.cat||'-')+'</td>'
+      +'<td style="text-align:right;font-weight:700">'+fmt(s.qty||0)+'</td>'
+      +'<td style="text-align:right">'+(s.min||'-')+'</td>'
+      +'<td style="text-align:right">'+fmt(s.avgPrice||s.unit||0)+'</td>'
+      +'<td style="text-align:right;font-weight:700">'+fmt(val)+'</td>'
+      +'<td>'+stBadge+'</td>'
+      +'<td style="font-size:11px;color:var(--txt3)">'+(s.updated||s.recalcDate||'-')+'</td></tr>';
+  }).join(''):'<tr><td colspan="8" class="empty-cell">재고 데이터 없음. 발주→입고로 등록하거나 재고 재계산을 실행하세요.</td></tr>';
+  // 입출고이력도 갱신
+  if(typeof rStockLog==='function')rStockLog();
+}
+
+/* === UI-2: WO 원가분석 모달 === */
+function showWOCostAnalysis(){
+  if(!detId){toast('작업지시서를 선택하세요','err');return}
+  var cost=calcWOCost(detId);
+  if(!cost){toast('원가 데이터 없음','err');return}
+  var h='<div style="padding:16px"><h3 style="margin:0 0 16px;font-size:16px;font-weight:800">원가 분석: '+cost.pnm+'</h3>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
+  h+='<div style="background:#EFF6FF;padding:14px;border-radius:10px;text-align:center"><div style="font-size:11px;color:#64748B">총원가</div><div style="font-size:20px;font-weight:800;color:#1E3A5F">'+fmt(cost.totalCost)+'<span style="font-size:12px">원</span></div></div>';
+  h+='<div style="background:#F0FDF4;padding:14px;border-radius:10px;text-align:center"><div style="font-size:11px;color:#64748B">개당원가</div><div style="font-size:20px;font-weight:800;color:#059669">'+fmt(cost.unitCost)+'<span style="font-size:12px">원</span></div></div>';
+  var mColor=cost.margin>=20?'#059669':cost.margin>=10?'#D97706':'#DC2626';
+  h+='<div style="background:'+(cost.margin>=20?'#F0FDF4':cost.margin>=10?'#FFFBEB':'#FEF2F2')+';padding:14px;border-radius:10px;text-align:center"><div style="font-size:11px;color:#64748B">마진율</div><div style="font-size:20px;font-weight:800;color:'+mColor+'">'+cost.margin+'<span style="font-size:12px">%</span></div></div>';
+  h+='</div>';
+  // 원가 구성
+  h+='<table class="dt" style="margin-bottom:12px"><thead><tr><th>항목</th><th style="text-align:right">금액</th><th style="text-align:right">비율</th></tr></thead><tbody>';
+  var items=[{nm:'자재비(BOM)',amt:cost.materialCost},{nm:'종이/원단비',amt:cost.paperCost},{nm:'외주가공비',amt:cost.procCost}];
+  items.forEach(function(it){
+    var pct=cost.totalCost>0?Math.round(it.amt/cost.totalCost*100):0;
+    h+='<tr><td>'+it.nm+'</td><td style="text-align:right;font-weight:700">'+fmt(it.amt)+'원</td><td style="text-align:right">'+pct+'%</td></tr>';
+  });
+  h+='<tr style="font-weight:800;background:#F8FAFC"><td>합계</td><td style="text-align:right">'+fmt(cost.totalCost)+'원</td><td style="text-align:right">100%</td></tr>';
+  h+='</tbody></table>';
+  // 판가 비교
+  if(cost.salePrice>0){
+    h+='<div style="background:#F8FAFC;padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">';
+    h+='<span style="font-size:13px;font-weight:600">판매단가: '+fmt(cost.salePrice)+'원</span>';
+    h+='<span style="font-size:13px;font-weight:700;color:'+mColor+'">이익: '+fmt(cost.salePrice-cost.unitCost)+'원/개</span>';
+    h+='</div>';
+  }else{
+    h+='<div style="background:#FFFBEB;padding:12px;border-radius:8px;text-align:center;font-size:12px;color:#92400E">판매단가 미입력 — 작업지시서에서 단가를 입력하면 마진 분석이 가능합니다</div>';
+  }
+  h+='</div>';
+  // 모달 표시
+  var mo=document.createElement('div');
+  mo.id='costMo';mo.className='mo-ov';mo.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.onclick=function(e){if(e.target===mo){mo.remove()}};
+  mo.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">'+h+'<div style="text-align:right;padding:0 16px 16px"><button class="btn btn-o" onclick="this.closest(\'.mo-ov\').remove()">닫기</button></div></div>';
+  document.body.appendChild(mo);
+}
+
+/* === UI-4: 월마감 실행 + 렌더링 === */
+function runMonthlyClosing(){
+  var ym=$('monthlyRptMonth')?$('monthlyRptMonth').value:'';
+  if(!ym)ym=td().slice(0,7);
+  var rpt=generateMonthlyClosing(ym);
+  renderClosingReport(rpt);
+}
+function renderClosingReport(rpt){
+  var el=$('monthlyClosingArea');if(!el||!rpt)return;
+  var h='<div style="border:2px solid var(--pri);border-radius:12px;padding:20px;background:#FAFBFF">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0;font-size:16px;color:var(--pri)">'+rpt.ym+' 월마감 요약</h3><span style="font-size:11px;color:var(--txt3)">생성: '+rpt.createdAt+'</span></div>';
+  // KPI 그리드
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">';
+  h+='<div style="background:#EFF6FF;padding:12px;border-radius:8px;text-align:center"><div style="font-size:10px;color:#64748B">매출</div><div style="font-size:16px;font-weight:800;color:#1E3A5F">'+fmt(rpt.salesTotal)+'</div><div style="font-size:10px;color:'+(rpt.salesGrowth>=0?'#059669':'#DC2626')+'">'+(rpt.salesGrowth>=0?'+':'')+rpt.salesGrowth+'% 전월비</div></div>';
+  h+='<div style="background:#FEF2F2;padding:12px;border-radius:8px;text-align:center"><div style="font-size:10px;color:#64748B">매입</div><div style="font-size:16px;font-weight:800;color:#DC2626">'+fmt(rpt.purchTotal)+'</div><div style="font-size:10px;color:var(--txt3)">'+rpt.purchCount+'건</div></div>';
+  var gpColor=rpt.grossProfit>=0?'#059669':'#DC2626';
+  h+='<div style="background:'+(rpt.grossProfit>=0?'#F0FDF4':'#FEF2F2')+';padding:12px;border-radius:8px;text-align:center"><div style="font-size:10px;color:#64748B">매출이익</div><div style="font-size:16px;font-weight:800;color:'+gpColor+'">'+fmt(rpt.grossProfit)+'</div><div style="font-size:10px;color:'+gpColor+'">이익률 '+rpt.profitRate+'%</div></div>';
+  h+='<div style="background:#FFFBEB;padding:12px;border-radius:8px;text-align:center"><div style="font-size:10px;color:#64748B">미수잔액</div><div style="font-size:16px;font-weight:800;color:#D97706">'+fmt(rpt.salesUnpaid)+'</div><div style="font-size:10px;color:var(--txt3)">미지급 '+fmt(rpt.purchUnpaid)+'</div></div>';
+  h+='</div>';
+  // 상세
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  h+='<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #E5E7EB"><div style="font-size:12px;font-weight:700;margin-bottom:8px">출고/생산</div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>출고 건수</span><span style="font-weight:700">'+rpt.shipCount+'건</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>출고 수량</span><span style="font-weight:700">'+fmt(rpt.shipQty)+'매</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>양품률</span><span style="font-weight:700;color:'+(rpt.yieldRate>=95?'#059669':'#D97706')+'">'+rpt.yieldRate+'%</span></div>';
+  h+='</div>';
+  h+='<div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #E5E7EB"><div style="font-size:12px;font-weight:700;margin-bottom:8px">입금/지급</div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>입금</span><span style="font-weight:700;color:#059669">'+fmt(rpt.payInAmt)+'원 ('+rpt.payInCount+'건)</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>지급</span><span style="font-weight:700;color:#DC2626">'+fmt(rpt.payOutAmt)+'원 ('+rpt.payOutCount+'건)</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>경비</span><span style="font-weight:700">'+fmt(rpt.expenseTotal)+'원</span></div>';
+  h+='</div></div></div>';
+  el.innerHTML=h;
+}
+// 페이지 진입 시 기존 마감 리포트 로드
+function loadClosingReport(){
+  var ym=$('monthlyRptMonth')?$('monthlyRptMonth').value:'';
+  if(!ym)ym=td().slice(0,7);
+  var closings=DB.g('closings');
+  var rpt=closings.find(function(c){return c.ym===ym});
+  if(rpt)renderClosingReport(rpt);
+  else{var el=$('monthlyClosingArea');if(el)el.innerHTML='<div style="text-align:center;padding:16px;color:var(--txt3);font-size:13px">해당 월의 마감 리포트가 없습니다. "월마감 생성" 버튼을 클릭하세요.</div>'}
+}
+
+/* === UI-5: 거래처 잔액 표시 (거래처 목록에 반영) === */
+// rCli가 호출될 때 잔액 정보가 있으면 표시되도록 기존 거래처 렌더링에 위임
+
+/* === UI-6: WO 자동채번 적용 === */
+function applyAutoWONum(){
+  var el=$('woNum');
+  if(el&&!el.value){
+    el.value=genWONumber();
+  }
+}
+
+/* === core ER(Event Router) 연결 === */
+if(typeof ER!=='undefined'){
+  var _origMatStock=ER['mat-stock'];
+  ER['mat-stock']=function(){if(typeof rStock==='function')rStock();if(_origMatStock)_origMatStock()};
+  var _origBizMonthly=ER['biz-monthly'];
+  ER['biz-monthly']=function(){if(typeof loadClosingReport==='function')loadClosingReport();if(_origBizMonthly)_origBizMonthly()};
+}
 
 initDB();

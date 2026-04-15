@@ -17,3 +17,17 @@ venv/
 
 # Backup
 *.bak
+
+# 얼마에요 원본 (49GB, 이관용으로만 사용)
+얼마에요2E/
+
+# 바이너리 도구
+cloudflared
+ngrok
+
+# 이관 추출 결과
+migrate/exported/
+
+# 프리뷰/로그
+/tmp/
+*.log

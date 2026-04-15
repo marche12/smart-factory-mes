@@ -1,0 +1,465 @@
+#!/usr/bin/env python3
+"""
+얼마에요2E에서 내보낸 엑셀/CSV를 팩플로우 형식으로 변환하여 DB에 넣는 스크립트.
+
+사용법:
+  1. migrate/exported/ 폴더에 엑셀(.xlsx) 또는 CSV 파일을 넣기
+     - 얼마에요에서 거래처/품목 목록을 엑셀로 내보내기
+  2. python3 02_import_to_packflow.py 실행
+
+  수동 입력: python3 02_import_to_packflow.py --manual
+"""
+import csv
+import json
+import os
+import sys
+import uuid
+import sqlite3
+from datetime import datetime
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+EXPORT_DIR = os.path.join(SCRIPT_DIR, "exported")
+DB_PATH = os.path.join(PROJECT_DIR, "data", "mes.db")
+
+
+def gid():
+    return str(uuid.uuid4())[:8]
+
+
+def now_str():
+    return datetime.now().isoformat()
+
+
+def today():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def read_csv(filename):
+    """CSV 파일 읽기"""
+    path = os.path.join(EXPORT_DIR, filename)
+    if not os.path.exists(path):
+        print(f"  [SKIP] {filename} 파일 없음")
+        return []
+    with open(path, "r", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+
+def read_xlsx_auto():
+    """exported/ 폴더의 모든 .xlsx 파일을 읽어 거래처/품목을 자동 판별"""
+    try:
+        import openpyxl
+    except ImportError:
+        print("openpyxl 설치 필요: pip3 install openpyxl")
+        return [], []
+
+    xlsx_files = [f for f in os.listdir(EXPORT_DIR) if f.endswith(('.xlsx', '.xls'))]
+    if not xlsx_files:
+        return [], []
+
+    customers = []
+    items = []
+
+    for fname in xlsx_files:
+        path = os.path.join(EXPORT_DIR, fname)
+        print(f"  엑셀 읽기: {fname}")
+        try:
+            wb = openpyxl.load_workbook(path, data_only=True)
+        except Exception as e:
+            print(f"    [ERROR] {e}")
+            continue
+
+        for sheet in wb.sheetnames:
+            ws = wb[sheet]
+            rows = list(ws.iter_rows(values_only=True))
+            if len(rows) < 2:
+                continue
+
+            # 헤더 행 찾기 (처음 나오는 텍스트 행)
+            header_idx = 0
+            for i, row in enumerate(rows):
+                vals = [str(v or '').strip() for v in row]
+                if any(v for v in vals):
+                    header_idx = i
+                    break
+
+            headers = [str(v or '').strip().replace('\n', ' ') for v in rows[header_idx]]
+            headers_lower = [h.lower() for h in headers]
+            data_rows = rows[header_idx + 1:]
+
+            # 거래처 판별: '거래처명', '상호', '사업자' 등의 컬럼이 있으면
+            is_customer = any(k in ''.join(headers) for k in ['거래처', '상호', '사업자', '매출처', '매입처', '업체명'])
+            # 품목 판별: '품목', '제품', '품명', '규격' 등
+            is_item = any(k in ''.join(headers) for k in ['품목', '제품', '품명', '코드', '바코드'])
+
+            if is_customer:
+                print(f"    → 거래처 시트 감지: [{sheet}] ({len(data_rows)}행)")
+                for row in data_rows:
+                    vals = {headers[j]: (str(row[j]) if j < len(row) and row[j] is not None else '') for j in range(len(headers))}
+                    # 거래처명 찾기
+                    nm = ''
+                    for key in ['거래처명', '상호', '거래처', '업체명', '회사명', '매출처', '매입처']:
+                        if key in vals and vals[key].strip():
+                            nm = vals[key].strip()
+                            break
+                    if not nm:
+                        # 첫 번째 비어있지 않은 열
+                        for v in row:
+                            if v and str(v).strip() and not str(v).replace('-','').replace(' ','').isdigit():
+                                nm = str(v).strip()
+                                break
+                    if not nm or nm == 'None':
+                        continue
+                    customers.append({
+                        "nm": nm,
+                        "bizNo": _find_val(vals, ['사업자번호', '사업자', '등록번호']),
+                        "ceo": _find_val(vals, ['대표자', '대표', '대표자명']),
+                        "bizType": _find_val(vals, ['업태']),
+                        "bizClass": _find_val(vals, ['종목', '업종']),
+                        "addr": _find_val(vals, ['주소', '소재지', '사업장주소']),
+                        "tel": _find_val(vals, ['전화', '전화번호', '연락처', 'TEL']),
+                        "fax": _find_val(vals, ['팩스', 'FAX']),
+                        "email": _find_val(vals, ['이메일', 'E-mail', 'email']),
+                        "customerType": _find_val(vals, ['유형', '구분', '분류']),
+                        "note": _find_val(vals, ['비고', '메모', '참고']),
+                    })
+
+            elif is_item:
+                print(f"    → 품목 시트 감지: [{sheet}] ({len(data_rows)}행)")
+                for row in data_rows:
+                    vals = {headers[j]: (str(row[j]) if j < len(row) and row[j] is not None else '') for j in range(len(headers))}
+                    nm = ''
+                    for key in ['품목명', '품명', '제품명', '제품', '품목', '상품명']:
+                        if key in vals and vals[key].strip():
+                            nm = vals[key].strip()
+                            break
+                    if not nm or nm == 'None':
+                        continue
+                    price_str = _find_val(vals, ['단가', '판매단가', '기본단가', '가격'])
+                    try:
+                        price = int(float(price_str.replace(',', ''))) if price_str else 0
+                    except (ValueError, TypeError):
+                        price = 0
+                    items.append({
+                        "nm": nm,
+                        "code": _find_val(vals, ['코드', '품목코드', '제품코드', '품번']),
+                        "spec": _find_val(vals, ['규격', '사양', '스펙']),
+                        "price": price,
+                        "note": _find_val(vals, ['비고', '메모', '참고']),
+                    })
+            else:
+                print(f"    → [{sheet}] 거래처/품목 판별 불가 (컬럼: {', '.join(headers[:5])}...)")
+
+    print(f"  총 거래처 {len(customers)}건, 품목 {len(items)}건 읽음")
+    return customers, items
+
+
+def _find_val(vals_dict, keys):
+    """여러 가능한 키 중 값이 있는 것을 반환"""
+    for k in keys:
+        if k in vals_dict and vals_dict[k].strip() and vals_dict[k].strip() != 'None':
+            return vals_dict[k].strip()
+    return ''
+
+
+def get_db_data(db, key):
+    """팩플로우 DB에서 기존 데이터 읽기"""
+    row = db.execute("SELECT value FROM data_store WHERE key=?", [key]).fetchone()
+    if row:
+        return json.loads(row[0])
+    return []
+
+
+def set_db_data(db, key, data):
+    """팩플로우 DB에 데이터 쓰기"""
+    db.execute(
+        "INSERT OR REPLACE INTO data_store(key, value) VALUES(?, ?)",
+        [key, json.dumps(data, ensure_ascii=False)]
+    )
+
+
+def convert_customers(rows):
+    """얼마에요 거래처 → 팩플로우 cli 형식"""
+    clients = []
+    seen = set()
+    for r in rows:
+        nm = (r.get("nm") or "").strip()
+        if not nm or nm in seen:
+            continue
+        seen.add(nm)
+
+        # 유형 판별: customerType에 '매입'이 포함되면 매입처
+        ct = (r.get("customerType") or "").strip()
+        if "매입" in ct or "구매" in ct:
+            ctype = "purchase"
+        elif "겸" in ct or "겸용" in ct:
+            ctype = "both"
+        else:
+            ctype = "sales"
+
+        clients.append({
+            "id": gid(),
+            "nm": nm,
+            "bizNo": (r.get("bizNo") or "").strip(),
+            "ceo": (r.get("ceo") or "").strip(),
+            "bizType": (r.get("bizType") or "").strip(),
+            "bizClass": (r.get("bizClass") or "").strip(),
+            "addr": (r.get("addr") or "").strip(),
+            "tel": (r.get("tel") or "").strip(),
+            "fax": (r.get("fax") or "").strip(),
+            "email": (r.get("email") or "").strip(),
+            "cType": ctype,
+            "contactNm": (r.get("contactNm") or "").strip(),
+            "contactTel": (r.get("contactTel") or "").strip(),
+            "note": (r.get("note") or "").strip(),
+            "ps": "",
+            "cat": now_str(),
+            "_src": "almayo"
+        })
+    return clients
+
+
+def convert_items(rows, clients):
+    """얼마에요 품목 → 팩플로우 prod 형식"""
+    products = []
+    seen = set()
+    # 기본 공정 (패키지 제조)
+    default_procs = [
+        {"nm": "인쇄", "tp": "out"},
+        {"nm": "코팅", "tp": "in"},
+        {"nm": "톰슨", "tp": "in"},
+        {"nm": "접착", "tp": "in"},
+    ]
+
+    for r in rows:
+        nm = (r.get("nm") or "").strip()
+        if not nm or nm in seen:
+            continue
+        seen.add(nm)
+
+        price = 0
+        try:
+            price = int(float(r.get("price") or 0))
+        except (ValueError, TypeError):
+            pass
+
+        products.append({
+            "id": gid(),
+            "nm": nm,
+            "code": (r.get("code") or "").strip(),
+            "cnm": "",  # 거래처 연결은 WO 등록 시 자동
+            "cid": "",
+            "spec": (r.get("spec") or "").strip(),
+            "price": price,
+            "paper": "",
+            "papers": [],
+            "fabric": "",
+            "fabrics": [],
+            "procs": default_procs,
+            "ps": "",
+            "gold": "",
+            "mold": "",
+            "hand": "",
+            "nt": (r.get("note") or "").strip(),
+            "caut": "",
+            "cat": now_str(),
+            "_src": "almayo"
+        })
+    return products
+
+
+def convert_company(rows):
+    """얼마에요 회사정보 → 팩플로우 co 형식"""
+    if not rows:
+        return None
+    r = rows[0]
+    return {
+        "nm": (r.get("nm") or "").strip(),
+        "bizNo": (r.get("bizNo") or "").strip(),
+        "ceo": (r.get("ceo") or "").strip(),
+        "bizType": (r.get("bizType") or "").strip(),
+        "bizClass": (r.get("bizClass") or "").strip(),
+        "addr": (r.get("addr") or "").strip(),
+        "tel": (r.get("tel") or "").strip(),
+        "fax": (r.get("fax") or "").strip(),
+    }
+
+
+def convert_balances(rows, clients):
+    """잔액 데이터 → 거래처에 미수금/미지급금 반영"""
+    cli_map = {c["nm"]: c for c in clients}
+    for r in rows:
+        cnm = (r.get("customerNm") or "").strip()
+        balance = float(r.get("balance") or 0)
+        if cnm in cli_map:
+            if balance > 0:
+                cli_map[cnm]["receivable"] = int(balance)
+            elif balance < 0:
+                cli_map[cnm]["payable"] = int(abs(balance))
+
+
+def main():
+    manual_mode = "--manual" in sys.argv
+
+    if not os.path.exists(DB_PATH):
+        print(f"팩플로우 DB가 없습니다: {DB_PATH}")
+        print("서버를 먼저 한 번 실행하세요: python3 server.py")
+        sys.exit(1)
+
+    db = sqlite3.connect(DB_PATH)
+
+    # 기존 데이터 확인
+    existing_cli = get_db_data(db, "cli")
+    existing_prod = get_db_data(db, "prod")
+    almayo_cli = [c for c in existing_cli if c.get("_src") == "almayo"]
+    almayo_prod = [p for p in existing_prod if p.get("_src") == "almayo"]
+
+    if almayo_cli or almayo_prod:
+        print(f"이미 이관된 데이터가 있습니다: 거래처 {len(almayo_cli)}건, 품목 {len(almayo_prod)}건")
+        ans = input("기존 이관 데이터를 삭제하고 다시 이관할까요? (y/N): ")
+        if ans.lower() != "y":
+            print("취소")
+            db.close()
+            return
+        # 기존 이관 데이터 제거
+        existing_cli = [c for c in existing_cli if c.get("_src") != "almayo"]
+        existing_prod = [p for p in existing_prod if p.get("_src") != "almayo"]
+
+    if manual_mode:
+        print("\n=== 수동 입력 모드 ===")
+        print("CSV 파일 없이 직접 입력합니다.\n")
+        new_cli, new_prod = manual_input()
+    else:
+        # 1순위: 엑셀 파일 (.xlsx)
+        xlsx_files = [f for f in os.listdir(EXPORT_DIR) if f.endswith(('.xlsx', '.xls'))] if os.path.exists(EXPORT_DIR) else []
+
+        if xlsx_files:
+            print(f"\n엑셀 파일 {len(xlsx_files)}개 발견!")
+            xlsx_custs, xlsx_items = read_xlsx_auto()
+            new_cli = convert_customers([{
+                "nm": c["nm"], "bizNo": c.get("bizNo",""), "ceo": c.get("ceo",""),
+                "bizType": c.get("bizType",""), "bizClass": c.get("bizClass",""),
+                "addr": c.get("addr",""), "tel": c.get("tel",""), "fax": c.get("fax",""),
+                "email": c.get("email",""), "customerType": c.get("customerType",""),
+                "note": c.get("note","")
+            } for c in xlsx_custs])
+            new_prod = convert_items([{
+                "nm": it["nm"], "code": it.get("code",""),
+                "spec": it.get("spec",""), "price": str(it.get("price",0)),
+                "note": it.get("note","")
+            } for it in xlsx_items], new_cli)
+        else:
+            # 2순위: CSV
+            print("\nCSV 파일 확인 중...")
+            cust_rows = read_csv("customers.csv")
+            item_rows = read_csv("items.csv")
+            comp_rows = read_csv("company.csv")
+            bal_rows = read_csv("balances.csv")
+
+            if not cust_rows and not item_rows:
+                print("\n파일이 없습니다!")
+                print(f"  폴더: {EXPORT_DIR}")
+                print("\n얼마에요에서 거래처/품목 목록을 엑셀로 내보내서")
+                print(f"  {EXPORT_DIR}/ 폴더에 넣어주세요.")
+                print("\n또는: python3 02_import_to_packflow.py --manual")
+                db.close()
+                return
+
+            new_cli = convert_customers(cust_rows)
+            new_prod = convert_items(item_rows, new_cli)
+
+            co = convert_company(comp_rows)
+            if co:
+                db.execute(
+                    "INSERT OR REPLACE INTO data_store(key, value) VALUES('co', ?)",
+                    [json.dumps(co, ensure_ascii=False)]
+                )
+                print(f"  회사정보: {co['nm']}")
+
+            if bal_rows:
+                convert_balances(bal_rows, new_cli)
+                has_balance = sum(1 for c in new_cli if c.get("receivable") or c.get("payable"))
+                print(f"  잔액 반영: {has_balance}건")
+
+    # 기존 + 신규 합치기 (중복 이름 제거)
+    existing_names = {c["nm"] for c in existing_cli}
+    for c in new_cli:
+        if c["nm"] not in existing_names:
+            existing_cli.append(c)
+            existing_names.add(c["nm"])
+
+    existing_pnames = {p["nm"] for p in existing_prod}
+    for p in new_prod:
+        if p["nm"] not in existing_pnames:
+            existing_prod.append(p)
+            existing_pnames.add(p["nm"])
+
+    # 저장
+    set_db_data(db, "cli", existing_cli)
+    set_db_data(db, "prod", existing_prod)
+    db.commit()
+    db.close()
+
+    added_cli = len([c for c in existing_cli if c.get("_src") == "almayo"])
+    added_prod = len([p for p in existing_prod if p.get("_src") == "almayo"])
+
+    print(f"\n{'='*50}")
+    print(f"  이관 완료!")
+    print(f"  거래처: {added_cli}건")
+    print(f"  품목: {added_prod}건")
+    print(f"{'='*50}")
+    print(f"\n팩플로우(http://localhost:8080)에서 확인하세요.")
+    print("거래처 → 거래처 목록, 품목 → 품목 목록")
+
+
+def manual_input():
+    """대화식 수동 입력"""
+    clients = []
+    products = []
+
+    print("--- 거래처 입력 (빈 줄 입력 시 종료) ---")
+    while True:
+        nm = input("거래처명: ").strip()
+        if not nm:
+            break
+        tel = input("  전화: ").strip()
+        addr = input("  주소: ").strip()
+        tp = input("  유형 (sales/purchase/both) [sales]: ").strip() or "sales"
+        clients.append({
+            "id": gid(), "nm": nm, "tel": tel, "addr": addr,
+            "cType": tp, "bizNo": "", "ceo": "", "fax": "", "email": "",
+            "ps": "", "note": "", "cat": now_str(), "_src": "almayo"
+        })
+        print(f"  → {nm} 추가됨")
+
+    print(f"\n거래처 {len(clients)}건 입력 완료\n")
+
+    print("--- 품목 입력 (빈 줄 입력 시 종료) ---")
+    default_procs = [
+        {"nm": "인쇄", "tp": "out"},
+        {"nm": "코팅", "tp": "in"},
+        {"nm": "톰슨", "tp": "in"},
+        {"nm": "접착", "tp": "in"},
+    ]
+    while True:
+        nm = input("품목명: ").strip()
+        if not nm:
+            break
+        spec = input("  규격: ").strip()
+        price = input("  단가: ").strip()
+        products.append({
+            "id": gid(), "nm": nm, "code": "", "cnm": "", "cid": "",
+            "spec": spec, "price": int(price) if price else 0,
+            "paper": "", "papers": [], "fabric": "", "fabrics": [],
+            "procs": default_procs, "ps": "", "gold": "", "mold": "",
+            "hand": "", "nt": "", "caut": "", "cat": now_str(), "_src": "almayo"
+        })
+        print(f"  → {nm} 추가됨")
+
+    print(f"\n품목 {len(products)}건 입력 완료")
+    return clients, products
+
+
+if __name__ == "__main__":
+    main()

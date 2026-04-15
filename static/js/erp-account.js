@@ -1,7 +1,7 @@
 /* ===== ERP:sales ===== */
 
 function cAmt(p){const q=+$(p+'Qty').value||1,pr=+$(p+'Price').value||0;$(p+'Amt').value=fmt(q*pr)+'원'}
-function cTax(){const s=+$('txSup').value||0;$('txVat').value=Math.round(s*0.1);$('txTot').value=fmt(s+Math.round(s*0.1))+'원'}
+function cTax(){const s=+$('txSup').value||0;var _vr=typeof SysCode!=='undefined'?SysCode.vatRate():0.1;$('txVat').value=Math.round(s*_vr);$('txTot').value=fmt(s+Math.round(s*_vr))+'원'}
 
 /* === 매출 === */
 function rSl(){
@@ -17,10 +17,16 @@ function rSl(){
   $('slP').textContent=fmt(ma.reduce((s,r)=>s+(r.paid||0),0))+'원';
   $('slC').textContent=[...new Set(ma.map(r=>r.cli))].length;
   $('slTbl').querySelector('tbody').innerHTML=fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const st=u<=0?'<span class="bd bd-s">완납</span>':r.paid>0?'<span class="bd bd-o">부분</span>':'<span class="bd bd-d">미수</span>';
-    const supply=Math.round((r.amt||0)/1.1),vat=(r.amt||0)-supply;
-    return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right">${fmt(supply)}</td><td style="text-align:right;color:var(--txt2)">${fmt(vat)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="genTradeStatement('${r.id}')" title="거래명세서">명세</button> <button class="btn btn-sm btn-o" onclick="eSlr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dSlr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="12" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
+    const supply=Math.round((r.amt||0)/(1+(typeof SysCode!=='undefined'?SysCode.vatRate():0.1))),vat=(r.amt||0)-supply;
+    var cliCell = '<span style="font-weight:700">'+r.cli+'</span>';
+    // 얼마에요 패턴: IsAmended (당초), IsAdditionalAmended (부의), 수정 신규
+    if(r.isAmended) cliCell += ' <span style="font-size:10px;background:#E5E7EB;color:#374151;padding:2px 5px;border-radius:4px" title="수정사유: '+(typeof AMEND_KINDS!=='undefined'?(AMEND_KINDS[r.amendedKindCode]||''):'')+'">당초(수정완료)</span>';
+    else if(r.isAdditionalAmended) cliCell += ' <span style="font-size:10px;background:#FEE2E2;color:#991B1B;padding:2px 5px;border-radius:4px" title="당초 취소">부의(-)</span>';
+    else if(r.amendedOriginalId) cliCell += ' <span style="font-size:10px;background:#DBEAFE;color:#1E3A5F;padding:2px 5px;border-radius:4px" title="수정 발행">수정(+)</span>';
+    if(r.changeMeta && !r.isAmended && !r.isAdditionalAmended && !r.amendedOriginalId) cliCell += ' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 5px;border-radius:4px" title="원래: '+(r.changeMeta.from||'?')+' / 사유: '+(r.changeMeta.reason||'')+'">출고시 변경</span>';
+    return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td>${cliCell}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right">${fmt(supply)}</td><td style="text-align:right;color:var(--txt2)">${fmt(vat)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="genTradeStatement('${r.id}')" title="거래명세서">명세</button> <button class="btn btn-sm" style="background:#FEF3C7;color:#92400E;border:none;padding:5px 10px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer" onclick="openAmendSale('${r.id}')" title="거래처/내용 수정 (이력 보존)">⚠ 수정</button> <button class="btn btn-sm btn-o" onclick="eSlr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dSlr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="12" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
   // 엑셀 내보내기 데이터
-  _prdExportData['sl']={headers:['일자','거래처','품명','수량','단가','공급가액','부가세','합계','입금','미수금','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const supply=Math.round((r.amt||0)/1.1),vat=(r.amt||0)-supply;return[r.dt,r.cli,r.prod,r.qty,r.price,supply,vat,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미수']}),sheetName:'매출장부',fileName:'매출장부'};
+  _prdExportData['sl']={headers:['일자','거래처','품명','수량','단가','공급가액','부가세','합계','입금','미수금','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const supply=Math.round((r.amt||0)/(1+(typeof SysCode!=='undefined'?SysCode.vatRate():0.1))),vat=(r.amt||0)-supply;return[r.dt,r.cli,r.prod,r.qty,r.price,supply,vat,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미수']}),sheetName:'매출장부',fileName:'매출장부'};
   rRecv();
 }
 window._prdCb_sl=rSl;
@@ -45,9 +51,11 @@ function rRecv(){
   }).join('');
 }
 function openSM(){['sId','sProd','sNote'].forEach(x=>$(x).value='');$('sDt').value=td();$('sCli').value='';$('sQty').value='';$('sPrice').value='';$('sAmt').value='';$('sPaid').value=0;$('sPay').value='미수';$('sMoT').textContent='매출 등록';oMo('sMo')}
-function eSlr(id){const r=DB.g('sales').find(x=>x.id===id);if(!r)return;$('sId').value=r.id;$('sDt').value=r.dt;$('sCli').value=r.cli;$('sProd').value=r.prod;$('sQty').value=r.qty;$('sPrice').value=r.price;$('sAmt').value=fmt(r.amt);$('sPaid').value=r.paid||0;$('sPay').value=r.payType||'미수';$('sNote').value=r.note||'';$('sMoT').textContent='매출 수정';oMo('sMo')}
+function eSlr(id){const r=DB.g('sales').find(x=>x.id===id);if(!r)return;$('sId').value=r.id;$('sDt').value=r.dt;$('sCli').value=r.cli;$('sProd').value=r.prod;$('sQty').value=r.qty;$('sPrice').value=r.price;$('sAmt').value=fmt(r.amt);$('sPaid').value=r.paid||0;$('sPay').value=r.payType||'미수';$('sNote').value=r.note||'';$('sMoT').textContent='매출 수정';
+var _bcSale=typeof DocTrace!=='undefined'?DocTrace.renderBreadcrumb('SALE',id):'';var _bcEl=$('saleBreadcrumb');if(_bcEl)_bcEl.innerHTML=_bcSale;
+oMo('sMo')}
 function saveSl(){const c=$('sCli').value.trim(),p=$('sProd').value.trim(),pr=+$('sPrice').value;if(!c){toast('거래처','err');return}if(!p){toast('품명','err');return}if(!pr){toast('단가','err');return}const id=$('sId').value||gid(),q=+$('sQty').value||1;const rec={id,dt:$('sDt').value,cli:c,prod:p,qty:q,price:pr,amt:q*pr,paid:+$('sPaid').value||0,payType:$('sPay').value,note:$('sNote').value,cat:nw()};const ls=DB.g('sales');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('sales',ls);cMo('sMo');rSl();toast('저장','ok')}
-function dSlr(id){if(!confirm('삭제?'))return;DB.s('sales',DB.g('sales').filter(x=>x.id!==id));rSl();toast('삭제','ok')}
+function dSlr(id){if(!confirm('삭제?'))return;if(typeof deleteSalesCascade==='function')deleteSalesCascade(id);else DB.s('sales',DB.g('sales').filter(x=>x.id!==id));rSl();toast('삭제','ok')}
 
 /* === 매입 === */
 function rPr(){
@@ -71,7 +79,150 @@ window._prdCb_pr=rPr;
 function openPM(){['pId','pProd','pNote'].forEach(x=>$(x).value='');$('pDt').value=td();$('pCli').value='';$('pQty').value='';$('pPrice').value='';$('pAmt').value='';$('pPaid').value=0;$('pPayT').value='미지급';$('pMoT').textContent='매입 등록';oMo('pMo')}
 function ePrr(id){const r=DB.g('purchase').find(x=>x.id===id);if(!r)return;$('pId').value=r.id;$('pDt').value=r.dt;$('pCli').value=r.cli;$('pProd').value=r.prod;$('pQty').value=r.qty;$('pPrice').value=r.price;$('pAmt').value=fmt(r.amt);$('pPaid').value=r.paid||0;$('pPayT').value=r.payType||'미지급';$('pNote').value=r.note||'';$('pMoT').textContent='매입 수정';oMo('pMo')}
 function savePr(){const c=$('pCli').value.trim(),p=$('pProd').value.trim(),pr=+$('pPrice').value;if(!c){toast('거래처','err');return}if(!p){toast('품명','err');return}if(!pr){toast('단가','err');return}const id=$('pId').value||gid(),q=+$('pQty').value||1;const rec={id,dt:$('pDt').value,cli:c,prod:p,qty:q,price:pr,amt:q*pr,paid:+$('pPaid').value||0,payType:$('pPayT').value,note:$('pNote').value,cat:nw()};const ls=DB.g('purchase');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('purchase',ls);cMo('pMo');rPr();toast('저장','ok')}
-function dPrr(id){if(!confirm('삭제?'))return;DB.s('purchase',DB.g('purchase').filter(x=>x.id!==id));rPr();toast('삭제','ok')}
+function dPrr(id){if(!confirm('삭제?'))return;if(typeof deletePurchaseCascade==='function')deletePurchaseCascade(id);else DB.s('purchase',DB.g('purchase').filter(x=>x.id!==id));rPr();toast('삭제','ok')}
+
+/* === 매출 거래처 변경 / 수정세금계산서 발행 (방안 B + D)
+   얼마에요 TaxBook 구조 그대로:
+   - isAmended (원본을 수정대상으로 표시)
+   - amendedKindCode (사유 코드 1~6, 얼마에요 CodeCategory 203)
+   - isAdditionalAmended (부의 발행 표시, 음수 행)
+   - amendedOriginalId (원본 매출 ID 참조)
+   ============================================ */
+// 얼마에요 CodeCategory 203 - 수정세금계산서 종류
+var AMEND_KINDS = {
+  1: '환입',
+  2: '계약의 해제',
+  3: '공급가액의 변동',
+  4: '기재사항의 착오 정정',
+  5: '내국신용장 사후 개설',
+  6: '착오에 의한 이중 발급'
+};
+function openAmendSale(saleId){
+  var sale=DB.g('sales').find(function(s){return s.id===saleId});
+  if(!sale){toast('매출 정보 없음','err');return}
+  var h='<div class="mb" style="width:600px"><div class="mo-t">수정세금계산서 발행 / 거래명세표 정정<button class="mo-x" onclick="cMo(\'amendMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
+  h+='<div style="padding:16px 20px">';
+  h+='<div style="background:#F8FAFC;padding:12px;border-radius:8px;margin-bottom:14px">';
+  h+='<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">당초 (원본)</div>';
+  h+='<div style="font-size:14px;font-weight:700">'+sale.cli+' / '+sale.prod+'</div>';
+  h+='<div style="font-size:12px;color:var(--txt2);margin-top:4px">'+sale.dt+' | 수량 '+fmt(sale.qty)+' | 합계 '+fmt(sale.amt)+'원</div>';
+  h+='</div>';
+  h+='<div class="fg"><label class="req">수정사유 (국세청 표준 6가지)</label><select id="amKind" style="width:100%;padding:10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px">';
+  Object.keys(AMEND_KINDS).forEach(function(k){
+    h+='<option value="'+k+'">'+k+'. '+AMEND_KINDS[k]+'</option>';
+  });
+  h+='</select></div>';
+  h+='<div class="fg"><label>새 거래처</label><div style="display:flex;gap:6px"><input id="amNewCli" value="'+sale.cli+'" style="flex:1;padding:9px;border:1px solid var(--bdr);border-radius:8px"><button class="btn btn-o btn-sm" onclick="pickAmendCli()" style="white-space:nowrap">🔍 검색</button></div></div>';
+  h+='<div class="fr" style="gap:8px"><div class="fg" style="flex:1"><label>새 수량</label><input type="number" id="amQty" value="'+sale.qty+'" style="width:100%;padding:9px;border:1px solid var(--bdr);border-radius:8px" oninput="amCalc()"></div>';
+  h+='<div class="fg" style="flex:1"><label>새 단가</label><input type="number" id="amPrice" value="'+sale.price+'" style="width:100%;padding:9px;border:1px solid var(--bdr);border-radius:8px" oninput="amCalc()"></div>';
+  h+='<div class="fg" style="flex:1"><label>새 금액</label><input type="number" id="amAmt" value="'+sale.amt+'" style="width:100%;padding:9px;border:1px solid var(--bdr);border-radius:8px;font-weight:700" readonly></div></div>';
+  h+='<div class="fg"><label>변경 메모</label><textarea id="amMemo" rows="2" style="width:100%;padding:9px;border:1px solid var(--bdr);border-radius:8px" placeholder="추가 설명 (선택)"></textarea></div>';
+  h+='<div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:10px;margin-top:8px;font-size:11px;color:#92400E">원본 매출은 그대로 유지되고, ① 부의(-) 매출 자동 발행 ② 새 매출(+) 자동 등록 됩니다. 변경 이력이 기록되어 추적 가능합니다.</div>';
+  h+='<input type="hidden" id="amOrigId" value="'+saleId+'">';
+  h+='</div>';
+  h+='<div class="mf"><button class="btn btn-o" onclick="cMo(\'amendMo\')">취소</button><button class="btn btn-p" onclick="doAmendSale()">수정 발행</button></div></div>';
+  var el=document.createElement('div');el.id='amendMo';el.className='mo-bg';el.innerHTML=h;
+  el.onclick=function(e){if(e.target===el)cMo('amendMo')};
+  document.body.appendChild(el);
+}
+function amCalc(){
+  var q=+$('amQty').value||0,p=+$('amPrice').value||0;
+  $('amAmt').value=q*p;
+}
+function pickAmendCli(){
+  var h='<div class="mb" style="width:500px"><div class="mo-t">거래처 선택<button class="mo-x" onclick="cMo(\'amCliMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
+  h+='<div style="padding:14px 18px"><input id="amCliSch" placeholder="거래처명 검색..." oninput="amFilterCli()" style="width:100%;padding:10px;border:1px solid var(--bdr);border-radius:8px;margin-bottom:8px">';
+  h+='<div id="amCliList" style="max-height:300px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:6px"></div></div></div>';
+  var el=document.createElement('div');el.id='amCliMo';el.className='mo-bg';el.style.zIndex='10000';el.innerHTML=h;
+  el.onclick=function(e){if(e.target===el)cMo('amCliMo')};
+  document.body.appendChild(el);
+  amFilterCli();
+  setTimeout(function(){$('amCliSch').focus()},80);
+}
+function amFilterCli(){
+  var v=($('amCliSch')?$('amCliSch').value:'').toLowerCase();
+  var cs=DB.g('cli').filter(function(c){return !v||(c.nm||'').toLowerCase().includes(v)});
+  if(cs.length>50)cs=cs.slice(0,50);
+  var h='';
+  if(!cs.length)h='<div style="padding:14px;text-align:center;color:var(--txt3)">검색 결과 없음</div>';
+  else cs.forEach(function(c){
+    h+='<div onclick="$(\'amNewCli\').value=\''+c.nm.replace(/\'/g,"&#39;")+'\';cMo(\'amCliMo\')" style="padding:10px 12px;border-radius:6px;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
+    h+='<div style="font-weight:700">'+c.nm+'</div>';
+    if(c.bizNo||c.addr)h+='<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+(c.bizNo||'')+(c.addr?' | '+c.addr.slice(0,30):'')+'</div>';
+    h+='</div>';
+  });
+  $('amCliList').innerHTML=h;
+}
+function doAmendSale(){
+  var origId=$('amOrigId').value;
+  var orig=DB.g('sales').find(function(s){return s.id===origId});
+  if(!orig){toast('원본 매출 없음','err');return}
+  var newCli=$('amNewCli').value.trim();
+  var newQty=+$('amQty').value||0;
+  var newPrice=+$('amPrice').value||0;
+  var newAmt=+$('amAmt').value||0;
+  var kindCode=parseInt($('amKind').value);
+  var kindName=AMEND_KINDS[kindCode]||'';
+  var memo=$('amMemo').value.trim();
+  if(!newCli){toast('거래처 필요','err');return}
+  if(newAmt<=0){toast('금액 필요','err');return}
+
+  var sales=DB.g('sales');
+  var ts=new Date().toISOString();
+  var by=(typeof CU!=='undefined'&&CU)?CU.nm:'';
+
+  // 1. 당초(원본) → 얼마에요 IsAmended=true
+  var oi=sales.findIndex(function(s){return s.id===origId});
+  if(oi>=0){
+    sales[oi].isAmended=true;            // 얼마에요 IsAmended
+    sales[oi].amendedKindCode=kindCode;  // 얼마에요 AmendedKindCode
+    sales[oi].amendedAt=ts;
+    sales[oi].amendedBy=by;
+  }
+  // 2. 부의(-) 발행 → 얼마에요 IsAdditionalAmended=true
+  var negId=gid();
+  sales.push({
+    id:negId, dt:td(), cli:orig.cli, prod:orig.prod,
+    qty:-orig.qty, price:orig.price, amt:-orig.amt, paid:0, payType:'수정',
+    note:'[부의(-) - 당초 취소] '+kindCode+'.'+kindName+(memo?' / '+memo:''),
+    isAdditionalAmended:true,         // 얼마에요 IsAdditionalAmended (부의 표시)
+    amendedKindCode:kindCode,         // 얼마에요 AmendedKindCode
+    amendedOriginalId:origId,         // 얼마에요 AmendedOriginalServerKey
+    cat:ts, regBy:by
+  });
+  // 3. 신규(+) 발행 → 수정된 정보로 새 매출
+  var newId=gid();
+  sales.push({
+    id:newId, dt:td(), cli:newCli, prod:orig.prod,
+    qty:newQty, price:newPrice, amt:newAmt, paid:0, payType:'미수',
+    note:'[수정 발행] '+kindCode+'.'+kindName+(memo?' / '+memo:''),
+    isAdditionalAmended:false,        // 부의 아님 (신규 수정 발행)
+    amendedKindCode:kindCode,
+    amendedOriginalId:origId,
+    changeMeta:{from:orig.cli, to:newCli, reason:kindName, kindCode:kindCode, memo:memo, by:by},
+    cat:ts, regBy:by
+  });
+  DB.s('sales',sales);
+
+  // 4. 변경 이력 기록 (얼마에요 EntityLog 패턴)
+  var cl=DB.g('changeLog');
+  cl.push({
+    id:gid(), dt:td(), tm:nw(),
+    type:'수정세금계산서발행',
+    target:'SALE:'+origId,
+    amendedKindCode:kindCode,
+    amendedKindName:kindName,
+    from:orig.cli+' / '+fmt(orig.amt)+'원',
+    to:newCli+' / '+fmt(newAmt)+'원',
+    memo:memo, by:by,
+    refIds:[origId,negId,newId]
+  });
+  DB.s('changeLog',cl);
+
+  cMo('amendMo');
+  if(typeof rSl==='function')rSl();
+  toast('수정세금계산서 발행 완료 ('+kindCode+'.'+kindName+')','ok');
+}
 
 /* === 입금/지급 === */
 function openPay(type){$('payTgt').value=type;$('payT').textContent=type==='sales'?'입금 처리':'지급 처리';$('payCli').value='';$('payAmt').value='';$('payDt').value=td();$('payInfo').innerHTML='';oMo('payMo')}
@@ -82,7 +233,14 @@ function doPay(){
   const ls=DB.g(key);const unpaid=ls.filter(r=>r.cli===cli&&(r.paid||0)<(r.amt||0)).sort((a,b)=>a.dt>b.dt?1:-1);
   let remain=amt;
   unpaid.forEach(r=>{if(remain<=0)return;const need=(r.amt||0)-(r.paid||0);const apply=Math.min(need,remain);r.paid=(r.paid||0)+apply;remain-=apply;const idx=ls.findIndex(x=>x.id===r.id);if(idx>=0)ls[idx]=r});
-  DB.s(key,ls);cMo('payMo');if(tgt==='sales')rSl();else rPr();toast(`${fmt(amt)}원 ${tgt==='sales'?'입금':'지급'} 처리`,'ok');
+  DB.s(key,ls);
+  /* === 입금/지급 이력 저장 === */
+  try{
+    var _ph=DB.g('payHistory');
+    _ph.push({id:gid(),dt:$('payDt').value||td(),type:tgt==='sales'?'입금':'지급',cli:cli,amt:amt,applied:amt-remain,note:'',mgr:typeof CU!=='undefined'&&CU?CU.nm:'',tm:nw()});
+    DB.s('payHistory',_ph);
+  }catch(e){console.warn('입금이력 저장 오류:',e)}
+  cMo('payMo');if(tgt==='sales')rSl();else rPr();toast(`${fmt(amt)}원 ${tgt==='sales'?'입금':'지급'} 처리`,'ok');
 }
 
 /* === 손익 === */
@@ -175,7 +333,7 @@ function toggleTxMethod(){
 }
 function openTxM(){['txId','txItem','txBiz','txNt','txCeo','txAddr'].forEach(x=>{if($(x))$(x).value=''});$('txDt').value=td();$('txTpS').value='매출';$('txCli').value='';$('txSup').value='';$('txVat').value='';$('txTot').value='';if($('txQty'))$('txQty').value=1;if($('txPrice'))$('txPrice').value='';if($('txPurpose'))$('txPurpose').value='영수';document.querySelector('input[name="txMethod"][value="paper"]').checked=true;toggleTxMethod();$('txMoT').textContent='세금계산서 등록';oMo('txMo2')}
 function eTxr(id){const r=DB.g('taxInvoice').find(x=>x.id===id);if(!r)return;$('txId').value=r.id;$('txDt').value=r.dt;$('txTpS').value=r.type;$('txCli').value=r.cli;$('txBiz').value=r.bizNo||'';if($('txCeo'))$('txCeo').value=r.ceo||'';if($('txAddr'))$('txAddr').value=r.addr||'';$('txItem').value=r.item||'';if($('txQty'))$('txQty').value=r.qty||1;if($('txPrice'))$('txPrice').value=r.price||'';$('txSup').value=r.supply;$('txVat').value=r.vat;$('txTot').value=fmt((r.supply||0)+(r.vat||0))+'원';$('txNt').value=r.note||'';if($('txPurpose'))$('txPurpose').value=r.purpose||'영수';var m=(r.method==='전자발행')?'electronic':'paper';document.querySelector('input[name="txMethod"][value="'+m+'"]').checked=true;toggleTxMethod();$('txMoT').textContent='수정';oMo('txMo2')}
-function saveTx(){const c=$('txCli').value.trim(),s=+$('txSup').value;if(!c){toast('거래처','err');return}if(!s){toast('공급가액','err');return}const id=$('txId').value||gid();const v=Math.round(s*0.1);const method=document.querySelector('input[name="txMethod"]:checked').value==='electronic'?'전자대기':'종이';const rec={id,dt:$('txDt').value,type:$('txTpS').value,cli:c,bizNo:$('txBiz').value,ceo:$('txCeo')?$('txCeo').value:'',addr:$('txAddr')?$('txAddr').value:'',item:$('txItem').value,qty:+($('txQty')?$('txQty').value:1)||1,price:+($('txPrice')?$('txPrice').value:0)||0,supply:s,vat:v,purpose:$('txPurpose')?$('txPurpose').value:'영수',method:method,note:$('txNt').value,cat:nw()};const ls=DB.g('taxInvoice');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('taxInvoice',ls);cMo('txMo2');rTx();toast('저장','ok')}
+function saveTx(){const c=$('txCli').value.trim(),s=+$('txSup').value;if(!c){toast('거래처','err');return}if(!s){toast('공급가액','err');return}const id=$('txId').value||gid();const v=Math.round(s*(typeof SysCode!=='undefined'?SysCode.vatRate():0.1));const method=document.querySelector('input[name="txMethod"]:checked').value==='electronic'?'전자대기':'종이';const rec={id,dt:$('txDt').value,type:$('txTpS').value,cli:c,bizNo:$('txBiz').value,ceo:$('txCeo')?$('txCeo').value:'',addr:$('txAddr')?$('txAddr').value:'',item:$('txItem').value,qty:+($('txQty')?$('txQty').value:1)||1,price:+($('txPrice')?$('txPrice').value:0)||0,supply:s,vat:v,purpose:$('txPurpose')?$('txPurpose').value:'영수',method:method,note:$('txNt').value,cat:nw()};const ls=DB.g('taxInvoice');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('taxInvoice',ls);cMo('txMo2');rTx();toast('저장','ok')}
 function dTxr(id){if(!confirm('삭제?'))return;DB.s('taxInvoice',DB.g('taxInvoice').filter(x=>x.id!==id));rTx();toast('삭제','ok')}
 
 /* 종이 세금계산서 인쇄 */
@@ -183,7 +341,7 @@ function printTx(){
   const c=$('txCli').value.trim(),s=+$('txSup').value;
   if(!c||!s){toast('거래처/공급가액 필요','err');return}
   const co=DB.g1('co')||{nm:'팩플로우',addr:'',tel:'',fax:''};
-  const v=Math.round(s*0.1);
+  const v=Math.round(s*(typeof SysCode!=='undefined'?SysCode.vatRate():0.1));
   const qty=$('txQty')?$('txQty').value:'1';
   const price=$('txPrice')?$('txPrice').value:s;
   const purpose=$('txPurpose')?$('txPurpose').value:'영수';
@@ -332,8 +490,9 @@ function cTax(){
   var s=+$('txSup').value||0;
   // 수량×단가가 있으면 공급가액 자동계산
   if(qty&&price){s=qty*price;$('txSup').value=s}
-  $('txVat').value=Math.round(s*0.1);
-  $('txTot').value=fmt(s+Math.round(s*0.1))+'원';
+  var _vr2=typeof SysCode!=='undefined'?SysCode.vatRate():0.1;
+  $('txVat').value=Math.round(s*_vr2);
+  $('txTot').value=fmt(s+Math.round(s*_vr2))+'원';
 }
 
 /* 팝빌 설정 저장/로드 */

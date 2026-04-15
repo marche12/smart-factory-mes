@@ -640,51 +640,37 @@ function backfillHist(){
   }
 }
 
+// CSS 기반 원형 게이지 (conic-gradient)
 function _ndSvgGauge(pct,label){
-  if(pct<1)pct=1;if(pct>100)pct=100;
-  var r=50,cx=60,cy=63,sw=10;
-  var angle=Math.PI*(1+pct/100);
-  var ex=cx+r*Math.cos(angle),ey=cy+r*Math.sin(angle);
-  var largeArc=pct>50?1:0;
-  return '<div class="nd-gauge"><div class="nd-gauge-title">'+label+'</div>'
-    +'<div class="nd-gauge-wrap"><svg viewBox="0 0 120 68" width="120" height="68">'
-    +'<path d="M10,63 A50,50 0 0,1 110,63" stroke="#E9EDF2" stroke-width="'+sw+'" fill="none" stroke-linecap="round"/>'
-    +'<path d="M10,63 A50,50 0 '+largeArc+',1 '+ex.toFixed(1)+','+ey.toFixed(1)+'" stroke="#1E3A5F" stroke-width="'+sw+'" fill="none" stroke-linecap="round"/>'
-    +'</svg><div class="nd-gauge-val">'+pct+'%</div></div></div>';
+  if(pct<0)pct=0;if(pct>100)pct=100;
+  var color=pct>=80?'#059669':pct>=50?'#D97706':'#DC2626';
+  return '<div class="nd-gauge-v2">'
+    +'<div class="nd-gauge-title">'+label+'</div>'
+    +'<div class="nd-gauge-circle" style="background:conic-gradient('+color+' 0% '+pct+'%, #E9EDF2 '+pct+'% 100%)">'
+    +'<div class="nd-gauge-inner"><div class="nd-gauge-val" style="color:'+color+'">'+pct+'<span style="font-size:14px">%</span></div></div>'
+    +'</div></div>';
 }
+// CSS flex 기반 막대 차트
 function _ndAreaChart(dailyData,labels){
-  var W=400,H=110,padT=5,padB=15;
-  var ch=H-padT-padB;
   var maxV=Math.max.apply(null,dailyData);if(maxV===0)maxV=1;
-  var step=W/(dailyData.length-1||1);
-  var pts=dailyData.map(function(v,i){return Math.round(i*step)+','+Math.round(padT+ch-ch*(v/maxV))});
-  var polyline=pts.join(' L');
-  var area='M'+pts.join(' L')+'L'+W+','+(H-padB)+' L0,'+(H-padB)+'Z';
-  var h='<svg width="100%" height="'+H+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">';
-  h+='<defs><linearGradient id="ndAF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1E3A5F" stop-opacity="0.12"/><stop offset="100%" stop-color="#1E3A5F" stop-opacity="0"/></linearGradient></defs>';
-  for(var g=1;g<=3;g++)h+='<line x1="0" y1="'+Math.round(padT+ch*g/4)+'" x2="'+W+'" y2="'+Math.round(padT+ch*g/4)+'" stroke="#F1F5F9" stroke-width="1"/>';
-  h+='<path d="'+area+'" fill="url(#ndAF)"/>';
-  h+='<path d="M'+polyline+'" stroke="#1E3A5F" stroke-width="2" fill="none" stroke-linejoin="round"/>';
-  pts.forEach(function(p,i){
-    var xy=p.split(',');
-    if(i===pts.length-1)h+='<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="4" fill="#059669" stroke="#fff" stroke-width="2"/>';
-    else if(i===pts.length-2)h+='<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="3" fill="#1E3A5F"/>';
+  var h='<div class="nd-bars">';
+  dailyData.forEach(function(v,i){
+    var pct=Math.round(v/maxV*100);
+    var isToday=(i===dailyData.length-1);
+    var barColor=isToday?'#059669':'#1E3A5F';
+    h+='<div class="nd-bar-col">';
+    h+='<div class="nd-bar-val">'+(v>0?(v>=1000?Math.round(v/100)/10+'k':v):'')+'</div>';
+    h+='<div class="nd-bar-track"><div class="nd-bar-fill" style="height:'+Math.max(pct,v>0?4:0)+'%;background:'+barColor+'"></div></div>';
+    h+='<div class="nd-bar-lbl" style="color:'+(isToday?'#059669':'#94A3B8')+';font-weight:'+(isToday?'700':'500')+'">'+labels[i]+'</div>';
+    h+='</div>';
   });
-  labels.forEach(function(l,i){
-    var x=Math.round(i*step);
-    var clr=i===labels.length-1?'#059669':'#94A3B8';
-    var fw=i===labels.length-1?'700':'400';
-    h+='<text x="'+x+'" y="'+(H-2)+'" fill="'+clr+'" font-size="9" font-weight="'+fw+'">'+l+'</text>';
-  });
-  h+='</svg>';
+  h+='</div>';
   return h;
 }
+// CSS conic-gradient 원형 링 (공정 파이프라인용)
 function _ndPipeRing(pct){
-  var circ=2*Math.PI*27;
-  var dash=Math.round(circ*pct/100);
-  var gap=Math.round(circ-dash);
-  return '<svg class="nd-pipe-ring" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" stroke="#E9EDF2" stroke-width="3" fill="none"/>'
-    +'<circle cx="30" cy="30" r="27" stroke="#1E3A5F" stroke-width="3" fill="none" stroke-dasharray="'+dash+' '+gap+'" stroke-linecap="round" transform="rotate(-90 30 30)"/></svg>';
+  if(pct<0)pct=0;if(pct>100)pct=100;
+  return '<div class="nd-pipe-ring-v2" style="background:conic-gradient(#1E3A5F 0% '+pct+'%, #E9EDF2 '+pct+'% 100%)"><div class="nd-pipe-ring-inner"></div></div>';
 }
 function rDash(){
 var _now=new Date(),_days=['일','월','화','수','목','금','토'];
@@ -732,10 +718,12 @@ if($('ndKpi'))$('ndKpi').innerHTML=kpis.map(function(k){
   if(k.spark){
     var days7=[];for(var di=6;di>=0;di--){var dd=new Date(now);dd.setDate(dd.getDate()-di);var dm=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');var dq=0;allHs.forEach(function(hh){if(hh.doneAt&&hh.doneAt.startsWith(dm))dq+=(+hh.qty||0)});days7.push(dq)}
     var mx=Math.max.apply(null,days7);if(mx===0)mx=1;
-    h+='<div class="nd-kpi-spark"><svg width="100%" height="28" viewBox="0 0 200 28"><defs><linearGradient id="ndSG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#059669" stop-opacity="0.15"/><stop offset="100%" stop-color="#059669" stop-opacity="0"/></linearGradient></defs>';
-    var spts=days7.map(function(v,i){return Math.round(i*200/6)+','+Math.round(26-24*(v/mx))});
-    h+='<path d="M'+spts.join(' L')+'" stroke="#059669" stroke-width="2" fill="none"/>';
-    h+='<path d="M'+spts.join(' L')+' L200,28 L0,28Z" fill="url(#ndSG)"/></svg></div>';
+    h+='<div class="nd-kpi-spark-v2">';
+    days7.forEach(function(v,i){
+      var pct=Math.max(Math.round(v/mx*100),v>0?8:0);
+      h+='<span class="nd-kpi-spark-bar" style="height:'+pct+'%;opacity:'+(0.4+(i/6)*0.6)+'"></span>';
+    });
+    h+='</div>';
   }
   h+='</div>';return h;
 }).join('');
@@ -765,7 +753,7 @@ pns2.forEach(function(pn,idx){
   var tt=w+k+d,pct=tt>0?Math.round(d/tt*100):0;
   var isDone=pn==='생산완료'||pct===100;
   pipH+='<div class="nd-pipe-step" onclick="showProcDet(\''+pn+'\')">';
-  pipH+='<div class="nd-pipe-circle"'+(isDone?' style="background:#ECFDF5;color:#059669"':'')+'>'+_ndPipeRing(pct)+(isDone?'✓':String(w+k))+'</div>';
+  pipH+='<div class="nd-pipe-circle"'+(isDone?' style="background:#ECFDF5;color:#059669"':'')+'>'+_ndPipeRing(pct)+'<span class="nd-pipe-num">'+(isDone?'✓':String(w+k))+'</span></div>';
   pipH+='<div class="nd-pipe-name"'+(isDone?' style="color:#059669;font-weight:800"':'')+'>'+pn+'</div>';
   pipH+='<div class="nd-pipe-tags">';
   if(w>0)pipH+='<span style="background:#FEF3C7;color:#92400E">'+w+'</span>';

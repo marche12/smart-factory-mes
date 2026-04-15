@@ -208,26 +208,37 @@ function openVendorSearch(){
 }
 function filterVendorSearch(){
   var v=($('vdSchInput')?$('vdSchInput').value:'').toLowerCase();
-  // 매입처에서 검색 (인쇄소 태그된 업체 우선)
+  // 전체 거래처에서 검색 (인쇄소/매입처 우선 정렬)
   var cs=DB.g('cli').filter(function(c){
-    var isPurch=c.cType==='purchase'||c.cType==='both';
-    var isVd=c.isVendor;
-    return (isPurch||isVd)&&(!v||(c.nm||'').toLowerCase().includes(v));
+    if(!v)return true;
+    return (c.nm||'').toLowerCase().includes(v) || (c.tel||'').includes(v) || (c.addr||'').toLowerCase().includes(v);
   });
-  // 인쇄소 태그된 업체를 상단에 정렬
-  cs.sort(function(a,b){return (b.isVendor?1:0)-(a.isVendor?1:0)});
+  // 정렬 우선순위: 인쇄소 → 매입처 → 매출처
+  cs.sort(function(a,b){
+    var pa=a.isVendor?0:(a.cType==='purchase'||a.cType==='both'?1:2);
+    var pb=b.isVendor?0:(b.cType==='purchase'||b.cType==='both'?1:2);
+    if(pa!==pb)return pa-pb;
+    return (a.nm||'').localeCompare(b.nm||'');
+  });
+  // 검색어 있을 때 상위 50건만 (성능)
+  if(v && cs.length>50) cs=cs.slice(0,50);
+  else if(!v) cs=cs.slice(0,30);
   var h='';
   if(!cs.length){
     h='<div style="padding:20px;text-align:center;color:var(--txt3)">검색 결과 없음</div>';
   } else {
     cs.forEach(function(c){
-      var badge=c.isVendor?'<span style="font-size:11px;padding:3px 10px;background:#DBEAFE;color:#2563EB;border-radius:20px;font-weight:600">인쇄소</span>':'<span style="font-size:11px;padding:3px 10px;background:#F3F4F6;color:#6B7280;border-radius:20px;font-weight:600">매입처</span>';
+      var badge;
+      if(c.isVendor) badge='<span style="font-size:11px;padding:3px 10px;background:#DBEAFE;color:#2563EB;border-radius:20px;font-weight:600">인쇄소</span>';
+      else if(c.cType==='purchase'||c.cType==='both') badge='<span style="font-size:11px;padding:3px 10px;background:#FEF3C7;color:#B45309;border-radius:20px;font-weight:600">매입처</span>';
+      else badge='<span style="font-size:11px;padding:3px 10px;background:#F3F4F6;color:#6B7280;border-radius:20px;font-weight:600">거래처</span>';
       h+='<div onclick="pickVendor(\''+c.id+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
-      h+='<div><div style="font-weight:700;font-size:14px">'+c.nm+'</div>';
-      h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px">'+(c.tel||'')+(c.addr?' | '+c.addr.slice(0,25):'')+'</div></div>';
+      h+='<div style="min-width:0;flex:1"><div style="font-weight:700;font-size:14px">'+c.nm+'</div>';
+      h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(c.tel||'')+(c.addr?' | '+c.addr.slice(0,25):'')+'</div></div>';
       h+=badge;
       h+='</div>';
     });
+    if(!v) h='<div style="padding:8px 4px;color:var(--txt3);font-size:11px">최근 거래처 '+cs.length+'건 (검색어 입력 시 전체 검색)</div>'+h;
   }
   $('vdSchList').innerHTML=h;
 }
@@ -353,6 +364,103 @@ function pickCli(id){
   cMo('cliSearchMo');
   $('woProd').value='';
   toast(c.nm+' 선택됨','ok');
+}
+
+/* ===== 납품처(입고처) 검색 모달 ===== */
+function openDlvSearch(){
+  var cn=$('woCli')?$('woCli').value.trim():'';
+  var h='<div class="mb" style="width:580px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">납품처 / 입고처 검색'+(cn?' <span style="font-size:13px;color:var(--pri);font-weight:500;margin-left:8px">'+cn+'</span>':'')+'<button class="mo-x" onclick="cMo(\'dlvSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
+  h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
+  h+='<input id="dlvSchInput" placeholder="납품처명, 주소, 담당자 검색..." oninput="filterDlvSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
+  if(cn)h+='<label style="white-space:nowrap;align-self:center;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--txt2)"><input type="checkbox" id="dlvSchToggle" checked onchange="filterDlvSearch()" style="margin-right:4px">'+cn+'만</label>';
+  h+='</div>';
+  h+='<div id="dlvSchList" style="padding:0 20px 12px;max-height:420px;overflow-y:auto"></div></div>';
+  var el=document.createElement('div');el.id='dlvSearchMo';el.className='mo-bg';el.innerHTML=h;
+  el.onclick=function(e){if(e.target===el)cMo('dlvSearchMo')};
+  document.body.appendChild(el);
+  filterDlvSearch();
+  setTimeout(function(){$('dlvSchInput').focus()},100);
+}
+function filterDlvSearch(){
+  var v=($('dlvSchInput')?$('dlvSchInput').value:'').toLowerCase();
+  var cn=$('woCli')?$('woCli').value.trim():'';
+  var onlyCli=$('dlvSchToggle')&&$('dlvSchToggle').checked;
+  var cli=DB.g('cli');
+  // 납품처 목록 구성: 거래처별 deliveries 배열 평탄화 + 거래처 자체
+  var list=[];
+  cli.forEach(function(c){
+    if(onlyCli && cn && c.nm!==cn) return;
+    // 등록된 납품처들
+    if(c.deliveries && c.deliveries.length){
+      c.deliveries.forEach(function(d){
+        list.push({
+          nm: d.nm||'', addr: d.addr||'', mgr: d.mgr||'',
+          tel: d.tel||'', parent: c.nm, type: 'dlv'
+        });
+      });
+    }
+    // 거래처 자체도 납품처 후보
+    if(!onlyCli || c.nm===cn){
+      list.push({
+        nm: c.nm, addr: c.addr||'', mgr: c.contactNm||c.ceo||'',
+        tel: c.tel||'', parent: '', type: 'cli'
+      });
+    }
+  });
+  // 검색 필터
+  if(v){
+    list = list.filter(function(d){
+      return (d.nm||'').toLowerCase().includes(v) ||
+             (d.addr||'').toLowerCase().includes(v) ||
+             (d.mgr||'').toLowerCase().includes(v) ||
+             (d.parent||'').toLowerCase().includes(v);
+    });
+  }
+  // 정렬: 납품처 우선, 그 다음 거래처. 매칭 거래처의 납품처를 상단
+  list.sort(function(a,b){
+    if(cn){
+      if(a.parent===cn && b.parent!==cn) return -1;
+      if(b.parent===cn && a.parent!==cn) return 1;
+    }
+    var pa=a.type==='dlv'?0:1;
+    var pb=b.type==='dlv'?0:1;
+    if(pa!==pb) return pa-pb;
+    return (a.nm||'').localeCompare(b.nm||'');
+  });
+  // 최대 50건
+  if(list.length>50) list=list.slice(0,50);
+
+  var h='';
+  if(!list.length){
+    h='<div style="padding:20px;text-align:center;color:var(--txt3)">검색 결과 없음</div>';
+  } else {
+    list.forEach(function(d,i){
+      var badge=d.type==='dlv'?
+        '<span style="font-size:11px;padding:3px 10px;background:#DBEAFE;color:#2563EB;border-radius:20px;font-weight:600">납품처</span>':
+        '<span style="font-size:11px;padding:3px 10px;background:#F3F4F6;color:#6B7280;border-radius:20px;font-weight:600">거래처</span>';
+      var payload=encodeURIComponent(JSON.stringify(d));
+      h+='<div onclick="pickDlv(\''+payload+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
+      h+='<div style="min-width:0;flex:1"><div style="font-weight:700;font-size:14px">'+d.nm+(d.parent?' <span style="font-weight:400;color:var(--txt3);font-size:12px">('+d.parent+')</span>':'')+'</div>';
+      var sub=[];
+      if(d.addr)sub.push('📍 '+d.addr.slice(0,35));
+      if(d.mgr)sub.push('👤 '+d.mgr);
+      if(d.tel)sub.push('📞 '+d.tel);
+      h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+sub.join(' | ')+'</div></div>';
+      h+=badge;
+      h+='</div>';
+    });
+  }
+  $('dlvSchList').innerHTML=h;
+}
+function pickDlv(payload){
+  try{
+    var d=JSON.parse(decodeURIComponent(payload));
+    var txt=d.nm;
+    if(d.addr)txt+=' / '+d.addr;
+    $('woDlv').value=txt;
+    cMo('dlvSearchMo');
+    toast(d.nm+' 입고처로 선택됨','ok');
+  }catch(e){console.warn('납품처 선택 오류:',e)}
 }
 
 /* ===== 목형 검색 모달 ===== */
@@ -700,12 +808,17 @@ if(!editId){
     // 기존 수주와 연결
     var _ord=_orders.find(function(x){return x.id===_ordId});
     if(_ord){_ord.woNo=wo.wn;_ord.woId=wo.id;_ord.status='수주확정';if(wo.price)_ord.price=wo.price;if(wo.amt)_ord.amt=wo.amt;saveOrders(_orders)}
+    if(typeof DocTrace!=='undefined')DocTrace.link('ORDER',_ordId,'WO',wo.id,_ord?_ord.no:'',wo.wn);
+    wo.ordId=_ordId;
     if($('woOrdId'))$('woOrdId').value='';
   } else {
     // 수주 없이 WO 직접 등록 → order 레코드 자동 생성
     var _newOrd={id:gid(),no:'ORD-'+wo.wn,dt:wo.dt,cli:wo.cnm,items:[{nm:wo.pnm,qty:wo.fq,price:wo.price||0}],price:wo.price||0,amt:wo.amt||0,due:wo.sd,status:'수주확정',woNo:wo.wn,woId:wo.id};
     _orders.push(_newOrd);saveOrders(_orders);
+    if(typeof DocTrace!=='undefined')DocTrace.link('ORDER',_newOrd.id,'WO',wo.id,_newOrd.no,wo.wn);
+    wo.ordId=_newOrd.id;
   }
+  DB.s('wo',os);
 }
 toast('저장 완료','ok');editId=null;
 cMo('woFormOv');rWOList();
@@ -814,7 +927,8 @@ if(_dfLogs.length>0){
   _dfSection+=_dfLogs.map(function(d){return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #FEE2E2"><span class="tag tag-red">'+d.proc+'</span><span style="font-size:12px;color:var(--dan);font-weight:700">불량 '+d.defect+'개</span><span style="font-size:12px;color:var(--txt)">'+d.reason+'</span><span style="font-size:11px;color:var(--txt3);margin-left:auto">'+d.dt+' '+d.worker+'</span></div>'}).join('');
   _dfSection+='</div>';
 }
-$('woDetC').innerHTML=`<div class="fr"><div class="fg"><label>지시번호</label><div style="font-weight:700">${o.wn}</div></div><div class="fg"><label>작성일</label><div>${o.dt}</div></div><div class="fg"><label>담당자</label><div>${o.mgr}</div></div></div><div class="fr"><div class="fg"><label>거래처</label><div style="font-weight:700">${o.cnm}</div></div><div class="fg"><label>제품명</label><div style="font-weight:700">${o.pnm}</div></div></div><div class="fr"><div class="fg"><label>종이</label><div>${o.paper||'-'}</div></div><div class="fg"><label>규격</label><div>${o.spec||'-'}</div></div><div class="fg"><label>정매</label><div>${o.qm}</div></div><div class="fg"><label>여분</label><div>${o.qe}</div></div></div>${o.fabric?`<div class="fr"><div class="fg"><label>원단</label><div>${o.fabric}</div></div><div class="fg"><label>원단규격</label><div>${o.fabricSpec||'-'}</div></div><div class="fg"><label>원단수량</label><div>${o.fabricQty||'-'}</div></div><div class="fg"><label>원단여분</label><div>${o.fabricExtra||'-'}</div></div></div>`:''}<div class="fg" style="margin-top:10px"><label>인쇄사양</label><div>${o.ps||'-'}</div></div>${o.colors&&o.colors.length?'<div class="fg" style="margin-top:8px"><label>색상</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">'+o.colors.map(function(c){return'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg2);border-radius:6px;font-size:12px;border:1px solid var(--bdr)"><span style="width:14px;height:14px;border-radius:3px;background:'+(c.hex||'#ccc')+';border:1px solid #ddd;display:inline-block"></span><b>'+c.code+'</b> '+c.name+' <span style="color:var(--txt3)">('+c.type+')</span></span>'}).join('')+'</div></div>':''}<div style="margin-top:10px"><label style="font-size:12px;font-weight:700">진행률: ${progBar(o)}</label></div><div style="margin-top:10px;overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>공정</th><th>방식</th><th>업체</th><th>상태</th><th>수량</th><th>불량</th><th>완료일</th></tr></thead><tbody>${ph}</tbody></table></div>${_dfSection}<div class="fr" style="margin-top:10px"><div class="fg"><label>금박</label><div>${o.gold||'-'}</div></div><div class="fg"><label>목형</label><div>${o.mold||'-'}</div></div><div class="fg"><label>손잡이</label><div>${o.hand||'-'}</div></div></div><div class="fr"><div class="fg"><label>완제품</label><div style="font-weight:700;font-size:16px">${o.fq}</div></div><div class="fg"><label>출고일</label><div style="font-weight:700;${isLate(o)?'color:var(--dan)':''}">${o.sd}</div></div><div class="fg"><label>입고처</label><div>${o.dlv||'-'}</div></div></div>${o.nt?`<div class="fg" style="margin-top:10px"><label>특이사항</label><div style="background:var(--bg2);padding:7px">${o.nt}</div></div>`:''}${o.caut?`<div class="fg" style="margin-top:10px"><label>주의사항</label><div style="background:var(--dan-l);padding:7px;color:var(--dan);font-weight:700">${o.caut}</div></div>`:''}`;
+var _bcHtml=typeof DocTrace!=='undefined'?DocTrace.renderBreadcrumb('WO',o.id):'';
+$('woDetC').innerHTML=_bcHtml+`<div class="fr"><div class="fg"><label>지시번호</label><div style="font-weight:700">${o.wn}</div></div><div class="fg"><label>작성일</label><div>${o.dt}</div></div><div class="fg"><label>담당자</label><div>${o.mgr}</div></div></div><div class="fr"><div class="fg"><label>거래처</label><div style="font-weight:700">${o.cnm}</div></div><div class="fg"><label>제품명</label><div style="font-weight:700">${o.pnm}</div></div></div><div class="fr"><div class="fg"><label>종이</label><div>${o.paper||'-'}</div></div><div class="fg"><label>규격</label><div>${o.spec||'-'}</div></div><div class="fg"><label>정매</label><div>${o.qm}</div></div><div class="fg"><label>여분</label><div>${o.qe}</div></div></div>${o.fabric?`<div class="fr"><div class="fg"><label>원단</label><div>${o.fabric}</div></div><div class="fg"><label>원단규격</label><div>${o.fabricSpec||'-'}</div></div><div class="fg"><label>원단수량</label><div>${o.fabricQty||'-'}</div></div><div class="fg"><label>원단여분</label><div>${o.fabricExtra||'-'}</div></div></div>`:''}<div class="fg" style="margin-top:10px"><label>인쇄사양</label><div>${o.ps||'-'}</div></div>${o.colors&&o.colors.length?'<div class="fg" style="margin-top:8px"><label>색상</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">'+o.colors.map(function(c){return'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg2);border-radius:6px;font-size:12px;border:1px solid var(--bdr)"><span style="width:14px;height:14px;border-radius:3px;background:'+(c.hex||'#ccc')+';border:1px solid #ddd;display:inline-block"></span><b>'+c.code+'</b> '+c.name+' <span style="color:var(--txt3)">('+c.type+')</span></span>'}).join('')+'</div></div>':''}<div style="margin-top:10px"><label style="font-size:12px;font-weight:700">진행률: ${progBar(o)}</label></div><div style="margin-top:10px;overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>공정</th><th>방식</th><th>업체</th><th>상태</th><th>수량</th><th>불량</th><th>완료일</th></tr></thead><tbody>${ph}</tbody></table></div>${_dfSection}<div class="fr" style="margin-top:10px"><div class="fg"><label>금박</label><div>${o.gold||'-'}</div></div><div class="fg"><label>목형</label><div>${o.mold||'-'}</div></div><div class="fg"><label>손잡이</label><div>${o.hand||'-'}</div></div></div><div class="fr"><div class="fg"><label>완제품</label><div style="font-weight:700;font-size:16px">${o.fq}</div></div><div class="fg"><label>출고일</label><div style="font-weight:700;${isLate(o)?'color:var(--dan)':''}">${o.sd}</div></div><div class="fg"><label>입고처</label><div>${o.dlv||'-'}</div></div></div>${o.nt?`<div class="fg" style="margin-top:10px"><label>특이사항</label><div style="background:var(--bg2);padding:7px">${o.nt}</div></div>`:''}${o.caut?`<div class="fg" style="margin-top:10px"><label>주의사항</label><div style="background:var(--dan-l);padding:7px;color:var(--dan);font-weight:700">${o.caut}</div></div>`:''}`;
 try{
 $('woDetPr').onclick=function(){printWO(detId)};
 if($('woDetEd'))$('woDetEd').onclick=function(){cMo('woDetMo');editWO(detId)};
@@ -1112,6 +1226,16 @@ if(_prevHist.length>0){
 hs.push({id:gid(),woId:o.id,pnm:o.pnm,cnm:o.cnm,proc:p.nm,worker:_worker,qty,t1:p.t1,t2:p.t2,setupMin:_setupMin,doneAt:nw()});DB.s('hist',hs);
 os[oi]=o;DB.s('wo',os);
 addLog('공정완료: '+o.pnm+' '+p.nm+' 수량:'+qty+' by '+(CU?CU.nm:'관리자'));
+/* === 데이터 연계: 외주완료 → 매입 자동 등록 === */
+try{
+  if(finalSt==='외주완료'&&p.vd){
+    var _purList=DB.g('purchase');
+    var _purAmt=+(p.cost||0);
+    _purList.push({id:gid(),dt:td(),cli:p.vd,prod:o.pnm,qty:qty,price:_purAmt?Math.round(_purAmt/qty):0,amt:_purAmt,paid:0,payType:'미지급',note:'외주완료자동등록 ('+o.wn+' '+p.nm+')',woId:o.id,proc:p.nm});
+    DB.s('purchase',_purList);
+    addLog('매입자동등록: '+p.vd+' '+p.nm+' '+o.pnm);
+  }
+}catch(e){console.warn('매입연계오류:',e)}
 $('compMo').classList.add('hidden');
 // 상세보기 모달이 열려있으면 갱신
 var detMo=$('woDetMo');if(detMo&&!detMo.classList.contains('hidden')){cMo('woDetMo');showDet(compItem.woId)}

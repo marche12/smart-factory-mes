@@ -483,7 +483,7 @@ def migrate_kv_to_tables():
                 co = {}
     if co:
         conn.execute('INSERT OR REPLACE INTO company (id, name, addr, tel, fax) VALUES (1,?,?,?,?)',
-                     (co.get('nm','이노패키지'), co.get('addr',''), co.get('tel',''), co.get('fax','')))
+                     (co.get('nm','팩플로우'), co.get('addr',''), co.get('tel',''), co.get('fax','')))
 
     conn.commit()
     conn.close()

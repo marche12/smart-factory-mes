@@ -40,49 +40,61 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div id="sbDate" style="padding:0 22px 14px;font-size:12px;color:#64748B;font-weight:600;letter-spacing:.3px;border-bottom:1px solid rgba(255,255,255,.08)"></div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open" role="button" aria-expanded="true">영업관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" role="button" aria-expanded="true">매입/매출<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="qc-quote">견적관리</button>
-<button class="sb-item" data-mod="mes-wo">작업지시서</button>
-<button class="sb-item" data-mod="mes-order">수주관리</button>
-<button class="sb-item" data-mod="qc-claim">클레임</button>
+<button class="sb-item" data-mod="acc-sales">매출</button>
+<button class="sb-item" data-mod="acc-purchase">매입</button>
+<button class="sb-item" data-mod="acc-tax">세금계산서</button>
 </div>
-<div class="sb-group open" role="button" aria-expanded="true">생산관리<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">생산관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
+<button class="sb-item" data-mod="mes-wo">작업지시서</button>
 <button class="sb-item" data-mod="mes-plan">생산계획</button>
 <button class="sb-item" data-mod="mes-dash">생산현황</button>
-<button class="sb-item" data-mod="mes-ship">출고관리<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 <button class="sb-item" data-mod="mes-proc-log">공정실적</button>
 <button class="sb-item" data-mod="mes-outsource">외주관리</button>
-<button class="sb-item" data-mod="mes-monitor">현장모니터</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">품질/설비<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">구매/자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="qc-inspect">검사관리</button>
-<button class="sb-item" data-mod="mes-defect">불량관리</button>
-<button class="sb-item" data-mod="qc-equip">설비관리</button>
+<button class="sb-item" data-mod="mat-po">발주</button>
+<button class="sb-item" data-mod="mat-income">입고</button>
+<button class="sb-item" data-mod="mat-stock">재고</button>
+<button class="sb-item" data-mod="mat-bom">BOM</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">자재/구매<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">출고/품질<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mat-stock">재고관리</button>
-<button class="sb-item" data-mod="mat-po">구매관리</button>
-<button class="sb-item" data-mod="mat-bom">BOM/MRP</button>
+<button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="qc-inspect">품질</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">회계/인사<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">회계관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="acc-sales">매출/매입</button>
-<button class="sb-item" data-mod="acc-tax">세금계산서</button>
+<button class="sb-item" onclick="goMod('mes-rpt');setTimeout(function(){if(typeof rptSub==='function')rptSub('pl',document.querySelector('.s-tab'))},200)">손익</button>
 <button class="sb-item" data-mod="acc-recv">채권/자금</button>
-<button class="sb-item" data-mod="hr-emp">인사관리</button>
-<button class="sb-item" data-mod="hr-pay">급여관리</button>
+<button class="sb-item" data-mod="acc-cashflow">입출금</button>
+<button class="sb-item" data-mod="acc-closing">외상마감</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">시스템<span class="sb-arrow">▶</span></div>
+<div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-cli">마스터관리</button>
+<button class="sb-item" data-mod="hr-emp">직원</button>
+<button class="sb-item" data-mod="hr-att">출퇴근</button>
+<button class="sb-item" data-mod="hr-pay">급여</button>
+<button class="sb-item" data-mod="hr-leave">연차</button>
+</div>
+<div class="sb-group" role="button" aria-expanded="false">보고서<span class="sb-arrow">▶</span></div>
+<div class="sb-tree">
+<button class="sb-item" data-mod="biz-kpi">보고서</button>
+</div>
+<div class="sb-group" role="button" aria-expanded="false">설정<span class="sb-arrow">▶</span></div>
+<div class="sb-tree">
+<button class="sb-item" data-mod="mes-cli">거래처</button>
+<button class="sb-item" data-mod="mes-prod">품목</button>
+<button class="sb-item" data-mod="mes-vendor">인쇄소</button>
+<button class="sb-item" data-mod="mes-mold">목형</button>
+<button class="sb-item" data-mod="qc-equip">설비</button>
 <button class="sb-item" data-mod="qc-approval">전자결재</button>
-<button class="sb-item" data-mod="adm-perm">권한관리</button>
-<button class="sb-item" data-mod="adm-backup">시스템관리</button>
-<button class="sb-item" data-mod="biz-kpi">경영분석</button>
+<button class="sb-item" data-mod="adm-perm">권한</button>
+<button class="sb-item" data-mod="adm-backup">백업</button>
+<button class="sb-item" data-mod="mes-monitor">현장모니터</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -379,7 +391,20 @@
 
 <!-- Toast -->
 </div>
-<div class="module-page" id="pg-mat-stock"></div>
+<div class="module-page" id="pg-mat-stock"><div class="card" style="padding:16px">
+<div class="card-t" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">재고 현황
+<div style="display:flex;gap:6px">
+<button class="btn btn-o btn-sm" onclick="recalcAllStock()">재고 재계산</button>
+<button class="btn btn-o btn-sm" onclick="recalcAllAvgPrices()">단가 갱신</button>
+<button class="btn btn-o btn-sm" onclick="startStockAudit()">재고 실사</button>
+</div></div>
+<div id="stockKpi" class="sg" style="margin-bottom:16px"></div>
+<table class="dt" id="stockMainTbl"><thead><tr><th>자재명</th><th>분류</th><th style="text-align:right">현재고</th><th style="text-align:right">안전재고</th><th style="text-align:right">이동평균단가</th><th style="text-align:right">재고금액</th><th>상태</th><th>최종갱신</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="card" style="padding:16px;margin-top:16px">
+<div class="card-t" style="margin-bottom:12px">입출고 이력</div>
+<table class="dt" id="stockLogTbl"><thead><tr><th>일자</th><th>구분</th><th>자재명</th><th style="text-align:right">수량</th><th>참조</th><th>담당</th></tr></thead><tbody></tbody></table>
+</div></div>
 <div class="module-page" id="pg-mat-po"></div>
 <div class="module-page" id="pg-mat-bom"></div>
 <div class="module-page" id="pg-acc-sales"><div class="app">
@@ -1155,7 +1180,7 @@
 <div class="fg" style="margin:0"><label style="font-size:10px;color:var(--txt2)">금액</label><div id="woAmtDisplay" style="padding:5px 4px;font-size:11px;background:#F3F4F6;border-radius:6px;border:1px solid var(--bdr);color:#1D4ED8;font-weight:600">-</div></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>입고처</label><input id="woDlv" class="u-input-md"></div>
+<div class="fg"><label>입고처 (납품처)</label><div style="display:flex;gap:4px"><input id="woDlv" class="u-input-md" style="flex:1;min-width:0"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()" style="white-space:nowrap;padding:6px 8px;font-size:12px">🔍 검색</button></div></div>
 <div class="fg"><label>참고이미지</label>
 <div id="woImgZone" style="border:2px dashed var(--bdr);border-radius:8px;padding:10px;text-align:center;cursor:pointer;background:var(--bg2);transition:border-color .15s" onclick="document.getElementById('woImg').click()" ondragover="event.preventDefault();this.style.borderColor='var(--pri)'" ondragleave="this.style.borderColor='var(--bdr)'" ondrop="woImgDrop(event)">
   <div id="woImgP" style="margin-bottom:4px"></div>
@@ -1786,7 +1811,7 @@
 <div class="my" id="woDetC"></div>
 <div class="mf" style="display:flex;justify-content:space-between">
 <div class="u-flex-gap6"><button class="btn btn-sm" id="woDetCancel" style="background:#FEF3C7;color:#B45309;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">작업취소</button><button class="btn btn-sm" id="woDetDel" style="background:#FEE2E2;color:#DC2626;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">삭제</button></div>
-<div class="u-flex-gap6"><button class="btn btn-o" onclick="cMo('woDetMo')">닫기</button><button class="btn btn-p" id="woDetPr">A4 출력</button></div>
+<div class="u-flex-gap6"><button class="btn btn-sm" style="background:#EFF6FF;color:#1E3A5F;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer" onclick="showWOCostAnalysis()">원가분석</button><button class="btn btn-o" onclick="cMo('woDetMo')">닫기</button><button class="btn btn-p" id="woDetPr">A4 출력</button></div>
 </div><div style="display:none"><button id="woDetEd"></button><button id="woDetCp"></button></div>
 </div></div>
 
@@ -1794,7 +1819,7 @@
 <div class="mh"><h3 id="shipMoT">출고 처리</h3><button class="mc" onclick="cMo('shipMo')">&times;</button></div>
 <div class="my">
 <input type="hidden" id="smWoId">
-<div class="fr"><div class="fg"><label>거래처</label><div id="smCli" class="u-fw700-15"></div></div><div class="fg"><label>제품</label><div id="smProd" class="u-fw700-15"></div></div></div>
+<div class="fr"><div class="fg"><label>거래처 <button type="button" class="btn btn-sm btn-o" onclick="changeShipCli()" style="font-size:10px;padding:2px 8px;margin-left:6px">변경</button></label><div id="smCli" class="u-fw700-15" style="display:flex;align-items:center;gap:6px"></div><input type="hidden" id="smCliOverride"></div><div class="fg"><label>제품</label><div id="smProd" class="u-fw700-15"></div></div></div>
 <div class="fr u-mt10"><div class="fg"><label>완제품수량</label><div id="smTotal" style="font-weight:700"></div></div><div class="fg"><label>기출고</label><div id="smShipped" style="font-weight:700;color:var(--suc)"></div></div><div class="fg"><label>잔량</label><div id="smRemain" style="font-weight:700;color:var(--dan)"></div></div></div>
 <div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:14px">
 <div class="card-t">검수</div>
@@ -2270,8 +2295,10 @@
 <div class="fbar"><div class="fbar-row">
 <input type="month" id="monthlyRptMonth" onchange="rMonthlyReport()">
 <button class="btn btn-p btn-sm" onclick="rMonthlyReport()">조회</button>
-<button class="btn btn-s btn-sm" onclick="dlMonthlyPdf()">📥 PDF 다운로드</button>
+<button class="btn btn-o btn-sm" onclick="runMonthlyClosing()">월마감 생성</button>
+<button class="btn btn-o btn-sm" onclick="if(typeof recalcClientBalances==='function')recalcClientBalances()">거래처 잔액정산</button>
 </div></div>
+<div id="monthlyClosingArea" style="margin-bottom:16px"></div>
 <div id="monthlyRptArea"></div>
 </div></div>
 

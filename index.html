@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="이노MES">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
-<title>이노패키지 ERP+MES</title>
+<title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
 <script src="/js/core.js"></script>
 </head>
@@ -15,7 +15,7 @@
 <div id="toast" class="toast"></div>
 <div id="loginOverlay" class="login-overlay">
 <div class="login-card">
-<h1 class="login-title">이노패키지</h1>
+<h1 class="login-title">팩플로우</h1>
 <div class="login-sub">통합 ERP + MES</div>
 <div class="login-field"><label>사용자</label>
 <select id="loginUser" class="login-input">
@@ -38,7 +38,7 @@
 <div style="margin-bottom:16px"><div style="font-size:16px;font-weight:800;color:#16A34A;padding:8px 12px;background:#DCFCE7;border-left:4px solid #16A34A;margin-bottom:8px">✅ 금일 완료 <span id="wCntDone" style="font-size:13px;color:#6B7280"></span></div><div id="wQueueDone"></div></div>
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
-<div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>이노패키지 ERP+MES</div><div style="flex:1;overflow-y:auto">
+<div class="sidebar" id="sidebar"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우 ERP+MES</div><div style="flex:1;overflow-y:auto">
 <div class="sb-group">MES 생산</div>
 <button class="sb-item" data-mod="mes-dash" onclick="goMod('mes-dash')"><span class="icon">📊</span>생산현황</button>
 <button class="sb-item" data-mod="mes-plan" onclick="goMod('mes-plan')"><span class="icon">📋</span>생산계획</button>
@@ -59,11 +59,12 @@
 <button class="sb-item" data-mod="mat-stock" onclick="goMod('mat-stock')"><span class="icon">📦</span>재고</button>
 <button class="sb-item" data-mod="mat-po" onclick="goMod('mat-po')"><span class="icon">📄</span>발주서</button>
 <button class="sb-item" data-mod="mat-bom" onclick="goMod('mat-bom')"><span class="icon">🔩</span>BOM</button>
-<div class="sb-group">매출/회계</div>
+<div class="sb-group">매입/매출</div>
 <button class="sb-item" data-mod="acc-sales" onclick="goMod('acc-sales')"><span class="icon">💰</span>매출</button>
 <button class="sb-item" data-mod="acc-purchase" onclick="goMod('acc-purchase')"><span class="icon">💳</span>매입</button>
-<button class="sb-item" data-mod="acc-pl" onclick="goMod('acc-pl')"><span class="icon">📊</span>손익</button>
 <button class="sb-item" data-mod="acc-tax" onclick="goMod('acc-tax')"><span class="icon">🧾</span>세금계산서</button>
+<div class="sb-group">회계관리</div>
+<button class="sb-item" data-mod="acc-pl" onclick="goMod('acc-pl')"><span class="icon">📊</span>손익</button>
 <button class="sb-item" data-mod="acc-recv" onclick="goMod('acc-recv')"><span class="icon">💰</span>미수/미지급</button>
 <button class="sb-item" data-mod="acc-cashflow" onclick="goMod('acc-cashflow')"><span class="icon">🏦</span>입출금</button>
 <button class="sb-item" data-mod="acc-monthly" onclick="goMod('acc-monthly')"><span class="icon">📊</span>월별 비교</button>
@@ -82,6 +83,12 @@
 <button class="sb-item" data-mod="qc-equip" onclick="goMod('qc-equip')"><span class="icon">⚙</span>설비</button>
 <button class="sb-item" data-mod="qc-quote" onclick="goMod('qc-quote')"><span class="icon">📝</span>견적</button>
 <button class="sb-item" data-mod="qc-approval" onclick="goMod('qc-approval')"><span class="icon">✅</span>결재</button>
+<div class="sb-group">시스템관리</div>
+<button class="sb-item" data-mod="adm-code" onclick="goMod('adm-code')"><span class="icon">🏷</span>공통코드</button>
+<button class="sb-item" data-mod="adm-perm" onclick="goMod('adm-perm')"><span class="icon">🔐</span>권한</button>
+<button class="sb-item" data-mod="adm-backup" onclick="goMod('adm-backup')"><span class="icon">💾</span>백업</button>
+<button class="sb-item" data-mod="adm-audit" onclick="goMod('adm-audit')"><span class="icon">📜</span>감사로그</button>
+<button class="sb-item" data-mod="adm-docflow" onclick="goMod('adm-docflow')"><span class="icon">🔗</span>문서흐름</button>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">🔓 로그아웃</button></div>
 <div class="main-area"><div class="main-header">
@@ -358,7 +365,7 @@
 <div class="module-page" id="pg-mat-bom"></div>
 <div class="module-page" id="pg-acc-sales"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">💰 매출/회계</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">💰 매입/매출</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('sales',this)">매출 장부</button>
     <button class="hd-tab" onclick="goTab('purchase',this)">매입 장부</button>
@@ -446,7 +453,7 @@
 
 <!-- 매출 모달 -->
 <div class="mo-bg hidden" id="sMo" onclick="event.target===this&&cMo('sMo')"><div class="mo">
-  <div class="mo-t" id="sMoT">매출 등록</div><input type="hidden" id="sId">
+  <div class="mo-t" id="sMoT">매출 등록</div><div id="saleBreadcrumb" style="margin-bottom:8px"></div><input type="hidden" id="sId">
   <div class="fr"><div class="fg"><label>일자 *</label><input type="date" id="sDt"></div><div class="fg ac-w"><label>거래처 *</label><input type="text" id="sCli" oninput="acCli(this.value,'acSCL','sCli')" autocomplete="off"><div class="ac-l hidden" id="acSCL"></div></div></div>
   <div class="fr"><div class="fg"><label>품명 *</label><input type="text" id="sProd"></div><div class="fg"><label>수량</label><input type="number" id="sQty" oninput="cAmt('s')"></div></div>
   <div class="fr"><div class="fg"><label>단가 *</label><input type="number" id="sPrice" oninput="cAmt('s')"></div><div class="fg"><label>매출액</label><input type="text" id="sAmt" readonly style="background:var(--bg2);font-weight:700"></div></div>
@@ -492,7 +499,7 @@
 <div class="module-page" id="pg-acc-tax"></div>
 <div class="module-page" id="pg-hr-emp"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">👷 인사/급여</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">👷 인사/급여</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('emp',this)">직원 정보</button>
     <button class="hd-tab" onclick="goTab('att',this)">출퇴근 기록</button>
@@ -634,7 +641,7 @@
 <div class="module-page" id="pg-hr-leave"></div>
 <div class="module-page" id="pg-biz-trend"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span class="hd-title">📊 경영분석</span>
+  <span class="hd-logo">팩플로우</span><span class="hd-title">📊 경영분석</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('trend',this)">매출/매입 추이</button>
     <button class="hd-tab" onclick="goTab('rank',this)">거래처 순위</button>
@@ -726,7 +733,7 @@
 <div class="module-page" id="pg-biz-cost"></div>
 <div class="module-page" id="pg-qc-inspect"><div class="app">
 <div class="hd">
-  <span class="hd-logo">이노패키지</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">🔧 품질/기타</span>
+  <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">🔧 품질/기타</span>
   <div class="hd-tabs">
     <button class="hd-tab on" onclick="goTab('qc',this)">품질검사</button>
     <button class="hd-tab" onclick="goTab('equip',this)">설비관리</button>
@@ -856,7 +863,7 @@
 <!-- ======== LOGIN ======== -->
 <div id="loginScreen" class="screen" style="display:none">
 <div class="login-box">
-<h1>이노패키지</h1>
+<h1>팩플로우</h1>
 <div class="sub">패키지 제조 생산관리 시스템</div>
 <div class="role-btns">
 <button class="role-btn on" onclick="selRole('admin',this)">관리자</button>
@@ -1248,7 +1255,7 @@
 <div id="procManagerArea"></div>
 </div>
 <div class="card"><div class="card-t">수신처 정보 (출력용)</div>
-<div class="fr"><div class="fg"><label>회사명</label><input id="sCo" value="이노패키지"></div><div class="fg"><label>주소</label><input id="sAddr" value="경기도 파주시"></div></div>
+<div class="fr"><div class="fg"><label>회사명</label><input id="sCo" value="팩플로우"></div><div class="fg"><label>주소</label><input id="sAddr" value="경기도 파주시"></div></div>
 <div class="fr"><div class="fg"><label>전화</label><input id="sTel"></div><div class="fg"><label>팩스</label><input id="sFax"></div></div>
 <div style="margin-top:10px"><button class="btn btn-p" onclick="saveCo()">저장</button></div>
 </div>
@@ -1385,48 +1392,57 @@
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px" id="umPermGrid">
 <div>
-<div style="font-weight:700;color:var(--pri);margin-bottom:4px">MES 생산</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
+<div style="font-weight:700;color:var(--pri);margin-bottom:4px">영업관리</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-quote">견적</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-order">수주</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-claim">클레임</label>
+<div style="font-weight:700;color:#0369A1;margin:8px 0 4px">생산관리</div>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-wo">작업지시서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-cli">거래처</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-vendor">인쇄소</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-prod">품목</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-mold">목형</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-ship">출고관리</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-rpt">보고서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-worker">작업자현황</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-queue">설정</label>
-<div style="font-weight:700;color:#0369A1;margin:8px 0 4px">구매/자재</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-proc-log">공정실적</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-outsource">외주</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-monitor">현장모니터</label>
+<div style="font-weight:700;color:#0E7490;margin:8px 0 4px">구매/자재</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-po">발주</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-income">입고</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-stock">재고</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-po">발주서</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mat-bom">BOM</label>
+<div style="font-weight:700;color:#DC2626;margin:8px 0 4px">출고/품질</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-ship">출고</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-inspect">검사</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-defect">불량</label>
 </div>
 <div>
-<div style="font-weight:700;color:#059669;margin-bottom:4px">매출/회계</div>
+<div style="font-weight:700;color:#059669;margin-bottom:4px">매입/매출</div>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-sales">매출</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-purchase">매입</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-pl">손익</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-tax">세금계산서</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-recv">미수/미지급</label>
+<div style="font-weight:700;color:#10B981;margin:8px 0 4px">회계관리</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-pl">손익</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-recv">채권/자금</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-cashflow">입출금</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-monthly">월별비교</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="acc-closing">외상마감</label>
 <div style="font-weight:700;color:#7C3AED;margin:8px 0 4px">인사/급여</div>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-emp">직원</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-att">출퇴근</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-pay">급여</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="hr-leave">연차</label>
-<div style="font-weight:700;color:#B45309;margin:8px 0 4px">경영분석</div>
+<div style="font-weight:700;color:#B45309;margin:8px 0 4px">보고서</div>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-trend">추이</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-rank">순위</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-cost">원가</label>
-<div style="font-weight:700;color:#DC2626;margin:8px 0 4px">품질/기타</div>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-inspect">검사</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="biz-kpi">KPI</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-rpt">보고서</label>
+<div style="font-weight:700;color:#64748B;margin:8px 0 4px">설정</div>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-cli">거래처</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-prod">품목</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-vendor">인쇄소</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="mes-mold">목형</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-equip">설비</label>
-<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-quote">견적</label>
 <label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="qc-approval">결재</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="adm-perm">권한</label>
+<label style="display:flex;align-items:center;gap:4px;margin-bottom:2px;cursor:pointer"><input type="checkbox" class="perm-cb" value="adm-backup">백업</label>
 </div>
 </div>
 </div>
@@ -1632,6 +1648,62 @@
 <div class="sched-legend-item"><div class="sched-legend-dot" style="background:#7B61FF"></div>외주</div>
 <div class="sched-legend-item">💡 카드를 드래그하여 일정 변경</div>
 </div>
+</div>
+</div>
+
+<!-- 공통코드 관리 -->
+<div id="pg-adm-code" class="module-page">
+<div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+<span>공통코드 관리</span>
+</div>
+<div style="display:flex;gap:16px;min-height:500px">
+<!-- 좌측: 카테고리 -->
+<div style="width:280px;flex-shrink:0;border-right:1px solid var(--bdr);padding-right:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<span style="font-weight:700;font-size:14px">카테고리</span>
+<button class="btn btn-sm btn-p" onclick="openCatAddM()">+ 추가</button>
+</div>
+<div id="codeCatList"></div>
+</div>
+<!-- 우측: 코드 목록 -->
+<div style="flex:1;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<span style="font-weight:700;font-size:14px" id="codeListTitle">카테고리를 선택하세요</span>
+<button class="btn btn-sm btn-p" onclick="openCodeAddM()" id="btnAddCode" style="display:none">+ 코드 추가</button>
+</div>
+<div id="codeItemList"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 문서흐름 -->
+<div id="pg-adm-docflow" class="module-page">
+<div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">문서 흐름 추적</div>
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+<select id="dfDocType" onchange="rDocFlow()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
+<option value="">문서유형 선택</option>
+<option value="QUOTE">견적</option>
+<option value="ORDER">수주</option>
+<option value="WO">작업지시</option>
+<option value="SHIP">출고</option>
+<option value="STATEMENT">거래명세표</option>
+<option value="TAX_INV">세금계산서</option>
+<option value="SALE">매출전표</option>
+</select>
+<input type="text" id="dfSearch" placeholder="문서번호 또는 거래처 검색" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;width:200px" onkeyup="rDocFlow()">
+</div>
+<div id="docFlowArea"></div>
+</div>
+</div>
+
+<!-- 품목별 수불장 -->
+<div id="pg-mat-ledger" class="module-page">
+<div class="card" style="padding:16px">
+<div class="card-t" style="margin-bottom:12px">품목별 수불장</div>
+<div id="ledgerArea"></div>
 </div>
 </div>
 

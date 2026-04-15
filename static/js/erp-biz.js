@@ -60,7 +60,7 @@ function renderTrend() {
   });
   chartHtml += '</div><div class="chart-legend"><span><span class="legend-dot" style="background:var(--pri)"></span>매출</span><span><span class="legend-dot" style="background:var(--wrn)"></span>매입</span></div>';
   $('trendChart').innerHTML = (yearSales + yearPurch > 0) ? chartHtml :
-    emptyHtml('', '매출/매입 데이터가 없습니다', '매출/회계 모듈에서 데이터를 등록하면 차트가 표시됩니다.');
+    emptyHtml('', '매출/매입 데이터가 없습니다', '매입/매출 모듈에서 데이터를 등록하면 차트가 표시됩니다.');
 
   // 테이블
   var rows = '';
@@ -363,6 +363,35 @@ function rMonthlyReport(){
     h+='</tbody></table>';
   }else{h+='<div style="padding:20px;text-align:center;color:var(--txt3)">매출 데이터 없음</div>'}
   h+='</div>';
+
+  // 12개월 추이 테이블
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-t">최근 12개월 추이</div>';
+  h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>월</th><th style="text-align:right">매출</th><th style="text-align:right">매입</th><th style="text-align:right">이익</th><th style="text-align:right">이익률</th></tr></thead><tbody>';
+  for(var mi=11;mi>=0;mi--){
+    var md=new Date(y,m-1-mi,1);
+    var mk=md.getFullYear()+'-'+String(md.getMonth()+1).padStart(2,'0');
+    var ms=0,mp=0;
+    sales.forEach(function(s){if(s.dt&&s.dt.startsWith(mk))ms+=(s.amt||0)});
+    purch.forEach(function(p){if(p.dt&&p.dt.startsWith(mk))mp+=(p.amt||0)});
+    var mpr=ms-mp;var mr2=ms>0?Math.round(mpr/ms*100):0;
+    var isCur=mk===month;
+    h+='<tr style="'+(isCur?'background:var(--bg2);font-weight:700':'')+'"><td>'+mk+'</td><td style="text-align:right">'+fmt(ms)+'</td><td style="text-align:right">'+fmt(mp)+'</td><td style="text-align:right;color:'+(mpr>=0?'var(--suc)':'var(--dan)')+'">'+fmt(mpr)+'</td><td style="text-align:right">'+mr2+'%</td></tr>';
+  }
+  h+='</tbody></table></div></div>';
+
+  // 거래처별 매입 내역
+  var cliPurch={};
+  purch.filter(function(p){return p.dt&&p.dt.startsWith(month)}).forEach(function(p){var cn=p.cli||'미지정';if(!cliPurch[cn])cliPurch[cn]=0;cliPurch[cn]+=(p.amt||0)});
+  var topPurch=Object.keys(cliPurch).sort(function(a,b){return cliPurch[b]-cliPurch[a]}).slice(0,5);
+  if(topPurch.length){
+    h+='<div class="card" style="margin-bottom:16px"><div class="card-t">거래처별 매입 TOP 5</div>';
+    h+='<table class="dt"><thead><tr><th>순위</th><th>거래처</th><th style="text-align:right">매입액</th><th style="text-align:right">비중</th></tr></thead><tbody>';
+    topPurch.forEach(function(c,i){
+      var pct=curPurch>0?Math.round(cliPurch[c]/curPurch*100):0;
+      h+='<tr><td style="font-weight:700">'+(i+1)+'</td><td>'+c+'</td><td style="text-align:right">'+fmt(cliPurch[c])+'원</td><td style="text-align:right">'+pct+'%</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
 
   // 인사이트 코멘트
   h+='<div class="card"><div class="card-t">분석 코멘트</div><div style="padding:4px 0">';

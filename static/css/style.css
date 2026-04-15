@@ -173,7 +173,7 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 /* ===== SUMMARY GRID — Compact Strip ===== */
 .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:8px;transition:all .2s var(--ease)}
 .sg.sg-hidden{display:none}
-.sb{background:var(--card);border:1px solid var(--bdr);padding:8px 12px 6px;box-shadow:var(--sh-xs);border-radius:var(--r-sm);transition:all .2s var(--ease);position:relative;overflow:hidden;cursor:default;height:44px;display:flex;flex-direction:column;justify-content:center}
+.sb{background:var(--card);border:1px solid var(--bdr);padding:10px 12px 8px;box-shadow:var(--sh-xs);border-radius:var(--r-sm);transition:all .2s var(--ease);position:relative;overflow:hidden;cursor:default;min-height:auto;display:flex;flex-direction:column;justify-content:center}
 .sb::before{display:none}
 .sb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pri);opacity:0;transition:opacity .2s var(--ease)}
 .sb:hover{box-shadow:var(--sh);border-color:var(--bdr2)}
@@ -318,8 +318,8 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .al.wrn{background:var(--wrn-l);border-color:var(--wrn);color:#92400E}
 
 /* ===== SIDEBAR — Glazey ===== */
-.unified-app{display:flex;height:100vh;overflow-x:auto;overflow-y:hidden;min-width:1100px}
-.sidebar{width:230px;background:#1E293B;color:#CBD5E1;display:flex;flex-direction:column;flex-shrink:0;border-right:none;box-shadow:none}
+.unified-app{display:flex;height:100vh;overflow-x:hidden;overflow-y:hidden;width:100%}
+.sidebar{width:230px;background:#1E293B;color:#FFFFFF;display:flex;flex-direction:column;flex-shrink:0;border-right:none;box-shadow:none}
 .sb-logo{padding:24px 22px 22px;font-size:20px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;color:#F1F5F9;letter-spacing:.5px}
 .sb-logo::before{content:'';display:inline-block;width:28px;height:28px;background:var(--pri);border-radius:var(--r-sm);box-shadow:0 2px 8px rgba(30,58,95,.4)}
 .sb-group{padding:14px 18px;margin:0;font-size:12px;color:#64748B;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:none;user-select:none;transition:background .2s var(--ease);margin-top:6px}
@@ -345,8 +345,8 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .main-header h2{font-size:18px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
 .main-header .breadcrumb{font-size:11px;color:var(--txt2);font-weight:600;padding:4px 12px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r-full);letter-spacing:.2px}
 .header-right{margin-left:auto;font-size:12px;color:var(--txt2);font-weight:500;font-feature-settings:"tnum"}
-.main-content{flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;background:var(--bg2)}
-.main-content>.module-page.active{min-width:1280px}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 24px;background:var(--bg2);min-width:0}
+.main-content>.module-page.active{min-width:0;max-width:100%}
 .module-page{display:none}.module-page.active{display:block}
 .module-page .card{margin-bottom:8px}
 .module-page .sg{margin-bottom:8px}
@@ -638,6 +638,110 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 @supports(padding:env(safe-area-inset-top)){
   .main-header{padding-top:env(safe-area-inset-top)}
   .sidebar{padding-top:env(safe-area-inset-top)}
+}
+
+/* ============================================
+   범용 반응형 (PC/노트북/태블릿/모바일 공통 - 터치 여부 무관)
+   ============================================ */
+
+/* 공통: 가로 overflow 방지 */
+body,html{overflow-x:hidden;max-width:100vw}
+.main-area,.main-content,.module-page{max-width:100%;box-sizing:border-box}
+.main-content>*{max-width:100%}
+img,svg,video,iframe{max-width:100%;height:auto}
+
+/* 큰 노트북 (1280~1600px) */
+@media(max-width:1600px){
+  .main-content{padding:16px 20px}
+  .kpi-value{font-size:24px}
+}
+
+/* 작은 노트북 (1024~1279px) */
+@media(max-width:1279px){
+  .sg{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .sb{padding:14px 16px 12px}
+  .sb .v{font-size:22px}
+  .main-content{padding:14px 16px}
+  .gal{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .kanban{grid-template-columns:repeat(3,1fr)}
+  .sidebar{width:220px}
+  .hd-tab{padding:10px 14px;font-size:13px}
+}
+
+/* 태블릿 가로 / 작은 노트북 (768~1023px) */
+@media(max-width:1023px){
+  .sidebar{position:fixed;top:0;bottom:0;left:0;z-index:9990;width:240px;height:100vh;transform:translateX(-100%);transition:transform .3s var(--ease-out);box-shadow:none}
+  .sidebar.open{transform:translateX(0);box-shadow:0 0 0 9999px rgba(15,23,42,.35),20px 0 60px rgba(15,23,42,.18)}
+  .mob-toggle{display:inline-flex!important;align-items:center;justify-content:center}
+  .main-area{margin-left:0}
+  .main-header{padding:0 16px;height:52px}
+  .main-content{padding:14px 16px;overflow-x:auto}
+  .sg{grid-template-columns:repeat(2,1fr);gap:10px}
+  .sb{padding:14px 16px}
+  .sb .v{font-size:20px}
+  .gal{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .kanban{grid-template-columns:1fr}
+  .fr{grid-template-columns:1fr 1fr;gap:10px}
+  .card>svg,#salesTrendArea svg,#trendChart svg{max-width:100%;height:auto}
+  #monthlyArea,#salesTrendArea,#rankChart,#prodChart{overflow-x:auto}
+  .module-page{overflow-x:auto}
+  .dt{min-width:max-content}
+  .hd-tabs{overflow-x:auto;flex-wrap:nowrap}
+  .hd-tab{flex-shrink:0}
+}
+
+/* 태블릿 세로 / 큰 폰 (481~767px) */
+@media(max-width:767px){
+  .sidebar{width:84vw;max-width:300px}
+  .main-header{padding:0 12px;height:48px}
+  .main-header h2{font-size:14px}
+  .main-header .breadcrumb{display:none}
+  .main-header .header-right>*:not(#notiWrap){display:none}
+  .main-content{padding:10px 12px}
+  .sg{grid-template-columns:1fr 1fr;gap:8px}
+  .sb{padding:12px 14px}
+  .sb .v{font-size:18px}
+  .sb .l{font-size:11px}
+  .card{padding:12px 14px;margin-bottom:10px}
+  .card-t{font-size:14px;margin-bottom:10px;padding-bottom:8px}
+  .dt{font-size:12px}
+  .dt th{padding:8px 6px;font-size:10px}
+  .dt td{padding:9px 6px;font-size:11.5px}
+  .gal{grid-template-columns:1fr;gap:10px}
+  .fbar{padding:10px 12px}
+  .fbar-row{gap:8px;flex-wrap:wrap}
+  .fbar-grow{flex-basis:100%;min-width:0}
+  .fbar-spacer{display:none}
+  .fr{grid-template-columns:1fr;gap:10px}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-value{font-size:20px}
+  .kpi-card{padding:12px}
+  .mo,.mb{width:100vw!important;max-width:100vw!important;border-radius:0!important;margin:0!important;min-height:100vh;max-height:100vh;overflow-y:auto}
+  .mh,.mo-t{font-size:15px;padding:16px 18px}
+  .my,.mo-b{padding:16px 18px;max-height:none}
+  .mf,.mo-f{padding:12px 18px env(safe-area-inset-bottom,12px)}
+  .btn{padding:10px 16px;font-size:13px}
+  .btn-sm{padding:8px 12px;font-size:12px}
+  .login-card{padding:32px 20px;width:92vw}
+  .login-title{font-size:22px}
+  .heat-grid{grid-template-columns:repeat(13,12px);grid-auto-rows:12px}
+  .heat-cell{width:12px;height:12px}
+  .chart-area{height:200px;padding:14px 8px 8px}
+  .chart-bars{height:160px}
+}
+
+/* 모바일 세로 (≤480px) */
+@media(max-width:480px){
+  .sg{grid-template-columns:1fr;gap:8px}
+  .kpi-grid{grid-template-columns:1fr}
+  .hd-tab{padding:8px 10px;font-size:12px}
+}
+
+/* 초대형 모니터 (≥1920px) */
+@media(min-width:1920px){
+  .main-content{padding:24px 32px}
+  .sb .v{font-size:30px}
+  .kpi-value{font-size:32px}
 }
 
 /* ===== PRINT / PDF OUTPUT ===== */
@@ -1085,7 +1189,44 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .nd-feed-time{font-size:11px;color:#94A3B8;margin-left:auto;white-space:nowrap;font-weight:600}
 
 @media(max-width:1024px){.nd-kpi{grid-template-columns:repeat(3,1fr)}.nd-gauge-row{grid-template-columns:1fr 1fr}.nd-pipe-row{flex-wrap:wrap;gap:8px}.nd-pipe-arrow{display:none}}
-@media(max-width:640px){.nd-kpi{grid-template-columns:repeat(2,1fr)}.nd-gauge-row{grid-template-columns:1fr}}
+@media(max-width:640px){.nd-kpi{grid-template-columns:repeat(2,1fr)}.nd-gauge-row{grid-template-columns:1fr}.nd-kpi-num{font-size:24px}.nd-kpi-card{padding:14px}}
+@media(max-width:480px){.nd-kpi{grid-template-columns:1fr}.nd-kpi-num{font-size:28px}.nd-pipe-row{gap:4px}}
+
+/* ===== v2: 새 차트 스타일 ===== */
+/* KPI 카드 미니 막대 스파크라인 */
+.nd-kpi-spark-v2{margin-top:10px;height:28px;display:flex;align-items:flex-end;gap:3px}
+.nd-kpi-spark-bar{flex:1;background:#059669;border-radius:2px;min-height:2px;transition:height .3s}
+
+/* 원형 게이지 v2 */
+.nd-gauge-v2{background:#fff;border-radius:14px;padding:20px 16px;box-shadow:0 1px 4px rgba(0,0,0,.04);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px}
+.nd-gauge-v2 .nd-gauge-title{font-size:11px;font-weight:700;color:#94A3B8;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.nd-gauge-circle{position:relative;width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.nd-gauge-inner{width:82px;height:82px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 3px rgba(0,0,0,.04)}
+.nd-gauge-v2 .nd-gauge-val{position:static;transform:none;font-size:22px;font-weight:900;letter-spacing:-.5px;font-feature-settings:"tnum";line-height:1}
+
+/* 일별 생산량 막대 차트 */
+.nd-bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding:10px 8px 0;min-width:0}
+.nd-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;height:100%}
+.nd-bar-val{font-size:10px;font-weight:700;color:#475569;height:14px;line-height:14px;font-feature-settings:"tnum"}
+.nd-bar-track{flex:1;width:100%;max-width:28px;background:#F5F7FA;border-radius:6px 6px 0 0;display:flex;align-items:flex-end;overflow:hidden;margin:4px 0}
+.nd-bar-fill{width:100%;border-radius:6px 6px 0 0;transition:height .4s ease}
+.nd-bar-lbl{font-size:11px;margin-top:6px}
+
+/* 공정 파이프라인 원형 링 v2 */
+.nd-pipe-circle{position:relative;z-index:1}
+.nd-pipe-circle>*:not(.nd-pipe-ring-v2){position:relative;z-index:2}
+.nd-pipe-ring-v2{position:absolute;top:-4px;left:-4px;width:60px;height:60px;border-radius:50%;padding:3px;box-sizing:border-box;z-index:0}
+.nd-pipe-ring-v2 .nd-pipe-ring-inner{width:100%;height:100%;background:#F5F7FA;border-radius:50%}
+.nd-pipe-num{position:relative;z-index:2;font-size:18px;font-weight:900}
+
+/* 공정 파이프라인 - 1줄 고정 */
+.nd-pipe-row{flex-wrap:nowrap;overflow-x:auto;gap:4px}
+.nd-pipe-step{flex:1 1 0;min-width:0;text-align:center}
+.nd-pipe-arrow{flex:0 0 auto}
+.nd-pipe-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nd-pipe-tags{flex-wrap:wrap}
+@media(max-width:1024px){.nd-pipe-arrow{padding:0 2px;font-size:14px}.nd-pipe-circle{width:44px;height:44px}.nd-pipe-ring-v2{width:52px;height:52px}.nd-pipe-num{font-size:15px}}
+@media(max-width:640px){.nd-pipe-arrow{display:none}.nd-pipe-circle{width:40px;height:40px}.nd-pipe-ring-v2{width:48px;height:48px}.nd-pipe-name{font-size:10px}.nd-pipe-num{font-size:13px}}
 
 /* ===== Gallery Card Grid (거래처/품목/인쇄소/직원 등) ===== */
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}

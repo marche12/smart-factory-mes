@@ -420,6 +420,11 @@
 </div>
 <div class="body">
 
+<!-- 얼마에요 Group 구조 — 회사 선택 토글 -->
+<div class="grp-toggle-bar" id="grpToggleBar">
+  <span class="grp-label">회사</span>
+</div>
+
 <!-- 매출 장부 -->
 <div class="tc on" id="t-sales">
   <div class="sg">
@@ -492,6 +497,8 @@
 <!-- 매출 모달 -->
 <div class="mo-bg hidden" id="sMo" onclick="event.target===this&&cMo('sMo')"><div class="mo">
   <div class="mo-t" id="sMoT">매출 등록</div><input type="hidden" id="sId">
+  <!-- 얼마에요 GroupId — 발행주체 선택 -->
+  <div class="fg" style="margin-bottom:10px"><label style="font-weight:800;color:var(--pri)">발행주체 (GroupId) *</label><div class="grp-radio-wrap" id="sGrpSel"></div></div>
   <div class="fr"><div class="fg"><label>일자 *</label><input type="date" id="sDt"></div><div class="fg ac-w"><label>거래처 *</label><input type="text" id="sCli" oninput="acCli(this.value,'acSCL','sCli')" autocomplete="off"><div class="ac-l hidden" id="acSCL"></div></div></div>
   <div class="fr"><div class="fg"><label>품명 *</label><input type="text" id="sProd"></div><div class="fg"><label>수량</label><input type="number" id="sQty" oninput="cAmt('s')"></div></div>
   <div class="fr"><div class="fg"><label>단가 *</label><input type="number" id="sPrice" oninput="cAmt('s')"></div><div class="fg"><label>매출액</label><input type="text" id="sAmt" readonly style="background:var(--bg2);font-weight:700"></div></div>
@@ -503,6 +510,8 @@
 <!-- 매입 모달 -->
 <div class="mo-bg hidden" id="pMo" onclick="event.target===this&&cMo('pMo')"><div class="mo">
   <div class="mo-t" id="pMoT">매입 등록</div><input type="hidden" id="pId">
+  <!-- 얼마에요 GroupId — 귀속회사 선택 -->
+  <div class="fg" style="margin-bottom:10px"><label style="font-weight:800;color:var(--pri)">귀속회사 (GroupId) *</label><div class="grp-radio-wrap" id="pGrpSel"></div></div>
   <div class="fr"><div class="fg"><label>일자 *</label><input type="date" id="pDt"></div><div class="fg ac-w"><label>거래처 *</label><input type="text" id="pCli" oninput="acCli(this.value,'acPCL','pCli')" autocomplete="off"><div class="ac-l hidden" id="acPCL"></div></div></div>
   <div class="fr"><div class="fg"><label>품명 *</label><input type="text" id="pProd"></div><div class="fg"><label>수량</label><input type="number" id="pQty" oninput="cAmt('p')"></div></div>
   <div class="fr"><div class="fg"><label>단가 *</label><input type="number" id="pPrice" oninput="cAmt('p')"></div><div class="fg"><label>매입액</label><input type="text" id="pAmt" readonly style="background:var(--bg2);font-weight:700"></div></div>
@@ -523,6 +532,12 @@
 <!-- 세금계산서 모달 -->
 <div class="mo-bg hidden" id="txMo2" onclick="event.target===this&&cMo('txMo2')"><div class="mo" style="max-width:560px">
   <div class="mo-t" id="txMoT">세금계산서 등록</div><input type="hidden" id="txId">
+  <!-- 얼마에요 GroupId — 공급자(발행주체) 선택 -->
+  <div class="fg" style="margin-bottom:12px;padding:10px 14px;background:var(--pri-l);border-radius:10px;border:1.5px solid var(--pri)">
+    <label style="font-weight:800;color:var(--pri);font-size:12px">공급자 (발행주체) *</label>
+    <div class="grp-radio-wrap" id="txGrpSel" style="margin-top:6px"></div>
+    <div id="txGrpInfo" style="margin-top:6px;font-size:11px;color:var(--txt2)"></div>
+  </div>
   <!-- 발행방식 선택 -->
   <div style="display:flex;gap:8px;margin-bottom:14px">
     <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px 14px;border:2px solid var(--pri);border-radius:8px;cursor:pointer;background:var(--pri-l);font-weight:700;font-size:13px">
@@ -1577,10 +1592,36 @@
 <p style="font-size:13px;color:var(--txt2);margin-bottom:10px">테스트용 거래처 4개, 품목 4개, 목형 4개, 인쇄소 2개, 작업지시서 4건을 자동으로 생성합니다.</p>
 <button class="btn btn-s" onclick="genSim()">시뮬레이션 데이터 생성</button>
 </div>
+<!-- 얼마에요 Group 구조 — 다중 회사 설정 -->
+<div class="card"><div class="card-t">🏢 회사 설정 (얼마에요 Group 구조)</div>
+<p style="font-size:12px;color:var(--txt2);margin-bottom:14px">매출/매입/세금계산서의 발행주체를 구분합니다. 얼마에요의 GroupId와 동일한 구조입니다. 생산/재고/거래처는 두 회사가 공유합니다.</p>
+<!-- 회사 A -->
+<div style="border:2px solid #DBEAFE;border-radius:10px;padding:14px;margin-bottom:12px;background:#EFF6FF">
+<div style="font-size:13px;font-weight:800;color:#1E40AF;margin-bottom:10px">🔵 회사 A (개인사업자)</div>
+<div class="fr"><div class="fg"><label>상호 *</label><input type="text" id="coA_nm" placeholder="이노패키지"></div><div class="fg"><label>사업자번호</label><input type="text" id="coA_bizNo" placeholder="000-00-00000"></div></div>
+<div class="fr"><div class="fg"><label>대표자</label><input type="text" id="coA_ceo" placeholder="대표자명"></div><div class="fg"><label>업태</label><input type="text" id="coA_bizType" placeholder="제조"></div><div class="fg"><label>종목</label><input type="text" id="coA_bizClass" placeholder="포장재"></div></div>
+<div class="fr"><div class="fg"><label>주소</label><input type="text" id="coA_addr" placeholder="사업장 주소"></div><div class="fg"><label>전화</label><input type="text" id="coA_tel" placeholder="02-0000-0000"></div></div>
+</div>
+<!-- 회사 B -->
+<div style="border:2px solid #EDE9FE;border-radius:10px;padding:14px;margin-bottom:12px;background:#F5F3FF">
+<div style="font-size:13px;font-weight:800;color:#7C3AED;margin-bottom:10px">🟣 회사 B (법인)</div>
+<div class="fr"><div class="fg"><label>상호 *</label><input type="text" id="coB_nm" placeholder="주식회사 이노패키지"></div><div class="fg"><label>사업자번호</label><input type="text" id="coB_bizNo" placeholder="000-00-00000"></div></div>
+<div class="fr"><div class="fg"><label>대표자</label><input type="text" id="coB_ceo" placeholder="대표자명"></div><div class="fg"><label>업태</label><input type="text" id="coB_bizType" placeholder="제조"></div><div class="fg"><label>종목</label><input type="text" id="coB_bizClass" placeholder="포장재"></div></div>
+<div class="fr"><div class="fg"><label>주소</label><input type="text" id="coB_addr" placeholder="사업장 주소"></div><div class="fg"><label>전화</label><input type="text" id="coB_tel" placeholder="02-0000-0000"></div></div>
+</div>
+<div style="display:flex;gap:8px"><button class="btn btn-p btn-sm" onclick="saveCompanies()">설정 저장</button><button class="btn btn-o btn-sm" onclick="loadCompanies()">불러오기</button></div>
+<div style="margin-top:8px;padding:8px 12px;background:#D1FAE5;border-radius:8px;font-size:11px;color:#065F46">
+공정(WO/출고/재고)은 두 회사가 공유합니다. 매출·매입·세금계산서만 GroupId로 분리됩니다.
+</div>
+</div>
 <div class="card"><div class="card-t">⚡ 팝빌 전자세금계산서 API 설정</div>
 <p style="font-size:12px;color:var(--txt2);margin-bottom:12px">전자세금계산서 국세청 발행을 위한 팝빌 API 설정입니다. <a href="https://www.popbill.com" target="_blank" style="color:var(--pri)">popbill.com</a>에서 연동신청 후 발급받은 키를 입력하세요.</p>
+<div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px">공통 설정 (LinkID/SecretKey는 두 회사 동일)</div>
 <div class="fr"><div class="fg"><label>LinkID</label><input type="text" id="pbLinkId" placeholder="연동신청 시 발급받은 LinkID"></div><div class="fg"><label>SecretKey</label><input type="password" id="pbSecretKey" placeholder="SecretKey (외부 노출 금지)"></div></div>
-<div class="fr"><div class="fg"><label>사업자등록번호</label><input type="text" id="pbCorpNum" placeholder="0000000000 (10자리, - 제외)"></div><div class="fg" style="display:flex;align-items:center;gap:8px;padding-top:20px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pbIsTest" checked> 테스트 모드</label></div></div>
+<div style="font-size:12px;font-weight:700;color:#1E40AF;margin:10px 0 6px">🔵 회사 A 사업자번호</div>
+<div class="fr"><div class="fg"><label>사업자번호 A</label><input type="text" id="pbCorpNum" placeholder="0000000000 (10자리, - 제외)"></div><div class="fg" style="display:flex;align-items:center;gap:8px;padding-top:20px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pbIsTest" checked> 테스트 모드</label></div></div>
+<div style="font-size:12px;font-weight:700;color:#7C3AED;margin:10px 0 6px">🟣 회사 B 사업자번호</div>
+<div class="fr"><div class="fg"><label>사업자번호 B</label><input type="text" id="pbCorpNumB" placeholder="0000000000 (10자리, - 제외)"></div></div>
 <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="savePopbillConfig()">설정 저장</button><button class="btn btn-o btn-sm" onclick="loadPopbillConfig()">설정 불러오기</button></div>
 <div style="margin-top:10px;padding:8px 12px;background:#FEF3C7;border-radius:8px;font-size:11px;color:#92400E">
 <b>가입 절차:</b> popbill.com 회원가입 → 1600-8536 전화 또는 sales@linkhubcorp.com 메일로 연동신청 → 20분 내 LinkID/SecretKey 발급 → 위에 입력<br>
@@ -1819,6 +1860,11 @@
 <div class="mh"><h3 id="shipMoT">출고 처리</h3><button class="mc" onclick="cMo('shipMo')">&times;</button></div>
 <div class="my">
 <input type="hidden" id="smWoId">
+<!-- 얼마에요 GroupId — 매출 귀속회사 선택 -->
+<div style="padding:8px 12px;background:var(--pri-l);border-radius:8px;border:1.5px solid var(--pri);margin-bottom:12px">
+  <div style="font-size:11px;font-weight:800;color:var(--pri);margin-bottom:6px">매출 귀속회사 (GroupId)</div>
+  <div class="grp-radio-wrap" id="smGrpSel"></div>
+</div>
 <div class="fr"><div class="fg"><label>거래처 <button type="button" class="btn btn-sm btn-o" onclick="changeShipCli()" style="font-size:10px;padding:2px 8px;margin-left:6px">변경</button></label><div id="smCli" class="u-fw700-15" style="display:flex;align-items:center;gap:6px"></div><input type="hidden" id="smCliOverride"></div><div class="fg"><label>제품</label><div id="smProd" class="u-fw700-15"></div></div></div>
 <div class="fr u-mt10"><div class="fg"><label>완제품수량</label><div id="smTotal" style="font-weight:700"></div></div><div class="fg"><label>기출고</label><div id="smShipped" style="font-weight:700;color:var(--suc)"></div></div><div class="fg"><label>잔량</label><div id="smRemain" style="font-weight:700;color:var(--dan)"></div></div></div>
 <div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:14px">

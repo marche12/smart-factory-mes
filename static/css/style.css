@@ -998,6 +998,22 @@ img,svg,video,iframe{max-width:100%;height:auto}
 .sched-legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--txt2)}
 .sched-legend-dot{width:10px;height:10px;border-radius:3px}
 
+/* ===== 얼마에요 Group 구조 — 다중 회사 토글 ===== */
+.grp-toggle-bar{display:flex;align-items:center;gap:6px;padding:10px 16px 6px;border-bottom:1px solid var(--bdr);background:var(--bg);flex-wrap:wrap}
+.grp-toggle-bar .grp-label{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.4px;text-transform:uppercase;margin-right:4px}
+.grp-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid var(--bdr);background:var(--bg);color:var(--txt2);cursor:pointer;transition:all .15s}
+.grp-btn:hover{border-color:var(--pri);color:var(--pri)}
+.grp-btn.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+.grp-btn.active-A{background:#1E40AF;color:#fff;border-color:#1E40AF}
+.grp-btn.active-B{background:#7C3AED;color:#fff;border-color:#7C3AED}
+.grp-radio-wrap{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grp-radio-wrap label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:6px 12px;border:1.5px solid var(--bdr);border-radius:8px;transition:all .15s}
+.grp-radio-wrap label:has(input:checked){border-color:var(--pri);background:var(--pri-l);color:var(--pri);font-weight:700}
+.grp-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px}
+.grp-badge-A{background:#DBEAFE;color:#1E40AF}
+.grp-badge-B{background:#EDE9FE;color:#7C3AED}
+.grp-badge-ALL{background:#E5E7EB;color:#374151}
+
 /* 통합 모드: ERP 내부 헤더/탭 숨기기 (사이드바로 통일) */
 .unified-app .module-page .hd{display:none!important}
 .unified-app .module-page .app>.body{padding:0}

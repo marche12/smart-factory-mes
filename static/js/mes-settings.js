@@ -161,7 +161,13 @@ $('shipSum').innerHTML=
 $('shipReadyTbl').querySelector('tbody').innerHTML=ready.length?ready.sort((a,b)=>a.sd>b.sd?1:-1).map(o=>{const shipped=getShipped(o.id);const remain=o.fq-shipped;const late=o.sd&&o.sd<td();
 var compQty=o.procs&&o.procs.length?o.procs[o.procs.length-1].qty||0:0;if(!compQty){for(var _pi=o.procs.length-1;_pi>=0;_pi--){if(o.procs[_pi].qty>0){compQty=o.procs[_pi].qty;break}}}
 return`<tr ${late?'class="row-late"':''}><td>${o.wn}</td><td>${o.cnm}</td><td>${o.pnm}</td><td>${o.fq}</td><td style="color:var(--pri);font-weight:700">${compQty||'-'}</td><td style="color:var(--suc);font-weight:700">${shipped}</td><td style="color:${remain>0?'var(--dan)':'var(--suc)'};font-weight:700">${remain}</td><td ${late?'style="color:var(--dan);font-weight:700"':''}>${o.sd}</td><td>${o.dlv||'-'}</td><td>${remain<=0?badge('출고완료'):late?badge('지연'):badge('출고대기')}</td><td>${remain>0?`<button class="btn btn-sm btn-s" onclick="openShipM('${o.id}')">출고</button>`:''} <button class="btn btn-sm btn-o" onclick="showDet('${o.id}')">상세</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty-cell">출고 대기 없음</td></tr>'}
-function openShipM(woId){const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;$('smWoId').value=woId;$('smCli').innerHTML='<span id="smCliName">'+o.cnm+'</span>';$('smCliOverride').value='';$('smProd').textContent=o.pnm;$('smTotal').textContent=o.fq;const shipped=getShipped(woId);$('smShipped').textContent=shipped;$('smRemain').textContent=o.fq-shipped;$('smQty').value=o.fq-shipped;$('smDefect').value=0;$('smGood').textContent=o.fq-shipped;$('smInspNote').value='';$('smCar').value='';$('smDriver').value='';$('smDlv').value=o.dlv||'';$('smMemo').value='';$('shipMoT').textContent=shipped>0?'부분 출고':'출고 처리';oMo('shipMo')}
+function openShipM(woId){const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;$('smWoId').value=woId;$('smCli').innerHTML='<span id="smCliName">'+o.cnm+'</span>';$('smCliOverride').value='';$('smProd').textContent=o.pnm;$('smTotal').textContent=o.fq;const shipped=getShipped(woId);$('smShipped').textContent=shipped;$('smRemain').textContent=o.fq-shipped;$('smQty').value=o.fq-shipped;$('smDefect').value=0;$('smGood').textContent=o.fq-shipped;$('smInspNote').value='';$('smCar').value='';$('smDriver').value='';$('smDlv').value=o.dlv||'';$('smMemo').value='';$('shipMoT').textContent=shipped>0?'부분 출고':'출고 처리';
+  // 얼마에요 GroupId — 매출 귀속회사 라디오 렌더링
+  if(typeof renderGrpRadio==='function'){
+    var _cg=typeof _currentGroupId!=='undefined'?_currentGroupId:'ALL';
+    renderGrpRadio('smGrpSel',_cg==='ALL'?'':_cg);
+  }
+  oMo('shipMo')}
 /* === 출고 시 거래처 변경 (방안 A) === */
 function changeShipCli(){
   var woId=$('smWoId').value;
@@ -265,7 +271,11 @@ try{
   var salesAmt=Math.round(unitPrice*qty);
   var sb=DB.g('sales');
   var _saleId=gid();
-  sb.push({id:_saleId,dt:td(),cli:o.cnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id});
+  // 얼마에요 GroupId — 출고 모달에서 선택된 귀속회사
+  var _shipGrpId='';
+  if(typeof getSelectedGrpId==='function')_shipGrpId=getSelectedGrpId('smGrpSel')||'';
+  else if(typeof _currentGroupId!=='undefined'&&_currentGroupId!=='ALL')_shipGrpId=_currentGroupId;
+  sb.push({id:_saleId,dt:td(),cli:_shipCnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id,groupId:_shipGrpId});
   DB.s('sales',sb);
   if(typeof DocTrace!=='undefined')DocTrace.link('SHIP',rec.id,'SALE',_saleId,'','');
   addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+(salesAmt?fmt(salesAmt)+'원':'단가미입력'));

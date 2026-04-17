@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import bcrypt
 import jwt
 from fastapi import FastAPI, Request, UploadFile, File, Depends, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -25,13 +25,28 @@ REFRESH_TOKEN_EXPIRE = timedelta(days=7)
 
 security = HTTPBearer(auto_error=False)
 
-# CORS for development
+# CORS - 허용 도메인 화이트리스트
+ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://inno.local:8080",
+    "http://192.168.0.2:8080",
+    "http://packflow-nas:8080",
+    "https://packflow.innopackage.direct.quickconnect.to",
+    # 추가 도메인은 여기에
+]
+
+# 환경변수로 추가 오리진 허용 (개발 편의)
+_extra = os.environ.get("EXTRA_CORS_ORIGINS", "").split(",")
+ALLOWED_ORIGINS.extend([o.strip() for o in _extra if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
+    max_age=3600,
 )
 
 
@@ -119,6 +134,24 @@ async def require_admin(user=Depends(get_current_user)):
 
 
 # --- Auth Endpoints ---
+
+@app.get("/api/users/public")
+async def users_public():
+    """로그인 화면용 사용자 목록 (비밀번호 등 민감정보 제외)"""
+    users_raw = db.get_data("ino_users")
+    users = json.loads(users_raw) if users_raw else []
+    if not users:
+        users = [{"nm": "관리자", "un": "admin", "role": "admin"}]
+    return [
+        {
+            "nm": u.get("nm", ""),
+            "un": u.get("un", ""),
+            "role": u.get("role", ""),
+            "proc": u.get("proc", "")
+        }
+        for u in users
+    ]
+
 
 @app.post("/api/auth/login")
 async def auth_login(request: Request):
@@ -545,6 +578,163 @@ async def popbill_issue(request: Request, user=Depends(get_current_user)):
         return JSONResponse(content={"ok": False, "error": f"서버 오류: {str(e)}"})
 
 
+def _popbill_get_token(link_id: str, secret_key: str, corp_num: str, is_test: bool):
+    """팝빌 인증 토큰 발급 (공통 유틸)"""
+    import urllib.request, hmac as hmac_mod, base64
+    auth_url = "https://auth.linkhub.co.kr"
+    service_id = "POPBILL_TEST" if is_test else "POPBILL"
+    token_body = json.dumps({"access_id": corp_num, "scope": ["member", "110", "121", "122", "123", "124", "125", "126"]}).encode("utf-8")
+    content_md5 = base64.b64encode(hashlib.md5(token_body).digest()).decode()
+    dt_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    sign_target = f"POST\n{content_md5}\n{dt_str}\n/{service_id}/Token\n"
+    signature = base64.b64encode(
+        hmac_mod.new(base64.b64decode(secret_key), sign_target.encode(), hashlib.sha256).digest()
+    ).decode()
+    token_req = urllib.request.Request(
+        f"{auth_url}/{service_id}/Token",
+        data=token_body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"LINKHUB {link_id} {signature}",
+            "x-lh-date": dt_str,
+            "x-lh-version": "2.0",
+            "x-lh-forwarded": "*",
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(token_req, timeout=10) as resp:
+        token_data = json.loads(resp.read().decode())
+    return token_data.get("session_token", ""), service_id
+
+
+@app.post("/api/popbill/received")
+async def popbill_received(request: Request, user=Depends(get_current_user)):
+    """팝빌 수신 세금계산서 조회
+    Body: { "dateType": "W|I|R", "from": "YYYYMMDD", "to": "YYYYMMDD", "page": 1 }
+    - W: 작성일자, I: 발행일자, R: 등록일자
+    """
+    import urllib.request, urllib.parse
+    body = await request.json()
+
+    config_raw = db.get_data("ino_popbillConfig")
+    if not config_raw:
+        return JSONResponse(content={"ok": False, "error": "팝빌 API 설정이 없습니다."})
+    config = json.loads(config_raw)
+    link_id = config.get("linkId", "")
+    secret_key = config.get("secretKey", "")
+    corp_num = config.get("corpNum", "")
+    is_test = config.get("isTest", True)
+
+    if not link_id or not secret_key or not corp_num:
+        return JSONResponse(content={"ok": False, "error": "팝빌 LinkID, SecretKey, 사업자번호 필요"})
+
+    date_type = body.get("dateType", "W")  # W=작성, I=발행, R=등록
+    date_from = body.get("from", "")
+    date_to = body.get("to", "")
+    page = int(body.get("page", 1))
+    per_page = int(body.get("perPage", 100))
+
+    if not date_from or not date_to:
+        return JSONResponse(content={"ok": False, "error": "조회 기간(from, to) 필요"})
+
+    try:
+        token, service_id = _popbill_get_token(link_id, secret_key, corp_num, is_test)
+        if not token:
+            return JSONResponse(content={"ok": False, "error": "토큰 발급 실패"})
+
+        api_url = "https://popbill-test.linkhub.co.kr" if is_test else "https://popbill.linkhub.co.kr"
+        # MgtKeyType = BUY (매입)
+        params = {
+            "DType": date_type,
+            "SDate": date_from,
+            "EDate": date_to,
+            "Page": page,
+            "PerPage": per_page,
+            "Order": "D"
+        }
+        query = urllib.parse.urlencode(params)
+        full_url = f"{api_url}/Taxinvoice/BUY?{query}"
+
+        req = urllib.request.Request(
+            full_url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-pb-userid": ""
+            },
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode())
+
+        db.add_audit_log(user.get("sub"), user.get("name"), "etax_received_query", "taxinvoice",
+                         None, f"{date_from}~{date_to} {result.get('total', 0)}건",
+                         get_client_ip(request))
+        return JSONResponse(content={"ok": True, "data": result})
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        return JSONResponse(content={"ok": False, "error": f"API 오류 ({e.code}): {error_body[:200]}"})
+    except Exception as e:
+        return JSONResponse(content={"ok": False, "error": f"서버 오류: {str(e)}"})
+
+
+@app.post("/api/hometax/parse-excel")
+async def hometax_parse_excel(request: Request, user=Depends(get_current_user)):
+    """홈택스 엑셀 파일 파싱 (매입/매출 세금계산서)
+    Body: { "fileBase64": "...", "type": "sales|purchase" }
+    """
+    import base64, io, csv
+    body = await request.json()
+    file_b64 = body.get("fileBase64", "")
+    inv_type = body.get("type", "purchase")  # 매입/매출
+    if not file_b64:
+        return JSONResponse(content={"ok": False, "error": "파일 데이터 없음"})
+
+    try:
+        # Data URL 프리픽스 제거
+        if "," in file_b64:
+            file_b64 = file_b64.split(",", 1)[1]
+        raw = base64.b64decode(file_b64)
+
+        # 홈택스 엑셀은 대부분 xls(HTML) 또는 CSV 형식으로 다운로드됨
+        # 간단하게: 헤더 포함된 CSV (UTF-8 BOM) 우선 처리
+        text = None
+        for encoding in ['utf-8-sig', 'utf-8', 'euc-kr', 'cp949']:
+            try:
+                text = raw.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        if not text:
+            return JSONResponse(content={"ok": False, "error": "파일 인코딩 실패 - CSV(UTF-8/EUC-KR) 형식 권장"})
+
+        reader = csv.DictReader(io.StringIO(text))
+        records = []
+        for row in reader:
+            # 홈택스 기본 컬럼명 매핑
+            record = {
+                "dt": (row.get("작성일자") or row.get("발행일자") or "").replace("-", "/").replace(".", "/"),
+                "bizNo": row.get("공급자사업자번호") or row.get("공급받는자사업자번호") or "",
+                "cli": row.get("공급자상호") or row.get("공급받는자상호") or row.get("상호") or "",
+                "ceo": row.get("대표자명") or "",
+                "item": row.get("품목명") or row.get("품목") or "",
+                "qty": int(float(row.get("수량", "1") or 1)),
+                "supply": int(float((row.get("공급가액") or "0").replace(",", ""))),
+                "vat": int(float((row.get("세액") or "0").replace(",", ""))),
+                "ntsNum": row.get("승인번호") or "",
+                "type": inv_type
+            }
+            record["total"] = record["supply"] + record["vat"]
+            records.append(record)
+
+        db.add_audit_log(user.get("sub"), user.get("name"), "hometax_parse", "taxinvoice",
+                         None, f"{inv_type} {len(records)}건 파싱",
+                         get_client_ip(request))
+        return JSONResponse(content={"ok": True, "count": len(records), "records": records})
+    except Exception as e:
+        return JSONResponse(content={"ok": False, "error": f"파싱 실패: {str(e)}"})
+
+
 # --- Serve Frontend ---
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -569,9 +759,35 @@ app.mount("/css", StaticFiles(directory=os.path.join(STATIC_DIR, "css")), name="
 app.mount("/js", StaticFiles(directory=os.path.join(STATIC_DIR, "js")), name="js")
 
 
+def _is_mobile(user_agent: str) -> bool:
+    """모바일 기기 감지 (UA 기반)"""
+    if not user_agent:
+        return False
+    ua = user_agent.lower()
+    mobile_keywords = ['iphone', 'ipad', 'android', 'mobile', 'blackberry', 'webos', 'iemobile', 'opera mini']
+    return any(k in ua for k in mobile_keywords)
+
+
 @app.get("/")
-def serve_index():
+def serve_index(request: Request):
+    # 모바일이면 /m 으로 리다이렉트 (쿠키로 오버라이드 가능)
+    force_pc = request.cookies.get("force_pc") == "1"
+    if not force_pc and _is_mobile(request.headers.get("user-agent", "")):
+        return RedirectResponse(url="/m", status_code=302)
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+
+@app.get("/m")
+def serve_mobile():
+    return FileResponse(os.path.join(STATIC_DIR, "m.html"))
+
+
+@app.get("/pc")
+def serve_pc_force():
+    """PC 버전 강제 (쿠키 설정 + 홈)"""
+    response = FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    response.set_cookie("force_pc", "1", max_age=86400*30)
+    return response
 
 
 # Serve docs (diagrams etc.)

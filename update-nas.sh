@@ -49,7 +49,7 @@ echo "🔄 NAS 서버 재시작 중..."
 # 3. NAS 서버 재시작 (expect로 비밀번호 자동 입력)
 expect <<EXPEOF
 set timeout 30
-spawn ssh -o StrictHostKeyChecking=no $NAS_USER@$NAS_IP "pkill -f 'python3 server.py' 2>/dev/null; sleep 2; cd $NAS_PATH && nohup python3 server.py > server.log 2>&1 & disown && sleep 3 && ps aux | grep 'python3 server.py' | grep -v grep | head -1"
+spawn ssh -o StrictHostKeyChecking=no $NAS_USER@$NAS_IP "pkill -f 'python3 server.py' 2>/dev/null; sleep 2; cd $NAS_PATH && setsid nohup python3 server.py </dev/null >server.log 2>&1 & sleep 3 && ps aux | grep 'python3 server.py' | grep -v grep | head -1"
 expect "assword:"
 send "Wjdtmdgns12#\r"
 expect eof

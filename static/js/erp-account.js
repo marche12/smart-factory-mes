@@ -668,3 +668,201 @@ function expCSV(type){
   const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=type+'_'+td()+'.csv';a.click();toast('내보내기','ok');
 }
 
+
+/* ===== 팝빌 수신 세금계산서 조회 ===== */
+var _pbRecvCache = [];
+
+function openPopbillReceive(){
+  var today = td();
+  var monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth()-1);
+  $('pbRecvFrom').value = monthAgo.toISOString().slice(0,10);
+  $('pbRecvTo').value = today;
+  $('pbRecvResult').innerHTML = '';
+  $('pbRecvImportBtn').style.display = 'none';
+  _pbRecvCache = [];
+  oMo('popbillRecvMo');
+}
+
+function queryPopbillReceived(){
+  var from = $('pbRecvFrom').value.replace(/-/g,'');
+  var to = $('pbRecvTo').value.replace(/-/g,'');
+  var type = $('pbRecvType').value;
+  if(!from || !to){toast('기간 입력','err');return}
+  $('pbRecvResult').innerHTML = '<div style="text-align:center;padding:30px;color:var(--txt3)">조회 중...</div>';
+  authFetch('/api/popbill/received', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({dateType: type, from: from, to: to, page: 1, perPage: 100})
+  }).then(function(r){return r.json()}).then(function(res){
+    if(!res.ok){
+      $('pbRecvResult').innerHTML = '<div style="color:var(--dan);padding:14px">❌ '+res.error+'</div>';
+      return;
+    }
+    var list = (res.data && res.data.list) ? res.data.list : [];
+    _pbRecvCache = list;
+    if(list.length === 0){
+      $('pbRecvResult').innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt3)">해당 기간에 수신된 세금계산서가 없습니다</div>';
+      return;
+    }
+    var h = '<div style="margin-bottom:8px;font-size:13px;font-weight:700">총 '+list.length+'건</div>';
+    h += '<table class="dt" style="font-size:12px"><thead><tr><th><input type="checkbox" checked onclick="document.querySelectorAll(\'.pb-chk\').forEach(function(x){x.checked=this.checked}.bind(this))"></th><th>작성일</th><th>공급자</th><th>사업자번호</th><th>품목</th><th>공급가액</th><th>세액</th><th>합계</th></tr></thead><tbody>';
+    list.forEach(function(r,i){
+      h += '<tr><td><input type="checkbox" class="pb-chk" data-idx="'+i+'" checked></td>';
+      h += '<td>'+(r.writeDate||'-')+'</td>';
+      h += '<td>'+(r.invoicerCorpName||'-')+'</td>';
+      h += '<td>'+(r.invoicerCorpNum||'-')+'</td>';
+      h += '<td>'+(r.itemName||'-')+'</td>';
+      h += '<td style="text-align:right">'+fmt(+r.supplyCostTotal||0)+'</td>';
+      h += '<td style="text-align:right">'+fmt(+r.taxTotal||0)+'</td>';
+      h += '<td style="text-align:right;font-weight:700">'+fmt(+r.totalAmount||0)+'</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    $('pbRecvResult').innerHTML = h;
+    $('pbRecvImportBtn').style.display = '';
+  }).catch(function(e){
+    $('pbRecvResult').innerHTML = '<div style="color:var(--dan);padding:14px">서버 오류: '+e.message+'</div>';
+  });
+}
+
+function importPopbillReceived(){
+  var checked = Array.from(document.querySelectorAll('.pb-chk')).filter(function(x){return x.checked});
+  if(checked.length === 0){toast('선택된 건이 없습니다','err');return}
+  if(!confirm(checked.length+'건을 매입장부에 등록하시겠습니까?')) return;
+
+  var purchase = DB.g('purchase') || [];
+  var added = 0, skipped = 0;
+  checked.forEach(function(cb){
+    var r = _pbRecvCache[+cb.dataset.idx];
+    if(!r) return;
+    // 중복 방지: ntsConfirmNum 같은 건 스킵
+    if(r.ntsConfirmNum && purchase.some(function(p){return p.ntsNum === r.ntsConfirmNum})){
+      skipped++; return;
+    }
+    var amt = (+r.totalAmount) || ((+r.supplyCostTotal||0) + (+r.taxTotal||0));
+    var dt = r.writeDate ? r.writeDate.substring(0,4)+'-'+r.writeDate.substring(4,6)+'-'+r.writeDate.substring(6,8) : td();
+    purchase.push({
+      id: gid(),
+      dt: dt,
+      cli: r.invoicerCorpName || '-',
+      bizNo: r.invoicerCorpNum || '',
+      prod: r.itemName || '-',
+      qty: 1,
+      price: amt,
+      amt: amt,
+      paid: 0,
+      payType: '미지급',
+      note: '팝빌 자동등록',
+      ntsNum: r.ntsConfirmNum || '',
+      cat: nw(),
+      _src: 'popbill'
+    });
+    added++;
+  });
+  DB.s('purchase', purchase);
+  toast('등록 '+added+'건 / 중복스킵 '+skipped+'건','ok');
+  cMo('popbillRecvMo');
+  if(typeof rPr === 'function') rPr();
+}
+
+/* ===== 홈택스 엑셀 업로드 ===== */
+var _htxRecords = [];
+
+function openHometaxUpload(){
+  $('htxType').value = 'purchase';
+  $('htxFile').value = '';
+  $('htxResult').innerHTML = '';
+  $('htxImportBtn').style.display = 'none';
+  _htxRecords = [];
+  oMo('hometaxUploadMo');
+}
+
+function parseHometaxExcel(){
+  var file = $('htxFile').files[0];
+  if(!file){toast('파일 선택','err');return}
+  if(file.size > 5*1024*1024){toast('5MB 이하만 가능','err');return}
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var base64 = e.target.result.split(',')[1] || e.target.result;
+    $('htxResult').innerHTML = '<div style="text-align:center;padding:30px;color:var(--txt3)">분석 중...</div>';
+
+    authFetch('/api/hometax/parse-excel', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({fileBase64: base64, type: $('htxType').value})
+    }).then(function(r){return r.json()}).then(function(res){
+      if(!res.ok){
+        $('htxResult').innerHTML = '<div style="color:var(--dan);padding:14px">❌ '+res.error+'</div>';
+        return;
+      }
+      _htxRecords = res.records || [];
+      if(_htxRecords.length === 0){
+        $('htxResult').innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt3)">파싱된 레코드 없음</div>';
+        return;
+      }
+      var h = '<div style="margin-bottom:8px;font-size:13px;font-weight:700">총 '+_htxRecords.length+'건 파싱됨</div>';
+      h += '<table class="dt" style="font-size:12px"><thead><tr><th>일자</th><th>거래처</th><th>품목</th><th>공급가액</th><th>세액</th><th>합계</th></tr></thead><tbody>';
+      _htxRecords.slice(0, 50).forEach(function(r){
+        h += '<tr>';
+        h += '<td>'+(r.dt||'-')+'</td>';
+        h += '<td>'+(r.cli||'-')+'</td>';
+        h += '<td>'+(r.item||'-')+'</td>';
+        h += '<td style="text-align:right">'+fmt(r.supply)+'</td>';
+        h += '<td style="text-align:right">'+fmt(r.vat)+'</td>';
+        h += '<td style="text-align:right;font-weight:700">'+fmt(r.total)+'</td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table>';
+      if(_htxRecords.length > 50){
+        h += '<div style="text-align:center;color:var(--txt3);padding:8px">... 외 '+(_htxRecords.length-50)+'건</div>';
+      }
+      $('htxResult').innerHTML = h;
+      $('htxImportBtn').style.display = '';
+    }).catch(function(e){
+      $('htxResult').innerHTML = '<div style="color:var(--dan);padding:14px">서버 오류: '+e.message+'</div>';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function importHometaxData(){
+  if(_htxRecords.length === 0){toast('데이터 없음','err');return}
+  if(!confirm(_htxRecords.length+'건을 등록하시겠습니까?')) return;
+
+  var type = $('htxType').value;
+  var dbKey = type === 'sales' ? 'sales' : 'purchase';
+  var list = DB.g(dbKey) || [];
+  var added = 0, skipped = 0;
+
+  _htxRecords.forEach(function(r){
+    // 중복 체크: 승인번호 있으면 그걸로
+    if(r.ntsNum && list.some(function(x){return x.ntsNum === r.ntsNum})){
+      skipped++; return;
+    }
+    var dt = r.dt ? r.dt.replace(/\//g,'-').substring(0,10) : td();
+    var amt = (+r.total) || ((+r.supply||0) + (+r.vat||0));
+    list.push({
+      id: gid(),
+      dt: dt,
+      cli: r.cli || '-',
+      bizNo: r.bizNo || '',
+      prod: r.item || '-',
+      qty: +r.qty || 1,
+      price: amt,
+      amt: amt,
+      paid: 0,
+      payType: type === 'sales' ? '미수' : '미지급',
+      note: '홈택스 엑셀 자동등록',
+      ntsNum: r.ntsNum || '',
+      cat: nw(),
+      _src: 'hometax'
+    });
+    added++;
+  });
+  DB.s(dbKey, list);
+  toast('등록 '+added+'건 / 중복스킵 '+skipped+'건','ok');
+  cMo('hometaxUploadMo');
+  if(type === 'sales' && typeof rSl === 'function') rSl();
+  else if(typeof rPr === 'function') rPr();
+}

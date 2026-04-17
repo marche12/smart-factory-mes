@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="팩플로우">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<title>팩플로우</title>
+<link rel="stylesheet" href="/css/mobile.css?v=5">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
+</head>
+<body>
+
+<div id="mToast" class="m-toast"></div>
+
+<!-- ======== 로그인 ======== -->
+<div id="mLogin" class="m-login">
+  <div class="m-login-title">팩플로우</div>
+  <div class="m-login-sub">모바일</div>
+
+  <div class="m-login-card">
+    <div class="m-form-row">
+      <label class="m-label">사용자</label>
+      <select id="mLoginUser" class="m-select">
+        <option value="">-- 선택 --</option>
+      </select>
+    </div>
+    <div class="m-form-row">
+      <label class="m-label">비밀번호</label>
+      <input type="password" id="mLoginPw" class="m-input" value="1234" autocomplete="current-password">
+    </div>
+    <button class="m-btn m-btn-lg" onclick="mLogin()">로그인</button>
+    <div id="mLoginErr" style="color:var(--m-red);font-size:13px;text-align:center;margin-top:8px"></div>
+  </div>
+  <div style="text-align:center;margin-top:20px">
+    <a href="/" style="color:var(--m-text3);font-size:13px">PC 버전</a>
+  </div>
+</div>
+
+<!-- ======== 메인 앱 ======== -->
+<div id="mApp" class="m-app" style="display:none">
+
+<div class="m-hdr">
+  <div class="m-hdr-left" id="mHdrLeft"></div>
+  <div class="m-hdr-title" id="mHdrTitle">홈</div>
+  <div class="m-hdr-right" id="mHdrRight" onclick="mLogout()">로그아웃</div>
+</div>
+
+<!-- ===== 홈 ===== -->
+<div class="m-page on" id="mPageHome">
+
+  <div style="font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-0.5px">
+    안녕하세요, <span id="mUserName">관리자</span>님
+  </div>
+  <div style="font-size:13px;color:var(--m-text3);margin-bottom:20px" id="mToday"></div>
+
+  <div class="m-kpi-grid">
+    <div class="m-kpi blue" onclick="mGoTab('order')">
+      <div class="m-kpi-label">진행중</div>
+      <div class="m-kpi-value" id="mHomeWOCnt">0</div>
+      <div class="m-kpi-sub">WO</div>
+    </div>
+    <div class="m-kpi orange" onclick="mGoTab('order')">
+      <div class="m-kpi-label">대기</div>
+      <div class="m-kpi-value" id="mHomeWaitCnt">0</div>
+      <div class="m-kpi-sub">WO</div>
+    </div>
+    <div class="m-kpi red" onclick="mGoTab('order')">
+      <div class="m-kpi-label">납기 임박</div>
+      <div class="m-kpi-value" id="mHomeDueCnt">0</div>
+      <div class="m-kpi-sub">3일 이내</div>
+    </div>
+    <div class="m-kpi green" onclick="mGoTab('dash')">
+      <div class="m-kpi-label">금일 완료</div>
+      <div class="m-kpi-value" id="mHomeDoneCnt">0</div>
+      <div class="m-kpi-sub">WO</div>
+    </div>
+  </div>
+
+  <div class="m-card-t">빠른 입력</div>
+  <button class="m-btn" onclick="mOpenNewOrder()">새 작업지시서 등록</button>
+  <button class="m-btn gray" onclick="mGoTab('dash')">생산현황 보기</button>
+
+  <div style="margin-top:24px">
+    <div class="m-card-t">납기 임박 (7일)</div>
+    <div id="mHomeDueList"></div>
+  </div>
+</div>
+
+<!-- ===== 작업지시서 ===== -->
+<div class="m-page" id="mPageOrder">
+  <div class="m-search">
+    <input type="text" id="mOrderSearch" placeholder="거래처 / 제품 / 담당자 검색" oninput="mRenderOrders()">
+  </div>
+
+  <div class="m-filter-row" id="mOrderFilters">
+    <button class="m-filter-btn on" data-f="all">전체</button>
+    <button class="m-filter-btn" data-f="progress">진행</button>
+    <button class="m-filter-btn" data-f="wait">대기</button>
+    <button class="m-filter-btn" data-f="due">임박</button>
+    <button class="m-filter-btn" data-f="overdue">지연</button>
+    <button class="m-filter-btn" data-f="high">급함</button>
+    <button class="m-filter-btn" data-f="done">완료</button>
+  </div>
+
+  <button class="m-btn" onclick="mOpenNewOrder()" style="margin-bottom:16px">새 작업지시서 등록</button>
+
+  <div id="mOrderList" class="m-list"></div>
+</div>
+
+<!-- ===== 생산현황 ===== -->
+<div class="m-page" id="mPageDash">
+  <div class="m-kpi-grid">
+    <div class="m-kpi blue">
+      <div class="m-kpi-label">진행 중</div>
+      <div class="m-kpi-value" id="mDashProgress">0</div>
+    </div>
+    <div class="m-kpi orange">
+      <div class="m-kpi-label">대기</div>
+      <div class="m-kpi-value" id="mDashWait">0</div>
+    </div>
+    <div class="m-kpi red">
+      <div class="m-kpi-label">지연</div>
+      <div class="m-kpi-value" id="mDashOverdue">0</div>
+    </div>
+    <div class="m-kpi green">
+      <div class="m-kpi-label">금일 완료</div>
+      <div class="m-kpi-value" id="mDashDone">0</div>
+    </div>
+  </div>
+
+  <div class="m-card-t">공정별 현황</div>
+  <div class="m-card" id="mDashProcs" style="padding:12px">
+    <div class="m-empty" style="padding:20px"><div class="m-empty-msg">로딩 중...</div></div>
+  </div>
+
+  <div class="m-card-t">납기 임박</div>
+  <div id="mDashDueList" class="m-list" style="margin-bottom:14px"></div>
+
+  <div class="m-card-t">진행 중 작업</div>
+  <div id="mDashWOList" class="m-list"></div>
+</div>
+
+<!-- ===== 더보기 ===== -->
+<div class="m-page" id="mPageMore">
+  <div class="m-card-t">데이터 검색</div>
+
+  <button class="m-btn gray" onclick="mOpenSearch('cli')" style="justify-content:space-between;text-align:left">
+    <span>거래처 <span style="color:var(--m-text3);font-size:13px" id="mCntCli">(0)</span></span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+  <button class="m-btn gray" onclick="mOpenSearch('prod')" style="justify-content:space-between;text-align:left">
+    <span>품목 <span style="color:var(--m-text3);font-size:13px" id="mCntProd">(0)</span></span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+  <button class="m-btn gray" onclick="mOpenSearch('mold')" style="justify-content:space-between;text-align:left">
+    <span>목형 <span style="color:var(--m-text3);font-size:13px" id="mCntMold">(0)</span></span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+
+  <div class="m-card-t" style="margin-top:20px">기타</div>
+
+  <button class="m-btn gray" onclick="location.href='/pc'" style="justify-content:space-between;text-align:left">
+    <span>PC 버전으로 보기</span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+  <button class="m-btn gray" onclick="mRefreshData()" style="justify-content:space-between;text-align:left">
+    <span>데이터 새로고침</span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+  <button class="m-btn gray" onclick="mLogout()" style="justify-content:space-between;text-align:left;color:var(--m-red)">
+    <span>로그아웃</span>
+    <span style="color:var(--m-text3)">></span>
+  </button>
+
+  <div style="text-align:center;margin-top:30px;padding:20px;color:var(--m-text3);font-size:12px">
+    팩플로우 v1.5<br>
+    로그인: <span id="mMoreUser">-</span>
+  </div>
+</div>
+
+<!-- ===== 하단 탭 바 ===== -->
+<div class="m-tabbar">
+  <div class="m-tab on" data-tab="home" onclick="mGoTab('home')">
+    <div class="m-tab-label">홈</div>
+  </div>
+  <div class="m-tab" data-tab="order" onclick="mGoTab('order')">
+    <div class="m-tab-label">작업지시</div>
+  </div>
+  <div class="m-tab" data-tab="dash" onclick="mGoTab('dash')">
+    <div class="m-tab-label">생산현황</div>
+  </div>
+  <div class="m-tab" data-tab="more" onclick="mGoTab('more')">
+    <div class="m-tab-label">더보기</div>
+  </div>
+</div>
+
+</div>
+
+<!-- ======== 새 작업지시서 모달 ======== -->
+<div class="m-modal" id="mModalOrder">
+  <div class="m-modal-hdr">
+    <div class="m-modal-cancel" onclick="mCloseModal('mModalOrder')">취소</div>
+    <div class="m-modal-title">새 작업지시서</div>
+    <div class="m-modal-save" onclick="mSaveOrder()">저장</div>
+  </div>
+  <div class="m-modal-body">
+    <input type="hidden" id="mOrderId">
+
+    <div class="m-form-row">
+      <label class="m-label">거래처 <span class="req">*</span></label>
+      <div class="m-autocomplete">
+        <input type="text" class="m-input" id="mOrderCli" placeholder="거래처 검색" oninput="mAcCli(this.value,'mOrderCliList','mOrderCli')" autocomplete="off">
+        <div class="m-ac-list" id="mOrderCliList" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">제품 <span class="req">*</span></label>
+      <div class="m-autocomplete">
+        <input type="text" class="m-input" id="mOrderProd" placeholder="제품명 (검색 시 공정 자동 적용)" oninput="mAcProd(this.value,'mOrderProdList','mOrderProd')" autocomplete="off">
+        <div class="m-ac-list" id="mOrderProdList" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="m-form-row-split">
+      <div class="m-form-row">
+        <label class="m-label">수량 <span class="req">*</span></label>
+        <input type="number" class="m-input" id="mOrderQty" inputmode="numeric" placeholder="1000">
+      </div>
+      <div class="m-form-row">
+        <label class="m-label">단가</label>
+        <input type="number" class="m-input" id="mOrderPrice" inputmode="numeric" placeholder="150">
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">합계</label>
+      <input type="text" class="m-input" id="mOrderAmt" readonly style="background:var(--m-bg);font-weight:700">
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">납기일 <span class="req">*</span></label>
+      <input type="date" class="m-input" id="mOrderDue">
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">우선순위</label>
+      <div class="m-radio-group" id="mOrderPri" style="grid-template-columns:repeat(3,1fr)">
+        <div class="m-radio" data-pri="high" style="color:var(--m-red)">급함</div>
+        <div class="m-radio on" data-pri="normal">보통</div>
+        <div class="m-radio" data-pri="low" style="color:var(--m-text3)">일반</div>
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">담당자</label>
+      <select class="m-select" id="mOrderMgr">
+        <option value="">-- 선택 --</option>
+      </select>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">납품처</label>
+      <input type="text" class="m-input" id="mOrderDlv" placeholder="배송지">
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">목형</label>
+      <div class="m-autocomplete">
+        <input type="text" class="m-input" id="mOrderMold" placeholder="목형 검색" oninput="mAcMold(this.value,'mOrderMoldList','mOrderMold')" autocomplete="off">
+        <div class="m-ac-list" id="mOrderMoldList" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">도면/참고 이미지</label>
+      <div id="mOrderImgPreview" style="margin-bottom:8px"></div>
+      <input type="file" id="mOrderImgFile" accept="image/*" capture="environment" style="display:none" onchange="mHandleImgPick(this)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" class="m-btn gray m-btn-sm" onclick="document.getElementById('mOrderImgFile').setAttribute('capture','environment');document.getElementById('mOrderImgFile').click()" style="margin:0">
+          카메라
+        </button>
+        <button type="button" class="m-btn gray m-btn-sm" onclick="document.getElementById('mOrderImgFile').removeAttribute('capture');document.getElementById('mOrderImgFile').click()" style="margin:0">
+          갤러리
+        </button>
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">공정 <span style="color:var(--m-text3);font-size:12px;font-weight:400">(탭으로 추가)</span></label>
+      <div id="mOrderProcs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px"></div>
+      <div id="mOrderProcPick" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">회사 귀속</label>
+      <div class="m-radio-group" id="mOrderCompany">
+        <div class="m-radio on" data-co="A">이노패키지</div>
+        <div class="m-radio" data-co="B">주식회사</div>
+      </div>
+    </div>
+
+    <div class="m-form-row">
+      <label class="m-label">메모</label>
+      <textarea class="m-textarea" id="mOrderNote" placeholder="참고사항"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ======== WO 상세 모달 ======== -->
+<div class="m-modal" id="mModalWO">
+  <div class="m-modal-hdr">
+    <div class="m-modal-cancel" onclick="mCloseModal('mModalWO')">닫기</div>
+    <div class="m-modal-title" id="mWOTitle">작업지시서</div>
+    <div class="m-modal-save" onclick="mEditWO()" style="font-size:14px">수정</div>
+  </div>
+  <div class="m-modal-body">
+    <input type="hidden" id="mWOId">
+
+    <div class="m-card">
+      <div id="mWOInfo"></div>
+    </div>
+
+    <div class="m-card-t">공정 진행</div>
+    <div id="mWOProcs" class="m-list" style="margin-bottom:14px"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px">
+      <button class="m-btn green m-btn-sm" onclick="mWOComplete()">완료 처리</button>
+      <button class="m-btn red m-btn-sm" onclick="mWOCancel()" style="background:#FF3B30">작업 취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 검색 모달 ======== -->
+<div class="m-modal" id="mModalSearch">
+  <div class="m-modal-hdr">
+    <div class="m-modal-cancel" onclick="mCloseModal('mModalSearch')">닫기</div>
+    <div class="m-modal-title" id="mSearchTitle">검색</div>
+    <div style="min-width:70px"></div>
+  </div>
+  <div class="m-modal-body">
+    <div class="m-search">
+      <input type="text" id="mSearchInput" placeholder="이름 또는 코드로 검색" oninput="mRenderSearchResults()" autofocus>
+    </div>
+    <div id="mSearchResults" class="m-list"></div>
+  </div>
+</div>
+
+<script src="/js/xlsx.full.min.js"></script>
+<script src="/js/core.js?v=22"></script>
+<script src="/js/search-util.js?v=1"></script>
+<script src="/js/m-app.js?v=6"></script>
+</body>
+</html>

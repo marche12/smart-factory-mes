@@ -1002,3 +1002,37 @@ function openMonitorFull(){
 }
 
 // WORK ORDER CRUD
+
+/* ===== 대시보드 자동 새로고침 ===== */
+var _dashAutoTimer = null;
+var _dashAutoInterval = 30000; // 30초
+
+function startDashAutoRefresh(){
+  stopDashAutoRefresh();
+  _dashAutoTimer = setInterval(function(){
+    var pg = document.getElementById('pg-mes-admin');
+    var dashActive = document.getElementById('t-dash');
+    if(pg && pg.classList.contains('active') && dashActive && dashActive.classList.contains('on')){
+      if(typeof rDash === 'function') rDash();
+    } else {
+      stopDashAutoRefresh();
+    }
+  }, _dashAutoInterval);
+}
+
+function stopDashAutoRefresh(){
+  if(_dashAutoTimer){
+    clearInterval(_dashAutoTimer);
+    _dashAutoTimer = null;
+  }
+}
+
+// rDash가 처음 호출될 때 자동 시작
+(function(){
+  var origRDash = window.rDash;
+  if(typeof origRDash !== 'function') return;
+  window.rDash = function(){
+    origRDash.apply(this, arguments);
+    startDashAutoRefresh();
+  };
+})();

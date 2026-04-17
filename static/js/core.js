@@ -719,7 +719,14 @@ async function unifiedLogin(){var user=$('loginUser').value,pw=$('loginPw').valu
   var proc=uObj?uObj.proc:'';var userRole=isAdmin?'admin':(isOffice?(uObj.role):(proc?'worker':'admin'));
   currentUser={id:user,name:isAdmin?'관리자':user,role:userRole,proc:proc};CU={nm:currentUser.name,role:currentUser.role,proc:currentUser.proc,perms:uObj&&uObj.perms?uObj.perms:null};
   $('loginOverlay').style.display='none';var now=new Date(),days=['일','월','화','수','목','금','토'],ds=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0')+' ('+days[now.getDay()]+')';
-  if(currentUser.role==='worker'&&currentUser.proc){$('workerApp').style.display='flex';$('adminApp').style.display='none';$('wProcTitle').textContent=currentUser.proc;$('wNameDisp').textContent=currentUser.name;$('wDateDisp').textContent=ds;rWQ();}else{$('workerApp').style.display='none';$('adminApp').style.display='flex';$('sbUserName').textContent=currentUser.name;$('sbAvatar').textContent=currentUser.name.charAt(0);var roleNames={'admin':'관리자','office':'사무실','sales':'영업','material':'자재','accounting':'회계','quality':'품질'};$('sbUserRole').textContent=roleNames[currentUser.role]||currentUser.role;$('sbDate').textContent=ds;SysCode.init();initProcsIfNeeded();refreshProcSelects();fillProcButtons('procBtnArea');document.querySelectorAll('.sb-group').forEach(function(g){g.classList.remove('open')});goMod('mes-dash');genNotifications();applyRoleAccess();}}
+  if(currentUser.role==='worker'&&currentUser.proc){$('workerApp').style.display='flex';$('adminApp').style.display='none';$('wProcTitle').textContent=currentUser.proc;$('wNameDisp').textContent=currentUser.name;$('wDateDisp').textContent=ds;rWQ();}else{$('workerApp').style.display='none';$('adminApp').style.display='flex';$('sbUserName').textContent=currentUser.name;$('sbAvatar').textContent=currentUser.name.charAt(0);var roleNames={'admin':'관리자','office':'사무실','sales':'영업','material':'자재','accounting':'회계','quality':'품질'};$('sbUserRole').textContent=roleNames[currentUser.role]||currentUser.role;$('sbDate').textContent=ds;SysCode.init();initProcsIfNeeded();refreshProcSelects();fillProcButtons('procBtnArea');document.querySelectorAll('.sb-group').forEach(function(g){g.classList.remove('open')});goMod('mes-dash');genNotifications();applyRoleAccess();}
+  /* 기본 비밀번호 1234 사용 시 경고 (외부 노출 환경 대응) */
+  if(pw==='1234'&&isAdmin){setTimeout(function(){
+    if(confirm('⚠ 보안 경고\n\n관리자 계정이 기본 비밀번호(1234)를 사용 중입니다.\n외부에서도 접속 가능한 상태이므로 즉시 변경하세요.\n\n지금 비밀번호 변경 화면으로 이동하시겠습니까?')){
+      if(typeof goMod==='function')goMod('mes-queue');
+    }
+  },1500)}
+}
 function unifiedLogout(){
   if(_authTokens.refresh){fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:_authTokens.refresh})}).catch(function(){})}
   _authTokens={access:null,refresh:null};currentUser=null;CU=null;$('loginOverlay').style.display='flex';$('adminApp').style.display='none';$('workerApp').style.display='none';if(typeof refreshLoginUsers==='function')refreshLoginUsers()}

@@ -10,7 +10,8 @@
 <title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
 <script src="js/xlsx.full.min.js"></script>
-<script src="/js/core.js?v=20"></script>
+<script src="/js/core.js?v=22"></script>
+<script src="/js/search-util.js?v=1"></script>
 </head>
 <body>
 <div id="toast" class="toast"></div>
@@ -27,6 +28,9 @@
 <input type="password" id="loginPw" value="1234" class="login-input"></div>
 <button onclick="unifiedLogin()" class="login-btn">로그인</button>
 <div id="loginErr" class="login-err"></div>
+<div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid #E5E7EB">
+<a href="/m" style="color:#6B7280;font-size:13px;text-decoration:none">📱 모바일 버전으로 전환</a>
+</div>
 </div></div>
 <div id="workerApp" class="worker-app">
 <div class="worker-header">
@@ -486,6 +490,8 @@
       <div class="fbar-spacer"></div>
       <button class="btn btn-sm" style="background:#065F46;color:#fff" onclick="expHometax()">홈택스 엑셀</button>
       <button class="btn btn-o btn-sm" onclick="expCSV('tax')">CSV</button>
+      <button class="btn btn-sm" style="background:#7C3AED;color:#fff" onclick="openPopbillReceive()">팝빌 수신조회</button>
+      <button class="btn btn-sm" style="background:#0891B2;color:#fff" onclick="openHometaxUpload()">엑셀 업로드</button>
       <button class="btn btn-p btn-sm" onclick="openTxM()">+ 등록</button>
     </div>
   </div>
@@ -566,6 +572,42 @@
     <button class="btn btn-o" id="txPrintBtn" onclick="printTx()">종이 인쇄</button>
     <button class="btn btn-p" id="txElecBtn" onclick="issueElecTx()" style="display:none;background:#1E40AF">⚡ 전자발행</button>
     <button class="btn btn-p" onclick="saveTx()">저장</button>
+  </div>
+</div></div>
+
+<!-- 팝빌 수신 조회 모달 -->
+<div class="mo-bg hidden" id="popbillRecvMo" onclick="event.target===this&&cMo('popbillRecvMo')"><div class="mo" style="max-width:700px">
+  <div class="mo-t">팝빌 수신 세금계산서 조회</div>
+  <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">팝빌 API로 국세청에 등록된 수신(매입) 세금계산서를 조회합니다.</p>
+  <div class="fr">
+    <div class="fg"><label>조회 기간 시작</label><input type="date" id="pbRecvFrom"></div>
+    <div class="fg"><label>조회 기간 종료</label><input type="date" id="pbRecvTo"></div>
+    <div class="fg"><label>기준</label><select id="pbRecvType"><option value="W">작성일자</option><option value="I">발행일자</option><option value="R">등록일자</option></select></div>
+  </div>
+  <div style="margin-top:10px"><button class="btn btn-p" onclick="queryPopbillReceived()">조회</button></div>
+  <div id="pbRecvResult" style="margin-top:14px;max-height:400px;overflow-y:auto"></div>
+  <div class="mo-f" style="margin-top:14px">
+    <button class="btn btn-g" onclick="cMo('popbillRecvMo')">닫기</button>
+    <button class="btn btn-p" id="pbRecvImportBtn" onclick="importPopbillReceived()" style="display:none">매입장부에 등록</button>
+  </div>
+</div></div>
+
+<!-- 홈택스 엑셀 업로드 모달 -->
+<div class="mo-bg hidden" id="hometaxUploadMo" onclick="event.target===this&&cMo('hometaxUploadMo')"><div class="mo" style="max-width:700px">
+  <div class="mo-t">홈택스 엑셀 파일 업로드</div>
+  <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">
+    홈택스에서 다운로드한 세금계산서 엑셀(CSV) 파일을 업로드하여 일괄 등록합니다.<br>
+    <a href="https://www.hometax.go.kr" target="_blank" style="color:var(--pri)">홈택스</a> → 조회/발급 → 전자세금계산서 → 목록조회 → 엑셀다운로드(UTF-8)
+  </p>
+  <div class="fr">
+    <div class="fg"><label>구분</label><select id="htxType"><option value="purchase">매입</option><option value="sales">매출</option></select></div>
+    <div class="fg" style="flex:2"><label>CSV 파일</label><input type="file" id="htxFile" accept=".csv,.xls,.xlsx"></div>
+  </div>
+  <div style="margin-top:10px"><button class="btn btn-p" onclick="parseHometaxExcel()">파일 분석</button></div>
+  <div id="htxResult" style="margin-top:14px;max-height:400px;overflow-y:auto"></div>
+  <div class="mo-f" style="margin-top:14px">
+    <button class="btn btn-g" onclick="cMo('hometaxUploadMo')">닫기</button>
+    <button class="btn btn-p" id="htxImportBtn" onclick="importHometaxData()" style="display:none">일괄 등록</button>
   </div>
 </div></div>
 
@@ -1100,8 +1142,16 @@
 <!-- 헤더 -->
 <div class="u-flex-between" style="margin-bottom:16px">
 <div style="font-size:20px;font-weight:900;color:#1E293B">금일현황</div>
-<div id="dashDateDisp" style="font-size:13px;color:#94A3B8"></div>
+<div style="display:flex;align-items:center;gap:12px">
+  <span id="dashDateDisp" style="font-size:13px;color:#94A3B8"></span>
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#DCFCE7;color:#166534;border-radius:12px;font-size:11px;font-weight:700">
+    <span style="width:6px;height:6px;background:#16A34A;border-radius:50%;animation:mpulse 2s infinite"></span>
+    자동 갱신 (30초)
+  </span>
+  <button onclick="rDash()" style="padding:4px 12px;border:1px solid #CBD5E1;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#475569">새로고침</button>
 </div>
+</div>
+<style>@keyframes mpulse{0%,100%{opacity:1}50%{opacity:0.3}}</style>
 <!-- 근무 진행률 -->
 <div id="ndShift"></div>
 <!-- KPI 카드 -->

@@ -1208,3 +1208,480 @@ function deleteBill(){
   rBill();
   toast('삭제 완료','ok');
 }
+
+/* =======================================================
+   통장 관리 (얼마에요 BankBook 패턴)
+   ======================================================= */
+
+function _bankAccList(){return DB.g('bankAccounts') || []}
+function _bankTxnList(){return DB.g('bankTxns') || []}
+
+function _fillBankAccSelects(){
+  var accs = _bankAccList();
+  var html1 = '<option value="">-- 계좌 선택 --</option>';
+  var html2 = '';
+  accs.forEach(function(a){
+    var label = (a.bank||'') + ' ' + (a.accNo||'') + (a.nm?' ('+a.nm+')':'');
+    html1 += '<option value="'+a.id+'">'+label+'</option>';
+    html2 += '<option value="'+a.id+'">'+label+'</option>';
+  });
+  if($('bankAccSel')){var p = $('bankAccSel').value; $('bankAccSel').innerHTML = html1; $('bankAccSel').value = p}
+  if($('bankTxnAcc')){var p2 = $('bankTxnAcc').value; $('bankTxnAcc').innerHTML = html2; $('bankTxnAcc').value = p2}
+}
+
+function rBank(){
+  _fillBankAccSelects();
+  rBankTxn();
+}
+window.rBank = rBank;
+
+function rBankTxn(){
+  var accs = _bankAccList();
+  var txns = _bankTxnList();
+  var accId = $('bankAccSel').value;
+
+  // 잔액 계산
+  var balanceMap = {};
+  accs.forEach(function(a){balanceMap[a.id] = +a.balance||0});
+  txns.slice().sort(function(a,b){return (a.dt||'') > (b.dt||'') ? 1 : -1}).forEach(function(t){
+    if(!balanceMap[t.accId]) balanceMap[t.accId] = 0;
+    if(t.kind === 'in') balanceMap[t.accId] += +t.amt||0;
+    else balanceMap[t.accId] -= +t.amt||0;
+  });
+
+  // KPI
+  var totalBal = Object.values(balanceMap).reduce(function(s,v){return s+v},0);
+  var accCnt = accs.length;
+  var td = new Date().toISOString().slice(0,10);
+  var todayIn = txns.filter(function(t){return t.dt===td && t.kind==='in'}).reduce(function(s,t){return s+(+t.amt||0)},0);
+  var todayOut = txns.filter(function(t){return t.dt===td && t.kind==='out'}).reduce(function(s,t){return s+(+t.amt||0)},0);
+
+  $('bankSummary').innerHTML =
+      '<div class="sb blue"><div class="l">총 잔액</div><div class="v">'+fmt(totalBal)+'</div></div>'
+    + '<div class="sb purple"><div class="l">계좌 수</div><div class="v">'+accCnt+'</div></div>'
+    + '<div class="sb green"><div class="l">오늘 입금</div><div class="v">'+fmt(todayIn)+'</div></div>'
+    + '<div class="sb orange"><div class="l">오늘 출금</div><div class="v">'+fmt(todayOut)+'</div></div>';
+
+  // 계좌 목록 or 거래내역
+  var h = '';
+  if(!accId){
+    // 계좌 목록
+    h += '<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 등록된 계좌</div>';
+    if(accs.length === 0){
+      h += '<div style="padding:30px;text-align:center;color:var(--txt3)">등록된 계좌가 없습니다. "+ 계좌 등록" 버튼을 눌러주세요.</div>';
+    } else {
+      h += '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+      h += '<th>은행</th><th>계좌번호</th><th>별칭</th><th>예금주</th><th>용도</th><th>회사</th><th>잔액</th><th>관리</th>';
+      h += '</tr></thead><tbody>';
+      var purposeMap = {main:'운영', vat:'부가세', salary:'급여', saving:'적립', other:'기타'};
+      var coMap = {A:'개인', B:'법인', '':'공용'};
+      accs.forEach(function(a){
+        h += '<tr>';
+        h += '<td style="font-weight:700">'+(a.bank||'-')+'</td>';
+        h += '<td style="font-family:monospace">'+(a.accNo||'-')+'</td>';
+        h += '<td>'+(a.nm||'-')+'</td>';
+        h += '<td>'+(a.holder||'-')+'</td>';
+        h += '<td><span class="bd">'+(purposeMap[a.purpose]||a.purpose||'-')+'</span></td>';
+        h += '<td>'+(coMap[a.company||'']||'-')+'</td>';
+        h += '<td style="text-align:right;font-weight:700">'+fmt(balanceMap[a.id]||0)+'</td>';
+        h += '<td><button class="btn btn-sm btn-o" onclick="editBankAcc(\''+a.id+'\')">수정</button> <button class="btn btn-sm btn-p" onclick="viewBankAcc(\''+a.id+'\')">내역</button></td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+  } else {
+    // 선택된 계좌의 거래 내역
+    var acc = accs.find(function(a){return a.id===accId});
+    if(!acc){h = '계좌 없음';$('bankTxnArea').innerHTML=h;return}
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+    h += '<div><span style="font-size:14px;font-weight:700">'+(acc.bank||'')+' '+(acc.accNo||'')+'</span>';
+    if(acc.nm) h += ' <span style="color:var(--txt3);font-size:12px">('+acc.nm+')</span>';
+    h += '</div>';
+    h += '<div style="font-size:16px;font-weight:700;color:'+(balanceMap[accId]>=0?'#1E40AF':'#DC2626')+'">잔액: '+fmt(balanceMap[accId]||0)+'</div>';
+    h += '</div>';
+
+    var accTxns = txns.filter(function(t){return t.accId===accId}).sort(function(a,b){return (b.dt||'') > (a.dt||'') ? 1 : -1});
+
+    // 누적 잔액 계산
+    var cumulative = (+acc.balance||0);
+    var sortedAsc = accTxns.slice().reverse();
+    var balMap = {};
+    sortedAsc.forEach(function(t){
+      if(t.kind==='in') cumulative += +t.amt||0;
+      else cumulative -= +t.amt||0;
+      balMap[t.id] = cumulative;
+    });
+
+    h += '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+    h += '<th>일자</th><th>구분</th><th>거래처</th><th>적요</th><th>금액</th><th>잔액</th><th>관리</th>';
+    h += '</tr></thead><tbody>';
+    accTxns.forEach(function(t){
+      var kindLbl = t.kind==='in' ? '<span class="bd bd-s">입금</span>' : '<span class="bd bd-d">출금</span>';
+      var amtColor = t.kind==='in' ? '#16A34A' : '#DC2626';
+      h += '<tr>';
+      h += '<td>'+(t.dt||'-')+'</td>';
+      h += '<td>'+kindLbl+'</td>';
+      h += '<td>'+(t.cli||'-')+'</td>';
+      h += '<td>'+(t.memo||'-')+'</td>';
+      h += '<td style="text-align:right;font-weight:700;color:'+amtColor+'">'+(t.kind==='in'?'+':'-')+fmt(t.amt||0)+'</td>';
+      h += '<td style="text-align:right">'+fmt(balMap[t.id]||0)+'</td>';
+      h += '<td><button class="btn btn-sm btn-o" onclick="editBankTxn(\''+t.id+'\')">수정</button></td>';
+      h += '</tr>';
+    });
+    if(accTxns.length === 0) h += '<tr><td colspan="7" class="empty-cell">거래 내역이 없습니다</td></tr>';
+    h += '</tbody></table></div>';
+  }
+  $('bankTxnArea').innerHTML = h;
+}
+window.renderBankTxn = rBankTxn;
+
+function openBankAccM(){
+  ['bankAccId','bankAccNo','bankAccNm','bankAccHolder','bankAccNote'].forEach(function(k){if($(k))$(k).value=''});
+  $('bankAccBank').value = '국민은행';
+  $('bankAccPurpose').value = 'main';
+  $('bankAccCompany').value = '';
+  $('bankAccBalance').value = 0;
+  $('bankAccMoT').textContent = '계좌 등록';
+  $('bankAccDelBtn').style.display = 'none';
+  oMo('bankAccMo');
+}
+
+function editBankAcc(id){
+  var a = _bankAccList().find(function(x){return x.id===id});
+  if(!a){toast('계좌 없음','err');return}
+  $('bankAccId').value = a.id;
+  $('bankAccBank').value = a.bank || '국민은행';
+  $('bankAccNo').value = a.accNo || '';
+  $('bankAccNm').value = a.nm || '';
+  $('bankAccHolder').value = a.holder || '';
+  $('bankAccPurpose').value = a.purpose || 'main';
+  $('bankAccCompany').value = a.company || '';
+  $('bankAccBalance').value = a.balance || 0;
+  $('bankAccNote').value = a.note || '';
+  $('bankAccMoT').textContent = '계좌 수정';
+  $('bankAccDelBtn').style.display = '';
+  oMo('bankAccMo');
+}
+
+function saveBankAcc(){
+  var accNo = $('bankAccNo').value.trim();
+  if(!accNo){toast('계좌번호 입력','err');return}
+  var id = $('bankAccId').value || gid();
+  var rec = {
+    id: id,
+    bank: $('bankAccBank').value,
+    accNo: accNo,
+    nm: $('bankAccNm').value.trim(),
+    holder: $('bankAccHolder').value.trim(),
+    purpose: $('bankAccPurpose').value,
+    company: $('bankAccCompany').value,
+    balance: +$('bankAccBalance').value || 0,
+    note: $('bankAccNote').value,
+    cat: nw()
+  };
+  var accs = _bankAccList();
+  var idx = accs.findIndex(function(x){return x.id===id});
+  if(idx >= 0) accs[idx] = rec;
+  else accs.push(rec);
+  DB.s('bankAccounts', accs);
+  cMo('bankAccMo');
+  rBank();
+  toast('저장 완료','ok');
+}
+
+function deleteBankAcc(){
+  var id = $('bankAccId').value;
+  if(!id) return;
+  var txnCnt = _bankTxnList().filter(function(t){return t.accId===id}).length;
+  if(txnCnt > 0){
+    if(!confirm('이 계좌에 '+txnCnt+'건의 거래 내역이 있습니다. 계좌와 모든 거래를 삭제합니다. 계속?')) return;
+    DB.s('bankTxns', _bankTxnList().filter(function(t){return t.accId !== id}));
+  } else {
+    if(!confirm('계좌 삭제?')) return;
+  }
+  DB.s('bankAccounts', _bankAccList().filter(function(x){return x.id !== id}));
+  cMo('bankAccMo');
+  rBank();
+  toast('삭제 완료','ok');
+}
+
+function viewBankAcc(id){
+  $('bankAccSel').value = id;
+  rBankTxn();
+}
+
+function openBankTxnM(){
+  ['bankTxnId','bankTxnAmt','bankTxnCli','bankTxnMemo','bankTxnNote'].forEach(function(k){if($(k))$(k).value=''});
+  _fillBankAccSelects();
+  var sel = $('bankAccSel').value;
+  if(sel) $('bankTxnAcc').value = sel;
+  $('bankTxnKind').value = 'in';
+  $('bankTxnDt').value = td();
+  $('bankTxnMoT').textContent = '거래 등록';
+  $('bankTxnDelBtn').style.display = 'none';
+  oMo('bankTxnMo');
+}
+
+function editBankTxn(id){
+  var t = _bankTxnList().find(function(x){return x.id===id});
+  if(!t) return;
+  _fillBankAccSelects();
+  $('bankTxnId').value = t.id;
+  $('bankTxnAcc').value = t.accId;
+  $('bankTxnKind').value = t.kind;
+  $('bankTxnDt').value = t.dt;
+  $('bankTxnAmt').value = t.amt;
+  $('bankTxnCli').value = t.cli || '';
+  $('bankTxnMemo').value = t.memo || '';
+  $('bankTxnNote').value = t.note || '';
+  $('bankTxnMoT').textContent = '거래 수정';
+  $('bankTxnDelBtn').style.display = '';
+  oMo('bankTxnMo');
+}
+
+function saveBankTxn(){
+  var accId = $('bankTxnAcc').value;
+  var amt = +$('bankTxnAmt').value;
+  if(!accId){toast('계좌 선택','err');return}
+  if(!amt){toast('금액 입력','err');return}
+  var id = $('bankTxnId').value || gid();
+  var rec = {
+    id: id,
+    accId: accId,
+    kind: $('bankTxnKind').value,
+    dt: $('bankTxnDt').value,
+    amt: amt,
+    cli: $('bankTxnCli').value.trim(),
+    memo: $('bankTxnMemo').value.trim(),
+    note: $('bankTxnNote').value,
+    cat: nw()
+  };
+  var txns = _bankTxnList();
+  var idx = txns.findIndex(function(x){return x.id===id});
+  if(idx >= 0) txns[idx] = rec;
+  else txns.push(rec);
+  DB.s('bankTxns', txns);
+  cMo('bankTxnMo');
+  rBankTxn();
+  toast('저장 완료','ok');
+}
+
+function deleteBankTxn(){
+  var id = $('bankTxnId').value;
+  if(!id || !confirm('삭제?')) return;
+  DB.s('bankTxns', _bankTxnList().filter(function(x){return x.id !== id}));
+  cMo('bankTxnMo');
+  rBankTxn();
+  toast('삭제 완료','ok');
+}
+
+/* =======================================================
+   지출결의서 + 원천세 (얼마에요 ExpenseSlip / WithholdingTax)
+   ======================================================= */
+
+function calcExpWithholding(){
+  var checked = $('expWithhold').checked;
+  var amt = +$('expAmt').value || 0;
+  if(!checked){
+    $('expWhIncomeTax').value = 0;
+    $('expWhResTax').value = 0;
+    $('expNetAmt').value = fmt(amt) + '원';
+    return;
+  }
+  var rateStr = $('expWhRate').value;
+  // 사업소득 3.3% = 소득세 3% + 주민세 0.3%
+  // 기타소득 8.8% = 소득세 8% + 주민세 0.8%
+  var incomeRate = 0, resRate = 0;
+  if(rateStr === '3.3'){ incomeRate = 0.03; resRate = 0.003; }
+  else if(rateStr === '8.8'){ incomeRate = 0.08; resRate = 0.008; }
+
+  var incomeTax = Math.floor(amt * incomeRate);
+  var resTax = Math.floor(amt * resRate);
+  var net = amt - incomeTax - resTax;
+
+  $('expWhIncomeTax').value = incomeTax;
+  $('expWhResTax').value = resTax;
+  $('expNetAmt').value = fmt(net) + '원';
+}
+
+function rExpense(){
+  var list = DB.g('expenses') || [];
+  var statusFilter = $('expStatus') ? $('expStatus').value : '';
+  var monthFilter = $('expMonth') ? $('expMonth').value : '';
+
+  var filtered = list.filter(function(r){
+    if(statusFilter && r.status !== statusFilter) return false;
+    if(monthFilter && (!r.dt || r.dt.slice(0,7) !== monthFilter)) return false;
+    return true;
+  }).sort(function(a,b){return (b.dt||'') > (a.dt||'') ? 1 : -1});
+
+  // KPI
+  var total = filtered.reduce(function(s,r){return s+(+r.amt||0)},0);
+  var whTotal = filtered.reduce(function(s,r){return s+(+r.whIncomeTax||0)+(+r.whResTax||0)},0);
+  var pending = filtered.filter(function(r){return r.status === 'pending'}).length;
+  var approved = filtered.filter(function(r){return r.status === 'approved' || r.status === 'paid'}).length;
+
+  $('expSummary').innerHTML =
+      '<div class="sb blue"><div class="l">총 지출</div><div class="v">'+fmt(total)+'</div></div>'
+    + '<div class="sb orange"><div class="l">원천징수</div><div class="v">'+fmt(whTotal)+'</div></div>'
+    + '<div class="sb red"><div class="l">승인 대기</div><div class="v">'+pending+'</div></div>'
+    + '<div class="sb green"><div class="l">승인/지급</div><div class="v">'+approved+'</div></div>';
+
+  var statusMap = {draft:'작성중', pending:'승인대기', approved:'승인', rejected:'반려', paid:'지급완료'};
+  var statusColor = {draft:'#6B7280', pending:'#F59E0B', approved:'#10B981', rejected:'#DC2626', paid:'#2563EB'};
+  var payMap = {cash:'현금', card:'카드', bank:'계좌이체', petty:'소액현금'};
+  var evidenceMap = {card:'카드전표', cash:'현금영수증', tax:'세금계산서', simple:'간이영수증', internal:'내부증빙'};
+
+  var h = '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+  h += '<th>일자</th><th>계정과목</th><th>지급처</th><th>금액</th><th>원천세</th><th>실지급</th><th>결제</th><th>증빙</th><th>상태</th><th>관리</th>';
+  h += '</tr></thead><tbody>';
+  filtered.forEach(function(r){
+    var wh = (+r.whIncomeTax||0) + (+r.whResTax||0);
+    var net = (+r.amt||0) - wh;
+    var statusLbl = '<span class="bd" style="background:'+(statusColor[r.status]||'#999')+'22;color:'+(statusColor[r.status]||'#999')+'">'+(statusMap[r.status]||r.status||'-')+'</span>';
+    h += '<tr>';
+    h += '<td>'+(r.dt||'-')+'</td>';
+    h += '<td style="font-weight:700">'+(r.category||'-')+'</td>';
+    h += '<td>'+(r.vendor||'-')+'</td>';
+    h += '<td style="text-align:right">'+fmt(r.amt||0)+'</td>';
+    h += '<td style="text-align:right;color:#DC2626">'+(wh>0?fmt(wh):'-')+'</td>';
+    h += '<td style="text-align:right;font-weight:700">'+fmt(net)+'</td>';
+    h += '<td>'+(payMap[r.payment]||r.payment||'-')+'</td>';
+    h += '<td>'+(evidenceMap[r.evidence]||r.evidence||'-')+'</td>';
+    h += '<td>'+statusLbl+'</td>';
+    h += '<td><button class="btn btn-sm btn-o" onclick="editExpense(\''+r.id+'\')">수정</button></td>';
+    h += '</tr>';
+  });
+  if(filtered.length === 0) h += '<tr><td colspan="10" class="empty-cell">등록된 지출결의서가 없습니다</td></tr>';
+  h += '</tbody></table></div>';
+  $('expArea').innerHTML = h;
+}
+window.rExpense = rExpense;
+
+function openExpM(){
+  ['expId','expAmt','expVendor','expDesc'].forEach(function(k){if($(k))$(k).value=''});
+  $('expDt').value = td();
+  $('expWriter').value = (CU && CU.nm) || '관리자';
+  $('expCategory').value = '소모품비';
+  $('expPayment').value = 'card';
+  $('expWithhold').checked = false;
+  $('expWhRate').value = '3.3';
+  $('expEvidence').value = '';
+  $('expStatusSel').value = 'draft';
+  $('expMoT').textContent = '지출결의서 작성';
+  $('expDelBtn').style.display = 'none';
+  calcExpWithholding();
+  oMo('expMo');
+}
+
+function editExpense(id){
+  var r = (DB.g('expenses')||[]).find(function(x){return x.id===id});
+  if(!r) return;
+  $('expId').value = r.id;
+  $('expDt').value = r.dt;
+  $('expWriter').value = r.writer || '';
+  $('expCategory').value = r.category || '소모품비';
+  $('expVendor').value = r.vendor || '';
+  $('expAmt').value = r.amt || 0;
+  $('expPayment').value = r.payment || 'card';
+  $('expWithhold').checked = !!r.withhold;
+  $('expWhRate').value = r.whRate || '3.3';
+  $('expDesc').value = r.desc || '';
+  $('expEvidence').value = r.evidence || '';
+  $('expStatusSel').value = r.status || 'draft';
+  $('expMoT').textContent = '지출결의서 수정';
+  $('expDelBtn').style.display = '';
+  calcExpWithholding();
+  oMo('expMo');
+}
+
+function saveExpense(){
+  var amt = +$('expAmt').value;
+  var vendor = $('expVendor').value.trim();
+  if(!amt){toast('금액 입력','err');return}
+
+  var id = $('expId').value || gid();
+  var rec = {
+    id: id,
+    dt: $('expDt').value,
+    writer: $('expWriter').value,
+    category: $('expCategory').value,
+    vendor: vendor,
+    amt: amt,
+    payment: $('expPayment').value,
+    withhold: $('expWithhold').checked,
+    whRate: $('expWhRate').value,
+    whIncomeTax: +$('expWhIncomeTax').value || 0,
+    whResTax: +$('expWhResTax').value || 0,
+    desc: $('expDesc').value,
+    evidence: $('expEvidence').value,
+    status: $('expStatusSel').value,
+    cat: nw()
+  };
+  var list = DB.g('expenses') || [];
+  var idx = list.findIndex(function(x){return x.id===id});
+  if(idx >= 0) list[idx] = rec;
+  else list.push(rec);
+  DB.s('expenses', list);
+  cMo('expMo');
+  rExpense();
+  toast('저장 완료','ok');
+}
+
+function deleteExpense(){
+  var id = $('expId').value;
+  if(!id || !confirm('결의서 삭제?')) return;
+  DB.s('expenses', (DB.g('expenses')||[]).filter(function(x){return x.id !== id}));
+  cMo('expMo');
+  rExpense();
+  toast('삭제 완료','ok');
+}
+
+function printExpense(){
+  var r = {
+    dt: $('expDt').value,
+    writer: $('expWriter').value,
+    category: $('expCategory').value,
+    vendor: $('expVendor').value,
+    amt: +$('expAmt').value || 0,
+    payment: $('expPayment').value,
+    desc: $('expDesc').value,
+    evidence: $('expEvidence').value,
+    whIncomeTax: +$('expWhIncomeTax').value || 0,
+    whResTax: +$('expWhResTax').value || 0
+  };
+  var co = DB.g1('co') || {nm:'팩플로우'};
+  var payMap = {cash:'현금', card:'카드', bank:'계좌이체', petty:'소액현금'};
+  var evidenceMap = {card:'신용카드 매출전표', cash:'현금영수증', tax:'세금계산서', simple:'간이영수증', internal:'내부증빙'};
+  var net = r.amt - r.whIncomeTax - r.whResTax;
+
+  var w = window.open('', '_blank', 'width=800,height=1000');
+  w.document.write('<html><head><meta charset="UTF-8"><title>지출결의서</title>');
+  w.document.write('<style>body{font-family:"Malgun Gothic",sans-serif;padding:20mm;font-size:12px}');
+  w.document.write('.t{text-align:center;font-size:24px;font-weight:900;letter-spacing:20px;margin-bottom:20px}');
+  w.document.write('.co{text-align:right;font-size:13px;margin-bottom:20px}');
+  w.document.write('table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #000;padding:8px;text-align:left;vertical-align:middle}th{background:#F3F4F6;width:20%}');
+  w.document.write('.sign{margin-top:40px;display:flex;justify-content:space-around}.sign div{text-align:center}.sign-box{border:1px solid #000;width:80px;height:80px;margin:8px auto}');
+  w.document.write('@media print{@page{size:A4;margin:15mm}}</style></head><body>');
+  w.document.write('<div class="t">지 출 결 의 서</div>');
+  w.document.write('<div class="co">'+(co.nm||'')+'</div>');
+  w.document.write('<table>');
+  w.document.write('<tr><th>지출일자</th><td>'+r.dt+'</td><th>작성자</th><td>'+r.writer+'</td></tr>');
+  w.document.write('<tr><th>계정과목</th><td>'+r.category+'</td><th>지급처</th><td>'+r.vendor+'</td></tr>');
+  w.document.write('<tr><th>금액</th><td>'+fmt(r.amt)+'원</td><th>결제수단</th><td>'+(payMap[r.payment]||r.payment)+'</td></tr>');
+  if(r.whIncomeTax > 0){
+    w.document.write('<tr><th>원천소득세</th><td>'+fmt(r.whIncomeTax)+'원</td><th>주민세</th><td>'+fmt(r.whResTax)+'원</td></tr>');
+    w.document.write('<tr><th>실지급액</th><td colspan="3" style="font-weight:700;font-size:14px">'+fmt(net)+'원</td></tr>');
+  }
+  w.document.write('<tr><th>증빙</th><td colspan="3">'+(evidenceMap[r.evidence]||r.evidence||'-')+'</td></tr>');
+  w.document.write('<tr><th>사용내역</th><td colspan="3" style="height:80px;vertical-align:top">'+(r.desc||'').replace(/\n/g,'<br>')+'</td></tr>');
+  w.document.write('</table>');
+  w.document.write('<div class="sign">');
+  w.document.write('<div>기안<div class="sign-box"></div></div>');
+  w.document.write('<div>검토<div class="sign-box"></div></div>');
+  w.document.write('<div>승인<div class="sign-box"></div></div>');
+  w.document.write('</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()}, 300);
+}

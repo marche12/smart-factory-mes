@@ -80,18 +80,11 @@ function rOrderTrack(){
 }
 function _getOrderStatus(o,wos,ships){
   if(o.status==='취소')return'취소';
-  var oid=o.id;
-  var _linkedWoIds=typeof orderWOIds==='function'?orderWOIds(o):[];
-  if(!_linkedWoIds.length)_linkedWoIds=wos.filter(function(w){return w.ordId===oid}).map(function(w){return w.id});
-  var hasShip=ships.some(function(s){return _linkedWoIds.indexOf(s.woId)>=0});
-  if(hasShip)return'출고완료';
-  var matchWO=function(w){return _linkedWoIds.indexOf(w.id)>=0||w.ordId===oid};
-  var linkedWOs=wos.filter(matchWO);
-  var hasWO=linkedWOs.length>0;
-  if(hasWO){
-    var allDone=linkedWOs.every(function(w){return w.status==='완료'||w.status==='완료대기'||w.status==='출고완료'});
-    if(allDone)return'출고대기';
-    return'생산중';
+  if(typeof summarizeOrderFlow==='function'){
+    var summary=summarizeOrderFlow(o,wos||[],ships||[]);
+    if(summary.totalQty>0&&summary.shippedQty>=summary.totalQty)return'출고완료';
+    if(summary.shippedQty>0||summary.allDone)return'출고대기';
+    if(summary.woIds.length)return'생산중';
   }
   return o.status||'수주';
 }

@@ -9,6 +9,11 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard Variable','Pretendard',sans-serif;background:#F5F7FA;color:#111827;min-height:100vh}
 .bx-app{max-width:1400px;margin:0 auto;padding:24px}
+.bx-bridge{display:none;margin:0 auto 16px;max-width:1400px;background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.bx-bridge.show{display:block}
+.bx-bridge-title{font-size:13px;font-weight:800;margin-bottom:4px}
+.bx-bridge-copy{font-size:12px;line-height:1.5}
+.bx-bridge-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .bx-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .bx-logo{font-size:22px;font-weight:900;color:#1E3A5F;letter-spacing:-.5px}
 .bx-sub{font-size:12px;color:#6B7280;font-weight:600}
@@ -82,6 +87,14 @@ select.bx-input{cursor:pointer}
 </style>
 </head>
 <body>
+<div class="bx-bridge" id="bridgeNotice">
+  <div class="bx-bridge-title">팩플로우 연동 모드로 전환 중</div>
+  <div class="bx-bridge-copy" id="bridgeCopy">이 페이지가 `file://`로 열려 있으면 팩플로우와 값 연동이 되지 않습니다. 서버 경로로 다시 열어 이어서 작업합니다.</div>
+  <div class="bx-bridge-actions">
+    <button class="bx-btn bx-btn-navy" type="button" id="bridgeOpenBtn">서버 경로로 열기</button>
+    <button class="bx-btn bx-btn-outline" type="button" id="bridgeStayBtn">여기서 계속 보기</button>
+  </div>
+</div>
 <div class="bx-app">
   <div class="bx-header">
     <div class="bx-logo">📦 팩플로우 박스 설계</div>
@@ -269,6 +282,10 @@ select.bx-input{cursor:pointer}
       <div class="bx-action">
         <button class="bx-btn bx-btn-navy" onclick="printEstimate()">견적서 출력</button>
         <button class="bx-btn bx-btn-outline" onclick="exportCSV()">CSV</button>
+        <button class="bx-btn bx-btn-green" id="pfApplyBtn" onclick="sendToPackflow()">팩플로우 적용</button>
+      </div>
+      <div id="pfApplyHint" style="margin-top:10px;font-size:11px;color:#94A3B8;line-height:1.5">
+        설계 결과를 팩플로우 견적 또는 작업지시에 바로 넘길 수 있습니다.
       </div>
     </div>
   </div>
@@ -286,6 +303,55 @@ var BOX_TYPES = [
   {id:'handle',   name:'손잡이형',    desc:'핸들홀 · 캐리형'}
 ];
 var selectedBox = 'mattuk';
+var designerMode = '';
+
+function _serverDesignerUrl(extra){
+  var url='http://127.0.0.1:8080/box-designer.html';
+  var qs=_qs();
+  var next=new URLSearchParams(qs.toString());
+  if(extra){
+    Object.keys(extra).forEach(function(key){
+      if(extra[key]===undefined||extra[key]===null||extra[key]==='')return;
+      next.set(key,extra[key]);
+    });
+  }
+  var q=next.toString();
+  return url+(q?('?'+q):'');
+}
+
+function _consumeForwardedPayload(){
+  var qs=_qs();
+  var encoded=qs.get('pf_payload');
+  if(!encoded)return false;
+  try{
+    var raw=decodeURIComponent(encoded);
+    var payload=JSON.parse(raw);
+    localStorage.setItem('packflow_box_designer_payload',JSON.stringify(payload));
+    var hint=document.getElementById('pfApplyHint');
+    if(hint){
+      hint.innerHTML='<span style="color:#059669;font-weight:700">연동 복원 완료</span> · file 미리보기에서 만든 설계값을 서버 경로로 옮겼습니다.';
+    }
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function handleProtocolBridge(){
+  if(location.protocol!=='file:'){
+    _consumeForwardedPayload();
+    return;
+  }
+  var notice=document.getElementById('bridgeNotice');
+  var openBtn=document.getElementById('bridgeOpenBtn');
+  var stayBtn=document.getElementById('bridgeStayBtn');
+  if(notice)notice.classList.add('show');
+  if(openBtn)openBtn.onclick=function(){location.href=_serverDesignerUrl();};
+  if(stayBtn)stayBtn.onclick=function(){if(notice)notice.classList.remove('show');};
+  setTimeout(function(){
+    try{location.href=_serverDesignerUrl();}catch(e){}
+  },1200);
+}
 
 /* ===== Flute thickness map ===== */
 var FLUTE_THICK = {E:1.5, B:3.0, C:3.7, A:4.8, EB:4.5, BC:6.5};
@@ -1042,6 +1108,227 @@ function switchView(v,btn){
   calc();
 }
 
+function _qs(){
+  try{return new URLSearchParams(location.search||'')}catch(e){return new URLSearchParams()}
+}
+
+function _numParam(v, fallback){
+  var n=+v;
+  return Number.isFinite(n)&&n>0?n:fallback;
+}
+
+function _textOfSelect(id){
+  var el=document.getElementById(id);
+  if(!el||!el.options||el.selectedIndex<0)return '';
+  return el.options[el.selectedIndex].text;
+}
+
+function _setIf(id,val){
+  if(val===undefined||val===null||val==='')return;
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.value=val;
+}
+
+function _parseDimsFromText(txt){
+  var m=String(txt||'').match(/(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)/);
+  return m?{L:+m[1],W:+m[2],H:+m[3]}:null;
+}
+
+function applyPackflowParams(){
+  var qs=_qs();
+  designerMode=qs.get('mode')||'';
+  var map={
+    boxType:'selectedBox',
+    paperType:'paperType',
+    fluteType:'fluteType',
+    gsm:'gsm',
+    paperThick:'paperThick',
+    coatingType:'coatingType',
+    orderQty:'orderQty',
+    inkColors:'inkColors',
+    sheetSize:'sheetSize',
+    sheetW:'sheetW',
+    sheetH:'sheetH',
+    paperPrice:'paperPrice',
+    printPrice:'printPrice',
+    coatPrice:'coatPrice',
+    diePrice:'diePrice',
+    gluePrice:'gluePrice',
+    moldCost:'moldCost',
+    wasteRate:'wasteRate',
+    marginRate:'marginRate',
+    boxTab:'boxTab'
+  };
+  Object.keys(map).forEach(function(key){
+    var val=qs.get(key);
+    if(val===null||val==='')return;
+    if(key==='boxType'){
+      selectedBox=val;
+      return;
+    }
+    _setIf(map[key],val);
+  });
+  var specDims=_parseDimsFromText(qs.get('spec')||'');
+  var L=_numParam(qs.get('boxL'), specDims&&specDims.L||300);
+  var W=_numParam(qs.get('boxW'), specDims&&specDims.W||200);
+  var H=_numParam(qs.get('boxH'), specDims&&specDims.H||150);
+  _setIf('boxL',L);
+  _setIf('boxW',W);
+  _setIf('boxH',H);
+  initFefcoGrid();
+  var active=document.querySelector('.fefco-btn[data-id="'+selectedBox+'"]');
+  if(active)selectBox(selectedBox,active);
+  else updateDesc();
+  if(document.getElementById('sheetSize').value==='custom')document.getElementById('customSheetCol').style.display='block';
+  onPaperTypeChange();
+  var applyBtn=document.getElementById('pfApplyBtn');
+  if(applyBtn){
+    applyBtn.textContent=designerMode==='wo'?'작업지시에 적용':designerMode==='quote'?'견적에 적용':'팩플로우 적용';
+  }
+  var hint=document.getElementById('pfApplyHint');
+  if(hint&&qs.get('sourceName')){
+    hint.innerHTML='<b style="color:#1E3A5F">'+qs.get('sourceName')+'</b> 기준으로 설계값을 이어받았습니다. 결과를 다시 팩플로우로 보낼 수 있습니다.';
+  }
+  _consumeForwardedPayload();
+}
+
+function buildPackflowPayload(){
+  var L=+document.getElementById('boxL').value||1;
+  var W=+document.getElementById('boxW').value||1;
+  var H=+document.getElementById('boxH').value||1;
+  var tab=+document.getElementById('boxTab').value||15;
+  var qty=+document.getElementById('orderQty').value||1;
+  var flat=getFlatDimensions(L,W,H,tab);
+  var sheet=getSheetSize();
+  var yield1=Math.floor(sheet.w/flat.w)*Math.floor(sheet.h/flat.h);
+  var yield2=Math.floor(sheet.w/flat.h)*Math.floor(sheet.h/flat.w);
+  var bestYield=Math.max(yield1,yield2,1);
+  var wasteRate=+document.getElementById('wasteRate').value||0;
+  var grossQty=Math.ceil(qty*(1+wasteRate/100));
+  var cleanSheets=Math.ceil(qty/bestYield);
+  var sheetsNeeded=Math.ceil(grossQty/bestYield);
+  var extraSheets=Math.max(0,sheetsNeeded-cleanSheets);
+  var paperTypeText=_textOfSelect('paperType');
+  var coatName=_textOfSelect('coatingType');
+  var sheetYield=document.getElementById('sheetYield').textContent||'';
+  var unitCost=document.getElementById('unitCost').textContent||'0원';
+  var unitPrice=document.getElementById('unitPrice').textContent||'0원';
+  var totalPrice=document.getElementById('totalPrice').textContent||'0원';
+  var totalCost=document.getElementById('totalCost').textContent||'0원';
+  var gsm=+document.getElementById('gsm').value||0;
+  var colors=+document.getElementById('inkColors').value||0;
+  var paperPrice=+document.getElementById('paperPrice').value||0;
+  var printPrice=+document.getElementById('printPrice').value||0;
+  var coatPrice=+document.getElementById('coatPrice').value||0;
+  var diePrice=+document.getElementById('diePrice').value||0;
+  var gluePrice=+document.getElementById('gluePrice').value||0;
+  var moldCost=+document.getElementById('moldCost').value||0;
+  var sheetAreaM2=(sheet.w/1000)*(sheet.h/1000);
+  var sheetWeightKg=sheetAreaM2*(gsm/1000);
+  var paperCostTotal=sheetWeightKg*paperPrice*sheetsNeeded;
+  var flatAreaM2=(flat.w/1000)*(flat.h/1000);
+  var printCostTotal=colors*printPrice*grossQty;
+  var coatCostTotal=flatAreaM2*coatPrice*grossQty;
+  var dieCostTotal=diePrice*grossQty;
+  var glueCostTotal=gluePrice*grossQty;
+  var totalCostNumber=paperCostTotal+printCostTotal+coatCostTotal+dieCostTotal+glueCostTotal+moldCost;
+  var unitCostNumber=qty>0?totalCostNumber/qty:0;
+  var unitPriceNumber=unitCostNumber*(1+(+document.getElementById('marginRate').value||0)/100);
+  var totalPriceNumber=unitPriceNumber*qty;
+  var summary=[
+    '박스형태: '+(BOX_TYPES.find(function(b){return b.id===selectedBox})||{}).name,
+    '규격: '+L+' x '+W+' x '+H+' mm',
+    '전개도: '+Math.round(flat.w)+' x '+Math.round(flat.h)+' mm',
+    '원지규격: '+sheet.w+' x '+sheet.h+' mm',
+    '취수: '+sheetYield,
+    '지류: '+paperTypeText+' / '+document.getElementById('gsm').value+'g',
+    '코팅: '+coatName,
+    '주문수량: '+qty+'매',
+    '개당 원가: '+unitCost,
+    '개당 판가: '+unitPrice,
+    '총 원가: '+totalCost,
+    '총 견적가: '+totalPrice
+  ].join('\n');
+  return {
+    target:designerMode||'',
+    ts:Date.now(),
+    boxType:selectedBox,
+    boxName:(BOX_TYPES.find(function(b){return b.id===selectedBox})||{}).name||'',
+    dims:{L:L,W:W,H:H,tab:tab},
+    flat:{w:Math.round(flat.w),h:Math.round(flat.h),name:flat.name},
+    qty:qty,
+    sheet:{
+      name:_textOfSelect('sheetSize'),
+      w:sheet.w,
+      h:sheet.h,
+      yield:sheetYield,
+      yieldCount:bestYield
+    },
+    production:{
+      cleanSheets:cleanSheets,
+      grossQty:grossQty,
+      sheetsNeeded:sheetsNeeded,
+      extraSheets:extraSheets
+    },
+    material:{
+      paperType:document.getElementById('paperType').value,
+      paperLabel:paperTypeText,
+      gsm:+document.getElementById('gsm').value||0,
+      thickness:+document.getElementById('paperThick').value||0,
+      coating:document.getElementById('coatingType').value,
+      coatingLabel:coatName,
+      colors:+document.getElementById('inkColors').value||0
+    },
+    costs:{
+      paper:+document.getElementById('paperPrice').value||0,
+      print:+document.getElementById('printPrice').value||0,
+      coat:+document.getElementById('coatPrice').value||0,
+      die:+document.getElementById('diePrice').value||0,
+      glue:+document.getElementById('gluePrice').value||0,
+      mold:+document.getElementById('moldCost').value||0,
+      waste:wasteRate,
+      margin:+document.getElementById('marginRate').value||0,
+      unitCostText:unitCost,
+      unitPriceText:unitPrice,
+      totalCostText:totalCost,
+      totalPriceText:totalPrice,
+      paperCostTotal:Math.round(paperCostTotal),
+      printCostTotal:Math.round(printCostTotal),
+      postCostTotal:Math.round(coatCostTotal+dieCostTotal+glueCostTotal),
+      coatCostTotal:Math.round(coatCostTotal),
+      dieCostTotal:Math.round(dieCostTotal),
+      glueCostTotal:Math.round(glueCostTotal),
+      totalCostNumber:Math.round(totalCostNumber),
+      unitCostNumber:Math.round(unitCostNumber),
+      unitPriceNumber:Math.round(unitPriceNumber),
+      totalPriceNumber:Math.round(totalPriceNumber)
+    },
+    specText:L+'x'+W+'x'+H+' / '+paperTypeText+' '+document.getElementById('gsm').value+'g / '+coatName,
+    summary:summary
+  };
+}
+
+function sendToPackflow(){
+  var payload=buildPackflowPayload();
+  if(location.protocol==='file:'){
+    try{
+      location.href=_serverDesignerUrl({pf_payload:encodeURIComponent(JSON.stringify(payload))});
+      return;
+    }catch(e){}
+  }
+  try{
+    localStorage.setItem('packflow_box_designer_payload',JSON.stringify(payload));
+    var hint=document.getElementById('pfApplyHint');
+    if(hint){
+      hint.innerHTML='<span style="color:#059669;font-weight:700">적용 준비 완료</span> · '+new Date(payload.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'에 저장되었습니다.';
+    }
+    if(window.opener&&!window.opener.closed){
+      try{window.opener.focus()}catch(e){}
+    }
+  }catch(e){}
+}
+
 /* ===== Main Calculation ===== */
 function calc(){
   var L=+document.getElementById('boxL').value||1;
@@ -1190,8 +1477,8 @@ function exportCSV(){
 }
 
 /* ===== Init ===== */
-initFefcoGrid();
-onPaperTypeChange();
+applyPackflowParams();
+handleProtocolBridge();
 calc();
 </script>
 </body>

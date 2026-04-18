@@ -124,6 +124,96 @@ function isAllProcsDone(o){
     return p.st==='완료'||p.st==='외주완료'||p.tp==='out'||p.tp==='exc';
   });
 }
+function _getWOBaseStatus(wo){
+  if(!wo)return '대기';
+  if(wo.status==='보류'||wo.status==='취소')return wo.status;
+  var procs=Array.isArray(wo.procs)?wo.procs:[];
+  if(!procs.length)return '대기';
+  if(procs.every(function(p){return p.st==='완료'||p.st==='외주완료'||p.st==='스킵';}))return '완료';
+  if(procs.some(function(p){return p.st==='진행중'||p.st==='외주대기'||p.st==='외주진행중'||p.st==='완료'||p.st==='외주완료';}))return '진행중';
+  return '대기';
+}
+function recalcWOShipState(woId,shipLogs){
+  var logs=(shipLogs||DB.g('shipLog')||[]).filter(function(s){return s.woId===woId;});
+  var wos=DB.g('wo');
+  var idx=wos.findIndex(function(x){return x.id===woId;});
+  if(idx<0)return null;
+  var wo=wos[idx];
+  var shipped=logs.reduce(function(sum,s){return sum+(Number(s&&s.qty)||0);},0);
+  wo.shippedQty=shipped;
+  wo.shipRemain=Math.max(0,(Number(wo.fq)||0)-shipped);
+  wo.lastShipDt=logs.length?logs.slice().sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')})[0].dt:'';
+  if(shipped>=(Number(wo.fq)||0)&&Number(wo.fq||0)>0)wo.status='출고완료';
+  else if(shipped>0)wo.status='출고대기';
+  else wo.status=_getWOBaseStatus(wo);
+  wos[idx]=wo;
+  DB.s('wo',wos);
+  return wo;
+}
+function _restoreShipDeductedStock(wo,remainingLogs){
+  if(!wo||!wo.wn)return 0;
+  if((remainingLogs||[]).length>0)return 0;
+  var ref='WO:'+wo.wn;
+  var stockLogs=DB.g('stockLog')||[];
+  var restoreItems=stockLogs.filter(function(l){return l.type==='차감'&&l.ref===ref&&l.note==='BOM자동차감';});
+  if(!restoreItems.length)return 0;
+  var stocks=DB.g('stock');
+  var restored=0;
+  restoreItems.forEach(function(item){
+    var qty=Number(item.qty)||0;
+    if(qty<=0)return;
+    var si=stocks.findIndex(function(s){return s.nm===item.item;});
+    if(si>=0)stocks[si].qty=(Number(stocks[si].qty)||0)+qty;
+    else stocks.push({id:gid(),nm:item.item,spec:'',qty:qty});
+    restored+=qty;
+    if(typeof addStockLog==='function')addStockLog(item.item,'반품',qty,ref,'출고취소 복원');
+  });
+  DB.s('stock',stocks);
+  return restored;
+}
+function cancelShipById(shipId,skipConfirm){
+  var logs=DB.g('shipLog')||[];
+  var rec=logs.find(function(x){return x.id===shipId;});
+  if(!rec){toast('출고 이력을 찾을 수 없습니다','err');return false}
+  if(!skipConfirm&&!confirm('이 출고를 취소하시겠습니까?\n자동 생성된 매출/세금계산 연동도 함께 정리됩니다.'))return false;
+  var nextLogs=logs.filter(function(x){return x.id!==shipId;});
+  DB.s('shipLog',nextLogs);
+
+  var sales=DB.g('sales')||[];
+  var linkedSales=sales.filter(function(x){return x.shipId===shipId;});
+  var linkedSaleIds=linkedSales.map(function(x){return x.id;});
+  DB.s('sales',sales.filter(function(x){return x.shipId!==shipId;}));
+
+  var taxList=DB.g('taxInvoice')||[];
+  DB.s('taxInvoice',taxList.filter(function(x){return x.shipId!==shipId&&linkedSaleIds.indexOf(x.saleId)<0;}));
+
+  var etaxList=DB.g('etax')||[];
+  DB.s('etax',etaxList.filter(function(x){return x.shipId!==shipId&&linkedSaleIds.indexOf(x.saleId)<0;}));
+
+  var qcList=DB.g('qcRecords')||[];
+  DB.s('qcRecords',qcList.filter(function(x){return !(x.shipId===shipId&&(x.source==='ship-auto'||x.proc==='출고검수'));}));
+
+  var wo=null;
+  if(rec.woId){
+    var remainForWO=nextLogs.filter(function(x){return x.woId===rec.woId;});
+    wo=(DB.g('wo')||[]).find(function(x){return x.id===rec.woId;})||null;
+    _restoreShipDeductedStock(wo,remainForWO);
+    wo=recalcWOShipState(rec.woId,nextLogs)||wo;
+  }
+  var orderId=(rec.orderId)||(wo&&wo.ordId)||'';
+  if(orderId&&typeof syncOrderFlowState==='function')syncOrderFlowState(orderId,null,null,nextLogs);
+
+  if(typeof rShipHist==='function')rShipHist();
+  if(typeof rShipReady==='function')rShipReady();
+  if(typeof rWOList==='function')rWOList();
+  if(typeof rDash==='function')rDash();
+  if(typeof rPlan==='function')rPlan();
+  if(typeof updateShipBadge==='function')updateShipBadge();
+  addLog('출고취소: '+(rec.pnm||'')+' '+(rec.qty||0)+'매');
+  if(typeof cMo==='function')cMo('shipDetMo');
+  toast('출고와 자동 연동 문서를 되돌렸습니다','ok');
+  return true;
+}
 function rShipReady(){
 // Fix status: 진행중이지만 모든 공정 완료된 WO → 완료로 자동 변경
 var _allWo=DB.g('wo');var _changed=false;
@@ -261,10 +351,9 @@ if(_changeMeta){
 }
 const logs=DB.g('shipLog');logs.push(rec);DB.s('shipLog',logs);
 if(typeof DocTrace!=='undefined')DocTrace.link('WO',woId,'SHIP',rec.id,o.wn,'');
-if(shipped+qty>=o.fq){const all=DB.g('wo');const i=all.findIndex(x=>x.id===woId);if(i>=0){all[i].status='출고완료';DB.s('wo',all);
-  // 수주 연동: WO 출고완료 → 수주도 출고완료
-  if(o.ordId){var _ords=getOrders();var _ord=_ords.find(function(x){return x.id===o.ordId});if(_ord&&_ord.status!=='출고완료'){_ord.status='출고완료';saveOrders(_ords)}}
-}}
+var _shipTotal=shipped+qty;
+var _woList=DB.g('wo');
+var _updatedWO=recalcWOShipState(woId,logs)||_woList.find(function(x){return x.id===woId;})||o;
 /* === 데이터 연계: 출고 → 매출 자동 등록 === */
 try{
   var unitPrice=o.price||(o.amt&&o.fq?Math.round(o.amt/o.fq):0);
@@ -275,7 +364,7 @@ try{
   var _shipGrpId='';
   if(typeof getSelectedGrpId==='function')_shipGrpId=getSelectedGrpId('smGrpSel')||'';
   else if(typeof _currentGroupId!=='undefined'&&_currentGroupId!=='ALL')_shipGrpId=_currentGroupId;
-  sb.push({id:_saleId,dt:td(),cli:_shipCnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id,groupId:_shipGrpId});
+  sb.push({id:_saleId,dt:td(),cli:_shipCnm,prod:o.pnm,qty:qty,price:unitPrice,amt:salesAmt,paid:0,payType:'미수',note:'출고자동등록 ('+o.wn+')',woId:woId,shipId:rec.id,orderId:o.ordId||'',groupId:_shipGrpId,source:'ship-auto'});
   DB.s('sales',sb);
   if(typeof DocTrace!=='undefined')DocTrace.link('SHIP',rec.id,'SALE',_saleId,'','');
   addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+(salesAmt?fmt(salesAmt)+'원':'단가미입력'));
@@ -295,7 +384,7 @@ try{
     _taxList.push({
       id:_taxId,dt:td(),type:'매출',cli:_shipCnm,bizNo:_cliInfo.bizNo||'',ceo:_cliInfo.ceo||'',addr:_cliInfo.addr||'',
       item:o.pnm,qty:qty,price:unitPrice,spec:o.spec||'',supply:_supplyAmt,vat:_vatAmt,purpose:'영수',method:_txMethod,
-      note:'출고 자동연계 ('+o.wn+')',groupId:_shipGrpId||'',woId:woId,shipId:rec.id,saleId:_saleId,source:'ship-auto'
+      note:'출고 자동연계 ('+o.wn+')',groupId:_shipGrpId||'',orderId:o.ordId||'',woId:woId,shipId:rec.id,saleId:_saleId,source:'ship-auto'
     });
     DB.s('taxInvoice',_taxList);
     var _salesSync=DB.g('sales');var _saleIdx=_salesSync.findIndex(function(x){return x.id===_saleId});
@@ -305,7 +394,7 @@ try{
   var _etaxList=DB.g('etax')||[];
   if(!_etaxList.some(function(x){return x.shipId===rec.id;})){
     var _etaxId=gid();
-    _etaxList.push({id:_etaxId,shipId:rec.id,saleId:_saleId,dt:td(),type:'매출',cli:_shipCnm,supply:_supplyAmt,vat:_vatAmt,total:_supplyAmt+_vatAmt,st:'미발행',note:'출고 자동연계 ('+o.wn+')'});
+    _etaxList.push({id:_etaxId,shipId:rec.id,saleId:_saleId,orderId:o.ordId||'',woId:woId,dt:td(),type:'매출',cli:_shipCnm,supply:_supplyAmt,vat:_vatAmt,total:_supplyAmt+_vatAmt,st:'미발행',note:'출고 자동연계 ('+o.wn+')',source:'ship-auto'});
     DB.s('etax',_etaxList);
     var _salesSync2=DB.g('sales');var _saleIdx2=_salesSync2.findIndex(function(x){return x.id===_saleId});
     if(_saleIdx2>=0){_salesSync2[_saleIdx2].etaxId=_etaxId;DB.s('sales',_salesSync2)}
@@ -316,7 +405,7 @@ try{
 try{
   if(defect>0){
     var qcRecs=DB.g('qcRecords');
-    qcRecs.push({id:gid(),dt:td(),prod:o.pnm,proc:'출고검수',sampleCnt:qty,defectCnt:defect,defectRate:((defect/qty)*100).toFixed(1),result:defect/qty>0.05?'불합격':'합격',action:rec.inspNote||'',mgr:CU?CU.nm:'',woId:woId});
+    qcRecs.push({id:gid(),dt:td(),prod:o.pnm,proc:'출고검수',sampleCnt:qty,defectCnt:defect,defectRate:((defect/qty)*100).toFixed(1),result:defect/qty>0.05?'불합격':'합격',action:rec.inspNote||'',mgr:CU?CU.nm:'',woId:woId,shipId:rec.id,source:'ship-auto'});
     DB.s('qcRecords',qcRecs);
   }
 }catch(e){console.warn('품질연계오류:',e);toast('⚠ 품질검사 기록 실패','err')}
@@ -327,9 +416,10 @@ try{
     else if(typeof deductMaterials==='function'){deductMaterials(woId)}
     addLog('자재차감(출고연동): '+o.pnm);
   }
-  if(typeof addStockLog==='function')addStockLog(o.pnm,'출고',qty,'WO:'+o.wn,'출고→'+o.cnm);
+if(typeof addStockLog==='function')addStockLog(o.pnm,'출고',qty,'WO:'+o.wn,'출고→'+o.cnm);
 }catch(e){console.warn('재고연계오류:',e)}
-addLog(`출고: ${o.pnm} ${qty}매 → ${o.cnm}`);cMo('shipMo');rShipReady();if(typeof rDash==='function')rDash();if(typeof rWOList==='function')rWOList();if(typeof rPlan==='function')rPlan();if(typeof updateShipBadge==='function')updateShipBadge();toast(shipped+qty>=o.fq?'출고 완료!':'부분 출고 완료','ok')}
+if(o.ordId&&typeof syncOrderFlowState==='function')syncOrderFlowState(o.ordId,null,null,logs);
+addLog(`출고: ${o.pnm} ${qty}매 → ${o.cnm}`);cMo('shipMo');rShipReady();if(typeof rDash==='function')rDash();if(typeof rWOList==='function')rWOList();if(typeof rPlan==='function')rPlan();if(typeof updateShipBadge==='function')updateShipBadge();toast(_updatedWO&&_updatedWO.status==='출고완료'?'출고 완료!':'부분 출고 완료','ok')}
 
 // ===== 백업 관리 UI =====
 function initBackupCard(){

@@ -39,7 +39,31 @@ function rShipHist(){
   _prdExportData['shHi']={headers:['출고일','거래처','제품','출고수량','양품','불량','차량','기사'],rows:logs.map(function(r){return[r.dt,r.cnm,r.pnm,r.qty,r.good||r.qty,r.defect||0,r.car||'',r.driver||'']}),sheetName:'출고이력',fileName:'출고이력'};
 }
 window._prdCb_shHi=rShipHist;
-function showShipDet(sid){const r=DB.g('shipLog').find(x=>x.id===sid);if(!r)return;var _bcShip=typeof DocTrace!=='undefined'?DocTrace.renderBreadcrumb('SHIP',sid):'';$('shipDetC').innerHTML=_bcShip+`<div class="fr"><div class="fg"><label>출고일시</label><div style="font-weight:700">${r.tm||r.dt}</div></div><div class="fg"><label>지시번호</label><div>${r.wn||'-'}</div></div><div class="fg"><label>담당</label><div>${r.mgr||'-'}</div></div></div><div class="fr"><div class="fg"><label>거래처</label><div style="font-weight:700;font-size:15px">${r.cnm}</div></div><div class="fg"><label>제품</label><div style="font-weight:700;font-size:15px">${r.pnm}</div></div></div><div class="fr" style="margin-top:10px"><div class="fg"><label>출고수량</label><div style="font-weight:700;font-size:18px">${r.qty}</div></div><div class="fg"><label>양품</label><div style="color:var(--suc);font-weight:700;font-size:18px">${r.good||r.qty}</div></div><div class="fg"><label>불량</label><div style="color:var(--dan);font-weight:700;font-size:18px">${r.defect||0}</div></div></div>${r.inspNote?`<div class="fg" style="margin-top:10px"><label>검수메모</label><div style="background:var(--bg2);padding:8px">${r.inspNote}</div></div>`:''}<div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:10px"><div class="fr"><div class="fg"><label>차량번호</label><div>${r.car||'-'}</div></div><div class="fg"><label>기사</label><div>${r.driver||'-'}</div></div></div><div class="fg" style="margin-top:8px"><label>입고처</label><div>${r.dlv||'-'}</div></div>${r.memo?`<div class="fg" style="margin-top:8px"><label>배송메모</label><div style="background:var(--bg2);padding:8px">${r.memo}</div></div>`:''}</div>`;_shipDetId=sid;oMo('shipDetMo')}
+function showShipDet(sid){
+const r=DB.g('shipLog').find(x=>x.id===sid);if(!r)return;
+const o=DB.g('wo').find(x=>x.id===r.woId)||{};
+const sale=(DB.g('sales')||[]).find(function(x){return x.shipId===sid;})||null;
+const tx=(DB.g('taxInvoice')||[]).find(function(x){return x.shipId===sid;})||null;
+const etx=(DB.g('etax')||[]).find(function(x){return x.shipId===sid;})||null;
+var _bcShip=typeof DocTrace!=='undefined'?DocTrace.renderBreadcrumb('SHIP',sid):'';
+var _flow='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+  +'<span style="background:#DBEAFE;color:#1D4ED8;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700">WO '+(r.wn||'-')+'</span>'
+  +(r.orderId?'<span style="background:#EDE9FE;color:#6D28D9;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700">수주 연결</span>':'')
+  +(sale?'<span style="background:#DCFCE7;color:#166534;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700">매출 등록</span>':'')
+  +(tx?'<span style="background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700">세금계산서 '+(tx.method||'')+'</span>':'')
+  +(etx?'<span style="background:#FCE7F3;color:#BE185D;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700">전자세금계산 '+(etx.st||'')+'</span>':'')
+  +'</div>';
+var _linked='<div style="border:1px solid var(--bdr);border-radius:12px;padding:12px;background:#F8FAFC;margin-top:12px">'
+  +'<div style="font-size:12px;font-weight:800;color:#475569;margin-bottom:8px">자동 연동 현황</div>'
+  +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:12px">'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">작업지시</div><div style="font-weight:700">'+(o.wn||r.wn||'-')+'</div></div>'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">수주 ID</div><div style="font-weight:700">'+(r.orderId||o.ordId||'-')+'</div></div>'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">매출 전표</div><div style="font-weight:700">'+(sale?sale.id:'-')+'</div></div>'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">세금계산서</div><div style="font-weight:700">'+(tx?tx.id:'-')+'</div></div>'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">전자세금 대기</div><div style="font-weight:700">'+(etx?etx.id:'-')+'</div></div>'
+  +'<div><div style="color:#94A3B8;margin-bottom:2px">세금 처리 상태</div><div style="font-weight:700">'+(tx&&tx.method?tx.method:(etx&&etx.st?etx.st:'-'))+'</div></div>'
+  +'</div></div>';
+$('shipDetC').innerHTML=_bcShip+_flow+`<div class="fr"><div class="fg"><label>출고일시</label><div style="font-weight:700">${r.tm||r.dt}</div></div><div class="fg"><label>지시번호</label><div>${r.wn||'-'}</div></div><div class="fg"><label>담당</label><div>${r.mgr||'-'}</div></div></div><div class="fr"><div class="fg"><label>거래처</label><div style="font-weight:700;font-size:15px">${r.cnm}</div></div><div class="fg"><label>제품</label><div style="font-weight:700;font-size:15px">${r.pnm}</div></div></div><div class="fr" style="margin-top:10px"><div class="fg"><label>출고수량</label><div style="font-weight:700;font-size:18px">${r.qty}</div></div><div class="fg"><label>양품</label><div style="color:var(--suc);font-weight:700;font-size:18px">${r.good||r.qty}</div></div><div class="fg"><label>불량</label><div style="color:var(--dan);font-weight:700;font-size:18px">${r.defect||0}</div></div></div>${r.inspNote?`<div class="fg" style="margin-top:10px"><label>검수메모</label><div style="background:var(--bg2);padding:8px">${r.inspNote}</div></div>`:''}<div style="border-top:1px solid var(--bdr);margin:14px 0;padding-top:10px"><div class="fr"><div class="fg"><label>차량번호</label><div>${r.car||'-'}</div></div><div class="fg"><label>기사</label><div>${r.driver||'-'}</div></div></div><div class="fg" style="margin-top:8px"><label>입고처</label><div>${r.dlv||'-'}</div></div>${r.memo?`<div class="fg" style="margin-top:8px"><label>배송메모</label><div style="background:var(--bg2);padding:8px">${r.memo}</div></div>`:''}</div>`+_linked;_shipDetId=sid;oMo('shipDetMo')}
 let _shipDetId=null;function printShipDocById(){if(_shipDetId)printShipOne(_shipDetId)}
 // Ship statistics
 function rShipStat(){
@@ -921,12 +945,31 @@ function _getOrderDateRange(){
 var _DAY_NM=['일','월','화','수','목','금','토'];
 function _orderAmt(o){var a=0;if(o.items){o.items.forEach(function(it){a+=(Number(it.qty)||0)*(Number(it.price)||0)})}else{a=(Number(o.qty)||0)*(Number(o.price)||0)}return a}
 function _orderProdNm(o){if(o.items&&o.items.length){return o.items[0].nm+(o.items.length>1?' 외 '+(o.items.length-1)+'건':'')}return o.prodNm||''}
+function _orderFlowSummaryHtml(o,woDateMap){
+  var summary=typeof summarizeOrderFlow==='function'?summarizeOrderFlow(o,DB.g('wo')||[],DB.g('shipLog')||[]):null;
+  var linkedWoIds=summary?summary.woIds:(typeof orderWOIds==='function'?orderWOIds(o):[]);
+  var linkedWoNos=summary?summary.woNos:(typeof orderWONos==='function'?orderWONos(o):[]);
+  var totalQty=summary?summary.totalQty:0;
+  var shippedQty=summary?summary.shippedQty:0;
+  var remainQty=summary?summary.remainQty:0;
+  var woDt=linkedWoIds.map(function(id){return woDateMap[id]}).filter(Boolean).sort().slice(-1)[0]||'';
+  var chips=['<span style="background:#DCE8F5;color:#1D4ED8;padding:1px 6px;border-radius:999px">수주 '+((o.dt||'').slice(5)||'-')+'</span>'];
+  if(linkedWoIds.length){
+    chips.push('<span style="background:#EDE9FE;color:#6D28D9;padding:1px 6px;border-radius:999px">WO '+(linkedWoIds.length>1?linkedWoIds.length+'건':((woDt||'').slice(5)||linkedWoNos[0]||'1건'))+'</span>');
+  }else if(o.status==='수주확정'){
+    chips.push('<span style="background:#F1F5F9;color:#94A3B8;padding:1px 6px;border-radius:999px">WO 미작성</span>');
+  }
+  if(shippedQty>0)chips.push('<span style="background:#DCFCE7;color:#166534;padding:1px 6px;border-radius:999px">출고 '+fmt(shippedQty)+' / '+fmt(totalQty||0)+'</span>');
+  var meta=[];
+  if(linkedWoNos.length)meta.push('연결 WO: '+linkedWoNos.join(', '));
+  if(totalQty)meta.push('잔량 '+fmt(remainQty));
+  if(summary&&summary.lastShipDt)meta.push('최근 출고 '+summary.lastShipDt);
+  return '<div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px">'+chips.join('<span style="color:#CBD5E1">→</span>')+'</div>'+(meta.length?'<div style="font-size:11px;color:#64748B">'+meta.join(' · ')+'</div>':'')+'</div>';
+}
 
 function _makeOrderRow(o,woDateMap,now){
   var amt=_orderAmt(o);
   var prodNm=_orderProdNm(o);
-  var linkedWoIds=typeof orderWOIds==='function'?orderWOIds(o):(o.woId?[o.woId]:[]);
-  var linkedWoNos=typeof orderWONos==='function'?orderWONos(o):(o.woNo?[o.woNo]:[]);
   var pendingWoCount=typeof orderPendingItemEntries==='function'?orderPendingItemEntries(o).length:0;
   var dday='';
   if(o.shipDt&&(o.status==='수주'||o.status==='수주확정'||o.status==='생산중')){
@@ -935,22 +978,7 @@ function _makeOrderRow(o,woDateMap,now){
     else if(dd<=3)dday='<span style="color:#F59E0B;font-weight:700;margin-left:4px">D-'+dd+'</span>';
     else dday='<span style="color:#94A3B8;font-size:11px;margin-left:4px">D-'+dd+'</span>';
   }
-  // 진행흐름
-  var woDt=linkedWoIds.map(function(id){return woDateMap[id]}).filter(Boolean).sort().slice(-1)[0]||'';
-  var flow='<div style="display:flex;align-items:center;gap:3px;font-size:11px">';
-  flow+='<span style="background:#DCE8F5;color:#1D4ED8;padding:1px 6px;border-radius:3px">수주 '+(o.dt?o.dt.slice(5):'')+'</span>';
-  if(woDt){
-    flow+='<span style="color:#CBD5E1">→</span>';
-    flow+='<span style="background:#EDE9FE;color:#6D28D9;padding:1px 6px;border-radius:3px">WO '+(linkedWoIds.length>1?linkedWoIds.length+'건':woDt.slice(5))+'</span>';
-  }else if(o.status==='수주확정'){
-    flow+='<span style="color:#CBD5E1">→</span>';
-    flow+='<span style="background:#F1F5F9;color:#94A3B8;padding:1px 6px;border-radius:3px">WO 미작성</span>';
-  }
-  if(o.status==='출고완료'){
-    flow+='<span style="color:#CBD5E1">→</span>';
-    flow+='<span style="background:#D1FAE5;color:#065F46;padding:1px 6px;border-radius:3px">출고완료</span>';
-  }
-  flow+='</div>';
+  var flow=_orderFlowSummaryHtml(o,woDateMap);
   return '<tr>'+
     '<td style="font-weight:600;font-size:12px">'+(o.no||'-')+'</td>'+
     '<td style="font-weight:600">'+(o.cli||'-')+'</td>'+

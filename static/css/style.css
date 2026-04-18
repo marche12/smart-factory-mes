@@ -573,6 +573,20 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .wo-inline-check{
   margin-top:6px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.7);border:1px solid rgba(226,232,240,.9)
 }
+.flow-note{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:10px 12px;border-radius:14px;border:1px solid #E2E8F0;background:linear-gradient(180deg,#FFFFFF,#F8FAFC);
+  margin:10px 0 0
+}
+.flow-note-copy{font-size:12px;color:var(--txt2);line-height:1.5}
+.flow-note-copy b{color:var(--txt)}
+.flow-note-chips{display:flex;gap:6px;flex-wrap:wrap}
+.flow-note-chip{
+  display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;
+  background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:700
+}
+.flow-note.danger{border-color:#FECACA;background:linear-gradient(180deg,#FFF7F7,#FEF2F2)}
+.flow-note.danger .flow-note-chip{background:#FEE2E2;color:#B91C1C}
 .mo-hd{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center}
 .mo-b{padding:28px}
 .mo-f{padding:16px 28px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:10px;background:var(--bg2)}
@@ -1886,6 +1900,7 @@ mark{background:#FEF3C7;color:#92400E;padding:0 2px;border-radius:2px}
   .wo-row-remove{width:100%;grid-column:1/-1}
   .wo-chip-bar{gap:6px}
   .wo-modal .pb{flex:1 1 calc(50% - 6px);justify-content:center}
+  .flow-note{align-items:flex-start}
   .ux-topbar{padding:0 12px}
   .ux-tb-btn span:not(.ux-kbd):not(.ux-tb-badge):not(.ux-user-avatar){display:none}
   .uxbc-group{display:none}

@@ -57,6 +57,100 @@ function orderHasLinkedWO(order){
   return orderWOIds(order).length>0;
 }
 
+function isCompletedWOStatus(status){
+  return status==='완료'||status==='완료대기'||status==='출고완료';
+}
+
+function orderTotalQty(order){
+  if(!order||!Array.isArray(order.items))return 0;
+  return order.items.reduce(function(sum,it){
+    return sum+(Number(it&&it.qty)||0);
+  },0);
+}
+
+function getOrderLinkedWOs(order,wos){
+  if(!order)return [];
+  var all=wos||[];
+  var linkedIds=orderWOIds(order);
+  var seen={};
+  return all.filter(function(wo){
+    if(!wo)return false;
+    var match=linkedIds.indexOf(wo.id)>=0||(order.id&&wo.ordId===order.id);
+    if(!match||seen[wo.id])return false;
+    seen[wo.id]=true;
+    return true;
+  });
+}
+
+function getOrderShipLogs(order,wos,ships){
+  if(!order)return [];
+  var linkedWOs=getOrderLinkedWOs(order,wos||[]);
+  var linkedIds=linkedWOs.map(function(wo){return wo.id});
+  return (ships||[]).filter(function(ship){
+    return !!ship&&((order.id&&ship.orderId===order.id)||linkedIds.indexOf(ship.woId)>=0);
+  });
+}
+
+function summarizeOrderFlow(order,wos,ships){
+  var linkedWOs=getOrderLinkedWOs(order,wos||[]);
+  var shipLogs=getOrderShipLogs(order,linkedWOs,ships||[]);
+  var shippedQty=shipLogs.reduce(function(sum,ship){return sum+(Number(ship&&ship.qty)||0);},0);
+  var totalQty=orderTotalQty(order);
+  var remainQty=Math.max(0,totalQty-shippedQty);
+  var allDone=linkedWOs.length>0&&linkedWOs.every(function(wo){return isCompletedWOStatus(wo.status);});
+  var lastShipDt='';
+  shipLogs.forEach(function(ship){
+    if(ship&&ship.dt&&(!lastShipDt||ship.dt>lastShipDt))lastShipDt=ship.dt;
+  });
+  return {
+    totalQty:totalQty,
+    shippedQty:shippedQty,
+    remainQty:remainQty,
+    shipCount:shipLogs.length,
+    lastShipDt:lastShipDt,
+    woIds:uniqVals(linkedWOs.map(function(wo){return wo.id;})),
+    woNos:uniqVals(linkedWOs.map(function(wo){return wo.wn;})),
+    linkedWOs:linkedWOs,
+    shipLogs:shipLogs,
+    allDone:allDone
+  };
+}
+
+function applyOrderFlowState(order,wos,ships){
+  if(!order)return order;
+  var summary=summarizeOrderFlow(order,wos||[],ships||[]);
+  order.woIds=summary.woIds;
+  order.woNos=summary.woNos;
+  if(summary.woIds.length){
+    order.woId=summary.woIds[0]||'';
+    order.woNo=summary.woNos[0]||'';
+  }else{
+    order.woId='';
+    order.woNo='';
+  }
+  order.shipCount=summary.shipCount;
+  order.shippedQty=summary.shippedQty;
+  order.remainQty=summary.remainQty;
+  order.lastShipDt=summary.lastShipDt||'';
+  if(order.status!=='취소'){
+    if(summary.totalQty>0&&summary.shippedQty>=summary.totalQty)order.status='출고완료';
+    else if(summary.shippedQty>0||summary.allDone)order.status='출고대기';
+    else if(summary.woIds.length)order.status='생산중';
+    else if(order.status!=='수주확정')order.status='수주';
+  }
+  return order;
+}
+
+function syncOrderFlowState(orderId,orders,wos,ships){
+  if(!orderId)return null;
+  var ownOrders=orders||(typeof getOrders==='function'?getOrders():[]);
+  var idx=ownOrders.findIndex(function(order){return order&&order.id===orderId;});
+  if(idx<0)return null;
+  var updated=applyOrderFlowState(ownOrders[idx],wos||(typeof DB!=='undefined'?DB.g('wo'):[]),ships||(typeof DB!=='undefined'?DB.g('shipLog'):[]));
+  if(!orders&&typeof saveOrders==='function')saveOrders(ownOrders);
+  return updated;
+}
+
 function orderPendingItemEntries(order){
   if(!order||!Array.isArray(order.items))return [];
   var linked={};
@@ -927,12 +1021,32 @@ var GROUPS={
 };
 var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.forEach(function(t){if(t.id!==gid)PARENT_MAP[t.id]=gid})});
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
-function openBoxDesigner(){
+function openBoxDesigner(params){
   if(CU&&CU.perms&&CU.perms.indexOf('qc-quote')<0&&CU.role!=='admin'){
     toast('접근 권한이 없습니다','err');
     return;
   }
-  window.open('/box-designer.html','_blank','noopener');
+  var url='/box-designer.html';
+  if(params&&typeof params==='object'){
+    var qs=new URLSearchParams();
+    Object.keys(params).forEach(function(key){
+      var val=params[key];
+      if(val===undefined||val===null||val==='')return;
+      qs.set(key,String(val));
+    });
+    var q=qs.toString();
+    if(q)url+='?'+q;
+  }
+  window.open(url,'_blank','noopener');
+}
+function getBoxDesignerPayload(){
+  try{
+    var raw=localStorage.getItem('packflow_box_designer_payload');
+    return raw?JSON.parse(raw):null;
+  }catch(e){return null}
+}
+function clearBoxDesignerPayload(){
+  try{localStorage.removeItem('packflow_box_designer_payload')}catch(e){}
 }
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}

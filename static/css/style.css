@@ -1517,3 +1517,154 @@ img,svg,video,iframe{max-width:100%;height:auto}
 .pager{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 0}
 .pager-info{font-size:13px;color:var(--txt2);font-weight:600}
 
+
+/* ==========================================
+   UX 강화 — 상단바 / 전역검색 / 알림 / 사용자메뉴
+   ========================================== */
+
+/* 상단바 */
+.ux-topbar{
+  height:48px;
+  background:#FFFFFF;
+  border-bottom:1px solid var(--bdr);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+
+/* 브레드크럼 */
+.ux-bc{display:flex;align-items:center;gap:6px;font-size:var(--fs-base);color:var(--txt2)}
+.uxbc-home{cursor:pointer;font-weight:600;color:var(--pri);padding:4px 8px;border-radius:6px;transition:background .15s}
+.uxbc-home:hover{background:var(--pri-l)}
+.uxbc-sep{color:var(--txt3)}
+.uxbc-group{color:var(--txt2)}
+.uxbc-current{color:var(--txt);font-weight:700}
+
+/* 상단바 우측 버튼 */
+.ux-topbar-right{display:flex;align-items:center;gap:8px}
+.ux-tb-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;
+  background:transparent;border:1px solid transparent;border-radius:8px;
+  cursor:pointer;font-size:var(--fs-sm);color:var(--txt);
+  transition:background .15s;position:relative;
+}
+.ux-tb-btn:hover{background:var(--bg3);border-color:var(--bdr)}
+.ux-kbd{
+  padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;
+  font-size:10px;color:var(--txt3);font-family:monospace;background:#F9FAFB;
+}
+.ux-tb-badge{
+  background:#DC2626;color:#fff;font-size:10px;font-weight:700;
+  min-width:16px;height:16px;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;position:absolute;top:2px;right:2px;
+}
+.ux-user-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--pri);color:#fff;font-weight:700;font-size:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+
+/* 전역 검색 오버레이 */
+.ux-gs-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:100px;
+  backdrop-filter:blur(6px);
+}
+.ux-gs-overlay.hidden{display:none}
+.ux-gs-box{
+  width:min(640px, 90vw);max-height:70vh;
+  background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.ux-gs-input-wrap{
+  display:flex;align-items:center;gap:10px;
+  padding:16px 18px;border-bottom:1px solid var(--bdr);
+}
+.ux-gs-input-wrap input{
+  flex:1;border:none;outline:none;font-size:16px;min-height:auto;
+}
+.ux-gs-input-wrap .ux-kbd{cursor:pointer}
+.ux-gs-results{flex:1;overflow-y:auto;padding:8px}
+.uxgs-section-hdr{
+  padding:8px 12px 4px;font-size:11px;font-weight:700;
+  color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;
+}
+.uxgs-section{}
+.uxgs-item{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;
+  cursor:pointer;transition:background .1s;
+}
+.uxgs-item:hover, .uxgs-item.selected{background:var(--pri-l)}
+.uxgs-ico{font-size:18px;width:32px;text-align:center}
+.uxgs-body{flex:1;min-width:0}
+.uxgs-ttl{font-size:14px;font-weight:600;color:var(--txt)}
+.uxgs-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+.uxgs-kbd{font-size:12px;color:var(--txt3)}
+.ux-gs-footer{
+  padding:10px 18px;border-top:1px solid var(--bdr);
+  font-size:11px;color:var(--txt3);background:#F9FAFB;
+}
+
+/* 알림 패널 */
+.ux-notif-panel{
+  position:fixed;top:70px;right:20px;width:360px;max-height:70vh;
+  background:#fff;border:1px solid var(--bdr);border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:100;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.ux-notif-panel.hidden{display:none}
+.ux-notif-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 16px;border-bottom:1px solid var(--bdr);
+}
+.ux-notif-list{flex:1;overflow-y:auto;max-height:480px}
+.uxnt-item{
+  display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--bdr);
+  cursor:pointer;transition:background .1s;
+}
+.uxnt-item:hover{background:var(--bg3)}
+.uxnt-danger{border-left:3px solid #DC2626}
+.uxnt-warn{border-left:3px solid #F59E0B}
+.uxnt-ico{font-size:18px;flex-shrink:0}
+.uxnt-body{flex:1;min-width:0}
+.uxnt-ttl{font-size:13px;font-weight:700;color:var(--txt);line-height:1.3;margin-bottom:2px}
+.uxnt-sub{font-size:12px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 사용자 메뉴 드롭다운 */
+.ux-user-menu{
+  position:fixed;top:70px;right:20px;width:240px;
+  background:#fff;border:1px solid var(--bdr);border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:100;overflow:hidden;
+}
+.ux-user-menu.hidden{display:none}
+.ux-um-hdr{
+  display:flex;gap:10px;align-items:center;
+  padding:14px 16px;border-bottom:1px solid var(--bdr);background:#F9FAFB;
+}
+.ux-um-avatar{
+  width:40px;height:40px;border-radius:50%;background:var(--pri);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;flex-shrink:0;
+}
+.ux-um-item{
+  padding:10px 16px;cursor:pointer;font-size:13px;color:var(--txt);
+  display:flex;align-items:center;gap:8px;transition:background .1s;
+}
+.ux-um-item:hover{background:var(--bg3)}
+.ux-um-divider{height:1px;background:var(--bdr);margin:4px 0}
+
+/* 검색 결과 하이라이트 */
+mark{background:#FEF3C7;color:#92400E;padding:0 2px;border-radius:2px}
+
+/* 반응형 */
+@media (max-width: 768px){
+  .ux-topbar{padding:0 12px}
+  .ux-tb-btn span:not(.ux-kbd):not(.ux-tb-badge):not(.ux-user-avatar){display:none}
+  .uxbc-group{display:none}
+}

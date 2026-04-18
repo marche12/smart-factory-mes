@@ -102,53 +102,40 @@ label{font-size:var(--fs-base);font-weight:var(--fw-semi);color:var(--txt2)}
 .mo-bg .mo[style*="max-width:900"], .mo-bg .mo[style*="max-width:700"], .mb[style*="width:900"]{width:clamp(320px, 92vw, 900px)!important}
 .mo-bg .mo[style*="max-width:500"], .mo-bg .mo[style*="max-width:560"]{width:clamp(320px, 88vw, 560px)!important}
 
-/* KPI / 통계 박스 그리드 반응형 */
-.sg{display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:12px}
+/* 안쪽 박스들 크기 고정 + 가로 슬라이드 */
 
-/* 폼 행 반응형 */
-.fr{display:flex;gap:10px;flex-wrap:wrap}
-.fr > .fg{flex:1 1 200px;min-width:0}
+/* KPI 그리드 고정 크기 (4개 기본) */
+.sg{display:grid;grid-template-columns:repeat(4, minmax(220px, 1fr));gap:12px;min-width:960px}
 
-/* 필터 바 */
-.fbar-row{flex-wrap:wrap;gap:8px;align-items:center}
+/* KPI 박스 최소 크기 */
+.sb{min-width:220px;min-height:90px;padding:14px 16px;box-sizing:border-box}
 
-/* 테이블 가로 스크롤 보장 */
+/* 폼 행 고정 (wrap 없음) */
+.fr{display:flex;gap:10px;align-items:flex-start}
+.fr > .fg{flex:1 1 0;min-width:180px}
+
+/* 필터 바 고정 */
+.fbar-row{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;min-width:max-content}
+
+/* 테이블 가로 슬라이드 */
 .u-scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.u-scroll-x table{min-width:900px}
 
-/* 태블릿 (1024px 이하) */
-@media (max-width: 1024px){
-  .sg{grid-template-columns:repeat(auto-fit, minmax(150px, 1fr))}
-  .card{padding:12px}
-  .btn{min-height:40px;padding:8px 14px}
-  .fr > .fg{flex:1 1 100%}
-}
+/* 모달은 화면 중앙 고정 (반응형 없음, 중간값 사용) */
+.mo-bg .mo, .mb{width:640px;max-width:95vw;max-height:90vh;overflow-y:auto;box-sizing:border-box}
+.mo-bg .mo[style*="max-width:900"], .mb[style*="width:900"]{width:900px}
+.mo-bg .mo[style*="max-width:700"], .mo-bg .mo[style*="max-width:680"]{width:700px}
+.mo-bg .mo[style*="max-width:500"], .mo-bg .mo[style*="max-width:560"]{width:560px}
 
-/* 모바일 가로 (640px 이하) */
-@media (max-width: 640px){
-  .sg{grid-template-columns:repeat(2, 1fr);gap:8px}
-  .sb{padding:10px 8px;min-width:0}
-  .sb .v{font-size:var(--fs-xl)}
-  .card{padding:10px;border-radius:10px}
-  .btn{min-height:44px;padding:10px 14px;font-size:var(--fs-md)}
-  .btn-sm{min-height:36px}
-  .dt th, .dt td{padding:6px 4px;font-size:var(--fs-xs)!important}
-  .mo-t{font-size:var(--fs-lg)}
-  .mo-bg .mo, .mb{padding:14px;border-radius:14px}
-  .fbar-row > *{width:100%}
-  .fbar-row .fbar-spacer{display:none}
-}
+/* 카드 기본 고정 너비 */
+.card{width:100%;box-sizing:border-box;min-width:0}
 
-/* 초소형 (480px 이하) */
-@media (max-width: 480px){
-  .sg{grid-template-columns:1fr 1fr;gap:6px}
-  .sb{padding:10px 8px}
-  .mo-t{font-size:var(--fs-md)}
-}
+/* 화면이 메인 최소너비(1200px)보다 작아질 때는 가로 스크롤로 */
+/* 반응형 축소 규칙 제거 — 안쪽은 고정 유지 */
 
 /* 초대형 모니터 (1920px 이상) */
 @media (min-width: 1920px){
-  .card{padding:20px}
-  .sg{gap:16px}
+  .main-content>.module-page.active{max-width:1800px}
 }
 
 html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;height:100%;overflow:hidden}
@@ -443,20 +430,15 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .main-header h2{font-size:18px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
 .main-header .breadcrumb{font-size:11px;color:var(--txt2);font-weight:600;padding:4px 12px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r-full);letter-spacing:.2px}
 .header-right{margin-left:auto;font-size:12px;color:var(--txt2);font-weight:500;font-feature-settings:"tnum"}
-.main-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 24px;background:var(--bg2);min-width:0;display:flex;justify-content:center}
+/* 메인 영역: 가로/세로 스크롤 허용 (안쪽 박스 고정 크기 유지) */
+.main-content{flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;background:var(--bg2);min-width:0;-webkit-overflow-scrolling:touch}
 .main-content>.module-page.active{
-  min-width:0;
+  min-width:1200px;      /* 안쪽 박스 고정을 위한 최소 너비 */
   width:100%;
-  max-width:1600px;      /* 메인 화면 최대 너비 고정 */
-  min-width:880px;       /* 최소 너비 (너무 좁아지지 않게) */
+  max-width:1600px;      /* 최대 너비 상한 */
   margin:0 auto;
 }
 .module-page{display:none}.module-page.active{display:block}
-
-/* 작은 화면에서는 최소너비 제거 (가로 스크롤 방지) */
-@media (max-width: 1024px){
-  .main-content>.module-page.active{min-width:0}
-}
 .module-page .card{margin-bottom:8px}
 .module-page .sg{margin-bottom:8px}
 .module-page .sb .l{font-size:11px;font-weight:600;color:var(--txt2)}

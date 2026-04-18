@@ -10,7 +10,7 @@
 <title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
 <script src="js/xlsx.full.min.js"></script>
-<script src="/js/core.js?v=23"></script>
+<script src="/js/core.js?v=24"></script>
 <script src="/js/search-util.js?v=1"></script>
 </head>
 <body>
@@ -508,8 +508,8 @@
   <div class="mo-t" id="sMoT">매출 등록</div><input type="hidden" id="sId">
   <!-- 얼마에요 GroupId — 발행주체 선택 -->
   <div class="fg" style="margin-bottom:10px"><label style="font-weight:800;color:var(--pri)">발행주체 (GroupId) *</label><div class="grp-radio-wrap" id="sGrpSel"></div></div>
-  <div class="fr"><div class="fg"><label>일자 *</label><input type="date" id="sDt"></div><div class="fg ac-w"><label>거래처 *</label><input type="text" id="sCli" oninput="acCli(this.value,'acSCL','sCli')" autocomplete="off"><div class="ac-l hidden" id="acSCL"></div></div></div>
-  <div class="fr"><div class="fg"><label>품명 *</label><input type="text" id="sProd"></div><div class="fg"><label>수량</label><input type="number" id="sQty" oninput="cAmt('s')"></div></div>
+  <div class="fr"><div class="fg"><label>일자 *</label><input type="date" id="sDt"></div><div class="fg ac-w"><label>거래처 *</label><input type="text" id="sCli" oninput="acCli(this.value,'acSCL','sCli')" onblur="applyCliPrice()" autocomplete="off"><div class="ac-l hidden" id="acSCL"></div></div></div>
+  <div class="fr"><div class="fg"><label>품명 *</label><input type="text" id="sProd" onblur="applyCliPrice()"></div><div class="fg"><label>수량</label><input type="number" id="sQty" oninput="cAmt('s')"></div></div>
   <div class="fr"><div class="fg"><label>단가 *</label><input type="number" id="sPrice" oninput="cAmt('s')"></div><div class="fg"><label>매출액</label><input type="text" id="sAmt" readonly style="background:var(--bg2);font-weight:700"></div></div>
   <div class="fr"><div class="fg"><label>입금액</label><input type="number" id="sPaid" value="0"></div><div class="fg"><label>결제</label><select id="sPay"><option value="미수">미수</option><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="어음">어음</option><option value="카드">카드</option></select></div></div>
   <div class="fg"><label>비고</label><textarea id="sNote" rows="2"></textarea></div>
@@ -1367,6 +1367,11 @@
       <button class="on" onclick="setCliView('table',this)">목록</button>
       <button onclick="setCliView('gallery',this)">갤러리</button>
     </div>
+    <select id="cliFolderFilter" onchange="_cliPage=0;rCli()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
+      <option value="">전체 폴더</option>
+      <option value="__none__">미분류</option>
+    </select>
+    <button class="btn btn-o btn-sm" onclick="openFolderMgr()">📁 폴더 관리</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">📥 엑셀 업로드</button>
     <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
@@ -1706,6 +1711,19 @@
 </div>
 
 <!-- MODALS -->
+<!-- 거래처 폴더 관리 모달 -->
+<div id="cliFolderMo" class="mo-bg hidden" onclick="event.target===this&&cMo('cliFolderMo')"><div class="mo" style="max-width:500px">
+  <div class="mo-t">📁 거래처 폴더 관리</div>
+  <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">거래처를 카테고리별로 묶어 관리합니다 (예: VIP, 일반, 인쇄소, 외주, 관공서 등)</p>
+  <div class="fr">
+    <div class="fg" style="flex:1"><label>새 폴더명</label><input type="text" id="newFolderNm" placeholder="예: VIP 고객"></div>
+    <div class="fg"><label>색상</label><input type="color" id="newFolderColor" value="#1E3A5F" style="height:38px;padding:2px"></div>
+    <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-sm" onclick="addFolder()">추가</button></div>
+  </div>
+  <div id="folderList" style="margin-top:14px;max-height:400px;overflow-y:auto"></div>
+  <div class="mo-f"><button class="btn btn-p" onclick="cMo('cliFolderMo')">닫기</button></div>
+</div></div>
+
 <div id="cliMo" class="mo hidden"><div class="mb" style="width:550px">
 <div class="mh"><h3 id="cliMoT">거래처 등록</h3><button class="mc" onclick="cMo('cliMo')">&times;</button></div>
 <div class="my"><input type="hidden" id="cmId">
@@ -1718,8 +1736,31 @@
 <div class="fr u-mt10"><div class="fg"><label>대표자명</label><input id="cmCeo" placeholder="세금계산서 발행용"></div><div class="fg"><label>업태/종목</label><input id="cmBizType" placeholder="제조업/포장재"></div></div>
 <div class="fr u-mt10"><div class="fg"><label>담당자</label><input id="cmPs"></div><div class="fg"><label>주소</label><input id="cmAd"></div></div>
 <div class="fr u-mt10"><div class="fg"><label>전화</label><input id="cmTl"></div><div class="fg"><label>팩스</label><input id="cmFx"></div></div>
-<div class="fr u-mt10"><div class="fg"><label>이메일</label><input id="cmEmail" type="email" placeholder="세금계산서 수신용"></div><div class="fg"></div></div>
+<div class="fr u-mt10"><div class="fg"><label>이메일</label><input id="cmEmail" type="email" placeholder="세금계산서 수신용"></div><div class="fg"><label>분류 (폴더)</label><select id="cmFolder"><option value="">-- 미분류 --</option></select></div></div>
+<div class="fr u-mt10">
+  <div class="fg"><label>신용한도 (여신)</label><input id="cmCreditLimit" type="number" placeholder="0 = 무제한" title="미수금이 이 금액 초과 시 매출등록 경고"></div>
+  <div class="fg"><label>결제조건</label><select id="cmPayTerm">
+    <option value="">-- 선택 --</option>
+    <option value="cash">현금</option>
+    <option value="30d">30일 후 결제</option>
+    <option value="60d">60일 후 결제</option>
+    <option value="90d">90일 후 결제</option>
+    <option value="month_end">월말 결제</option>
+    <option value="bill30">30일 어음</option>
+    <option value="bill60">60일 어음</option>
+    <option value="bill90">90일 어음</option>
+  </select></div>
+</div>
 <div class="fg u-mt10"><label>비고</label><textarea id="cmNt"></textarea></div>
+
+<!-- 거래처별 단가표 -->
+<div class="u-mt10" style="border-top:1px solid #E5E7EB;padding-top:10px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <label style="font-size:13px;font-weight:700;color:#1E293B">거래처별 단가표</label>
+    <button type="button" class="btn btn-o btn-sm" onclick="addCliPriceRow()" style="padding:3px 8px;font-size:11px">+ 행 추가</button>
+  </div>
+  <div id="cmPriceList" style="font-size:12px;max-height:200px;overflow-y:auto"></div>
+</div>
 </div><div class="mf"><button class="btn btn-o" onclick="cMo('cliMo')">취소</button><button class="btn btn-p" onclick="saveCli()">저장</button></div>
 </div></div>
 

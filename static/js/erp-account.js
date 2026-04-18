@@ -171,10 +171,50 @@ function eSlr(id){const r=DB.g('sales').find(x=>x.id===id);if(!r)return;$('sId')
   renderGrpRadio('sGrpSel',r.groupId||'');
 var _bcSale=typeof DocTrace!=='undefined'?DocTrace.renderBreadcrumb('SALE',id):'';var _bcEl=$('saleBreadcrumb');if(_bcEl)_bcEl.innerHTML=_bcSale;
 oMo('sMo')}
-function saveSl(){const c=$('sCli').value.trim(),p=$('sProd').value.trim(),pr=+$('sPrice').value;if(!c){toast('거래처','err');return}if(!p){toast('품명','err');return}if(!pr){toast('단가','err');return}const id=$('sId').value||gid(),q=+$('sQty').value||1;
+function saveSl(){
+  const c=$('sCli').value.trim(),p=$('sProd').value.trim(),pr=+$('sPrice').value;
+  if(!c){toast('거래처','err');return}
+  if(!p){toast('품명','err');return}
+  if(!pr){toast('단가','err');return}
+  const id=$('sId').value||gid(),q=+$('sQty').value||1;
+  const amt = q*pr;
+  const paid = +$('sPaid').value||0;
+
+  // 신용한도 체크
+  if(typeof checkCreditLimit === 'function'){
+    var existing = $('sId').value ? DB.g('sales').find(function(x){return x.id===id}) : null;
+    var addAmt = amt - paid - (existing ? (existing.amt - (existing.paid||0)) : 0);
+    if(addAmt > 0){
+      var credit = checkCreditLimit(c, addAmt);
+      if(!credit.ok){
+        if(!confirm(credit.msg + '\n\n그래도 저장하시겠습니까?')) return;
+      } else if(credit.warn){
+        toast(credit.msg, 'err');
+      }
+    }
+  }
+
   const gId=getSelectedGrpId('sGrpSel')||(_currentGroupId!=='ALL'?_currentGroupId:'');
-  const rec={id,dt:$('sDt').value,cli:c,prod:p,qty:q,price:pr,amt:q*pr,paid:+$('sPaid').value||0,payType:$('sPay').value,note:$('sNote').value,groupId:gId,cat:nw()};
-  const ls=DB.g('sales');const idx=ls.findIndex(x=>x.id===id);if(idx>=0)ls[idx]=rec;else ls.push(rec);DB.s('sales',ls);cMo('sMo');rSl();toast('저장','ok')}
+  const rec={id,dt:$('sDt').value,cli:c,prod:p,qty:q,price:pr,amt:amt,paid:paid,payType:$('sPay').value,note:$('sNote').value,groupId:gId,cat:nw()};
+  const ls=DB.g('sales');const idx=ls.findIndex(x=>x.id===id);
+  if(idx>=0)ls[idx]=rec;else ls.push(rec);
+  DB.s('sales',ls);cMo('sMo');rSl();toast('저장','ok');
+}
+
+/* 거래처 단가표에서 자동 단가 채우기 */
+function applyCliPrice(){
+  var cliField = $('sCli'), prodField = $('sProd'), priceField = $('sPrice');
+  if(!cliField || !prodField || !priceField) return;
+  if(priceField.value) return;
+  if(typeof getCliPrice !== 'function') return;
+  var p = getCliPrice(cliField.value.trim(), prodField.value.trim());
+  if(p){
+    priceField.value = p;
+    if(typeof cAmt === 'function') cAmt('s');
+    toast('거래처 단가표 적용 ('+fmt(p)+'원)', 'ok');
+  }
+}
+window.applyCliPrice = applyCliPrice;
 function dSlr(id){if(!confirm('삭제?'))return;if(typeof deleteSalesCascade==='function')deleteSalesCascade(id);else DB.s('sales',DB.g('sales').filter(x=>x.id!==id));rSl();toast('삭제','ok')}
 
 /* === 매입 === */

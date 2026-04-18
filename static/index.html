@@ -10,7 +10,7 @@
 <title>팩플로우 ERP+MES</title>
 <link rel="stylesheet" href="/css/style.css">
 <script src="js/xlsx.full.min.js"></script>
-<script src="/js/core.js?v=22"></script>
+<script src="/js/core.js?v=23"></script>
 <script src="/js/search-util.js?v=1"></script>
 </head>
 <body>
@@ -76,6 +76,8 @@
 <button class="sb-item" data-mod="acc-recv">채권/자금</button>
 <button class="sb-item" data-mod="acc-cashflow">입출금</button>
 <button class="sb-item" data-mod="acc-closing">외상마감</button>
+<button class="sb-item" data-mod="acc-vat">부가세 신고</button>
+<button class="sb-item" data-mod="acc-bill">어음 관리</button>
 </div>
 <div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
@@ -2014,6 +2016,96 @@
 <div id="tplEditMo" class="mo-ov hidden"><div class="mo" style="max-width:420px"><div class="mh"><h3>템플릿 수정</h3><button class="mc" onclick="cMo('tplEditMo')">&times;</button></div><div class="mo-b"><input type="hidden" id="tplEditId"><div class="fg"><label>거래처/제품</label><div id="tplEditInfo" style="font-weight:700;padding:6px 0"></div></div><div class="fg"><label>템플릿명</label><input id="tplEditName"></div><div class="fg"><label>반복주기</label><select id="tplEditCycle"><option value="weekly">주간</option><option value="biweekly">격주</option><option value="monthly">월간</option><option value="quarterly">분기</option></select></div><div class="fg"><label>기본수량</label><input type="number" id="tplEditFQ"></div><div class="fg"><label>기본단가</label><input type="number" id="tplEditPrice"></div><div class="fg"><label>비고</label><textarea id="tplEditNote" rows="2"></textarea></div><div style="text-align:right;margin-top:12px"><button class="btn btn-p" onclick="saveTplEdit()">저장</button></div></div></div></div>
 <!-- 외상마감 -->
 <div id="pg-acc-closing" class="module-page"><div class="card"><div id="closingArea"></div></div></div>
+
+<!-- 부가세 신고 자료 -->
+<div id="pg-acc-vat" class="module-page">
+  <div class="card" style="padding:16px">
+    <div class="u-flex-between" style="margin-bottom:14px">
+      <div class="card-t" style="margin:0">📄 부가세 신고 자료</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="vatPeriod" onchange="renderVatReport()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
+          <option value="Q1">1분기 (1-3월)</option>
+          <option value="Q2">2분기 (4-6월)</option>
+          <option value="Q3">3분기 (7-9월)</option>
+          <option value="Q4">4분기 (10-12월)</option>
+          <option value="H1">상반기 (1-6월)</option>
+          <option value="H2">하반기 (7-12월)</option>
+          <option value="Y">연간</option>
+        </select>
+        <input type="number" id="vatYear" value="2026" min="2020" max="2030" onchange="renderVatReport()" style="padding:6px 8px;width:90px;border:1px solid var(--bdr);border-radius:6px">
+        <select id="vatCompany" onchange="renderVatReport()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
+          <option value="">전체 회사</option>
+          <option value="A">이노패키지 (개인)</option>
+          <option value="B">주식회사 이노패키지</option>
+        </select>
+        <button class="btn btn-p btn-sm" onclick="renderVatReport()">조회</button>
+        <button class="btn btn-o btn-sm" onclick="exportVatCSV()">CSV</button>
+        <button class="btn btn-s btn-sm" onclick="printVatReport()">인쇄</button>
+      </div>
+    </div>
+    <div id="vatReportArea"><div style="padding:40px;text-align:center;color:var(--txt3)">상단 조건 선택 후 [조회] 클릭</div></div>
+  </div>
+</div>
+
+<!-- 어음 관리 -->
+<div id="pg-acc-bill" class="module-page">
+  <div class="card" style="padding:16px">
+    <div class="u-flex-between" style="margin-bottom:14px">
+      <div class="card-t" style="margin:0">💳 어음 관리</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="billFilter" onchange="renderBills()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
+          <option value="all">전체</option>
+          <option value="pending">미만기 (보유중)</option>
+          <option value="due7">7일 이내 만기</option>
+          <option value="overdue">만기 경과</option>
+          <option value="settled">결제완료</option>
+          <option value="dishonored">부도</option>
+        </select>
+        <select id="billType" onchange="renderBills()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
+          <option value="">매출/매입 전체</option>
+          <option value="R">받은 어음 (매출)</option>
+          <option value="P">발행 어음 (매입)</option>
+        </select>
+        <button class="btn btn-p btn-sm" onclick="openBillM()">+ 어음 등록</button>
+      </div>
+    </div>
+    <div id="billSummary" class="sg" style="margin-bottom:12px"></div>
+    <div id="billArea"></div>
+  </div>
+</div>
+
+<!-- 어음 등록 모달 -->
+<div class="mo-bg hidden" id="billMo" onclick="event.target===this&&cMo('billMo')"><div class="mo">
+  <div class="mo-t" id="billMoT">어음 등록</div><input type="hidden" id="billId">
+  <div class="fr">
+    <div class="fg"><label>구분 *</label><select id="billKind"><option value="R">받은 어음 (매출)</option><option value="P">발행 어음 (매입)</option></select></div>
+    <div class="fg"><label>어음번호</label><input type="text" id="billNo" placeholder="어음번호"></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>거래처 *</label><input type="text" id="billCli" placeholder="거래처명"></div>
+    <div class="fg"><label>금액 *</label><input type="number" id="billAmt"></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>발행일 *</label><input type="date" id="billIssueDt"></div>
+    <div class="fg"><label>만기일 *</label><input type="date" id="billDueDt"></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>은행/지급처</label><input type="text" id="billBank" placeholder="국민은행 등"></div>
+    <div class="fg"><label>상태</label><select id="billStatus">
+      <option value="holding">보유중</option>
+      <option value="settled">결제완료</option>
+      <option value="dishonored">부도</option>
+      <option value="discounted">할인</option>
+      <option value="endorsed">배서양도</option>
+    </select></div>
+  </div>
+  <div class="fg"><label>비고</label><textarea id="billNote" rows="2"></textarea></div>
+  <div class="mo-f">
+    <button class="btn btn-g" onclick="cMo('billMo')">취소</button>
+    <button class="btn btn-d" id="billDelBtn" onclick="deleteBill()" style="display:none">삭제</button>
+    <button class="btn btn-p" onclick="saveBill()">저장</button>
+  </div>
+</div></div>
 <!-- 입출고이력 -->
 <div id="pg-mat-lot" class="module-page"><div class="card"><div id="lotArea"></div></div></div>
 <!-- ABC분석 -->

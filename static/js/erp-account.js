@@ -866,3 +866,305 @@ function importHometaxData(){
   if(type === 'sales' && typeof rSl === 'function') rSl();
   else if(typeof rPr === 'function') rPr();
 }
+
+/* =======================================================
+   부가세 신고 자료 (얼마에요 VatReport 패턴)
+   매출/매입 → 거래처별 집계 → 홈택스 신고 양식 호환
+   ======================================================= */
+
+function _vatGetPeriod(){
+  var year = +$('vatYear').value || new Date().getFullYear();
+  var p = $('vatPeriod').value || 'Q1';
+  var map = {Q1:[1,3],Q2:[4,6],Q3:[7,9],Q4:[10,12],H1:[1,6],H2:[7,12],Y:[1,12]};
+  var r = map[p] || [1,3];
+  var from = year+'-'+String(r[0]).padStart(2,'0')+'-01';
+  var lastDay = new Date(year, r[1], 0).getDate();
+  var to = year+'-'+String(r[1]).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
+  return {from:from, to:to, label:year+'년 '+p, year:year, p:p};
+}
+
+function _vatAggregate(type){
+  var period = _vatGetPeriod();
+  var companyId = $('vatCompany').value;
+  var list = DB.g(type) || [];
+  var filtered = list.filter(function(r){
+    if(!r.dt || r.dt < period.from || r.dt > period.to) return false;
+    if(companyId && r.companyId !== companyId) return false;
+    return true;
+  });
+
+  // 거래처별 집계 (사업자번호 있으면 사업자번호 기준)
+  var agg = {};
+  filtered.forEach(function(r){
+    var key = r.bizNo || r.cli || '-';
+    if(!agg[key]){
+      agg[key] = {
+        cli: r.cli || '-',
+        bizNo: r.bizNo || '',
+        count: 0,
+        supply: 0,
+        vat: 0,
+        total: 0
+      };
+    }
+    var vatRate = typeof SysCode!=='undefined' ? SysCode.vatRate() : 0.1;
+    var amt = r.amt || 0;
+    var supply = r.supply != null ? r.supply : Math.round(amt / (1+vatRate));
+    var vat = r.vat != null ? r.vat : (amt - supply);
+    agg[key].count++;
+    agg[key].supply += supply;
+    agg[key].vat += vat;
+    agg[key].total += (supply + vat);
+  });
+  return {period: period, list: Object.values(agg).sort(function(a,b){return b.total - a.total})};
+}
+
+function renderVatReport(){
+  var sales = _vatAggregate('sales');
+  var purchase = _vatAggregate('purchase');
+
+  var sTotal = sales.list.reduce(function(s,r){return s+r.supply},0);
+  var sVat = sales.list.reduce(function(s,r){return s+r.vat},0);
+  var pTotal = purchase.list.reduce(function(s,r){return s+r.supply},0);
+  var pVat = purchase.list.reduce(function(s,r){return s+r.vat},0);
+  var payableVat = sVat - pVat;
+
+  var h = '<div style="background:#EFF6FF;padding:14px;border-radius:10px;margin-bottom:16px">'
+    + '<div style="font-size:13px;font-weight:700;color:#1E40AF;margin-bottom:8px">📌 '+sales.period.label+' 신고 요약</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
+    + '<div><div style="font-size:11px;color:var(--txt3)">매출 공급가액</div><div style="font-size:18px;font-weight:700;color:#1E40AF">'+fmt(sTotal)+'</div></div>'
+    + '<div><div style="font-size:11px;color:var(--txt3)">매출세액</div><div style="font-size:18px;font-weight:700;color:#1E40AF">'+fmt(sVat)+'</div></div>'
+    + '<div><div style="font-size:11px;color:var(--txt3)">매입 공급가액</div><div style="font-size:18px;font-weight:700;color:#DC2626">'+fmt(pTotal)+'</div></div>'
+    + '<div><div style="font-size:11px;color:var(--txt3)">매입세액</div><div style="font-size:18px;font-weight:700;color:#DC2626">'+fmt(pVat)+'</div></div>'
+    + '</div>'
+    + '<div style="border-top:1px solid #DBEAFE;margin-top:12px;padding-top:12px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center">'
+    + '<span style="font-size:14px;font-weight:700">납부할 부가세 (매출세액 - 매입세액)</span>'
+    + '<span style="font-size:22px;font-weight:900;color:'+(payableVat>=0?'#DC2626':'#16A34A')+'">'+fmt(payableVat)+'원'+(payableVat<0?' (환급)':'')+'</span>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+
+  // 매출처별
+  h += '<div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#1E40AF">📥 매출처별 집계 ('+sales.list.length+'곳)</div>';
+  h += '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+  h += '<th>거래처</th><th>사업자번호</th><th>건수</th><th>공급가액</th><th>세액</th><th>합계</th></tr></thead><tbody>';
+  sales.list.forEach(function(r){
+    h += '<tr><td style="font-weight:700">'+r.cli+'</td>';
+    h += '<td>'+r.bizNo+'</td>';
+    h += '<td style="text-align:center">'+r.count+'</td>';
+    h += '<td style="text-align:right">'+fmt(r.supply)+'</td>';
+    h += '<td style="text-align:right">'+fmt(r.vat)+'</td>';
+    h += '<td style="text-align:right;font-weight:700">'+fmt(r.total)+'</td></tr>';
+  });
+  if(sales.list.length === 0) h += '<tr><td colspan="6" class="empty-cell">매출 내역이 없습니다</td></tr>';
+  h += '</tbody></table></div>';
+
+  // 매입처별
+  h += '<div style="font-size:14px;font-weight:700;margin:20px 0 8px;color:#DC2626">📤 매입처별 집계 ('+purchase.list.length+'곳)</div>';
+  h += '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+  h += '<th>거래처</th><th>사업자번호</th><th>건수</th><th>공급가액</th><th>세액</th><th>합계</th></tr></thead><tbody>';
+  purchase.list.forEach(function(r){
+    h += '<tr><td style="font-weight:700">'+r.cli+'</td>';
+    h += '<td>'+r.bizNo+'</td>';
+    h += '<td style="text-align:center">'+r.count+'</td>';
+    h += '<td style="text-align:right">'+fmt(r.supply)+'</td>';
+    h += '<td style="text-align:right">'+fmt(r.vat)+'</td>';
+    h += '<td style="text-align:right;font-weight:700">'+fmt(r.total)+'</td></tr>';
+  });
+  if(purchase.list.length === 0) h += '<tr><td colspan="6" class="empty-cell">매입 내역이 없습니다</td></tr>';
+  h += '</tbody></table></div>';
+
+  $('vatReportArea').innerHTML = h;
+}
+
+function exportVatCSV(){
+  var sales = _vatAggregate('sales');
+  var purchase = _vatAggregate('purchase');
+  var csv = '\uFEFF[부가세 신고자료] '+sales.period.label+'\n\n';
+
+  csv += '=== 매출처별 ===\n';
+  csv += '거래처,사업자번호,건수,공급가액,세액,합계\n';
+  sales.list.forEach(function(r){
+    csv += [r.cli, r.bizNo, r.count, r.supply, r.vat, r.total].join(',')+'\n';
+  });
+
+  csv += '\n=== 매입처별 ===\n';
+  csv += '거래처,사업자번호,건수,공급가액,세액,합계\n';
+  purchase.list.forEach(function(r){
+    csv += [r.cli, r.bizNo, r.count, r.supply, r.vat, r.total].join(',')+'\n';
+  });
+
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vat_report_'+sales.period.year+'_'+sales.period.p+'.csv';
+  a.click();
+  toast('CSV 다운로드 완료','ok');
+}
+
+function printVatReport(){
+  window.print();
+}
+
+/* =======================================================
+   어음 관리 (얼마에요 IoCode 어음 패턴 + 만기 알림)
+   ======================================================= */
+
+function rBill(){
+  var bills = DB.g('bills') || [];
+  var td = new Date().toISOString().slice(0,10);
+  var filter = $('billFilter').value || 'all';
+  var type = $('billType').value || '';
+
+  // 요약
+  var holding = bills.filter(function(b){return b.status==='holding'||b.status==='discounted'||b.status==='endorsed'});
+  var totalRecv = holding.filter(function(b){return b.kind==='R'}).reduce(function(s,b){return s+(+b.amt||0)},0);
+  var totalPay = holding.filter(function(b){return b.kind==='P'}).reduce(function(s,b){return s+(+b.amt||0)},0);
+  var dueSoon = holding.filter(function(b){
+    var diff = (new Date(b.dueDt) - new Date(td))/86400000;
+    return diff >= 0 && diff <= 7;
+  }).length;
+  var overdue = holding.filter(function(b){return b.dueDt < td}).length;
+
+  $('billSummary').innerHTML =
+      '<div class="sb blue"><div class="l">받을 어음</div><div class="v">'+fmt(totalRecv)+'</div></div>'
+    + '<div class="sb orange"><div class="l">지급할 어음</div><div class="v">'+fmt(totalPay)+'</div></div>'
+    + '<div class="sb red"><div class="l">만기 임박 (7일)</div><div class="v">'+dueSoon+'</div></div>'
+    + '<div class="sb" style="background:#7C2D12;color:#fff"><div class="l">만기 경과</div><div class="v" style="color:#fff">'+overdue+'</div></div>';
+
+  var filtered = bills.filter(function(b){
+    if(type && b.kind !== type) return false;
+    if(filter === 'all') return true;
+    if(filter === 'settled') return b.status === 'settled';
+    if(filter === 'dishonored') return b.status === 'dishonored';
+    if(filter === 'pending') return b.status === 'holding' || b.status === 'discounted' || b.status === 'endorsed';
+    if(filter === 'due7'){
+      if(b.status !== 'holding') return false;
+      var diff = (new Date(b.dueDt) - new Date(td))/86400000;
+      return diff >= 0 && diff <= 7;
+    }
+    if(filter === 'overdue') return b.status === 'holding' && b.dueDt < td;
+    return true;
+  }).sort(function(a,b){return (a.dueDt||'9999') > (b.dueDt||'9999') ? 1 : -1});
+
+  var statusMap = {holding:'보유중', settled:'결제완료', dishonored:'부도', discounted:'할인', endorsed:'배서양도'};
+  var statusColor = {holding:'#1E40AF', settled:'#16A34A', dishonored:'#DC2626', discounted:'#9333EA', endorsed:'#F59E0B'};
+
+  var h = '<div class="u-scroll-x"><table class="dt" style="font-size:12px"><thead><tr>';
+  h += '<th>구분</th><th>어음번호</th><th>거래처</th><th>금액</th><th>발행일</th><th>만기일</th><th>은행</th><th>상태</th><th>관리</th>';
+  h += '</tr></thead><tbody>';
+
+  filtered.forEach(function(b){
+    var days = Math.ceil((new Date(b.dueDt) - new Date(td))/86400000);
+    var dueLabel = b.dueDt;
+    if(b.status === 'holding'){
+      if(days < 0) dueLabel += ' <span class="bd bd-d">경과 '+(-days)+'일</span>';
+      else if(days <= 7) dueLabel += ' <span class="bd bd-o">D-'+days+'</span>';
+    }
+    var kindLabel = b.kind === 'R' ? '<span class="bd" style="background:#DBEAFE;color:#1E40AF">받은</span>' : '<span class="bd" style="background:#FEE2E2;color:#DC2626">발행</span>';
+    var statusLabel = '<span class="bd" style="background:'+(statusColor[b.status]||'#999')+'22;color:'+(statusColor[b.status]||'#999')+'">'+(statusMap[b.status]||b.status)+'</span>';
+
+    h += '<tr'+(b.status==='holding' && b.dueDt < td ? ' class="row-warn"' : '')+'>';
+    h += '<td>'+kindLabel+'</td>';
+    h += '<td style="font-family:monospace">'+(b.billNo||'-')+'</td>';
+    h += '<td style="font-weight:700">'+(b.cli||'-')+'</td>';
+    h += '<td style="text-align:right;font-weight:700">'+fmt(b.amt||0)+'</td>';
+    h += '<td>'+(b.issueDt||'-')+'</td>';
+    h += '<td>'+dueLabel+'</td>';
+    h += '<td>'+(b.bank||'-')+'</td>';
+    h += '<td>'+statusLabel+'</td>';
+    h += '<td><button class="btn btn-sm btn-o" onclick="editBill(\''+b.id+'\')">수정</button></td>';
+    h += '</tr>';
+  });
+  if(filtered.length === 0) h += '<tr><td colspan="9" class="empty-cell">등록된 어음이 없습니다</td></tr>';
+  h += '</tbody></table></div>';
+  $('billArea').innerHTML = h;
+}
+window.renderBills = rBill;
+
+function openBillM(){
+  ['billId','billNo','billCli','billAmt','billBank','billNote'].forEach(function(k){if($(k))$(k).value=''});
+  $('billKind').value = 'R';
+  $('billStatus').value = 'holding';
+  var today = new Date().toISOString().slice(0,10);
+  $('billIssueDt').value = today;
+  // 기본 만기: 60일 후
+  var due = new Date(); due.setDate(due.getDate()+60);
+  $('billDueDt').value = due.toISOString().slice(0,10);
+  $('billMoT').textContent = '어음 등록';
+  $('billDelBtn').style.display = 'none';
+  oMo('billMo');
+}
+
+function editBill(id){
+  var b = (DB.g('bills')||[]).find(function(x){return x.id===id});
+  if(!b){toast('어음 없음','err');return}
+  $('billId').value = b.id;
+  $('billKind').value = b.kind || 'R';
+  $('billNo').value = b.billNo || '';
+  $('billCli').value = b.cli || '';
+  $('billAmt').value = b.amt || '';
+  $('billIssueDt').value = b.issueDt || '';
+  $('billDueDt').value = b.dueDt || '';
+  $('billBank').value = b.bank || '';
+  $('billStatus').value = b.status || 'holding';
+  $('billNote').value = b.note || '';
+  $('billMoT').textContent = '어음 수정';
+  $('billDelBtn').style.display = '';
+  oMo('billMo');
+}
+
+function saveBill(){
+  var cli = $('billCli').value.trim();
+  var amt = +$('billAmt').value;
+  var dueDt = $('billDueDt').value;
+  if(!cli){toast('거래처 입력','err');return}
+  if(!amt){toast('금액 입력','err');return}
+  if(!dueDt){toast('만기일 입력','err');return}
+
+  var id = $('billId').value || gid();
+  var rec = {
+    id: id,
+    kind: $('billKind').value,
+    billNo: $('billNo').value.trim(),
+    cli: cli,
+    amt: amt,
+    issueDt: $('billIssueDt').value,
+    dueDt: dueDt,
+    bank: $('billBank').value.trim(),
+    status: $('billStatus').value,
+    note: $('billNote').value,
+    cat: nw()
+  };
+  var bills = DB.g('bills') || [];
+  var idx = bills.findIndex(function(x){return x.id===id});
+  if(idx >= 0) bills[idx] = rec;
+  else bills.push(rec);
+  DB.s('bills', bills);
+
+  // 변경이력 기록
+  var cl = DB.g('changeLog') || [];
+  cl.push({
+    id: gid(), dt: td(), tm: nw(),
+    type: idx>=0 ? '어음수정' : '어음등록',
+    target: 'BILL:' + (rec.billNo || rec.id),
+    memo: rec.cli + ' ' + fmt(rec.amt) + '원 만기 ' + rec.dueDt,
+    by: CU ? CU.nm : ''
+  });
+  DB.s('changeLog', cl);
+
+  cMo('billMo');
+  rBill();
+  toast('저장 완료','ok');
+}
+
+function deleteBill(){
+  var id = $('billId').value;
+  if(!id || !confirm('이 어음을 삭제합니다. 계속?')) return;
+  var bills = DB.g('bills') || [];
+  DB.s('bills', bills.filter(function(x){return x.id!==id}));
+  cMo('billMo');
+  rBill();
+  toast('삭제 완료','ok');
+}

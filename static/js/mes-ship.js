@@ -602,7 +602,7 @@ function openPlanFilter(type){
   var os=DB.g('wo');
   var active=os.filter(function(o){return o.status!=='완료'&&o.status!=='출고완료'&&o.status!=='취소'});
   var items,title;
-  if(type==='all'){items=active;title='전체 작업지시서';}
+  if(type==='all'){items=active;title='전체 패키지 작업지시';}
   else if(type==='ing'){items=active.filter(function(o){return o.status==='진행중'});title='진행중';}
   else if(type==='wait'){items=active.filter(function(o){return o.status==='대기'});title='대기중';}
   else if(type==='late'){items=active.filter(function(o){return isLate(o)});title='출고 지연';}
@@ -1060,7 +1060,7 @@ function resetOrder(){
   $('ordShipDt').value='';
   $('ordDlv').value='';
   $('ordNote').value='';
-  $('orderFormTitle').textContent='수주 등록';
+  $('orderFormTitle').textContent='패키지 수주 등록';
   _ordItems=[{nm:'',spec:'',qty:'',price:'',note:''}];
   renderOrdItems();
 }
@@ -1146,7 +1146,7 @@ function saveOrder(){
     orders.push(obj);
   }
   saveOrders(orders);
-  toast(isEdit?'수주 수정 완료':'수주 등록 완료','ok');
+  toast(isEdit?'패키지 수주 수정 완료':'패키지 수주 등록 완료','ok');
   if(isEdit){orderSub('list');return}
   // 신규 저장 → 작업지시서 바로 작성 여부 묻기
   _askWOAfterOrder(obj);
@@ -1159,11 +1159,11 @@ function _askWOAfterOrder(o){
   el.innerHTML=
     '<div style="background:#fff;border-radius:16px;width:380px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden">'+
       '<div style="background:#1E3A5F;padding:16px 20px">'+
-        '<div style="font-size:15px;font-weight:700;color:#fff">수주 등록 완료</div>'+
+        '<div style="font-size:15px;font-weight:700;color:#fff">패키지 수주 등록 완료</div>'+
         '<div style="font-size:12px;color:#B0C9E0;margin-top:2px">'+o.no+' · '+(o.cli||'')+'</div>'+
       '</div>'+
       '<div style="padding:20px">'+
-        '<div style="font-size:14px;color:#1E293B;margin-bottom:16px">작업지시서를 바로 작성하시겠습니까?</div>'+
+        '<div style="font-size:14px;color:#1E293B;margin-bottom:16px">패키지 작업지시를 바로 작성하시겠습니까?</div>'+
         '<div style="display:flex;gap:8px">'+
           '<button onclick="_doWONow(\''+o.id+'\')" style="flex:1;padding:10px;background:#1E3A5F;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">지금 작성</button>'+
           '<button onclick="_skipWO()" style="flex:1;padding:10px;background:#F1F5F9;color:#64748B;border:none;border-radius:8px;font-size:14px;cursor:pointer">나중에</button>'+
@@ -1200,7 +1200,7 @@ function editOrder(id){
   $('ordShipDt').value=o.shipDt||'';
   $('ordDlv').value=o.dlv||'';
   $('ordNote').value=o.note||'';
-  $('orderFormTitle').textContent='수주 수정';
+  $('orderFormTitle').textContent='패키지 수주 수정';
   _ordItems=o.items&&o.items.length?o.items.map(function(it){return{nm:it.nm,spec:it.spec,qty:it.qty,price:it.price,note:it.note}}):[{nm:o.prodNm||'',spec:'',qty:o.qty||'',price:o.price||'',note:''}];
   renderOrdItems();
   orderSub('new');
@@ -1245,9 +1245,9 @@ function orderToWO(id){
         +'<span style="font-size:12px;color:#1E3A5F;font-weight:600">선택 ›</span></div>';
     }).join('');
     el.innerHTML='<div style="background:#fff;border-radius:14px;width:420px;box-shadow:0 25px 50px rgba(0,0,0,.15)">'
-      +'<div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">작업지시서 생성할 품목 선택</span><button onclick="document.getElementById(\'ordToWoMo\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>'
+      +'<div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">작업지시로 넘길 품목 선택</span><button onclick="document.getElementById(\'ordToWoMo\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>'
       +'<div style="padding:4px 0;max-height:60vh;overflow-y:auto">'+listH+'</div>'
-      +'<div style="padding:10px 14px;border-top:1px solid var(--bdr);font-size:11px;color:#94A3B8">품목마다 별도 작업지시서가 생성됩니다</div></div>';
+      +'<div style="padding:10px 14px;border-top:1px solid var(--bdr);font-size:11px;color:#94A3B8">품목마다 별도 패키지 작업지시가 생성됩니다</div></div>';
     document.body.appendChild(el);
     window._orderToWoId=id;
     return;
@@ -1281,7 +1281,7 @@ function _fillWOFromOrder(o,it){
     var orders=getOrders();
     var ord=orders.find(function(x){return x.id===o.id});
     if(ord){ord.status='생산중';saveOrders(orders)}
-    toast('작업지시서 등록 화면으로 이동합니다. 공정 설정 후 저장하세요.');
+    toast('패키지 작업지시 화면으로 이동합니다. 공정 흐름을 확인한 뒤 저장하세요.');
   },100);
 }
 
@@ -1556,7 +1556,7 @@ function rLotHist(){
   var sch=($('lotSch')?$('lotSch').value:'').trim().toLowerCase();
   var area=$('lotResult');if(!area)return;
   if(!sch){
-    area.innerHTML='<div class="empty-state"><div class="msg">제품명을 검색하세요</div><div class="sub">인쇄소 · 작업수량 · 출고량 · 불량 이력을 한눈에 확인</div></div>';
+    area.innerHTML='<div class="empty-state"><div class="msg">제품명을 검색하세요</div><div class="sub">협력사 · 작업수량 · 출고량 · 불량 이력을 한눈에 확인</div></div>';
     return;
   }
   var wos=DB.g('wo');
@@ -1606,7 +1606,7 @@ function rLotHist(){
   }).join('');
   area.innerHTML='<div style="margin-bottom:10px;color:var(--txt3);font-size:13px">검색결과 <b style="color:var(--txt)">'+matched.length+'건</b></div>'
     +'<div style="overflow-x:auto"><table class="dt"><thead><tr>'
-    +'<th>지시번호</th><th>제품명</th><th>거래처</th><th>인쇄소</th><th>작업수량</th><th>출고량</th><th>불량</th><th>손실</th><th>최근출고</th><th>상태</th>'
+    +'<th>지시번호</th><th>제품명</th><th>거래처</th><th>협력사</th><th>작업수량</th><th>출고량</th><th>불량</th><th>손실</th><th>최근출고</th><th>상태</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
@@ -1616,7 +1616,7 @@ function showLotDetail(woId){
   var claims=DB.g('claims').filter(function(c){return c.pnm===o.pnm&&c.cnm===o.cnm});
   // 공정/인쇄소
   var procs=(o.procs||[]).filter(function(p){return p.vd&&p.vd.trim()});
-  var procsHtml=procs.length?'<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px">공정 / 인쇄소</div>'
+  var procsHtml=procs.length?'<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--txt3);margin-bottom:6px">공정 / 협력사</div>'
     +procs.map(function(p){return'<div style="font-size:12px;padding:5px 10px;background:#EDE9FE;border-radius:8px;margin-bottom:4px"><b style="color:#7C3AED">'+p.nm+'</b>'+(p.mt?' · '+p.mt:'')+' → <b>'+p.vd+'</b></div>'}).join('')+'</div>':'';
   // 종이 목록
   var papersHtml='';

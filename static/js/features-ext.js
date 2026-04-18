@@ -42,7 +42,7 @@ function _equipSelect(selId){
 }
 function _vendorSelect(selId){
   var el=$(selId);if(!el||el.id==='__null__')return;
-  var vs=DB.g('cli').filter(function(c){return c.tp==='vendor'||c.tp==='인쇄소'});
+  var vs=DB.g('cli').filter(function(c){return c.tp==='vendor'||c.tp==='인쇄소'||c.tp==='협력사'||c.tp==='협력 인쇄소'});
   if(!vs.length)vs=DB.g('vendor');
   el.innerHTML='<option value="">전체</option>'+vs.map(function(v){return'<option value="'+(v.nm||v.name)+'">'+( v.nm||v.name)+'</option>'}).join('');
 }
@@ -173,7 +173,7 @@ function fillPLProcs(){
   sel.innerHTML=wo.procs.map(function(p){return'<option value="'+p.nm+'">'+p.nm+'</option>'}).join('');
 }
 function saveProcLog(){
-  var woId=$('plWO').value;if(!woId){toast('작업지시서를 선택하세요','err');return}
+  var woId=$('plWO').value;if(!woId){toast('패키지 작업지시를 선택하세요','err');return}
   var wo=DB.g('wo').find(function(w){return w.id===woId});
   var rec={id:_plEdit||gid(),dt:td(),woId:woId,woNm:wo?wo.wn:'',proc:$('plProcSel').value,worker:$('plWorker').value,qty:+$('plQty').value||0,defect:+$('plDefect').value||0,time:+$('plTime').value||0,note:$('plNote').value};
   var list=DB.g('procLog');var idx=list.findIndex(function(x){return x.id===rec.id});
@@ -1085,7 +1085,7 @@ function delCert(id){if(!confirm('삭제?'))return;DB.s('certs',DB.g('certs').fi
 function rPerm(){
   var users=DB.g('users');
   var allMods=['mes-order','mes-wo','mes-order-track','mes-due','mes-dash','mes-plan','mes-worker','mes-proc-log','mes-lot','mes-downtime','mes-defect','mes-outsource','mes-mold-hist','mes-oee','mes-ship','ship-partial','ship-return','ship-inspect','mat-income','mat-stock','mat-po','mat-bom','mat-safety','mat-mrp','mat-audit','mat-price','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','acc-closing','acc-etax','acc-costing','acc-aging','hr-emp','hr-att','hr-pay','hr-leave','hr-shift','hr-insurance','biz-trend','biz-rank','biz-cost','biz-kpi','biz-profit','biz-ontime','qc-inspect','qc-equip','qc-claim','qc-pm','qc-breakdown','qc-cert','qc-quote','qc-approval','mes-cli','mes-vendor','mes-prod','mes-mold','adm-perm','adm-backup','adm-audit','adm-code','mes-queue'];
-  var modNames={'mes-order':'수주관리','mes-wo':'작업지시서','mes-order-track':'납기추적','mes-due':'납기관리','mes-dash':'생산현황','mes-plan':'생산계획','mes-worker':'현장모니터','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동','mes-defect':'불량관리','mes-outsource':'외주관리','mes-mold-hist':'금형이력','mes-oee':'OEE','mes-ship':'출고관리','ship-partial':'부분출고','ship-return':'반품','ship-inspect':'출하검사','mat-income':'원자재입고','mat-stock':'재고현황','mat-po':'구매발주','mat-bom':'BOM/MRP','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-sales':'매출장부','acc-purchase':'매입장부','acc-tax':'세금계산서','acc-recv':'채권관리','acc-cashflow':'자금흐름','acc-closing':'마감','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권노후화','hr-emp':'직원정보','hr-att':'출퇴근','hr-pay':'급여관리','hr-leave':'연차/휴가','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-trend':'매출추이','biz-rank':'거래처순위','biz-cost':'원가/이익률','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','qc-inspect':'품질검사','qc-equip':'설비관리','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','qc-quote':'견적서','qc-approval':'전자결재','mes-cli':'거래처','mes-vendor':'협력업체','mes-prod':'품목','mes-mold':'목형','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-queue':'설정'};
+  var modNames={'mes-order':'수주관리','mes-wo':'패키지 작업지시','mes-order-track':'납기추적','mes-due':'납기관리','mes-dash':'생산현황','mes-plan':'생산계획','mes-worker':'현장모니터','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동','mes-defect':'불량관리','mes-outsource':'외주관리','mes-mold-hist':'금형이력','mes-oee':'OEE','mes-ship':'출고관리','ship-partial':'부분출고','ship-return':'반품','ship-inspect':'출하검사','mat-income':'원자재입고','mat-stock':'재고현황','mat-po':'구매발주','mat-bom':'BOM/MRP','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-sales':'매출장부','acc-purchase':'매입장부','acc-tax':'세금계산서','acc-recv':'채권관리','acc-cashflow':'자금흐름','acc-closing':'마감','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권노후화','hr-emp':'직원정보','hr-att':'출퇴근','hr-pay':'급여관리','hr-leave':'연차/휴가','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-trend':'매출추이','biz-rank':'거래처순위','biz-cost':'원가/이익률','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','qc-inspect':'품질검사','qc-equip':'설비관리','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','qc-quote':'패키지 견적','qc-approval':'전자결재','mes-cli':'거래처','mes-vendor':'협력사','mes-prod':'품목','mes-mold':'목형','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-queue':'설정'};
   var h='<div style="overflow-x:auto"><table class="dt" style="font-size:11px"><thead><tr><th>사용자</th><th>역할</th>';
   allMods.forEach(function(m){h+='<th style="writing-mode:vertical-rl;text-orientation:mixed;padding:4px 2px;font-size:10px">'+(modNames[m]||m)+'</th>'});
   h+='</tr></thead><tbody>';
@@ -1265,7 +1265,7 @@ function _tradeFormat3(co,s,wo,prod,price,amt,vat){
 /* 작업지시서 인쇄 */
 function printWorkOrder(woId){
   var wo=DB.g('wo').find(function(w){return w.id===woId});
-  if(!wo){toast('작업지시서 없음','err');return}
+  if(!wo){toast('패키지 작업지시 없음','err');return}
   var co=_co();
   var h='<div class="hdr"><h1>작 업 지 시 서</h1><div class="co">'+co.nm+'</div><div class="dt">발행일: '+(wo.dt||td())+'</div></div>';
   h+='<table><tr><th style="width:90px">지시번호</th><td>'+(wo.wn||'-')+'</td><th style="width:90px">상태</th><td>'+(wo.status||'-')+'</td></tr>';
@@ -1285,14 +1285,14 @@ function printWorkOrder(woId){
   if(wo.note)h+='<div class="note"><b>비고:</b> '+wo.note+'</div>';
   h+='<div class="sig"><div class="sig-box"><div class="label">지시자</div><div class="line"></div></div>';
   h+='<div class="sig-box"><div class="label">확인자</div><div class="line"></div></div></div>';
-  h+='<div class="footer">'+co.nm+' · 작업지시서</div>';
-  _openPW('작업지시서 - '+wo.wn,h);
+  h+='<div class="footer">'+co.nm+' · 패키지 작업지시서</div>';
+  _openPW('패키지 작업지시서 - '+wo.wn,h);
 }
 
 /* 견적서 인쇄 */
 function printQuote(quoteId){
   var quotes=DB.g('quotes');var q=quotes.find(function(x){return x.id===quoteId});
-  if(!q){toast('견적서 없음','err');return}
+  if(!q){toast('패키지 견적 없음','err');return}
   var co=_co();
   var h='<div class="hdr"><h1>견 적 서</h1><div class="co">'+co.nm+'</div><div class="dt">견적일: '+(q.dt||td())+'</div></div>';
   h+='<table><tr><th style="width:90px">견적번호</th><td>'+(q.num||q.no||q.id.slice(-6).toUpperCase())+'</td><th style="width:90px">유효기간</th><td>'+(q.valid||'발행일로부터 30일')+'</td></tr>';
@@ -1322,7 +1322,7 @@ function printQuote(quoteId){
   h+='<div style="margin-top:30px;font-size:12px;color:#666;text-align:center">위 금액으로 견적을 제출합니다.</div>';
   h+='<div class="sig"><div class="sig-box"><div class="label">공급자</div><div class="line"></div><div style="font-size:11px;margin-top:4px">'+co.nm+'</div></div></div>';
   h+='<div class="footer">'+co.nm+' · '+(co.tel||'')+'</div>';
-  _openPW('견적서',h);
+  _openPW('패키지 견적서',h);
 }
 
 /* ================================================================

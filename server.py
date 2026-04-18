@@ -3,6 +3,8 @@ import json
 import secrets
 import hashlib
 import threading
+from pathlib import Path
+from typing import Optional
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -131,6 +133,75 @@ async def require_admin(user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     return user
+
+
+ALLOWED_FINANCE_ROLES = {"admin", "accounting"}
+
+# 쓰기 허용 역할
+WRITE_ALLOWED_ROLES = {"admin", "office", "sales", "material", "accounting", "quality"}
+
+# 쓰기 보호 (관리자만 수정 가능)
+ADMIN_WRITE_ONLY_KEYS = {
+    "ino_users",
+    "ino_popbillConfig",
+    "ino_co",
+    "ino_companies",
+    "ino_bizApiKey",
+}
+
+# 읽기+쓰기 모두 관리자만 (민감한 시크릿)
+ADMIN_FULL_ONLY_KEYS = {
+    "ino_popbillConfig",  # SecretKey 포함
+}
+
+
+def require_finance_user(user):
+    if user.get("role") not in ALLOWED_FINANCE_ROLES:
+        raise HTTPException(status_code=403, detail="Accounting or admin only")
+    return user
+
+
+def can_access_key(user, key: str, write: bool = False) -> bool:
+    role = user.get("role")
+    if role == "admin":
+        return True
+
+    # 읽기+쓰기 모두 차단
+    if key in ADMIN_FULL_ONLY_KEYS:
+        return False
+
+    # ino_users 읽기 차단 (비밀번호 해시 보호)
+    if not write and key == "ino_users":
+        return False
+
+    # 쓰기 차단 목록
+    if write:
+        if key in ADMIN_WRITE_ONLY_KEYS:
+            return False
+        # worker는 쓰기 자체 차단 (공정 상태 업데이트는 별도 API로)
+        if role == "worker":
+            return False
+        # 사무실/영업/자재/회계/품질은 일반 데이터 쓰기 허용
+        if role not in WRITE_ALLOWED_ROLES:
+            return False
+
+    return True
+
+
+def require_key_access(user, key: str, write: bool = False):
+    if not can_access_key(user, key, write=write):
+        raise HTTPException(status_code=403, detail="Forbidden key")
+    return key
+
+
+def resolve_safe_path(base_dir: str, requested_path: str) -> Optional[Path]:
+    base_path = Path(base_dir).resolve()
+    target_path = (base_path / requested_path).resolve()
+    try:
+        target_path.relative_to(base_path)
+    except ValueError:
+        return None
+    return target_path
 
 
 # --- Auth Endpoints ---
@@ -293,12 +364,16 @@ async def auth_logout(request: Request):
 
 @app.get("/api/data")
 def get_all_keys(user=Depends(get_current_user)):
-    keys = db.get_all_keys()
+    keys = [
+        key for key in db.get_all_keys()
+        if can_access_key(user, key)
+    ]
     return JSONResponse(content=keys)
 
 
 @app.get("/api/data/{key:path}")
 def get_data(key: str, user=Depends(get_current_user)):
+    require_key_access(user, key)
     value = db.get_data(key)
     if value is None:
         return JSONResponse(content={"key": key, "value": None})
@@ -308,6 +383,7 @@ def get_data(key: str, user=Depends(get_current_user)):
 @app.post("/api/data/{key:path}")
 async def set_data(key: str, request: Request, user=Depends(get_current_user)):
     import json as _json
+    require_key_access(user, key, write=True)
     body = await request.json()
     value = body.get("value", "")
     if not isinstance(value, str):
@@ -320,6 +396,7 @@ async def set_data(key: str, request: Request, user=Depends(get_current_user)):
 
 @app.delete("/api/data/{key:path}")
 def delete_data(key: str, request: Request, user=Depends(get_current_user)):
+    require_key_access(user, key, write=True)
     deleted = db.delete_data(key)
     target = extract_target(key)
     db.add_audit_log(user.get("sub"), user.get("name"), "delete", target, key, None, get_client_ip(request))
@@ -451,6 +528,8 @@ async def popbill_issue(request: Request, user=Depends(get_current_user)):
     import urllib.request
     import hmac as hmac_mod
     import base64
+
+    require_finance_user(user)
 
     body = await request.json()
 
@@ -614,6 +693,7 @@ async def popbill_received(request: Request, user=Depends(get_current_user)):
     - W: 작성일자, I: 발행일자, R: 등록일자
     """
     import urllib.request, urllib.parse
+    require_finance_user(user)
     body = await request.json()
 
     config_raw = db.get_data("ino_popbillConfig")
@@ -793,17 +873,17 @@ def serve_pc_force():
 # Serve docs (diagrams etc.)
 @app.get("/docs/{filename:path}")
 def serve_docs(filename: str):
-    filepath = os.path.join(DOCS_DIR, filename)
-    if os.path.isfile(filepath):
-        return FileResponse(filepath)
+    filepath = resolve_safe_path(DOCS_DIR, filename)
+    if filepath and filepath.is_file():
+        return FileResponse(str(filepath))
     return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
 # Serve static assets (icons, manifest, etc.)
 @app.get("/{filename:path}")
 def serve_static(filename: str):
-    filepath = os.path.join(STATIC_DIR, filename)
-    if os.path.isfile(filepath):
-        return FileResponse(filepath)
+    filepath = resolve_safe_path(STATIC_DIR, filename)
+    if filepath and filepath.is_file():
+        return FileResponse(str(filepath))
     return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
 

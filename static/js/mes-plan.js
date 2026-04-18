@@ -267,8 +267,8 @@ function autoCSV(){
 /* ===== 1/9 QUOTE TO WO CONVERSION ===== */
 function quoteToWO(qid){
   var qs=DB.g('quotes'),q=qs.find(function(x){return x.id===qid});
-  if(!q){toast('견적서를 찾을 수 없습니다','err');return}
-  if(!confirm('['+q.cnm+'] '+q.pnm+' 견적을 작업지시서로 전환하시겠습니까?'))return;
+  if(!q){toast('패키지 견적을 찾을 수 없습니다','err');return}
+  if(!confirm('['+q.cnm+'] '+q.pnm+' 견적을 패키지 작업지시로 전환하시겠습니까?'))return;
   var os=DB.g('wo');
   var woId=gid();
   var woNum='WO-'+new Date().getFullYear()+'-'+String(os.length+1).padStart(3,'0');
@@ -303,7 +303,7 @@ function quoteToWO(qid){
   var qi=qs.findIndex(function(x){return x.id===qid});
   if(qi>=0){qs[qi].status='수주확정';qs[qi].woId=woId;DB.s('quotes',qs)}
   addLog('견적-작업지시 전환: '+q.pnm+' ('+woNum+')');
-  toast('작업지시서 생성: '+woNum,'ok');
+  toast('패키지 작업지시 생성: '+woNum,'ok');
   rQt();
 }
 
@@ -334,7 +334,7 @@ function renderCliDash(){
       +'<div class="cli-dash-row"><span class="label">완료율</span><span class="value" style="color:'+color+'">'+ontime+'%</span></div>'
       +'<div class="cli-dash-row"><span class="label">최근주문</span><span class="value">'+(d.lastDate||'-')+'</span></div></div>';
   });
-  return h||emptyHtml('','거래처 데이터 없음','작업지시서를 등록하세요');
+  return h||emptyHtml('','거래처 데이터 없음','패키지 작업지시를 등록하세요');
 }
 
 /* ===== 3/9 COPY WORK ORDER ===== */
@@ -376,8 +376,22 @@ function getOutsourceList(){
 /* ===== 6/9 BACKUP/RESTORE ===== */
 function backupData(){
   if(DB._serverOk){
-    window.open('/api/backup','_blank');
-    toast('백업 다운로드 중...','ok');addLog('데이터 백업');
+    authFetch('/api/backup').then(function(r){
+      if(!r.ok) throw new Error('backup');
+      return Promise.all([r.blob(), Promise.resolve(r.headers.get('Content-Disposition')||'')]);
+    }).then(function(res){
+      var blob=res[0], cd=res[1];
+      var match=/filename=([^;]+)/i.exec(cd);
+      var name=match?match[1].replace(/"/g,''):'inno-backup-'+td()+'.json';
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=name;
+      a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+      toast('백업 다운로드 중...','ok');addLog('데이터 백업');
+    }).catch(function(){
+      toast('백업 실패','err');
+    });
   }else{
     // Fallback: localStorage backup
     var keys=['wo','cli','prod','mold','stock','bom','income','po','sales','purchase','tax','emp','att','pay','leave','equip','quotes','claims','approval','users','log','procLogs','hist','shipLog','incLog','vendors','qcRecords','done','contracts','closings','empCards','eqLogs','payments','payHistory','payroll','taxInvoice'];
@@ -396,7 +410,7 @@ function restoreData(){
     if(DB._serverOk){
       var formData=new FormData();
       formData.append('file',file);
-      fetch('/api/restore',{method:'POST',body:formData})
+      authFetch('/api/restore',{method:'POST',body:formData})
         .then(function(r){return r.json()})
         .then(function(d){if(d.ok){toast('복원 완료','ok');addLog('데이터 복원');location.reload()}else{toast('복원 실패: '+(d.error||''),'err')}})
         .catch(function(err){toast('복원 실패','err')});
@@ -411,7 +425,7 @@ function restoreData(){
 }
 
 /* ===== 7/9 ROLE ACCESS ===== */
-var ROLE_MENUS={'admin':null,'office':null,'worker':['worker-screen'],'sales':['mes-dash','mes-wo','mes-ship','mes-cli','mes-cal','mes-rpt','qc-quote','acc-sales'],'material':['mes-dash','mat-income','mat-stock','mat-po','mat-bom'],'accounting':['mes-dash','acc-sales','acc-purchase','acc-pl','acc-tax','hr-emp','hr-att','hr-pay','hr-leave'],'quality':['mes-dash','qc-inspect','qc-equip','qc-quote','qc-approval']};
+var ROLE_MENUS={'admin':null,'office':null,'worker':['worker-screen'],'sales':['mes-dash','mes-order','mes-wo','mes-ship','mes-cli','mes-cal','mes-rpt','qc-quote','acc-sales'],'material':['mes-dash','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','mes-vendor'],'accounting':['mes-dash','mes-order','acc-sales','acc-purchase','acc-pl','acc-tax','acc-recv','acc-cashflow','hr-emp','hr-att','hr-pay','hr-leave'],'quality':['mes-dash','qc-inspect','qc-equip','qc-quote','qc-approval']};
 function applyRoleAccess(){if(!CU)return;var role=CU.role||'admin';
   // admin은 전체 접근
   if(role==='admin'){CU.perms=null;return}
@@ -464,7 +478,7 @@ function renderSettingsExt(){
 var _editVdId=null;
 function saveVendor(){
   var nm=$('vdNm').value.trim();
-  if(!nm){toast('인쇄소명을 입력하세요','err');return}
+  if(!nm){toast('협력사명을 입력하세요','err');return}
   var vendors=DB.g('vendors');
   if(_editVdId){
     var vi=vendors.findIndex(function(v){return v.id===_editVdId});
@@ -474,8 +488,8 @@ function saveVendor(){
     vendors.push({id:gid(),nm:nm,tel:$('vdTel').value.trim(),addr:$('vdAddr').value.trim(),note:$('vdNote').value.trim(),cat:td()});
   }
   DB.s('vendors',vendors);cMo('vendorMo');
-  toast(_editVdId?'수정 완료':'인쇄소 등록 완료','ok');
-  addLog('인쇄소 '+(_editVdId?'수정':'등록')+': '+nm);
+  toast(_editVdId?'협력사 수정 완료':'협력사 등록 완료','ok');
+  addLog('협력사 '+(_editVdId?'수정':'등록')+': '+nm);
   _editVdId=null;rVendor();
 }
 function editVendor(id){
@@ -498,7 +512,7 @@ function rVendor(){
   var late=os.filter(function(o){return o.vendor&&o.sd&&o.sd<td()&&o.status!=='완료'&&o.status!=='출고완료'}).length;
   var avgRate=totalWo?Math.round(done/totalWo*100):0;
   var k=$('vendorKpi');if(k)k.innerHTML=
-    '<div class="sb blue"><div class="l">전체 인쇄소</div><div class="v">'+vendors.length+'</div></div>'+
+    '<div class="sb blue"><div class="l">전체 협력사</div><div class="v">'+vendors.length+'</div></div>'+
     '<div class="sb green"><div class="l">완료 작업</div><div class="v">'+done+'</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">전체 '+totalWo+'건 중</div></div>'+
     '<div class="sb '+(late>0?'red':'orange')+'"><div class="l">지연 작업</div><div class="v">'+late+'</div></div>'+
     '<div class="sb purple"><div class="l">평균 완료율</div><div class="v">'+avgRate+'<span style="font-size:14px">%</span></div></div>';
@@ -513,7 +527,7 @@ function rVendor(){
   var tbl=$('vendorTbl');
   if(tbl){
     var tb=tbl.querySelector('tbody');
-    if(tb)tb.innerHTML=tbody||'<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">등록된 인쇄소가 없습니다</td></tr>';
+    if(tb)tb.innerHTML=tbody||'<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">등록된 협력사가 없습니다</td></tr>';
   }
   // 인쇄소별 대시보드
   var dash=$('vendorDash');
@@ -533,7 +547,7 @@ function rVendor(){
         +'<div class="vd-stat"><span class="vl">완료율</span><span class="vv" style="color:'+(rate>=80?'#10B981':'#F59E0B')+'">'+rate+'%</span></div>'
         +'</div>';
     });
-    dash.innerHTML=h||'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--txt3)">인쇄소를 등록하세요</div>';
+    dash.innerHTML=h||'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--txt3)">협력사를 등록하세요</div>';
   }
   // 드롭다운 갱신
   populateVendorDropdowns();
@@ -557,7 +571,7 @@ function populateVendorDropdowns(){
   // 작업지시서 등록 드롭다운
   var woV=$('woVendor');if(woV)woV.innerHTML=opts;
   // 작업지시서 목록 필터
-  var fOpts='<option value="">전체 인쇄소</option><option value="__self__">자체생산</option>';
+  var fOpts='<option value="">전체 협력사</option><option value="__self__">자체생산</option>';
   vendors.forEach(function(v){fOpts+='<option value="'+v.nm+'">'+v.nm+'</option>'});
   var wf=$('woVendorFilter');if(wf)wf.innerHTML=fOpts;
 }
@@ -1713,7 +1727,7 @@ function rPlanPriority(){
   var sorted=[].concat(groups.overdue,groups.today,groups.d1,groups.d3,groups.normal);
   var cardsHtml='';
   if(!sorted.length){
-    cardsHtml=emptyHtml('','진행중인 작업 없음','작업지시서를 등록하면 우선순위가 표시됩니다.');
+    cardsHtml=emptyHtml('','진행중인 작업 없음','패키지 작업지시를 등록하면 우선순위가 표시됩니다.');
   }else{
     cardsHtml='<div style="display:flex;flex-direction:column;gap:8px">';
     sorted.forEach(function(o){
@@ -2142,7 +2156,7 @@ function rStock(){
 
 /* === UI-2: WO 원가분석 모달 === */
 function showWOCostAnalysis(){
-  if(!detId){toast('작업지시서를 선택하세요','err');return}
+  if(!detId){toast('패키지 작업지시를 선택하세요','err');return}
   var cost=calcWOCost(detId);
   if(!cost){toast('원가 데이터 없음','err');return}
   var h='<div style="padding:16px"><h3 style="margin:0 0 16px;font-size:16px;font-weight:800">원가 분석: '+cost.pnm+'</h3>';
@@ -2168,7 +2182,7 @@ function showWOCostAnalysis(){
     h+='<span style="font-size:13px;font-weight:700;color:'+mColor+'">이익: '+fmt(cost.salePrice-cost.unitCost)+'원/개</span>';
     h+='</div>';
   }else{
-    h+='<div style="background:#FFFBEB;padding:12px;border-radius:8px;text-align:center;font-size:12px;color:#92400E">판매단가 미입력 — 작업지시서에서 단가를 입력하면 마진 분석이 가능합니다</div>';
+    h+='<div style="background:#FFFBEB;padding:12px;border-radius:8px;text-align:center;font-size:12px;color:#92400E">판매단가 미입력 - 패키지 작업지시에서 단가를 입력하면 마진 분석이 가능합니다</div>';
   }
   h+='</div>';
   // 모달 표시

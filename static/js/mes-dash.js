@@ -672,11 +672,129 @@ function _ndPipeRing(pct){
   if(pct<0)pct=0;if(pct>100)pct=100;
   return '<div class="nd-pipe-ring-v2" style="background:conic-gradient(#1E3A5F 0% '+pct+'%, #E9EDF2 '+pct+'% 100%)"><div class="nd-pipe-ring-inner"></div></div>';
 }
+
+function _dashStockQty(item){
+  return +(
+    item.qty ?? item.cur ?? item.stock ?? item.onhand ?? item.balance ?? 0
+  ) || 0;
+}
+
+function _dashStockMin(item){
+  return +(
+    item.safe ?? item.safeQty ?? item.min ?? item.minQty ?? item.safety ?? 0
+  ) || 0;
+}
+
+function renderDashTodayCards(os, quotes){
+  var shipList=os.filter(function(o){return o.sd===td()&&o.status!=='출고완료'&&o.status!=='취소';}).slice(0,5);
+  var urgentList=os.filter(function(o){return o.status!=='완료'&&o.status!=='출고완료'&&o.status!=='취소'&&o.sd&&dLeft(o)<=1;})
+    .sort(function(a,b){return dLeft(a)-dLeft(b)}).slice(0,5);
+  var quoteList=(quotes||[]).filter(function(q){return q.status!=='수주확정'&&q.status!=='취소';}).slice(0,5);
+  function _empty(msg){
+    return '<div class="today-empty">'+msg+'</div>';
+  }
+  function _shipItem(o){
+    return '<div class="today-item" onclick="showDet(\''+o.id+'\')">'
+      +'<div><div class="ti-cli">'+(o.cnm||'-')+'</div><div class="ti-prod">'+(o.pnm||'-')+' · '+fmt(o.fq||0)+'매</div></div>'
+      +'<span class="ti-badge '+(dLeft(o)<=0?'ti-urgent':'ti-normal')+'">'+(dLeft(o)<=0?'오늘출고':'D-'+dLeft(o))+'</span></div>';
+  }
+  function _urgentItem(o){
+    var cp=curP(o);
+    return '<div class="today-item" onclick="showDet(\''+o.id+'\')">'
+      +'<div><div class="ti-cli">'+(o.pnm||'-')+'</div><div class="ti-prod">'+(o.cnm||'-')+' · 현재 '+(cp?cp.nm:'대기')+'</div></div>'
+      +'<span class="ti-badge ti-urgent">'+(dLeft(o)<0?'지연':'긴급')+'</span></div>';
+  }
+  function _quoteItem(q){
+    return '<div class="today-item" onclick="goMod(\'qc-quote\')">'
+      +'<div><div class="ti-cli">'+(q.cnm||'-')+'</div><div class="ti-prod">'+(q.pnm||'-')+' · '+fmt(q.qty||q.fq||0)+'매</div></div>'
+      +'<span class="ti-badge ti-normal">'+(q.status||'견적대기')+'</span></div>';
+  }
+  return '<div class="today-wrap">'
+    +'<div class="today-card"><h4>🚚 오늘 출고 예정</h4>'+(shipList.length?shipList.map(_shipItem).join(''):_empty('오늘 출고 예정 작업이 없습니다'))+'</div>'
+    +'<div class="today-card"><h4>🚨 긴급 생산 / 납기</h4>'+(urgentList.length?urgentList.map(_urgentItem).join(''):_empty('긴급 작업이 없습니다'))+'</div>'
+    +'<div class="today-card"><h4>🧾 견적 / 수주 대기</h4>'+(quoteList.length?quoteList.map(_quoteItem).join(''):_empty('처리 대기 견적이 없습니다'))+'</div>'
+    +'</div>';
+}
+
+function renderDashOpsGrid(os, stock){
+  var inProgress=os.filter(function(o){return o.status==='진행중';}).length;
+  var outsourceWait=os.filter(function(o){
+    return (o.procs||[]).some(function(p){return p.st==='외주대기';});
+  }).length;
+  var shortage=(stock||[]).filter(function(item){
+    var min=_dashStockMin(item);
+    return min>0&&_dashStockQty(item)<min;
+  }).length;
+  var doneToday=os.filter(function(o){return o.compDate===td()||o.status==='완료대기';}).length;
+  var metrics=[
+    {label:'진행중 작업',value:inProgress,sub:'현재 공정에서 처리 중',tone:'navy'},
+    {label:'외주 대기',value:outsourceWait,sub:'협력사 확인 필요',tone:outsourceWait>0?'warn':'ok'},
+    {label:'자재 부족',value:shortage,sub:'안전재고 이하 자재',tone:shortage>0?'danger':'ok'},
+    {label:'금일 완료',value:doneToday,sub:'검수·출고 연결 준비',tone:'green'}
+  ];
+  return '<div class="dash-ops-grid">'+metrics.map(function(m){
+    return '<div class="dash-op-card op-'+m.tone+'"><div class="dash-op-label">'+m.label+'</div><div class="dash-op-value">'+m.value+'</div><div class="dash-op-sub">'+m.sub+'</div></div>';
+  }).join('')+'</div>';
+}
+
+function renderDashClientArea(os,sales){
+  var map={};
+  os.forEach(function(o){
+    if(!o.cnm)return;
+    if(!map[o.cnm])map[o.cnm]={total:0,late:0,amt:0};
+    map[o.cnm].total++;
+    if(o.sd&&o.sd<td()&&o.status!=='완료'&&o.status!=='출고완료')map[o.cnm].late++;
+  });
+  (sales||[]).forEach(function(s){
+    var nm=s.cnm||s.cli||'';
+    if(!nm)return;
+    if(!map[nm])map[nm]={total:0,late:0,amt:0};
+    map[nm].amt+=(+s.amt||0);
+  });
+  var rows=Object.keys(map).map(function(name){
+    return {name:name,total:map[name].total,late:map[name].late,amt:map[name].amt};
+  }).sort(function(a,b){return b.amt-a.amt||b.total-a.total;}).slice(0,6);
+  return rows.length?rows.map(function(r){
+    return '<div class="cli-dash-card"><div class="cli-dash-name">'+r.name+'</div>'
+      +'<div class="cli-dash-row"><span class="label">진행 작업</span><span class="value">'+r.total+'건</span></div>'
+      +'<div class="cli-dash-row"><span class="label">지연</span><span class="value" style="color:'+(r.late>0?'#EF4444':'#10B981')+'">'+(r.late||'없음')+'</span></div>'
+      +'<div class="cli-dash-row"><span class="label">누적 매출</span><span class="value">'+fmt(r.amt)+'원</span></div></div>';
+  }).join(''):'<div class="dash-empty">거래처 운영 데이터가 없습니다</div>';
+}
+
+function renderDashVendorArea(os){
+  var map={};
+  os.forEach(function(o){
+    (o.procs||[]).forEach(function(p){
+      var vendor=p.vd||o.vendor;
+      if(!vendor)return;
+      if(!map[vendor])map[vendor]={all:0,wait:0,done:0,late:0};
+      map[vendor].all++;
+      if(p.st==='외주대기')map[vendor].wait++;
+      if(p.st==='외주완료'||p.st==='완료')map[vendor].done++;
+      if(o.sd&&o.sd<td()&&p.st!=='외주완료'&&p.st!=='완료')map[vendor].late++;
+    });
+  });
+  var vendors=Object.keys(map).map(function(name){return {name:name,data:map[name]};})
+    .sort(function(a,b){return b.data.all-a.data.all;}).slice(0,6);
+  return vendors.length?vendors.map(function(v){
+    var rate=v.data.all?Math.round(v.data.done/v.data.all*100):0;
+    return '<div class="vd-card"><div class="vd-name">'+v.name+' <span class="vd-badge">'+v.data.all+'공정</span></div>'
+      +'<div class="vd-stat"><span class="vl">외주대기</span><span class="vv">'+v.data.wait+'</span></div>'
+      +'<div class="vd-stat"><span class="vl">완료</span><span class="vv" style="color:#10B981">'+v.data.done+'</span></div>'
+      +'<div class="vd-stat"><span class="vl">지연</span><span class="vv" style="color:'+(v.data.late>0?'#EF4444':'#10B981')+'">'+(v.data.late||'없음')+'</span></div>'
+      +'<div class="vd-stat"><span class="vl">완료율</span><span class="vv">'+rate+'%</span></div></div>';
+  }).join(''):'<div class="dash-empty">협력사 데이터가 없습니다</div>';
+}
+
 function rDash(){
 var _now=new Date(),_days=['일','월','화','수','목','금','토'];
 if($('dashDateDisp'))$('dashDateDisp').textContent=_now.getFullYear()+'.'+String(_now.getMonth()+1).padStart(2,'0')+'.'+String(_now.getDate()).padStart(2,'0')+' ('+_days[_now.getDay()]+')';
 var allOs=DB.g('wo');
 var os=allOs.filter(function(o){return o.status!=='취소'});
+var quotes=DB.g('quotes');
+var sales=DB.g('sales');
+var stock=DB.g('stock');
 var tot=os.length,dn=os.filter(function(o){return o.status==='완료'||o.status==='출고완료'||o.status==='완료대기'}).length;
 var pg=os.filter(function(o){return o.status==='진행중'}).length;
 var dl=os.filter(function(o){return isLate(o)}).length;
@@ -690,6 +808,7 @@ var prevD2=new Date(now.getFullYear(),now.getMonth()-1,1);
 var prevM=prevD2.getFullYear()+'-'+String(prevD2.getMonth()+1).padStart(2,'0');
 var curQ=0,prevQ=0;
 allHs.forEach(function(h){if(!h.doneAt)return;if(h.doneAt.startsWith(curM))curQ+=(+h.qty||0);if(h.doneAt.startsWith(prevM))prevQ+=(+h.qty||0)});
+if($('dashToday'))$('dashToday').innerHTML=renderDashTodayCards(os,quotes);
 // === 1. 근무 진행률 ===
 var shiftStart=8,shiftEnd=18,curHour=now.getHours()+now.getMinutes()/60;
 var shiftPct=Math.max(0,Math.min(100,Math.round((curHour-shiftStart)/(shiftEnd-shiftStart)*100)));
@@ -765,6 +884,10 @@ pns2.forEach(function(pn,idx){
 });
 pipH+='</div></div>';
 if($('ndPipeline'))$('ndPipeline').innerHTML=pipH;
+if($('dashOps'))$('dashOps').innerHTML=renderDashOpsGrid(os,stock);
+if($('dashClientArea'))$('dashClientArea').innerHTML=renderDashClientArea(os,sales);
+if($('dashVendorArea'))$('dashVendorArea').innerHTML=renderDashVendorArea(os);
+if($('dashExec'))$('dashExec').innerHTML=typeof renderCEODash==='function'?renderCEODash():'<div class="dash-empty">경영 요약 데이터를 준비 중입니다</div>';
 // === 5. 실시간 알림 ===
 var feeds=[];
 if(dl>0)os.filter(function(o){return isLate(o)}).slice(0,2).forEach(function(o){feeds.push({cls:'nd-f-red',icon:'🚨',msg:o.pnm+' — 출고일 초과 (D+'+(Math.abs(dLeft(o)))+')',time:''})});

@@ -80,7 +80,7 @@ function openQtM(){
   $('qtCli').value='';$('qtProd').value='';$('qtQty').value='';
   $('qtPrice').value='';$('qtContent').value='';$('qtNote').value='';
   $('qtSt').value='작성중';$('qtToWOBtn').style.display='none';
-  $('qtMoT').textContent='견적 등록';oMo('qtMo2');
+  $('qtMoT').textContent='패키지 견적 등록';oMo('qtMo2');
 }
 
 function eQt(id){
@@ -90,7 +90,7 @@ function eQt(id){
   $('qtQty').value=r.qty||'';$('qtPrice').value=r.price||'';
   $('qtContent').value=r.content||'';$('qtNote').value=r.note||'';
   $('qtSt').value=r.st;$('qtToWOBtn').style.display='inline-block';
-  $('qtMoT').textContent='견적 수정';oMo('qtMo2');
+  $('qtMoT').textContent='패키지 견적 수정';oMo('qtMo2');
 }
 
 function saveQt(){
@@ -103,7 +103,7 @@ function saveQt(){
     content:$('qtContent').value,note:$('qtNote').value,st:$('qtSt').value};
   var ls=DB.g('quotes');var idx=ls.findIndex(function(x){return x.id===id});
   if(idx>=0)ls[idx]=rec;else ls.push(rec);
-  DB.s('quotes',ls);cMo('qtMo2');rQt();toast('견적 저장','ok');
+  DB.s('quotes',ls);cMo('qtMo2');rQt();toast('패키지 견적 저장','ok');
 }
 
 function dQt(id){
@@ -158,7 +158,7 @@ function rQt(){
       +'<td><span class="bd" style="background:'+c+'20;color:'+c+';border-color:'+c+'40">'+r.st+'</span></td>'
       +'<td style="display:flex;gap:4px;flex-wrap:wrap">'
       +'<button class="btn btn-s btn-sm" onclick="eQt(\''+r.id+'\')">보기/수정</button>'
-      +'<button class="btn btn-sm" style="background:#EFF6FF;color:#1E3A5F;border:1px solid #B0C9E0" onclick="qtToWODirect(\''+r.id+'\')">→작업지시</button>'
+      +'<button class="btn btn-sm" style="background:#EFF6FF;color:#1E3A5F;border:1px solid #B0C9E0" onclick="qtToWODirect(\''+r.id+'\')">→패키지 작업지시</button>'
       +'<button class="btn btn-sm btn-p" onclick="printQuote(\''+r.id+'\')">인쇄</button>'
       +'<button class="btn btn-sm" style="color:var(--dan)" onclick="dQt(\''+r.id+'\')">삭제</button>'
       +'</td></tr>';

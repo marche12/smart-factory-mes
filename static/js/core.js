@@ -790,9 +790,9 @@ if(window.matchMedia){
 var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin','mes-wo':'mes-admin','mes-ship':'mes-admin','mes-cli':'mes-admin','mes-prod':'mes-admin','mes-vendor':'mes-admin','mes-mold':'mes-admin','mes-rpt':'mes-admin','mes-plan':'mes-admin','mes-queue':'mes-admin','mes-worker':'mes-admin','mes-perf':'mes-admin','mes-cal':'mes-admin','mat-stock':'mat-income','mat-po':'mat-income','mat-bom':'mat-income','acc-purchase':'acc-sales','acc-tax':'acc-sales','hr-att':'hr-emp','hr-pay':'hr-emp','hr-leave':'hr-emp','biz-rank':'biz-trend','biz-cost':'biz-trend','qc-equip':'qc-inspect','qc-quote':'qc-inspect','qc-approval':'qc-inspect'};
 var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','hr-emp':'emp','hr-att':'att','hr-pay':'pay','hr-leave':'leave','biz-trend':'trend','biz-rank':'rank','biz-cost':'cost','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote','qc-approval':'approval'};
 var GROUPS={
-'mes-order':{tabs:[{id:'mes-order',l:'수주목록'},{id:'mes-order-track',l:'진행추적'}]},
+'mes-order':{tabs:[{id:'mes-order',l:'수주목록'},{id:'mes-order-track',l:'납기추적'}]},
 'mes-ship':{tabs:[{id:'mes-ship',l:'출고'},{id:'ship-partial',l:'부분출고'},{id:'ship-return',l:'반품'},{id:'qc-claim',l:'클레임'}]},
-'mes-dash':{tabs:[{id:'mes-dash',l:'대시보드'},{id:'mes-worker',l:'작업자현황'}]},
+'mes-dash':{tabs:[{id:'mes-dash',l:'운영판'},{id:'mes-worker',l:'작업자현황'}]},
 'mes-proc-log':{tabs:[{id:'mes-proc-log',l:'실적입력'},{id:'mes-lot',l:'로트추적'}]},
 'qc-inspect':{tabs:[{id:'qc-inspect',l:'수입검사'},{id:'ship-inspect',l:'출하검사'},{id:'qc-cert',l:'검사성적서'},{id:'mes-defect',l:'불량등록'}]},
 'qc-equip':{tabs:[{id:'qc-equip',l:'설비대장'},{id:'qc-pm',l:'예방보전'},{id:'qc-breakdown',l:'고장이력'},{id:'mes-downtime',l:'비가동'},{id:'mes-oee',l:'OEE'},{id:'mes-mold-hist',l:'금형이력'}]},
@@ -804,7 +804,7 @@ var GROUPS={
 'acc-recv':{tabs:[{id:'acc-recv',l:'미수미지급'},{id:'acc-cashflow',l:'입출금'},{id:'acc-closing',l:'외상마감'},{id:'acc-aging',l:'채권Aging'}]},
 'hr-emp':{tabs:[{id:'hr-emp',l:'직원'},{id:'hr-att',l:'출퇴근'},{id:'hr-leave',l:'연차'}]},
 'hr-pay':{tabs:[{id:'hr-pay',l:'급여'},{id:'hr-shift',l:'교대스케줄'},{id:'hr-insurance',l:'4대보험'}]},
-'mes-cli':{tabs:[{id:'mes-cli',l:'거래처'},{id:'mes-vendor',l:'인쇄소'},{id:'mes-prod',l:'품목'},{id:'mes-mold',l:'목형'},{id:'adm-code',l:'공통코드'}]},
+'mes-cli':{tabs:[{id:'mes-cli',l:'거래처'},{id:'mes-vendor',l:'협력사'},{id:'mes-prod',l:'패키지 품목'},{id:'mes-mold',l:'목형'},{id:'adm-code',l:'공통코드'}]},
 'adm-backup':{tabs:[{id:'adm-backup',l:'백업/복원'},{id:'adm-audit',l:'감사로그'},{id:'mes-queue',l:'설정'}]},
 'biz-kpi':{tabs:[{id:'biz-kpi',l:'KPI'},{id:'biz-trend',l:'추이'},{id:'biz-rank',l:'순위'},{id:'biz-profit',l:'수익성'},{id:'biz-ontime',l:'납기준수율'},{id:'biz-monthly',l:'월간보고서'},{id:'mes-rpt',l:'생산보고'}]}
 };
@@ -812,8 +812,8 @@ var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.for
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}
-var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'작업지시서','mes-ship':'출고','mes-cli':'거래처','mes-prod':'품목','mes-mold':'목형','mes-rpt':'보고서','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'인쇄소 관리','mes-queue':'설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','acc-vat':'부가세 신고','acc-bill':'어음 관리','acc-bank':'통장 관리','acc-expense':'지출결의서','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'검사','qc-equip':'설비','qc-quote':'견적','qc-approval':'전자결재','mes-order-track':'수주진행추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주관리','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','biz-monthly':'월간보고서','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-monitor':'현장모니터'};
-if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'영업관리','mes-order-track':'영업관리','qc-quote':'영업관리','qc-claim':'출고/품질','mes-wo':'생산관리','mes-dash':'생산관리','mes-plan':'생산관리','mes-worker':'생산관리','mes-proc-log':'생산관리','mes-lot':'생산관리','mes-outsource':'생산관리','mes-monitor':'설정','mat-stock':'구매/자재','mat-income':'구매/자재','mat-safety':'구매/자재','mat-audit':'구매/자재','mat-po':'구매/자재','mat-price':'구매/자재','mat-bom':'구매/자재','mat-mrp':'구매/자재','mes-ship':'출고/품질','ship-partial':'출고/품질','ship-return':'출고/품질','ship-inspect':'출고/품질','qc-inspect':'출고/품질','qc-cert':'출고/품질','mes-defect':'출고/품질','acc-sales':'매입/매출','acc-purchase':'매입/매출','acc-tax':'매입/매출','acc-costing':'매입/매출','acc-etax':'매입/매출','acc-pl':'회계관리','acc-recv':'회계관리','acc-cashflow':'회계관리','acc-closing':'회계관리','acc-aging':'회계관리','acc-monthly':'회계관리','hr-emp':'인사/급여','hr-att':'인사/급여','hr-leave':'인사/급여','hr-pay':'인사/급여','hr-shift':'인사/급여','hr-insurance':'인사/급여','biz-trend':'보고서','biz-rank':'보고서','biz-cost':'보고서','biz-kpi':'보고서','biz-profit':'보고서','biz-ontime':'보고서','biz-monthly':'보고서','mes-rpt':'보고서','mes-cli':'설정','mes-vendor':'설정','mes-prod':'설정','mes-mold':'설정','qc-equip':'설정','qc-pm':'설정','qc-breakdown':'설정','mes-downtime':'설정','mes-oee':'설정','mes-mold-hist':'설정','adm-code':'설정','qc-approval':'설정','adm-perm':'설정','adm-backup':'설정','adm-audit':'설정','mes-queue':'설정'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='MES'}}
+var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'패키지 운영판','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','acc-vat':'부가세 신고','acc-bill':'어음 관리','acc-bank':'통장 관리','acc-expense':'지출결의서','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','qc-approval':'전자결재','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','biz-monthly':'월간보고서','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-monitor':'현장모니터'};
+if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mes-monitor':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기준정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-pl':'보고·분석','acc-recv':'출고·정산','acc-cashflow':'출고·정산','acc-closing':'보고·분석','acc-aging':'출고·정산','acc-monthly':'보고·분석','hr-emp':'시스템','hr-att':'시스템','hr-leave':'시스템','hr-pay':'시스템','hr-shift':'시스템','hr-insurance':'시스템','biz-trend':'보고·분석','biz-rank':'보고·분석','biz-cost':'보고·분석','biz-kpi':'보고·분석','biz-profit':'보고·분석','biz-ontime':'보고·분석','biz-monthly':'보고·분석','mes-rpt':'보고·분석','mes-cli':'기준정보','mes-vendor':'자재·외주','mes-prod':'기준정보','mes-mold':'기준정보','qc-equip':'기준정보','qc-pm':'기준정보','qc-breakdown':'기준정보','mes-downtime':'기준정보','mes-oee':'기준정보','mes-mold-hist':'기준정보','adm-code':'시스템','qc-approval':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}}
 var _gid=PARENT_MAP[id]||id;var _gtb=$('groupTabBar');if(GROUPS[_gid]){var _grp=GROUPS[_gid];_gtb.innerHTML=_grp.tabs.map(function(t){return'<button style="padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:1px solid '+(t.id===id?'var(--pri)':'var(--bdr)')+';background:'+(t.id===id?'var(--pri)':'var(--bg1)')+';color:'+(t.id===id?'#fff':'var(--txt2)')+';transition:all .15s" onclick="goMod(\''+t.id+'\')">'+t.l+'</button>'}).join('');_gtb.style.display='flex'}else{_gtb.style.display='none';_gtb.innerHTML=''}
 if(MR[id])MR[id]();if(ER[id])ER[id]();}
 var _mesInited=false;
@@ -898,16 +898,30 @@ function refreshLoginUsers(){
   var sel=document.getElementById('loginUser');
   var curVal=sel.value;
   sel.innerHTML='<option value="">-- 선택 --</option>';
-  var us;
-  try{us=DB.g('users')}catch(e){us=JSON.parse(localStorage.getItem('ino_users')||'[]')}
-  if(!us||!us.length)us=[{nm:'관리자',un:'admin',role:'admin',proc:'',pw:'1234'}];
-  us.forEach(function(u){
-    var opt=document.createElement('option');
-    opt.value=u.un||u.nm;
-    opt.textContent=u.nm+(u.proc?' ('+u.proc+')':u.role==='admin'?' (관리자)':u.role==='office'?' (사무실)':'');
-    sel.appendChild(opt);
+  fetch('/api/users/public').then(function(r){
+    if(!r.ok) throw new Error('users');
+    return r.json();
+  }).then(function(us){
+    if(!Array.isArray(us)||!us.length)us=[{nm:'관리자',un:'admin',role:'admin',proc:''}];
+    us.forEach(function(u){
+      var opt=document.createElement('option');
+      opt.value=u.un||u.nm;
+      opt.textContent=u.nm+(u.proc?' ('+u.proc+')':u.role==='admin'?' (관리자)':u.role==='office'?' (사무실)':'');
+      sel.appendChild(opt);
+    });
+    if(curVal)sel.value=curVal;
+  }).catch(function(){
+    var us;
+    try{us=DB.g('users')}catch(e){us=JSON.parse(localStorage.getItem('ino_users')||'[]')}
+    if(!us||!us.length)us=[{nm:'관리자',un:'admin',role:'admin',proc:'',pw:'1234'}];
+    us.forEach(function(u){
+      var opt=document.createElement('option');
+      opt.value=u.un||u.nm;
+      opt.textContent=u.nm+(u.proc?' ('+u.proc+')':u.role==='admin'?' (관리자)':u.role==='office'?' (사무실)':'');
+      sel.appendChild(opt);
+    });
+    if(curVal)sel.value=curVal;
   });
-  if(curVal)sel.value=curVal;
 }
 
 /* ===== EVENT DELEGATION ===== */

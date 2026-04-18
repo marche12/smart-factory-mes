@@ -45,7 +45,7 @@ function fillWOMgr(defaultVal){
   if(!sel.value&&us.length)sel.value=us[0].nm;
 }
 function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
-function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId'))$('woOrdId').value='';$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();$('selP').innerHTML='<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>';$('pDet').innerHTML='';$('woImgP').innerHTML='';$('woFormTitle').textContent='작업지시서 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
+function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId'))$('woOrdId').value='';$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();$('selP').innerHTML='<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>';$('pDet').innerHTML='';$('woImgP').innerHTML='';$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
 function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
@@ -66,7 +66,7 @@ h+='<div class="fg"><label>'+( i+1)+'. '+p.nm+' - 방식</label><input value="'+
 h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div>';
 h+='</div>';
 if(p.nm==='인쇄'){
-  h+='<div style="margin-top:4px;padding:4px 0"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(인쇄소에서 일괄 처리)</span></label></div>';
+  h+='<div style="margin-top:4px;padding:4px 0"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(협력사에서 일괄 처리)</span></label></div>';
 }
 if(p.nm==='톰슨'){
   h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div style="display:flex;gap:6px;align-items:center"><div class="ac-w"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">🔍 검색</button></div></div>';
@@ -194,7 +194,7 @@ function filterQMold(){
 /* ===== 거래처 검색 모달 (작업지시서용) ===== */
 /* ===== 인쇄소/외주업체 검색 모달 ===== */
 function openVendorSearch(){
-  var h='<div class="mb" style="width:520px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">인쇄소 / 외주업체 검색<button class="mo-x" onclick="cMo(\'vendorSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">×</button></div>';
+  var h='<div class="mb" style="width:520px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">협력사 / 외주처 검색<button class="mo-x" onclick="cMo(\'vendorSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">×</button></div>';
   h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
   h+='<input id="vdSchInput" placeholder="업체명 검색..." oninput="filterVendorSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
   h+='<button class="btn btn-p btn-sm" onclick="showQuickVendorForm()" style="white-space:nowrap;align-self:center">+ 신규 등록</button>';
@@ -229,7 +229,7 @@ function filterVendorSearch(){
   } else {
     cs.forEach(function(c){
       var badge;
-      if(c.isVendor) badge='<span style="font-size:11px;padding:3px 10px;background:#DBEAFE;color:#2563EB;border-radius:20px;font-weight:600">인쇄소</span>';
+      if(c.isVendor) badge='<span style="font-size:11px;padding:3px 10px;background:#DBEAFE;color:#2563EB;border-radius:20px;font-weight:600">협력사</span>';
       else if(c.cType==='purchase'||c.cType==='both') badge='<span style="font-size:11px;padding:3px 10px;background:#FEF3C7;color:#B45309;border-radius:20px;font-weight:600">매입처</span>';
       else badge='<span style="font-size:11px;padding:3px 10px;background:#F3F4F6;color:#6B7280;border-radius:20px;font-weight:600">거래처</span>';
       h+='<div onclick="pickVendor(\''+c.id+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
@@ -255,7 +255,7 @@ function pickVendor(id){
     sel.value=c.nm;
   }
   cMo('vendorSearchMo');
-  toast(c.nm+' 인쇄소로 선택됨','ok');
+  toast(c.nm+' 협력사로 선택됨','ok');
 }
 function showQuickVendorForm(){
   var nm=($('vdSchInput')?$('vdSchInput').value.trim():'');
@@ -268,7 +268,7 @@ function showQuickVendorForm(){
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">주소</label><input id="qvAddr" placeholder="주소" style="width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;box-sizing:border-box"></div>';
   h+='</div>';
   h+='<div style="margin-bottom:12px;display:flex;align-items:center;gap:14px"><label style="font-size:12px;font-weight:600">유형:</label>';
-  h+='<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="qvType" value="print" checked style="accent-color:var(--pri)"> 인쇄소</label>';
+  h+='<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="qvType" value="print" checked style="accent-color:var(--pri)"> 협력사</label>';
   h+='<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="qvType" value="out" style="accent-color:var(--pri)"> 외주가공</label>';
   h+='<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="qvType" value="both" style="accent-color:var(--pri)"> 인쇄+외주</label></div>';
   h+='<div style="display:flex;gap:8px;justify-content:flex-end">';
@@ -869,9 +869,9 @@ if(o.status!=='완료'&&o.status!=='출고완료'&&o.sd){
 var _rowCls=isLate(o)?'class="row-late"':'';
 return '<tr '+_rowCls+'><td><a href="#" onclick="showDet(\''+o.id+'\');return false" style="color:var(--pri);font-weight:700">'+o.wn+'</a></td><td>'+o.dt+'</td><td>'+o.cnm+'</td><td>'+o.pnm+'</td><td>'+o.fq+'</td><td style="color:var(--pri);font-weight:700">'+_amtStr+'</td><td>'+_sdDisp+'</td><td>'+(o.vendor||'자체')+'</td><td>'+progBar(o)+'</td><td>'+(isLate(o)?badge('지연'):badge(o.status))+'</td><td>'+acts+'</td></tr>'}).join('')||'<tr><td colspan="11" class="empty-cell">작업지시 없음</td></tr>'}
 function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();}
-function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();if(o.img)$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr)">`;else $('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='작업지시서 수정';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
+function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();if(o.img)$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr)">`;else $('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
 // Copy work order
-function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 출고일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();$('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='작업지시서 복사 등록';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사됨. 출고일 설정 후 저장','ok')}
+function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();$('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
 function delWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(o.status!=='대기'&&o.status!=='취소'){toast('대기/취소 상태만 삭제 가능','err');return}if(!confirm(`삭제: ${o.cnm} - ${o.pnm}`))return;if(!confirm('복구 불가. 최종 확인?'))return;DB.s('wo',DB.g('wo').filter(x=>x.id!==id));addLog(`삭제: ${o.wn} ${o.pnm}`);rWOList();if(typeof rDash==='function')rDash();if(typeof rPlan==='function')rPlan();toast('삭제','ok')}
 function chgProcSt(woId,pi,newSt){
 var wos=DB.g('wo');var oi=wos.findIndex(function(x){return x.id===woId});if(oi<0)return;
@@ -900,7 +900,7 @@ if(typeof rPlanList==='function')rPlanList();
 if(typeof rWOList==='function')rWOList();
 if(typeof updateShipBadge==='function')updateShipBadge();
 }
-function showDet(id){var wos=DB.g('wo');var o=wos.find(x=>x.id===id);if(!o){o=wos.find(x=>x.pnm===id)}if(!o){o=wos.find(x=>x.pnm&&x.pnm.indexOf(id)>=0)}if(!o){var q=id.toLowerCase();o=wos.find(x=>x.pnm&&x.pnm.toLowerCase().indexOf(q)>=0)}if(!o){toast('작업지시서를 찾을 수 없습니다','err');return}detId=o.id;
+function showDet(id){var wos=DB.g('wo');var o=wos.find(x=>x.id===id);if(!o){o=wos.find(x=>x.pnm===id)}if(!o){o=wos.find(x=>x.pnm&&x.pnm.indexOf(id)>=0)}if(!o){var q=id.toLowerCase();o=wos.find(x=>x.pnm&&x.pnm.toLowerCase().indexOf(q)>=0)}if(!o){toast('패키지 작업지시를 찾을 수 없습니다','err');return}detId=o.id;
 function fmtDate(iso){if(!iso)return'-';try{var d=new Date(iso);return d.getFullYear()+'.'+(String(d.getMonth()+1).padStart(2,'0'))+'.'+(String(d.getDate()).padStart(2,'0'))}catch(e){return'-'}}
 let ph=o.procs.map((p,i)=>{
 var isExt=(p.nm==='인쇄'||p.nm==='외주가공'||p.tp==='out'||p.tp==='exc');
@@ -965,18 +965,18 @@ toast('복원됨','ok');
 }
 // 작업 취소
 function cancelWO(id){
-if(!confirm('이 작업지시서를 취소하시겠습니까?\n취소된 작업은 현황판에서 사라집니다.'))return;
+if(!confirm('이 패키지 작업지시를 취소하시겠습니까?\n취소된 작업은 현황판에서 사라집니다.'))return;
 var os=DB.g('wo');var o=os.find(x=>x.id===id);if(!o)return;
 o.status='취소';o.procs.forEach(function(p){p.st='취소'});
 DB.s('wo',os);cMo('woDetMo');
 if(typeof rDash==='function')rDash();
 if(typeof rWOList==='function')rWOList();
 if(typeof rPlan==='function')rPlan();
-toast('작업지시서 취소됨','ok');
+toast('패키지 작업지시 취소됨','ok');
 }
 // 작업 삭제
 function deleteWO(id){
-if(!confirm('이 작업지시서를 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.'))return;
+if(!confirm('이 패키지 작업지시를 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.'))return;
 if(!confirm('정말 삭제하시겠습니까? (최종 확인)'))return;
 var _dwo=DB.g('wo').find(x=>x.id===id);
 DB.s('wo',DB.g('wo').filter(x=>x.id!==id));
@@ -985,7 +985,7 @@ cMo('woDetMo');
 if(typeof rDash==='function')rDash();
 if(typeof rWOList==='function')rWOList();
 if(typeof rPlan==='function')rPlan();
-toast('작업지시서 삭제됨','ok');
+toast('패키지 작업지시 삭제됨','ok');
 }
 // CSV Export
 function exportCSV(){const os=DB.g('wo');let csv='\\uFEFF지시번호,작성일,거래처,제품명,정매,완제품,출고일,상태,진행률\\n';os.forEach(o=>{const t=o.procs.length,d=o.procs.filter(p=>p.st==='완료'||p.st==='외주완료').length;csv+=`${o.wn},${o.dt},${o.cnm},${o.pnm},${o.qm},${o.fq},${o.sd},${o.status},${d}/${t}\\n`});const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='작업지시목록_'+td()+'.csv';a.click();toast('엑셀 내보내기 완료','ok')}
@@ -995,7 +995,7 @@ function printWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;const co
 function pVal(nm){const p=o.procs.find(x=>x.nm===nm);return p?{mt:p.mt||'',vd:p.vd||'',tp:p.tp}:{mt:'',vd:'',tp:'n'}}
 const pi=pVal('인쇄'),pk=pVal('코팅'),psk=pVal('실크코팅'),pg=pVal('금박'),ph=pVal('합지'),pt=pVal('톰슨'),pj=pVal('접착'),phg=pVal('후가공'),pe=pVal('기타');
 const h=`
-<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:6px;padding:16px 0;border:3px solid #000;margin-bottom:12px">${co.nm||'팩플로우'} 작업지시서</div>
+<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:4px;padding:16px 0;border:3px solid #000;margin-bottom:12px">${co.nm||'팩플로우'} 패키지 작업지시서</div>
 <table>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;수신: <b>${o.vendor||''}</b></td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">주소 : ${co.addr}</td></tr>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;전화 : ${o.tel||''} &nbsp; 팩스 : ${o.fax||''}</td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">전화 : ${co.tel}</td></tr>
@@ -1030,7 +1030,7 @@ if(!w){
   // 팝업 차단 시 모달로 대체
   var pm=document.getElementById('printMo');
   if(!pm){pm=document.createElement('div');pm.id='printMo';pm.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center';pm.onclick=function(e){if(e.target===pm)pm.remove()};document.body.appendChild(pm)}
-  pm.innerHTML='<div style="background:#fff;width:90vw;height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column"><div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd"><span style="font-weight:700">작업지시서 미리보기</span><div style="display:flex;gap:8px"><button onclick="document.getElementById(\'printFrame\').contentWindow.print()" style="padding:8px 20px;background:#1E3A5F;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">인쇄</button><button onclick="document.getElementById(\'printMo\').remove()" style="padding:8px 16px;background:#E2E8F0;border:none;border-radius:8px;cursor:pointer">닫기</button></div></div><iframe id="printFrame" style="flex:1;border:none"></iframe></div>';
+  pm.innerHTML='<div style="background:#fff;width:90vw;height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column"><div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd"><span style="font-weight:700">패키지 작업지시 미리보기</span><div style="display:flex;gap:8px"><button onclick="document.getElementById(\'printFrame\').contentWindow.print()" style="padding:8px 20px;background:#1E3A5F;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">인쇄</button><button onclick="document.getElementById(\'printMo\').remove()" style="padding:8px 16px;background:#E2E8F0;border:none;border-radius:8px;cursor:pointer">닫기</button></div></div><iframe id="printFrame" style="flex:1;border:none"></iframe></div>';
   var pf=document.getElementById('printFrame');
   pf.contentDocument.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.wn}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Malgun Gothic','Nanum Gothic',sans-serif;font-size:11px;line-height:1.4;width:210mm;padding:10mm 15mm}table{width:100%;border-collapse:collapse}th.lbl,td.val{border:1px solid #333;padding:5px 8px;font-size:11px;text-align:left;vertical-align:middle}th.lbl{background:#F0F0F0;font-weight:700;white-space:nowrap;text-align:center;width:75px}td.val{font-size:11px}@media print{@page{size:A4;margin:0}body{padding:10mm 15mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>${h}</body></html>`);
@@ -1058,8 +1058,8 @@ ${h}</body></html>`);w.document.close()}
 function openWoListPopup(filter){
   var all=window._woListData||[];
   var woList=all;
-  var titleMap={all:'전체 작업지시서',ing:'진행중',wait:'대기',late:'납기임박',urgent:'긴급'};
-  var title=titleMap[filter]||'전체 작업지시서';
+  var titleMap={all:'전체 패키지 작업지시',ing:'진행중',wait:'대기',late:'납기임박',urgent:'긴급'};
+  var title=titleMap[filter]||'전체 패키지 작업지시';
   if(filter==='ing')woList=all.filter(function(x){return x.curSt==='진행중'});
   else if(filter==='wait')woList=all.filter(function(x){return x.curSt!=='진행중'});
   else if(filter==='late')woList=all.filter(function(x){return x.dday<0});
@@ -1624,7 +1624,7 @@ function openTplList(){
   var tpls=DB.g('woTemplates');
   var h='<div style="max-height:500px;overflow-y:auto">';
   if(!tpls.length){
-    h+='<div class="empty-state"><div class="msg">등록된 템플릿이 없습니다.<br>작업지시서 목록에서 "템플릿 저장"을 이용하세요.</div></div>';
+    h+='<div class="empty-state"><div class="msg">등록된 템플릿이 없습니다.<br>패키지 작업지시 목록에서 "템플릿 저장"을 이용하세요.</div></div>';
   } else {
     h+='<table class="dt"><thead><tr><th>템플릿명</th><th>거래처</th><th>제품</th><th>수량</th><th>주기</th><th>사용</th><th>관리</th></tr></thead><tbody>';
     tpls.forEach(function(t){
@@ -1645,7 +1645,7 @@ function openTplList(){
 
 function saveAsTpl(woId){
   var o=DB.g('wo').find(function(x){return x.id===woId});
-  if(!o){toast('작업지시서를 찾을 수 없습니다','err');return}
+  if(!o){toast('패키지 작업지시를 찾을 수 없습니다','err');return}
   var name=prompt('템플릿 이름을 입력하세요:', o.cnm+' - '+o.pnm+' 반복주문');
   if(!name)return;
   var cycle=prompt('반복 주기를 입력하세요 (monthly/weekly/biweekly/quarterly):','monthly');

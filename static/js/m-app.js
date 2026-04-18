@@ -36,7 +36,7 @@ function mGoTab(tab){
     t.classList.toggle('on', t.dataset.tab === tab);
   });
 
-  var titles = {home:'홈', order:'작업지시서', dash:'생산현황', more:'더보기'};
+  var titles = {home:'홈', order:'패키지 작업', dash:'생산현황', more:'더보기'};
   mq('mHdrTitle').textContent = titles[tab] || '팩플로우';
 
   // 탭별 렌더링
@@ -53,14 +53,14 @@ function mLoadLoginUsers(){
   var sel = mq('mLoginUser');
   sel.innerHTML = '<option value="">-- 선택 --</option>';
 
-  // 1) 서버 DB에서 직접 users 조회 (인증 없이 공개 접근)
-  fetch('/api/data/ino_users').then(function(r){
+  // 1) 서버 공개 사용자 목록 사용
+  fetch('/api/users/public').then(function(r){
     if(!r.ok) throw new Error('API');
     return r.json();
   }).then(function(data){
     var users = [];
     try {
-      users = typeof data === 'string' ? JSON.parse(data) : (data.value ? JSON.parse(data.value) : data);
+      users = typeof data === 'string' ? JSON.parse(data) : data;
       if (!Array.isArray(users)) users = [];
     } catch(e) { users = []; }
 
@@ -464,7 +464,7 @@ function mRenderOrders(){
 
   var html = '';
   if(list.length === 0){
-    html = '<div class="m-empty"><div class="m-empty-ico"></div><div class="m-empty-msg">작업지시서가 없습니다</div><div class="m-empty-sub">+ 새 작업지시서 등록으로 시작하세요</div></div>';
+    html = '<div class="m-empty"><div class="m-empty-ico"></div><div class="m-empty-msg">패키지 작업이 없습니다</div><div class="m-empty-sub">+ 새 작업지시 등록으로 시작하세요</div></div>';
   } else {
     list.forEach(function(r){
       var progress = mCalcWOProgress(r);
@@ -554,7 +554,7 @@ function mShowWODetail(id){
   if(!r){mToast('데이터 없음','err');return}
 
   mq('mWOId').value = id;
-  mq('mWOTitle').textContent = r.wn || '작업지시서';
+  mq('mWOTitle').textContent = r.wn || '패키지 작업지시';
 
   // 기본 정보 렌더
   var progress = mCalcWOProgress(r);
@@ -642,13 +642,13 @@ function mSetProcStatus(idx, status){
   }
 
   DB.s('wo', all);
-  mToast('+' 처리됨', 'ok');
+  mToast(status+' 처리됨', 'ok');
   mShowWODetail(id); // 새로고침
 }
 
 function mWOComplete(){
   var id = mq('mWOId').value;
-  if(!confirm('이 작업지시서를 완료 처리하시겠습니까?')) return;
+  if(!confirm('이 패키지 작업지시를 완료 처리하시겠습니까?')) return;
   var all = DB.g('wo') || [];
   var i = all.findIndex(function(x){return x.id === id});
   if(i < 0) return;
@@ -664,7 +664,7 @@ function mWOComplete(){
 
 function mWOCancel(){
   var id = mq('mWOId').value;
-  if(!confirm('이 작업지시서를 취소하시겠습니까?')) return;
+  if(!confirm('이 패키지 작업지시를 취소하시겠습니까?')) return;
   var all = DB.g('wo') || [];
   var i = all.findIndex(function(x){return x.id === id});
   if(i < 0) return;
@@ -852,7 +852,7 @@ function mRenderShip(){
 
 function mOpenShip(woId){
   var wo = (DB.g('wo')||[]).find(function(x){return x.id===woId});
-  if(!wo){mToast('작업지시서 없음','err');return}
+  if(!wo){mToast('패키지 작업지시 없음','err');return}
 
   mq('mShipWoId').value = woId;
   mq('mShipInfo').innerHTML = '<b>'+(wo.cnm||'')+'</b><br>'
@@ -883,7 +883,7 @@ function mDoShip(){
   if(!qty || qty <= 0){mToast('출고 수량을 입력하세요','err');return}
 
   var wo = (DB.g('wo')||[]).find(function(x){return x.id===woId});
-  if(!wo){mToast('작업지시서 없음','err');return}
+  if(!wo){mToast('패키지 작업지시 없음','err');return}
 
   var rec = {
     id: mGid(),
@@ -1073,7 +1073,7 @@ function mOpenNewOrder(editId){
 
   // 타이틀
   var titleEl = document.querySelector('#mModalOrder .m-modal-title');
-  if(titleEl) titleEl.textContent = editId ? '작업지시서 수정' : '새 작업지시서';
+  if(titleEl) titleEl.textContent = editId ? '패키지 작업지시 수정' : '새 작업지시';
 
   // 금액 자동 계산
   mq('mOrderQty').oninput = mCalcOrderAmt;
@@ -1166,7 +1166,7 @@ function mSaveOrder(){
 
     wo.push(rec);
     DB.s('wo', wo);
-    mToast('작업지시서 등록 완료', 'ok');
+    mToast('패키지 작업지시 등록 완료', 'ok');
   }
 
   mCloseModal('mModalOrder');

@@ -479,6 +479,7 @@ function rTx(){
   $('txT').textContent=fmt(ma.reduce((s,r)=>s+(r.supply||0)+(r.vat||0),0))+'원';
   var stBadge=function(m){
     if(m==='전자발행')return '<span class="bd" style="background:#EFF6FF;color:#1E40AF;border-color:#BFDBFE">⚡전자</span>';
+    if(m==='전자대기')return '<span class="bd" style="background:#EEF2FF;color:#4338CA;border-color:#C7D2FE">전자대기</span>';
     if(m==='전자실패')return '<span class="bd" style="background:#FEE2E2;color:#DC2626;border-color:#FECACA">실패</span>';
     return '<span class="bd" style="background:#F1F5F9;color:#64748B;border-color:#E2E8F0">📄종이</span>';
   };
@@ -510,7 +511,7 @@ function openTxM(){['txId','txItem','txBiz','txNt','txCeo','txAddr'].forEach(x=>
   renderGrpRadio('txGrpSel',_currentGroupId==='ALL'?'':_currentGroupId);
   updateTxGrpInfo(getSelectedGrpId('txGrpSel'));
   oMo('txMo2')}
-function eTxr(id){const r=DB.g('taxInvoice').find(x=>x.id===id);if(!r)return;$('txId').value=r.id;$('txDt').value=r.dt;$('txTpS').value=r.type;$('txCli').value=r.cli;$('txBiz').value=r.bizNo||'';if($('txCeo'))$('txCeo').value=r.ceo||'';if($('txAddr'))$('txAddr').value=r.addr||'';$('txItem').value=r.item||'';if($('txQty'))$('txQty').value=r.qty||1;if($('txPrice'))$('txPrice').value=r.price||'';$('txSup').value=r.supply;$('txVat').value=r.vat;$('txTot').value=fmt((r.supply||0)+(r.vat||0))+'원';$('txNt').value=r.note||'';if($('txPurpose'))$('txPurpose').value=r.purpose||'영수';var m=(r.method==='전자발행')?'electronic':'paper';document.querySelector('input[name="txMethod"][value="'+m+'"]').checked=true;toggleTxMethod();$('txMoT').textContent='수정';
+function eTxr(id){const r=DB.g('taxInvoice').find(x=>x.id===id);if(!r)return;$('txId').value=r.id;$('txDt').value=r.dt;$('txTpS').value=r.type;$('txCli').value=r.cli;$('txBiz').value=r.bizNo||'';if($('txCeo'))$('txCeo').value=r.ceo||'';if($('txAddr'))$('txAddr').value=r.addr||'';$('txItem').value=r.item||'';if($('txQty'))$('txQty').value=r.qty||1;if($('txPrice'))$('txPrice').value=r.price||'';$('txSup').value=r.supply;$('txVat').value=r.vat;$('txTot').value=fmt((r.supply||0)+(r.vat||0))+'원';$('txNt').value=r.note||'';if($('txPurpose'))$('txPurpose').value=r.purpose||'영수';var m=(r.method&&r.method.indexOf('전자')===0)?'electronic':'paper';document.querySelector('input[name="txMethod"][value="'+m+'"]').checked=true;toggleTxMethod();$('txMoT').textContent='수정';
   renderGrpRadio('txGrpSel',r.groupId||'');
   updateTxGrpInfo(r.groupId||'');
   oMo('txMo2')}

@@ -1,32 +1,38 @@
 let cProcs=[],cPapers=[],cFabrics=[],editId=null,lastSavedId=null,detId=null;
 function renPapers(){
   var area=$('woPapersArea');if(!area)return;
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:600;color:var(--txt2)">종이</span><button type="button" class="btn btn-o btn-sm" onclick="addPaperRow()" style="padding:3px 8px;font-size:11px">+ 추가</button></div>';
+  var h='<div class="wo-subsheet">'
+    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">종이 자재</div><div class="wo-subsheet-sub">정매와 여분 수량을 함께 관리합니다.</div></div><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addPaperRow()">+ 추가</button></div>';
   cPapers.forEach(function(p,i){
-    h+='<div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr auto;gap:4px;margin-bottom:4px;align-items:end">';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">종류'+(cPapers.length>1?' '+(i+1):'')+'</label><input value="'+(p.paper||'')+'" placeholder="" onchange="cPapers['+i+'].paper=this.value" style="padding:5px 6px;font-size:12px"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">규격</label><input value="'+(p.spec||'')+'" placeholder="" onchange="cPapers['+i+'].spec=this.value" style="padding:5px 6px;font-size:12px"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">'+(i===0?'<span class="req">정매</span>':'정매')+'</label><input type="number" value="'+(p.qm||'')+'" min="0" onchange="cPapers['+i+'].qm=+this.value" style="padding:5px 4px;font-size:12px;width:100%;box-sizing:border-box"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">여분</label><input type="number" value="'+(p.qe||'')+'" min="0" onchange="cPapers['+i+'].qe=+this.value" style="padding:5px 4px;font-size:12px;width:100%;box-sizing:border-box"></div>';
-    h+='<button type="button" onclick="rmPaperRow('+i+')" style="background:none;border:none;color:#EF4444;font-size:16px;cursor:pointer;padding:0 2px;align-self:center"'+(cPapers.length===1?' disabled style="opacity:0.3;cursor:default"':'')+'>×</button>';
-    h+='</div>';
+    var canRemove=cPapers.length>1;
+    h+='<div class="wo-row-card"><div class="wo-row-grid wo-row-grid-material">';
+    h+='<div class="fg"><label>종류'+(cPapers.length>1?' '+(i+1):'')+'</label><input value="'+(p.paper||'')+'" placeholder="예: 아이보리 350g" onchange="cPapers['+i+'].paper=this.value"></div>';
+    h+='<div class="fg"><label>규격</label><input value="'+(p.spec||'')+'" placeholder="예: 788x1091" onchange="cPapers['+i+'].spec=this.value"></div>';
+    h+='<div class="fg"><label>'+(i===0?'<span class="req">정매</span>':'정매')+'</label><input type="number" value="'+(p.qm||'')+'" min="0" onchange="cPapers['+i+'].qm=+this.value"></div>';
+    h+='<div class="fg"><label>여분</label><input type="number" value="'+(p.qe||'')+'" min="0" onchange="cPapers['+i+'].qe=+this.value"></div>';
+    h+='<button type="button" class="wo-row-remove'+(canRemove?'':' is-disabled')+'" onclick="rmPaperRow('+i+')"'+(canRemove?'':' disabled')+'>×</button>';
+    h+='</div></div>';
   });
+  h+='</div>';
   area.innerHTML=h;
 }
 function addPaperRow(){cPapers.push({paper:'',spec:'',qm:0,qe:0});renPapers();}
 function rmPaperRow(i){if(cPapers.length===1)return;cPapers.splice(i,1);renPapers();}
 function renFabrics(){
   var area=$('woFabricsArea');if(!area)return;
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:600;color:var(--txt2)">원단</span><button type="button" class="btn btn-o btn-sm" onclick="addFabricRow()" style="padding:3px 8px;font-size:11px">+ 추가</button></div>';
+  var h='<div class="wo-subsheet">'
+    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">원단 / 부자재</div><div class="wo-subsheet-sub">원단이나 보조 자재가 있으면 같이 기록합니다.</div></div><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addFabricRow()">+ 추가</button></div>';
   cFabrics.forEach(function(f,i){
-    h+='<div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr auto;gap:4px;margin-bottom:4px;align-items:end">';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">종류'+(cFabrics.length>1?' '+(i+1):'')+'</label><input value="'+(f.fabric||'')+'" placeholder="" onchange="cFabrics['+i+'].fabric=this.value" style="padding:5px 6px;font-size:12px"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">원단규격</label><input value="'+(f.fabricSpec||'')+'" placeholder="" onchange="cFabrics['+i+'].fabricSpec=this.value" style="padding:5px 6px;font-size:12px"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">수량</label><input type="number" value="'+(f.fabricQty||'')+'" min="0" onchange="cFabrics['+i+'].fabricQty=+this.value" style="padding:5px 4px;font-size:12px;width:100%;box-sizing:border-box"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">여분</label><input type="number" value="'+(f.fabricExtra||'')+'" min="0" onchange="cFabrics['+i+'].fabricExtra=+this.value" style="padding:5px 4px;font-size:12px;width:100%;box-sizing:border-box"></div>';
-    h+='<button type="button" onclick="rmFabricRow('+i+')" style="background:none;border:none;color:#EF4444;font-size:16px;cursor:pointer;padding:0 2px;align-self:center"'+(cFabrics.length===1?' disabled style="opacity:0.3;cursor:default"':'')+'>×</button>';
-    h+='</div>';
+    var canRemove=cFabrics.length>1;
+    h+='<div class="wo-row-card"><div class="wo-row-grid wo-row-grid-material">';
+    h+='<div class="fg"><label>종류'+(cFabrics.length>1?' '+(i+1):'')+'</label><input value="'+(f.fabric||'')+'" placeholder="예: 손잡이끈" onchange="cFabrics['+i+'].fabric=this.value"></div>';
+    h+='<div class="fg"><label>원단규격</label><input value="'+(f.fabricSpec||'')+'" placeholder="규격 / 색상" onchange="cFabrics['+i+'].fabricSpec=this.value"></div>';
+    h+='<div class="fg"><label>수량</label><input type="number" value="'+(f.fabricQty||'')+'" min="0" onchange="cFabrics['+i+'].fabricQty=+this.value"></div>';
+    h+='<div class="fg"><label>여분</label><input type="number" value="'+(f.fabricExtra||'')+'" min="0" onchange="cFabrics['+i+'].fabricExtra=+this.value"></div>';
+    h+='<button type="button" class="wo-row-remove'+(canRemove?'':' is-disabled')+'" onclick="rmFabricRow('+i+')"'+(canRemove?'':' disabled')+'>×</button>';
+    h+='</div></div>';
   });
+  h+='</div>';
   area.innerHTML=h;
 }
 function addFabricRow(){cFabrics.push({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0});renFabrics();}
@@ -45,7 +51,7 @@ function fillWOMgr(defaultVal){
   if(!sel.value&&us.length)sel.value=us[0].nm;
 }
 function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
-function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId'))$('woOrdId').value='';$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();$('selP').innerHTML='<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>';$('pDet').innerHTML='';$('woImgP').innerHTML='';$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
+function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId'))$('woOrdId').value='';$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
 function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
@@ -58,18 +64,21 @@ function pMove(i,dir){
   renP();
 }
 function renP(){
-$('selP').innerHTML=cProcs.length===0?'<span style="color:var(--txt2);font-size:13px">공정 버튼을 클릭하여 추가</span>':cProcs.map((p,i)=>`<span class="pt ${p.tp==='out'?'out':p.tp==='exc'?'exc':''}" style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-flex;flex-direction:column;gap:1px"><button onclick="pMove(${i},-1)" style="border:none;background:${i===0?'#E5E7EB':'#DCE8F5'};color:${i===0?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===0?'default':'pointer'}" ${i===0?'disabled':''}>▲</button><button onclick="pMove(${i},1)" style="border:none;background:${i===cProcs.length-1?'#E5E7EB':'#DCE8F5'};color:${i===cProcs.length-1?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===cProcs.length-1?'default':'pointer'}" ${i===cProcs.length-1?'disabled':''}>▼</button></span>${i+1}. ${p.nm}<span class="rm" onclick="rmP(${i})">&times;</span></span>`).join('');
-$('pDet').innerHTML=cProcs.length===0?'':'<div style="font-size:13px;font-weight:700;margin-bottom:7px">공정별 상세</div>'+cProcs.map((p,i)=>{
-var bg=p.tp==='out'?'var(--out-l)':p.tp==='exc'?'var(--exc-l)':'var(--bg2)';
-var h='<div style="margin-bottom:7px;padding:10px;background:'+bg+';border-radius:10px"><div class="fr">';
-h+='<div class="fg"><label>'+( i+1)+'. '+p.nm+' - 방식</label><input value="'+(p.mt||'')+'" onchange="cProcs['+i+'].mt=this.value" placeholder=""></div>';
+$('selP').innerHTML=cProcs.length===0
+  ?'<div class="wo-proc-empty"><div class="wo-proc-empty-title">공정을 추가해보세요</div><div class="wo-proc-empty-sub">상단 버튼을 눌러 실제 생산 순서대로 쌓으면 됩니다.</div></div>'
+  :cProcs.map((p,i)=>`<span class="pt wo-proc-pill ${p.tp==='out'?'out':p.tp==='exc'?'exc':''}" style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-flex;flex-direction:column;gap:1px"><button onclick="pMove(${i},-1)" style="border:none;background:${i===0?'#E5E7EB':'#DCE8F5'};color:${i===0?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===0?'default':'pointer'}" ${i===0?'disabled':''}>▲</button><button onclick="pMove(${i},1)" style="border:none;background:${i===cProcs.length-1?'#E5E7EB':'#DCE8F5'};color:${i===cProcs.length-1?'#D1D5DB':'#1E3A5F'};font-size:8px;line-height:1;padding:1px 3px;border-radius:2px;cursor:${i===cProcs.length-1?'default':'pointer'}" ${i===cProcs.length-1?'disabled':''}>▼</button></span>${i+1}. ${p.nm}<span class="rm" onclick="rmP(${i})">&times;</span></span>`).join('');
+$('pDet').innerHTML=cProcs.length===0?'':'<div class="wo-proc-panel-title">공정 상세 설정</div>'+cProcs.map((p,i)=>{
+var cardClass=p.tp==='out'?' is-out':p.tp==='exc'?' is-exc':'';
+var procSub=p.tp!=='n'?'외주 공정':'내부 공정';
+var h='<div class="wo-proc-card'+cardClass+'"><div class="wo-proc-card-head"><div class="wo-proc-card-index">'+(i+1)+'</div><div class="wo-proc-card-copy"><div class="wo-proc-card-title">'+p.nm+'</div><div class="wo-proc-card-sub">'+procSub+'</div></div></div><div class="fr">';
+h+='<div class="fg"><label>방식</label><input value="'+(p.mt||'')+'" onchange="cProcs['+i+'].mt=this.value" placeholder="방식 또는 장비명"></div>';
 h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div>';
 h+='</div>';
 if(p.nm==='인쇄'){
-  h+='<div style="margin-top:4px;padding:4px 0"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(협력사에서 일괄 처리)</span></label></div>';
+  h+='<div class="wo-inline-check"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(협력사에서 일괄 처리)</span></label></div>';
 }
 if(p.nm==='톰슨'){
-  h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div style="display:flex;gap:6px;align-items:center"><div class="ac-w"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">🔍 검색</button></div></div>';
+  h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">🔍 검색</button></div></div>';
 }
 if(p.nm==='외주가공'){
 h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div></div>';
@@ -641,7 +650,7 @@ function getDefectHistory(pnm){
   var lines=recent.map(function(d){return '['+d.dt+'] '+d.proc+' - '+d.reason+' (불량 '+d.defect+'매, '+d.worker+')'});
   return '이전 불량 이력\n'+lines.join('\n');
 }
-function selProd(id){const p=DB.g('prod').find(x=>x.id===id);if(!p)return;$('woProd').value=p.nm;$('woPrint').value=p.ps||'';$('woGold').value=p.gold||'';$('woMold').value=p.mold||'';$('woHand').value=p.hand||'';$('woNote').value=p.nt||'';_loadPapersFabrics(p);
+function selProd(id){const p=DB.g('prod').find(x=>x.id===id);if(!p)return;$('woProd').value=p.nm;$('woPrint').value=p.ps||'';$('woGold').value=p.gold||'';$('woMold').value=p.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=p.mold||'';$('woHand').value=p.hand||'';$('woNote').value=p.nt||'';_loadPapersFabrics(p);
   // 불량 이력 자동 삽입
   var defHist=getDefectHistory(p.nm);
   $('woCaut').value=defHist?(defHist+(p.caut?'\n\n'+p.caut:'')):(p.caut||'');
@@ -683,7 +692,7 @@ function loadPastWO(woId){
   $('woQM').value=o.qm||'';$('woQE').value=o.qe||'';
   $('woFabric').value=o.fabric||'';$('woFabricSpec').value=o.fabricSpec||'';$('woFabricQty').value=o.fabricQty||'';$('woFabricExtra').value=o.fabricExtra||'';
   $('woPrint').value=o.ps||'';
-  $('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';
+  $('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';
   $('woFQ').value='';$('woShip').value='';
   $('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';
   if(o.vendor&&$('woVendor'))$('woVendor').value=o.vendor;
@@ -723,12 +732,12 @@ function _hlAcVd(items){
   if(_acVdIdx>=0&&items[_acVdIdx])items[_acVdIdx].scrollIntoView({block:'nearest'});
 }
 function acMoldInProc(v,idx){var l=$('acMoldP'+idx);if(!l)return;if(!v){l.classList.add('hidden');return}var ms=DB.g('mold').filter(function(m){return m.no.includes(v)||m.pnm.includes(v)});if(!ms.length){l.classList.add('hidden');return}l.innerHTML=ms.map(function(m){return'<div class="ac-i" onclick="cProcs['+idx+'].moldNo=\''+m.no+'\';this.closest(\'.ac-w\').querySelector(\'input\').value=\''+m.no+'\';$(\'acMoldP'+idx+'\').classList.add(\'hidden\');$(\'woMold\').value=\''+m.no+'\'">'+m.no+' ('+m.pnm+')</div>'}).join('');l.classList.remove('hidden')}
-function _setWoImg(file){if(!file||!file.type.startsWith('image/'))return;var r=new FileReader();r.onload=function(e){var pv=$('woImgP');var hint=$('woImgHint');var zone=$('woImgZone');if(pv)pv.innerHTML='<img src="'+e.target.result+'" style="max-width:200px;max-height:130px;border-radius:6px;border:1px solid var(--bdr);cursor:pointer" onclick="window.open(this.src)" title="클릭하면 원본 보기"><button onclick="event.stopPropagation();woImgClear()" style="display:block;margin:4px auto 0;font-size:10px;color:var(--txt2);background:none;border:none;cursor:pointer">× 제거</button>';if(hint)hint.style.display='none';if(zone)zone.style.borderColor='var(--pri)'};r.readAsDataURL(file)}
+function _setWoImg(file){if(!file||!file.type.startsWith('image/'))return;var r=new FileReader();r.onload=function(e){var pv=$('woImgP');var hint=$('woImgHint');var zone=$('woImgZone');if(pv)pv.innerHTML='<img src="'+e.target.result+'" style="max-width:200px;max-height:130px;border-radius:10px;border:1px solid var(--bdr);cursor:pointer" onclick="window.open(this.src)" title="클릭하면 원본 보기"><button onclick="event.stopPropagation();woImgClear()" style="display:block;margin:6px auto 0;font-size:11px;color:var(--txt2);background:none;border:none;cursor:pointer">× 제거</button>';if(hint)hint.style.display='none';if(zone)zone.style.borderColor='var(--pri)'};r.readAsDataURL(file)}
 function prevImg(inp){if(inp.files&&inp.files[0])_setWoImg(inp.files[0])}
 function woImgDrop(e){e.preventDefault();var zone=$('woImgZone');if(zone)zone.style.borderColor='var(--bdr)';var file=e.dataTransfer.files[0];if(file)_setWoImg(file)}
 function woImgClear(){var pv=$('woImgP');var hint=$('woImgHint');var zone=$('woImgZone');if(pv)pv.innerHTML='';if(hint)hint.style.display='';if(zone)zone.style.borderColor='var(--bdr)';var inp=$('woImg');if(inp)inp.value=''}
 // 클립보드 붙여넣기 (모달이 열려 있을 때만)
-document.addEventListener('paste',function(e){if(!document.getElementById('woMo')||document.getElementById('woMo').style.display==='none')return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;for(var i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){_setWoImg(items[i].getAsFile());toast('이미지 붙여넣기 완료','ok');break}}});
+document.addEventListener('paste',function(e){var ov=document.getElementById('woFormOv');if(!ov||ov.classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;for(var i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){_setWoImg(items[i].getAsFile());toast('이미지 붙여넣기 완료','ok');break}}});
 function saveWO(){
 const cn=$('woCli').value.trim(),pn=$('woProd').value.trim(),fq=$('woFQ').value,sd=$('woShip').value;
 var _p0=cPapers[0]||{};var qm=_p0.qm||0;
@@ -820,6 +829,9 @@ if(!editId){
   }
   DB.s('wo',os);
 }
+if(typeof syncWOOutsourceRecords==='function'){
+  try{syncWOOutsourceRecords(wo)}catch(_osSyncErr){console.warn('outsource sync error',_osSyncErr)}
+}
 toast('저장 완료','ok');editId=null;
 cMo('woFormOv');rWOList();
 try{if(typeof rDash==='function')rDash();if(typeof rPlan==='function')rPlan();if(typeof rWQ==='function')rWQ();if(typeof updateShipBadge==='function')updateShipBadge();}catch(e){}
@@ -869,9 +881,9 @@ if(o.status!=='완료'&&o.status!=='출고완료'&&o.sd){
 var _rowCls=isLate(o)?'class="row-late"':'';
 return '<tr '+_rowCls+'><td><a href="#" onclick="showDet(\''+o.id+'\');return false" style="color:var(--pri);font-weight:700">'+o.wn+'</a></td><td>'+o.dt+'</td><td>'+o.cnm+'</td><td>'+o.pnm+'</td><td>'+o.fq+'</td><td style="color:var(--pri);font-weight:700">'+_amtStr+'</td><td>'+_sdDisp+'</td><td>'+(o.vendor||'자체')+'</td><td>'+progBar(o)+'</td><td>'+(isLate(o)?badge('지연'):badge(o.status))+'</td><td>'+acts+'</td></tr>'}).join('')||'<tr><td colspan="11" class="empty-cell">작업지시 없음</td></tr>'}
 function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();}
-function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();if(o.img)$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr)">`;else $('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
+function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();if(o.img){$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr);border-radius:10px">`;if($('woImgHint'))$('woImgHint').style.display='none';}else{woImgClear()}_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
 // Copy work order
-function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();$('woImgP').innerHTML='';_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
+function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
 function delWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(o.status!=='대기'&&o.status!=='취소'){toast('대기/취소 상태만 삭제 가능','err');return}if(!confirm(`삭제: ${o.cnm} - ${o.pnm}`))return;if(!confirm('복구 불가. 최종 확인?'))return;DB.s('wo',DB.g('wo').filter(x=>x.id!==id));addLog(`삭제: ${o.wn} ${o.pnm}`);rWOList();if(typeof rDash==='function')rDash();if(typeof rPlan==='function')rPlan();toast('삭제','ok')}
 function chgProcSt(woId,pi,newSt){
 var wos=DB.g('wo');var oi=wos.findIndex(function(x){return x.id===woId});if(oi<0)return;
@@ -1738,17 +1750,19 @@ var cColors=[];
 
 function renColors(){
   var area=$('woColorsArea');if(!area)return;
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:600;color:var(--txt2)">색상</span><div><button type="button" class="btn btn-o btn-sm" onclick="openColorMaster()" style="padding:3px 6px;font-size:10px;margin-right:4px">마스터</button><button type="button" class="btn btn-o btn-sm" onclick="addColorRow()" style="padding:3px 8px;font-size:11px">+ 추가</button></div></div>';
+  var h='<div class="wo-subsheet">'
+    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">색상 / 박 사양</div><div class="wo-subsheet-sub">별색, 팬톤, 금박 정보를 같이 관리합니다.</div></div><div class="wo-subsheet-actions"><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="openColorMaster()">마스터</button><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addColorRow()">+ 추가</button></div></div>';
   cColors.forEach(function(c,i){
-    h+='<div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr auto;gap:4px;margin-bottom:4px;align-items:end">';
-    h+='<div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bdr);background:'+(c.hex||'#ccc')+';align-self:center;cursor:pointer" onclick="pickColorHex('+i+')" title="색상 선택"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">색상코드</label><div style="position:relative"><input value="'+(c.code||'')+'" placeholder="PMS 186C" oninput="cColors['+i+'].code=this.value;acColor(this.value,'+i+')" onfocus="acColor(this.value,'+i+')" style="padding:6px 8px;font-size:12px"><div id="acClr'+i+'" class="ac-l hidden" style="position:absolute;top:100%;left:0;right:0;z-index:99;background:#fff;border:1px solid var(--bdr);border-radius:6px;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">색상명</label><input value="'+(c.name||'')+'" placeholder="빨강" onchange="cColors['+i+'].name=this.value" style="padding:6px 8px;font-size:12px"></div>';
-    h+='<div class="fg" style="margin:0"><label style="font-size:11px">구분</label><select onchange="cColors['+i+'].type=this.value" style="padding:6px 8px;font-size:12px;border:1px solid var(--bdr);border-radius:8px"><option value="별색"'+(c.type==='별색'?' selected':'')+'>별색</option><option value="일반"'+(c.type==='일반'?' selected':'')+'>일반(CMYK)</option><option value="팬톤"'+(c.type==='팬톤'?' selected':'')+'>팬톤</option><option value="금박"'+(c.type==='금박'?' selected':'')+'>금박</option><option value="은박"'+(c.type==='은박'?' selected':'')+'>은박</option></select></div>';
-    h+='<button type="button" onclick="rmColorRow('+i+')" style="background:none;border:none;color:#EF4444;font-size:16px;cursor:pointer;padding:0 4px;align-self:center">x</button>';
-    h+='</div>';
+    h+='<div class="wo-row-card"><div class="wo-row-grid wo-row-grid-color">';
+    h+='<div class="wo-color-swatch" style="background:'+(c.hex||'#ccc')+'" onclick="pickColorHex('+i+')" title="색상 선택"></div>';
+    h+='<div class="fg"><label>색상코드</label><div style="position:relative"><input value="'+(c.code||'')+'" placeholder="PMS 186C" oninput="cColors['+i+'].code=this.value;acColor(this.value,'+i+')" onfocus="acColor(this.value,'+i+')"><div id="acClr'+i+'" class="ac-l hidden" style="position:absolute;top:100%;left:0;right:0;z-index:99;background:#fff;border:1px solid var(--bdr);border-radius:6px;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div></div>';
+    h+='<div class="fg"><label>색상명</label><input value="'+(c.name||'')+'" placeholder="빨강" onchange="cColors['+i+'].name=this.value"></div>';
+    h+='<div class="fg"><label>구분</label><select onchange="cColors['+i+'].type=this.value"><option value="별색"'+(c.type==='별색'?' selected':'')+'>별색</option><option value="일반"'+(c.type==='일반'?' selected':'')+'>일반(CMYK)</option><option value="팬톤"'+(c.type==='팬톤'?' selected':'')+'>팬톤</option><option value="금박"'+(c.type==='금박'?' selected':'')+'>금박</option><option value="은박"'+(c.type==='은박'?' selected':'')+'>은박</option></select></div>';
+    h+='<button type="button" class="wo-row-remove" onclick="rmColorRow('+i+')">×</button>';
+    h+='</div></div>';
   });
-  if(!cColors.length) h+='<div style="font-size:11px;color:var(--txt3);padding:6px;text-align:center">색상 추가 버튼을 클릭하세요</div>';
+  if(!cColors.length) h+='<div class="wo-empty-inline">색상 추가 버튼을 눌러 별색이나 금박 사양을 기록하세요.</div>';
+  h+='</div>';
   area.innerHTML=h;
 }
 function addColorRow(){cColors.push({code:'',name:'',type:'별색',hex:'#999999',recipe:'',note:''});renColors()}

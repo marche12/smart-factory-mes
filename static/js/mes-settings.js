@@ -280,6 +280,38 @@ try{
   if(typeof DocTrace!=='undefined')DocTrace.link('SHIP',rec.id,'SALE',_saleId,'','');
   addLog('매출자동등록: '+o.cnm+' '+o.pnm+' '+(salesAmt?fmt(salesAmt)+'원':'단가미입력'));
 }catch(e){console.warn('매출연계오류:',e);toast('⚠ 매출 자동등록 실패 — 매출관리에서 수동 등록 필요','err')}
+/* === 데이터 연계: 출고 → 세금계산서 / 전자세금계산 대기 자동 등록 === */
+try{
+  var _cliList=DB.g('cli')||[];
+  var _cliInfo=_cliList.find(function(c){return (_shipCid&&c.id===_shipCid)||c.nm===_shipCnm;})||{};
+  var _vatRate=(typeof SysCode!=='undefined'&&typeof SysCode.vatRate==='function')?SysCode.vatRate():0.1;
+  var _supplyAmt=Math.round((o.price||(o.amt&&o.fq?o.amt/o.fq:0)||0)*qty);
+  var _vatAmt=Math.round(_supplyAmt*_vatRate);
+  var _taxList=DB.g('taxInvoice');
+  var _taxRec=_taxList.find(function(t){return t.shipId===rec.id;});
+  if(!_taxRec){
+    var _taxId=gid();
+    var _txMethod=(_cliInfo.bizNo||'').trim()?'전자대기':'종이';
+    _taxList.push({
+      id:_taxId,dt:td(),type:'매출',cli:_shipCnm,bizNo:_cliInfo.bizNo||'',ceo:_cliInfo.ceo||'',addr:_cliInfo.addr||'',
+      item:o.pnm,qty:qty,price:unitPrice,spec:o.spec||'',supply:_supplyAmt,vat:_vatAmt,purpose:'영수',method:_txMethod,
+      note:'출고 자동연계 ('+o.wn+')',groupId:_shipGrpId||'',woId:woId,shipId:rec.id,saleId:_saleId,source:'ship-auto'
+    });
+    DB.s('taxInvoice',_taxList);
+    var _salesSync=DB.g('sales');var _saleIdx=_salesSync.findIndex(function(x){return x.id===_saleId});
+    if(_saleIdx>=0){_salesSync[_saleIdx].taxInvoiceId=_taxId;DB.s('sales',_salesSync)}
+    if(typeof DocTrace!=='undefined'){DocTrace.link('SALE',_saleId,'TAX_INV',_taxId,'','');DocTrace.link('SHIP',rec.id,'TAX_INV',_taxId,'','')}
+  }
+  var _etaxList=DB.g('etax')||[];
+  if(!_etaxList.some(function(x){return x.shipId===rec.id;})){
+    var _etaxId=gid();
+    _etaxList.push({id:_etaxId,shipId:rec.id,saleId:_saleId,dt:td(),type:'매출',cli:_shipCnm,supply:_supplyAmt,vat:_vatAmt,total:_supplyAmt+_vatAmt,st:'미발행',note:'출고 자동연계 ('+o.wn+')'});
+    DB.s('etax',_etaxList);
+    var _salesSync2=DB.g('sales');var _saleIdx2=_salesSync2.findIndex(function(x){return x.id===_saleId});
+    if(_saleIdx2>=0){_salesSync2[_saleIdx2].etaxId=_etaxId;DB.s('sales',_salesSync2)}
+  }
+  addLog('세금계산서 연동대기: '+_shipCnm+' '+o.pnm+' '+fmt(_supplyAmt)+'원');
+}catch(e){console.warn('세금계산연계오류:',e);toast('⚠ 세금계산서 자동연계 실패 — 세금계산서에서 확인 필요','err')}
 /* === 데이터 연계: 출고 → 품질검사 기록 === */
 try{
   if(defect>0){

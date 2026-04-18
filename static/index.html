@@ -1016,7 +1016,7 @@
 </div></div>
 
 <!-- 패키지 견적 모달 -->
-<div class="mo-bg hidden" id="qtMo2" onclick="event.target===this&&cMo('qtMo2')"><div class="mo" style="width:700px;max-height:90vh;overflow-y:auto;overflow-x:hidden">
+<div class="mo-bg hidden" id="qtMo2" onclick="event.target===this&&cMo('qtMo2')"><div class="mo" style="width:820px;max-height:90vh;overflow-y:auto;overflow-x:hidden">
   <div class="mo-t" id="qtMoT">패키지 견적 등록</div><input type="hidden" id="qtId">
   <div class="fr">
     <div class="fg"><label>견적번호</label><input type="text" id="qtNum" readonly style="background:var(--bg2)"></div>
@@ -1028,8 +1028,38 @@
     <div class="fg"><label>패키지 품목 *</label><input type="text" id="qtProd" placeholder="품목명"></div>
   </div>
   <div class="fr">
-    <div class="fg"><label>수량 (매)</label><input type="number" id="qtQty" placeholder="0"></div>
-    <div class="fg"><label>확정 공급가 (원)</label><input type="number" id="qtPrice" placeholder="마진 확정 후 입력"></div>
+    <div class="fg"><label>규격 / 사양</label><input type="text" id="qtSpec" placeholder="예: 350x250x120 / 백판지 350g"></div>
+    <div class="fg"><label>패키지 유형</label><select id="qtPackType"><option value="단상자">단상자</option><option value="합지박스">합지박스</option><option value="쇼핑백">쇼핑백</option><option value="슬리브">슬리브</option><option value="싸바리">싸바리</option><option value="기타">기타</option></select></div>
+  </div>
+  <div style="margin:10px 0 14px;padding:14px;border:1px solid var(--bdr);border-radius:14px;background:#F8FAFC">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:800;color:#1E293B">패키지 견적 자동 계산</div>
+        <div style="font-size:12px;color:var(--txt2)">자재비, 인쇄비, 후가공, 외주비, 목형비와 마진율을 넣으면 공급가가 자동 계산됩니다.</div>
+      </div>
+      <div style="font-size:12px;color:#64748B;background:#fff;border:1px solid #E2E8F0;border-radius:999px;padding:6px 10px">견적 저장 시 수주/작업지시로 바로 전환 가능</div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>수량 (매)</label><input type="number" id="qtQty" placeholder="0" oninput="calcQtAuto()"></div>
+      <div class="fg"><label>자재비</label><input type="number" id="qtPaperCost" placeholder="0" oninput="calcQtAuto()"></div>
+      <div class="fg"><label>인쇄비</label><input type="number" id="qtPrintCost" placeholder="0" oninput="calcQtAuto()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>후가공비</label><input type="number" id="qtPostCost" placeholder="0" oninput="calcQtAuto()"></div>
+      <div class="fg"><label>외주비</label><input type="number" id="qtOutCost" placeholder="0" oninput="calcQtAuto()"></div>
+      <div class="fg"><label>목형비</label><input type="number" id="qtMoldCost" placeholder="0" oninput="calcQtAuto()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>목표 마진율 (%)</label><input type="number" id="qtMargin" value="18" oninput="calcQtAuto()"></div>
+      <div class="fg"><label>확정 공급가 (원)</label><input type="number" id="qtPrice" readonly style="background:var(--bg2);font-weight:700;color:#1E3A5F"></div>
+      <div class="fg"><label>예상 단가 (원/매)</label><input type="text" id="qtUnitPriceView" readonly style="background:var(--bg2)"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px"><div style="font-size:11px;color:#64748B">원가 합계</div><div id="qtBaseAmt" style="font-size:17px;font-weight:800;color:#0F172A">0원</div></div>
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px"><div style="font-size:11px;color:#64748B">마진 포함 공급가</div><div id="qtSupplyAmt" style="font-size:17px;font-weight:800;color:#1E3A5F">0원</div></div>
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px"><div style="font-size:11px;color:#64748B">부가세</div><div id="qtVatAmt" style="font-size:17px;font-weight:800;color:#EA580C">0원</div></div>
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px"><div style="font-size:11px;color:#64748B">합계금액</div><div id="qtFinalAmt" style="font-size:17px;font-weight:800;color:#16A34A">0원</div></div>
+    </div>
   </div>
   <div class="fg">
     <label>AI 계산 메모 <span style="font-size:11px;color:var(--txt2);font-weight:400">- 채팅 또는 계산 결과 붙여넣기</span></label>
@@ -1038,6 +1068,7 @@
   <div class="fg"><label>메모</label><textarea id="qtNote" rows="2" placeholder="특이사항, 협의내용 등"></textarea></div>
   <div class="mo-f">
     <button class="btn btn-g" onclick="cMo('qtMo2')">취소</button>
+    <button class="btn btn-o" id="qtToOrderBtn" onclick="qtToOrder()">→ 패키지 수주 전환</button>
     <button class="btn btn-o" id="qtToWOBtn" onclick="qtToWO()" style="display:none">→ 패키지 작업지시 전환</button>
     <button class="btn btn-p" onclick="saveQt()">저장</button>
   </div>
@@ -1297,75 +1328,129 @@
 
 <!-- 작업지시서 등록/수정 팝업 -->
 <div id="woFormOv" class="mo-ov hidden">
-<div class="mo" style="max-width:1100px;width:96vw;height:90vh;overflow:hidden;padding:0;display:flex;flex-direction:column">
-<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:#fff;z-index:10">
-<span id="woFormTitle" style="font-size:14px;font-weight:700">패키지 작업지시 등록</span>
-<div style="display:flex;gap:5px;align-items:center">
+<div class="mo wo-modal">
+<div class="wo-modal-head">
+<div class="wo-modal-head-copy">
+<div class="wo-modal-kicker">Package Workflow</div>
+<span id="woFormTitle" class="wo-modal-title">패키지 작업지시 등록</span>
+<div class="wo-modal-sub">거래처, 자재, 공정, 납품 흐름을 한 화면에서 정리합니다.</div>
+</div>
+<div class="wo-modal-actions">
 <button class="btn btn-o btn-sm" onclick="resetWO()">초기화</button>
 <button class="btn btn-p btn-sm" onclick="saveWO()">저장</button>
 <button class="btn btn-s btn-sm" onclick="if(saveWO())setTimeout(function(){printWO(lastSavedId)},300)">저장+출력</button>
-<button style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt2);line-height:1;padding:0 4px" onclick="cMo('woFormOv')">×</button>
+<button class="wo-close-btn" onclick="cMo('woFormOv')" aria-label="닫기">×</button>
 </div>
 </div>
-<div style="padding:12px;flex:1;overflow:hidden">
-<div id="woWarnBox"></div>
-<div class="wo-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;height:100%">
-<!-- 좌측: 기본정보 -->
-<div style="overflow-y:auto;padding-right:8px">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+<div class="wo-modal-body">
+<div id="woWarnBox" class="wo-alert-stack"></div>
+<div class="wo-form-grid">
+<div class="wo-form-col">
 <input type="hidden" id="woOrdId">
-<div class="fg"><label>지시번호</label><input id="woNum" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
-<div class="fg"><label>작성일</label><input type="date" id="woDt" class="u-input-md"></div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>협력사/인쇄소</label><div style="display:flex;gap:4px"><select id="woVendor" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px;flex:1;min-width:0"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()" style="white-space:nowrap;padding:6px 8px;font-size:12px">🔍 검색</button></div></div>
-<div class="fg"><label>담당자</label><select id="woMgr" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px;width:100%"></select></div>
-</div>
-<div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px">
-<div class="fg"><label class="req">거래처</label><input id="woCli" placeholder="거래처 선택" readonly style="cursor:pointer;padding:6px 8px;font-size:12px" onclick="openCliSearch()"></div>
-<button type="button" class="btn btn-o btn-sm" onclick="openCliSearch()" style="align-self:end;margin-bottom:1px">검색</button>
-</div>
 <input type="hidden" id="woAddr"><input type="hidden" id="woTel"><input type="hidden" id="woFax">
-<div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px">
-<div class="fg"><label class="req">패키지 품목</label><input id="woProd" placeholder="품목 선택" readonly style="cursor:pointer;padding:6px 8px;font-size:12px" onclick="openProdSearch()"></div>
-<button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()" style="align-self:end;margin-bottom:1px">검색</button>
-</div>
-<div id="woPastPanel" style="display:none"></div>
-<div id="woColorsArea" style="margin-bottom:6px"></div>
-<div id="woPapersArea" style="margin-bottom:6px"></div>
-<div id="woFabricsArea" style="margin-bottom:6px"></div>
 <input type="hidden" id="woPaper"><input type="hidden" id="woSpec"><input type="hidden" id="woQM"><input type="hidden" id="woQE">
 <input type="hidden" id="woFabric"><input type="hidden" id="woFabricSpec"><input type="hidden" id="woFabricQty"><input type="hidden" id="woFabricExtra">
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>목형번호</label><div style="display:flex;gap:4px"><input id="woMoldDisplay" placeholder="목형 선택" readonly style="cursor:pointer;padding:6px 8px;font-size:12px;flex:1" onclick="openMoldSearch()"><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearch()" style="padding:6px 8px;font-size:12px;white-space:nowrap">검색</button></div></div>
-<div class="fg"><label>인쇄사양</label><input id="woPrint" placeholder="4도/전면" class="u-input-md"></div>
+<section class="wo-section-card">
+<div class="wo-section-head">
+<div>
+<div class="wo-section-kicker">Base</div>
+<h3>작업 메타</h3>
+<p>작업번호와 담당 흐름을 먼저 고정합니다.</p>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;margin-bottom:6px">
-<div class="fg" style="margin:0"><label class="req" style="font-size:11px">수량</label><input type="number" id="woFQ" min="0" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box" oninput="_updateWoAmt()"></div>
-<div class="fg" style="margin:0"><label class="req" style="font-size:11px">납품예정</label><input type="date" id="woShip" style="padding:5px 3px;font-size:11px;width:100%;box-sizing:border-box"></div>
-<div class="fg" style="margin:0"><label style="font-size:11px">손잡이</label><input id="woHand" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box"></div>
-<div class="fg" style="margin:0"><label style="font-size:11px">단가</label><input type="number" id="woPrice" min="0" placeholder="0" style="padding:5px 4px;font-size:11px;width:100%;box-sizing:border-box" oninput="_updateWoAmt()"></div>
-<div class="fg" style="margin:0"><label style="font-size:11px;color:var(--txt2)">금액</label><div id="woAmtDisplay" style="padding:5px 4px;font-size:11px;background:#F3F4F6;border-radius:6px;border:1px solid var(--bdr);color:#1D4ED8;font-weight:600">-</div></div>
+<span class="wo-section-tag">기본</span>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-<div class="fg"><label>납품처</label><div style="display:flex;gap:4px"><input id="woDlv" class="u-input-md" style="flex:1;min-width:0"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()" style="white-space:nowrap;padding:6px 8px;font-size:12px">🔍 검색</button></div></div>
+<div class="wo-inline-grid wo-inline-grid-2">
+<div class="fg"><label>지시번호</label><input id="woNum" readonly class="wo-input-soft"></div>
+<div class="fg"><label>작성일</label><input type="date" id="woDt" class="u-input-md"></div>
+</div>
+<div class="wo-inline-grid wo-inline-grid-2">
+<div class="fg"><label>협력사/인쇄소</label><div class="wo-inline-actions"><select id="woVendor"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()">🔍 검색</button></div></div>
+<div class="fg"><label>담당자</label><select id="woMgr"></select></div>
+</div>
+</section>
+
+<section class="wo-section-card">
+<div class="wo-section-head">
+<div>
+<div class="wo-section-kicker">Client</div>
+<h3>거래처 · 품목</h3>
+<p>고객사와 패키지 품목을 선택하면 이전 작업 이력까지 이어집니다.</p>
+</div>
+<span class="wo-section-tag">필수</span>
+</div>
+<div class="wo-search-row">
+<div class="fg"><label class="req">거래처</label><input id="woCli" placeholder="거래처 선택" readonly class="wo-select-input" onclick="openCliSearch()"></div>
+<button type="button" class="btn btn-o btn-sm" onclick="openCliSearch()">검색</button>
+</div>
+<div class="wo-search-row">
+<div class="fg"><label class="req">패키지 품목</label><input id="woProd" placeholder="품목 선택" readonly class="wo-select-input" onclick="openProdSearch()"></div>
+<button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()">검색</button>
+</div>
+<div id="woPastPanel" class="wo-history-panel" style="display:none"></div>
+</section>
+
+<section class="wo-section-card">
+<div class="wo-section-head">
+<div>
+<div class="wo-section-kicker">Spec</div>
+<h3>자재 · 인쇄 사양</h3>
+<p>색상, 종이, 원단, 목형 정보를 같이 맞추면 다음 작업이 빨라집니다.</p>
+</div>
+<span class="wo-section-tag">사양</span>
+</div>
+<div id="woColorsArea"></div>
+<div id="woPapersArea"></div>
+<div id="woFabricsArea"></div>
+<div class="wo-inline-grid wo-inline-grid-2">
+<div class="fg"><label>목형번호</label><div class="wo-inline-actions"><input id="woMoldDisplay" placeholder="목형 선택" readonly class="wo-select-input" onclick="openMoldSearch()"><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearch()">검색</button></div></div>
+<div class="fg"><label>인쇄사양</label><input id="woPrint" placeholder="4도 / 전면 / 별색 1도" class="u-input-md"></div>
+</div>
+</section>
+
+<section class="wo-section-card">
+<div class="wo-section-head">
+<div>
+<div class="wo-section-kicker">Delivery</div>
+<h3>납품 · 메모</h3>
+<p>수량, 납품예정, 금액, 참고 이미지를 한 번에 정리합니다.</p>
+</div>
+<span class="wo-section-tag">출고</span>
+</div>
+<div class="wo-inline-grid wo-inline-grid-5 wo-qty-grid">
+<div class="fg"><label class="req">수량</label><input type="number" id="woFQ" min="0" oninput="_updateWoAmt()"></div>
+<div class="fg"><label class="req">납품예정</label><input type="date" id="woShip"></div>
+<div class="fg"><label>손잡이</label><input id="woHand"></div>
+<div class="fg"><label>단가</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()"></div>
+<div class="fg"><label>금액</label><div id="woAmtDisplay" class="wo-amount-box">-</div></div>
+</div>
+<div class="wo-inline-grid wo-inline-grid-2">
+<div class="fg"><label>납품처</label><div class="wo-inline-actions"><input id="woDlv" class="u-input-md"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()">🔍 검색</button></div></div>
 <div class="fg"><label>참고이미지</label>
-<div id="woImgZone" style="border:2px dashed var(--bdr);border-radius:8px;padding:10px;text-align:center;cursor:pointer;background:var(--bg2);transition:border-color .15s" onclick="document.getElementById('woImg').click()" ondragover="event.preventDefault();this.style.borderColor='var(--pri)'" ondragleave="this.style.borderColor='var(--bdr)'" ondrop="woImgDrop(event)">
-  <div id="woImgP" style="margin-bottom:4px"></div>
-  <div id="woImgHint" style="font-size:11px;color:var(--txt2)">클릭 · 드래그 · <b>Ctrl+V</b> 붙여넣기</div>
+<div id="woImgZone" class="wo-image-drop" onclick="document.getElementById('woImg').click()" ondragover="event.preventDefault();this.style.borderColor='var(--pri)'" ondragleave="this.style.borderColor='var(--bdr)'" ondrop="woImgDrop(event)">
+  <div id="woImgP" class="wo-image-preview"></div>
+  <div id="woImgHint" class="wo-image-hint">클릭 · 드래그 · <b>Ctrl+V</b> 붙여넣기</div>
 </div>
 <input type="file" id="woImg" accept="image/*" onchange="prevImg(this)" style="display:none">
 </div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-<div class="fg"><label>특이사항</label><textarea id="woNote" rows="1" style="padding:6px 8px;font-size:12px;min-height:28px"></textarea></div>
-<div class="fg"><label>주의사항</label><textarea id="woCaut" rows="1" style="padding:6px 8px;font-size:12px;min-height:28px"></textarea></div>
+<div class="wo-inline-grid wo-inline-grid-2">
+<div class="fg"><label>특이사항</label><textarea id="woNote" rows="2"></textarea></div>
+<div class="fg"><label>주의사항</label><textarea id="woCaut" rows="2"></textarea></div>
 </div>
+</section>
 </div>
-<!-- 우측: 공정 설정 -->
-<div style="overflow-y:auto;padding-right:4px">
-<div class="fg" style="margin-bottom:6px"><label class="req" style="font-size:12px">공정 설정</label>
-<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">
+
+<div class="wo-form-col">
+<section class="wo-section-card wo-section-card-process">
+<div class="wo-section-head">
+<div>
+<div class="wo-section-kicker">Process</div>
+<h3>공정 설계</h3>
+<p>실제 생산 순서대로 공정을 쌓고, 외주 여부와 방식을 바로 정리합니다.</p>
+</div>
+<span class="wo-section-tag">필수</span>
+</div>
+<div class="wo-chip-bar">
 <button type="button" class="pb u-input-pill" onclick="addP('인쇄')">인쇄</button>
 <button type="button" class="pb u-input-pill" onclick="addP('코팅')">코팅</button>
 <button type="button" class="pb u-input-pill" onclick="addP('합지')">합지</button>
@@ -1373,10 +1458,10 @@
 <button type="button" class="pb u-input-pill" onclick="addP('접착')">접착</button>
 <button type="button" class="pb out u-input-pill" onclick="addP('외주가공','out')">외주가공</button>
 </div>
-<div id="selP" style="min-height:28px;padding:5px;background:var(--bg2);border:1px dashed var(--bdr);border-radius:8px;font-size:12px"><span style="color:var(--txt2);font-size:12px">공정 버튼 클릭하여 추가</span></div>
-</div>
+<div id="selP"></div>
 <div id="pDet"></div>
 <input type="hidden" id="woGold"><input type="hidden" id="woMold"><div id="acMoldL" class="ac-l hidden" style="display:none"></div>
+</section>
 </div>
 </div>
 </div>

@@ -455,10 +455,14 @@ function rPlan(){
   var ingCnt=active.filter(function(o){return o.status==='진행중'}).length;
   var waitCnt=active.filter(function(o){return o.status==='대기'}).length;
   var lateCnt=active.filter(function(o){return isLate(o)}).length;
+  var extCnt=active.filter(function(o){return(o.procs||[]).some(function(p){return p.st==='외주대기'||p.st==='외주진행중'})}).length;
+  var todayCnt=active.filter(function(o){return o.sd===dt}).length;
   var sH='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
   sH+='<div class="plan-kpi k-gray" onclick="openPlanFilter(\'all\')"><div class="num">'+active.length+'</div><div class="lbl">전체</div></div>';
   sH+='<div class="plan-kpi k-blue" onclick="openPlanFilter(\'ing\')"><div class="num">'+ingCnt+'</div><div class="lbl">진행중</div></div>';
   sH+='<div class="plan-kpi k-orange" onclick="openPlanFilter(\'wait\')"><div class="num">'+waitCnt+'</div><div class="lbl">대기중</div></div>';
+  if(extCnt)sH+='<div class="plan-kpi k-purple"><div class="num">'+extCnt+'</div><div class="lbl">외주 진행</div></div>';
+  if(todayCnt)sH+='<div class="plan-kpi k-green"><div class="num">'+todayCnt+'</div><div class="lbl">오늘 납기</div></div>';
   if(lateCnt)sH+='<div class="plan-kpi k-red" onclick="openPlanFilter(\'late\')"><div class="num">'+lateCnt+'</div><div class="lbl">출고 지연</div></div>';
   sH+='</div>';
   $('planPriority').innerHTML=sH;
@@ -1125,6 +1129,11 @@ function saveOrder(){
   var orders=getOrders();
   var id=$('ordId').value;
   var isEdit=!!id;
+  var existing=isEdit?orders.find(function(o){return o.id===id}):null;
+  var items=_ordItems.filter(function(it){return it.nm}).map(function(it){
+    return {nm:it.nm,spec:it.spec||'',qty:+it.qty||0,price:+it.price||0,note:it.note||''};
+  });
+  var totalAmt=items.reduce(function(sum,it){return sum+((Number(it.qty)||0)*(Number(it.price)||0));},0);
 
   var obj={
     id:id||'ord_'+Date.now(),
@@ -1134,14 +1143,19 @@ function saveOrder(){
     shipDt:$('ordShipDt').value,
     dlv:$('ordDlv').value,
     note:$('ordNote').value,
-    items:_ordItems.filter(function(it){return it.nm}),
+    items:items,
+    price:items.length===1?(items[0].price||0):0,
+    amt:totalAmt,
     status:'수주',
-    cdt:new Date().toISOString()
+    cdt:existing&&existing.cdt||new Date().toISOString(),
+    quoteId:existing&&existing.quoteId||'',
+    quoteNum:existing&&existing.quoteNum||'',
+    quoteSnapshot:existing&&existing.quoteSnapshot||null
   };
 
   if(isEdit){
     var idx=orders.findIndex(function(o){return o.id===id});
-    if(idx>=0){obj.status=orders[idx].status;obj.woId=orders[idx].woId;orders[idx]=obj}
+    if(idx>=0){obj.status=orders[idx].status;obj.woId=orders[idx].woId;obj.woNo=orders[idx].woNo;orders[idx]=obj}
   }else{
     orders.push(obj);
   }
@@ -1272,8 +1286,13 @@ function _fillWOFromOrder(o,it){
     $('woQM').value=it.qty||'';
     $('woShip').value=o.shipDt||o.due||'';
     $('woDlv').value=o.dlv||'';
-    $('woNote').value='수주번호: '+(o.no||'')+(o.note?' / '+o.note:'');
-    if($('woPrice'))$('woPrice').value=o.price||'';
+    var noteBits=[];
+    if(o.quoteNum)noteBits.push('견적번호: '+o.quoteNum);
+    if(o.no)noteBits.push('수주번호: '+o.no);
+    if(it.spec)noteBits.push('사양: '+it.spec);
+    if(o.note)noteBits.push(o.note);
+    $('woNote').value=noteBits.join(' / ');
+    if($('woPrice'))$('woPrice').value=it.price||o.price||'';
     _updateWoAmt();
     // 수주 ID 연결 (hidden field)
     if($('woOrdId'))$('woOrdId').value=o.id;

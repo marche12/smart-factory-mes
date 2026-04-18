@@ -107,28 +107,87 @@ function _getOrderProgress(o,wos,ships){
    ================================================================ */
 function rDueManage(){
   var wos=DB.g('wo');
+  var orders=typeof getOrders==='function'?getOrders():(DB.g('orders')||[]);
+  var outsource=DB.g('outsource')||[];
   var today=td();
   var over=0,soon=0,active=0,done=0;
   var rows=[];
+  function diffOf(ds){return Math.round((new Date(ds)-new Date(today))/864e5)}
+  function ddayText(diff){return diff<0?'D+'+Math.abs(diff):diff===0?'D-Day':'D-'+diff}
+  function currentProcLabel(w){
+    var cur=(w.procs||[]).find(function(p){return p.st==='진행중'||p.st==='외주대기'||p.st==='외주진행중'});
+    if(cur)return cur.nm+(cur.st==='외주대기'||cur.st==='외주진행중'?' / 외주':' / 진행중');
+    var next=(w.procs||[]).find(function(p){return p.st==='대기'});
+    if(next)return next.nm+' / 대기';
+    return w.status||'대기';
+  }
+  function outsourceRisk(w){
+    var items=outsource.filter(function(o){return o.woId===w.id&&o.st!=='완료'});
+    if(!items.length)return '-';
+    items.sort(function(a,b){return (a.due||'9999-12-31').localeCompare(b.due||'9999-12-31')});
+    var os=items[0];
+    if(os.due&&os.due<today)return (os.vendor||'협력사')+' / 외주 지연';
+    if(os.due&&diffOf(os.due)<=1)return (os.vendor||'협력사')+' / 입고 임박';
+    return (os.vendor||'협력사')+' / '+(os.proc||'외주공정');
+  }
   wos.forEach(function(w){
     if(!w.sd)return;
     if(w.status==='출고완료'||w.status==='취소'){done++;return}
-    var diff=Math.round((new Date(w.sd)-new Date(today))/864e5);
+    var diff=diffOf(w.sd);
     if(diff<0)over++;
     else if(diff<=3)soon++;
     else active++;
-    rows.push({w:w,diff:diff});
+    rows.push({
+      type:'wo',
+      no:w.wn||'-',
+      cli:w.cnm||'-',
+      prod:w.pnm||'-',
+      qty:w.fq||0,
+      due:w.sd,
+      diff:diff,
+      status:w.status||'대기',
+      current:currentProcLabel(w),
+      risk:outsourceRisk(w)
+    });
+  });
+  orders.forEach(function(o){
+    if(!o.shipDt||o.woId||o.status==='출고완료'||o.status==='취소')return;
+    var diff=diffOf(o.shipDt);
+    if(diff<0)over++;
+    else if(diff<=3)soon++;
+    else active++;
+    rows.push({
+      type:'order',
+      no:o.no||'-',
+      cli:o.cli||'-',
+      prod:(o.items&&o.items.length?o.items.map(function(it){return it.nm;}).join(', '):o.prodNm||'-'),
+      qty:(o.items||[]).reduce(function(sum,it){return sum+(Number(it.qty)||0);},0),
+      due:o.shipDt,
+      diff:diff,
+      status:o.status||'수주확정',
+      current:'작업지시 미생성',
+      risk:'수주만 등록'
+    });
   });
   $('dueOver').textContent=over;
   $('dueSoon').textContent=soon;
   $('dueActive').textContent=active;
   $('dueDone').textContent=done;
   rows.sort(function(a,b){return a.diff-b.diff});
-  var h='<table class="dt"><thead><tr><th>D-Day</th><th>작업번호</th><th>거래처</th><th>품목</th><th>수량</th><th>납기일</th><th>상태</th></tr></thead><tbody>';
+  var noWoCount=rows.filter(function(r){return r.type==='order'}).length;
+  var osLate=outsource.filter(function(o){return o.st!=='완료'&&o.due&&o.due<today}).length;
+  var h='';
+  if(noWoCount||osLate){
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+    if(noWoCount)h+='<div style="padding:8px 12px;border-radius:10px;background:#FFF7ED;border:1px solid #FED7AA;color:#C2410C;font-size:12px;font-weight:700">작업지시 미생성 수주 '+noWoCount+'건</div>';
+    if(osLate)h+='<div style="padding:8px 12px;border-radius:10px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:12px;font-weight:700">외주 지연 '+osLate+'건</div>';
+    h+='</div>';
+  }
+  h+='<table class="dt"><thead><tr><th>D-Day</th><th>구분</th><th>거래처</th><th>품목</th><th>수량</th><th>현재 단계</th><th>외주/리스크</th><th>납기일</th><th>상태</th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--txt3)">데이터 없음</td></tr>';
   rows.forEach(function(r){
     var cls=r.diff<0?'color:#EF4444;font-weight:700':r.diff<=3?'color:#F59E0B;font-weight:700':'';
-    var dday=r.diff<0?'D+'+Math.abs(r.diff):r.diff===0?'D-Day':'D-'+r.diff;
-    h+='<tr><td style="'+cls+'">'+dday+'</td><td>'+(r.w.wn||'-')+'</td><td>'+(r.w.cnm||'-')+'</td><td>'+(r.w.pnm||'-')+'</td><td>'+fmt(r.w.fq)+'</td><td>'+r.w.sd+'</td><td>'+badge(r.w.status||'대기')+'</td></tr>';
+    h+='<tr><td style="'+cls+'">'+ddayText(r.diff)+'</td><td>'+(r.type==='wo'?'<span class="bd bd-p">WO</span>':'<span class="bd bd-o">수주</span>')+' '+r.no+'</td><td>'+r.cli+'</td><td>'+r.prod+'</td><td>'+fmt(r.qty)+'</td><td>'+r.current+'</td><td>'+r.risk+'</td><td>'+r.due+'</td><td>'+badge(r.status||'대기')+'</td></tr>';
   });
   h+='</tbody></table>';
   $('dueArea').innerHTML=h;
@@ -287,6 +346,28 @@ function delDefect(id){if(!confirm('삭제?'))return;DB.s('defects',DB.g('defect
    7. 외주 공정 관리
    ================================================================ */
 var _osEdit=null;
+function syncWOOutsourceRecords(wo){
+  if(!wo||!wo.procs||!wo.procs.length)return;
+  var list=DB.g('outsource')||[];
+  var changed=false;
+  wo.procs.forEach(function(p){
+    var isOut=p.tp==='out'||!!(p.vd&&p.vd.trim());
+    if(!isOut)return;
+    var idx=list.findIndex(function(x){return x.woId===wo.id&&x.proc===p.nm});
+    var rec=idx>=0?list[idx]:{id:gid(),dt:wo.dt||td(),woId:wo.id,woNm:wo.wn||'',proc:p.nm};
+    rec.woNm=wo.wn||rec.woNm||'';
+    rec.vendor=p.vd||wo.vendor||rec.vendor||'';
+    rec.qty=rec.qty||p.qty||wo.fq||0;
+    rec.price=rec.price||0;
+    rec.amt=(rec.qty||0)*(rec.price||0);
+    rec.due=rec.due||wo.sd||'';
+    rec.note=rec.note||'WO 자동 연동';
+    rec.st=(p.st==='외주완료')?'완료':'진행중';
+    if(idx>=0)list[idx]=rec;else list.push(rec);
+    changed=true;
+  });
+  if(changed)DB.s('outsource',list);
+}
 function rOutsource(){
   var mo=$('osMonth').value||cm();
   var vd=$('osVendor').value;
@@ -306,20 +387,80 @@ function rOutsource(){
   var tb=$('osTbl').querySelector('tbody');
   if(!list.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt3)">데이터 없음</td></tr>';return}
   tb.innerHTML=list.map(function(o){
-    return'<tr><td>'+(o.dt||'-')+'</td><td>'+(o.woNm||'-')+'</td><td>'+(o.proc||'-')+'</td><td>'+(o.vendor||'-')+'</td><td>'+fmt(o.qty)+'</td><td>'+fmt(o.price)+'</td><td>'+fmt(o.amt)+'</td><td>'+(o.due||'-')+'</td><td>'+badge(o.st||'진행중')+'</td><td><button class="btn btn-sm btn-o" onclick="completeOS(\''+o.id+'\')">완료</button> <button class="btn btn-sm btn-d" onclick="delOS(\''+o.id+'\')">삭제</button></td></tr>'
+    var dueTxt=o.due||'-';
+    if(o.st!=='완료'&&o.due){
+      var dd=Math.round((new Date(o.due)-new Date(td()))/864e5);
+      dueTxt+='<div style="font-size:11px;color:'+(dd<0?'#DC2626':dd<=1?'#EA580C':'#64748B')+';font-weight:700">'+(dd<0?'D+'+Math.abs(dd):dd===0?'D-Day':'D-'+dd)+'</div>';
+    }
+    return'<tr><td>'+(o.dt||'-')+'</td><td>'+(o.woNm||'-')+'</td><td>'+(o.proc||'-')+'</td><td>'+(o.vendor||'-')+(o.note?'<div style="font-size:11px;color:#64748B">'+o.note+'</div>':'')+'</td><td>'+fmt(o.qty)+'</td><td>'+fmt(o.price)+'</td><td>'+fmt(o.amt)+'</td><td>'+dueTxt+'</td><td>'+badge(o.st||'진행중')+'</td><td><button class="btn btn-sm btn-o" onclick="completeOS(\''+o.id+'\')">완료</button> <button class="btn btn-sm btn-d" onclick="delOS(\''+o.id+'\')">삭제</button></td></tr>'
   }).join('');
 }
 function openOsM(){_osEdit=null;_woSelect('osWO');fillProcSelect('osProc',false);_vendorSelect('osVendorSel');$('osQty').value='';$('osPrice').value='';$('osDue').value='';$('osNote').value='';oMo('osMo')}
 function saveOutsource(){
   var woId=$('osWO').value;var wo=woId?DB.g('wo').find(function(w){return w.id===woId}):null;
+  if(!wo){toast('작업지시를 선택하세요','err');return}
+  if(!$('osProc').value){toast('외주 공정을 선택하세요','err');return}
+  if(!$('osVendorSel').value){toast('외주업체를 선택하세요','err');return}
   var qty=+$('osQty').value||0,price=+$('osPrice').value||0;
+  if(!qty)qty=wo.fq||0;
   var rec={id:_osEdit||gid(),dt:td(),woId:woId,woNm:wo?wo.wn:'',proc:$('osProc').value,vendor:$('osVendorSel').value,qty:qty,price:price,amt:qty*price,due:$('osDue').value,note:$('osNote').value,st:'진행중'};
   var list=DB.g('outsource');var idx=list.findIndex(function(x){return x.id===rec.id});
   if(idx>=0)list[idx]=rec;else list.push(rec);
-  DB.s('outsource',list);cMo('osMo');rOutsource();toast('외주 등록','ok');
+  DB.s('outsource',list);
+  var wos=DB.g('wo');var wi=wos.findIndex(function(w){return w.id===woId});
+  if(wi>=0&&wos[wi].procs){
+    var pi=wos[wi].procs.findIndex(function(p){return p.nm===rec.proc});
+    if(pi>=0){
+      var p=wos[wi].procs[pi];
+      p.tp='out';
+      p.vd=rec.vendor;
+      if(p.st==='대기'||!p.st)p.st='외주대기';
+      if(!p.t1)p.t1=nw();
+      if(wos[wi].status==='대기')wos[wi].status='진행중';
+      DB.s('wo',wos);
+    }
+  }
+  cMo('osMo');
+  rOutsource();
+  if(typeof rPlan==='function')rPlan();
+  if(typeof rWOList==='function')rWOList();
+  if(typeof rDueManage==='function')rDueManage();
+  toast('외주 등록','ok');
 }
-function completeOS(id){var list=DB.g('outsource');var o=list.find(function(x){return x.id===id});if(o){o.st='완료';DB.s('outsource',list);rOutsource();toast('외주 완료','ok')}}
-function delOS(id){if(!confirm('삭제?'))return;DB.s('outsource',DB.g('outsource').filter(function(x){return x.id!==id}));rOutsource()}
+function completeOS(id){
+  var list=DB.g('outsource');
+  var o=list.find(function(x){return x.id===id});
+  if(!o)return;
+  o.st='완료';
+  o.doneDt=td();
+  DB.s('outsource',list);
+  var wos=DB.g('wo');var wi=wos.findIndex(function(w){return w.id===o.woId});
+  if(wi>=0&&wos[wi].procs){
+    var wo=wos[wi];
+    var pi=wo.procs.findIndex(function(p){return p.nm===o.proc});
+    if(pi>=0){
+      var p=wo.procs[pi];
+      p.tp='out';
+      p.vd=o.vendor||p.vd||'';
+      p.st='외주완료';
+      p.t2=nw();
+      if(o.qty)p.qty=o.qty;
+      var nextIdx=-1;
+      for(var ni=pi+1;ni<wo.procs.length;ni++){
+        if(wo.procs[ni].st==='대기'){nextIdx=ni;break}
+      }
+      if(nextIdx>=0)wo.status='진행중';
+      else if(wo.procs.every(function(x){return x.st==='완료'||x.st==='외주완료'||x.st==='스킵';})){wo.status='완료대기';wo.compDate=td()}
+      DB.s('wo',wos);
+    }
+  }
+  rOutsource();
+  if(typeof rPlan==='function')rPlan();
+  if(typeof rWOList==='function')rWOList();
+  if(typeof rDueManage==='function')rDueManage();
+  toast('외주 완료','ok');
+}
+function delOS(id){if(!confirm('삭제?'))return;DB.s('outsource',DB.g('outsource').filter(function(x){return x.id!==id}));rOutsource();if(typeof rPlan==='function')rPlan();if(typeof rDueManage==='function')rDueManage()}
 
 /* ================================================================
    8. 금형/목형 사용 이력

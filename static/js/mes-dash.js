@@ -689,7 +689,10 @@ function renderDashTodayCards(os, quotes){
   var shipList=os.filter(function(o){return o.sd===td()&&o.status!=='출고완료'&&o.status!=='취소';}).slice(0,5);
   var urgentList=os.filter(function(o){return o.status!=='완료'&&o.status!=='출고완료'&&o.status!=='취소'&&o.sd&&dLeft(o)<=1;})
     .sort(function(a,b){return dLeft(a)-dLeft(b)}).slice(0,5);
-  var quoteList=(quotes||[]).filter(function(q){return q.status!=='수주확정'&&q.status!=='취소';}).slice(0,5);
+  var quoteList=(quotes||[]).filter(function(q){
+    var st=q.status||q.st||'작성중';
+    return st!=='수주'&&st!=='수주확정'&&st!=='실주'&&st!=='취소';
+  }).slice(0,5);
   function _empty(msg){
     return '<div class="today-empty">'+msg+'</div>';
   }
@@ -706,8 +709,8 @@ function renderDashTodayCards(os, quotes){
   }
   function _quoteItem(q){
     return '<div class="today-item" onclick="goMod(\'qc-quote\')">'
-      +'<div><div class="ti-cli">'+(q.cnm||'-')+'</div><div class="ti-prod">'+(q.pnm||'-')+' · '+fmt(q.qty||q.fq||0)+'매</div></div>'
-      +'<span class="ti-badge ti-normal">'+(q.status||'견적대기')+'</span></div>';
+      +'<div><div class="ti-cli">'+(q.cnm||q.cli||'-')+'</div><div class="ti-prod">'+(q.pnm||q.prod||'-')+' · '+fmt(q.qty||q.fq||0)+'매</div></div>'
+      +'<span class="ti-badge ti-normal">'+(q.status||q.st||'견적대기')+'</span></div>';
   }
   return '<div class="today-wrap">'
     +'<div class="today-card"><h4>🚚 오늘 출고 예정</h4>'+(shipList.length?shipList.map(_shipItem).join(''):_empty('오늘 출고 예정 작업이 없습니다'))+'</div>'

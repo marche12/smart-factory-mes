@@ -315,60 +315,52 @@ var UX = (function(){
 
   function initTopBar(){
     var existing = document.getElementById('uxTopBar');
-    if(existing) return;
-
-    var topBar = document.createElement('div');
-    topBar.id = 'uxTopBar';
-    topBar.className = 'ux-topbar';
-    topBar.innerHTML =
-        '<div class="ux-bc" id="uxBreadcrumb"><span class="uxbc-home" onclick="goMod(\'mes-dash\')">🏠 홈</span></div>'
-      + '<div class="ux-topbar-right">'
-      + '<button class="ux-tb-btn" onclick="UX.openGlobalSearch()" title="검색 (Cmd+K)"><span>🔍 검색</span><span class="ux-kbd">⌘K</span></button>'
-      + '<button class="ux-tb-btn ux-tb-notif" onclick="UX.toggleNotifPanel()" title="알림"><span>🔔</span><span class="ux-tb-badge" id="uxNotifBadge" style="display:none">0</span></button>'
-      + '<button class="ux-tb-btn" onclick="UX.toggleUserMenu()" title="사용자 메뉴"><span class="ux-user-avatar" id="uxUserAvatar">관</span><span id="uxUserName">관리자</span></button>'
-      + '</div>';
-
-    var mainArea = document.querySelector('.main-area');
-    var mainHeader = document.querySelector('.main-header');
-    if(mainArea && mainHeader){
-      mainArea.insertBefore(topBar, mainHeader);
-    }
+    if(existing){ existing.remove(); }
 
     // 알림 패널
-    var notifPanel = document.createElement('div');
-    notifPanel.id = 'uxNotifPanel';
-    notifPanel.className = 'ux-notif-panel hidden';
-    notifPanel.innerHTML =
-        '<div class="ux-notif-hdr"><span style="font-weight:700">🔔 알림</span><button onclick="UX.toggleNotifPanel()" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:#94A3B8">×</button></div>'
-      + '<div id="uxNotifList" class="ux-notif-list"></div>';
-    document.body.appendChild(notifPanel);
+    var notifPanel = document.getElementById('uxNotifPanel');
+    if(!notifPanel){
+      notifPanel = document.createElement('div');
+      notifPanel.id = 'uxNotifPanel';
+      notifPanel.className = 'ux-notif-panel hidden';
+      notifPanel.innerHTML =
+          '<div class="ux-notif-hdr"><span style="font-weight:700">🔔 알림</span><button onclick="UX.toggleNotifPanel()" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:#94A3B8">×</button></div>'
+        + '<div id="uxNotifList" class="ux-notif-list"></div>';
+      document.body.appendChild(notifPanel);
+    }
 
     // 사용자 메뉴 드롭다운
-    var userMenu = document.createElement('div');
-    userMenu.id = 'uxUserMenu';
-    userMenu.className = 'ux-user-menu hidden';
-    userMenu.innerHTML =
-        '<div class="ux-um-hdr"><div class="ux-um-avatar" id="uxUmAvatar">관</div>'
-      + '<div><div style="font-weight:700;font-size:14px" id="uxUmName">관리자</div><div style="font-size:12px;color:#94A3B8" id="uxUmRole">관리자</div></div></div>'
-      + '<div class="ux-um-item" onclick="goMod(\'mes-queue\')">⚙️ 시스템 설정</div>'
-      + '<div class="ux-um-item" onclick="goMod(\'adm-perm\')">🔒 권한 관리</div>'
-      + '<div class="ux-um-item" onclick="goMod(\'adm-backup\')">💾 백업</div>'
-      + '<div class="ux-um-divider"></div>'
-      + '<div class="ux-um-item" style="color:#DC2626" onclick="unifiedLogout()">🚪 로그아웃</div>';
-    document.body.appendChild(userMenu);
+    var userMenu = document.getElementById('uxUserMenu');
+    if(!userMenu){
+      userMenu = document.createElement('div');
+      userMenu.id = 'uxUserMenu';
+      userMenu.className = 'ux-user-menu hidden';
+      userMenu.innerHTML =
+          '<div class="ux-um-hdr"><div class="ux-um-avatar" id="uxUmAvatar">관</div>'
+        + '<div><div style="font-weight:700;font-size:14px" id="uxUmName">관리자</div><div style="font-size:12px;color:#94A3B8" id="uxUmRole">관리자</div></div></div>'
+        + '<div class="ux-um-item" onclick="goMod(\'mes-queue\')">⚙️ 시스템 설정</div>'
+        + '<div class="ux-um-item" onclick="goMod(\'adm-perm\')">🔒 권한 관리</div>'
+        + '<div class="ux-um-item" onclick="goMod(\'adm-backup\')">💾 백업</div>'
+        + '<div class="ux-um-divider"></div>'
+        + '<div class="ux-um-item" style="color:#DC2626" onclick="unifiedLogout()">🚪 로그아웃</div>';
+      document.body.appendChild(userMenu);
+    }
 
     // 전역 검색 모달
-    var gsModal = document.createElement('div');
-    gsModal.id = 'uxGlobalSearch';
-    gsModal.className = 'ux-gs-overlay hidden';
-    gsModal.onclick = function(e){ if(e.target === gsModal) closeGlobalSearch() };
-    gsModal.innerHTML =
-        '<div class="ux-gs-box">'
-      + '<div class="ux-gs-input-wrap"><span style="font-size:18px">🔍</span><input type="text" id="uxgsInput" placeholder="메뉴 / 거래처 / 품목 / 작업지시서 검색..." oninput="UX.renderSearch(this.value)"><span class="ux-kbd" onclick="UX.closeGlobalSearch()">ESC</span></div>'
-      + '<div id="uxgsResults" class="ux-gs-results"></div>'
-      + '<div class="ux-gs-footer">↑↓ 이동 · ↵ 선택 · ESC 닫기</div>'
-      + '</div>';
-    document.body.appendChild(gsModal);
+    var gsModal = document.getElementById('uxGlobalSearch');
+    if(!gsModal){
+      gsModal = document.createElement('div');
+      gsModal.id = 'uxGlobalSearch';
+      gsModal.className = 'ux-gs-overlay hidden';
+      gsModal.onclick = function(e){ if(e.target === gsModal) closeGlobalSearch() };
+      gsModal.innerHTML =
+          '<div class="ux-gs-box">'
+        + '<div class="ux-gs-input-wrap"><span style="font-size:18px">🔍</span><input type="text" id="uxgsInput" placeholder="메뉴 / 거래처 / 품목 / 작업지시서 검색..." oninput="UX.renderSearch(this.value)"><span class="ux-kbd" onclick="UX.closeGlobalSearch()">ESC</span></div>'
+        + '<div id="uxgsResults" class="ux-gs-results"></div>'
+        + '<div class="ux-gs-footer">↑↓ 이동 · ↵ 선택 · ESC 닫기</div>'
+        + '</div>';
+      document.body.appendChild(gsModal);
+    }
 
     // 사용자 정보 업데이트
     updateUserInfo();

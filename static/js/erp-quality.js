@@ -218,7 +218,12 @@ function _makeOrderFromQuote(rec){
   var idx=orders.findIndex(function(o){return o.id===obj.id});
   if(idx>=0)orders[idx]=Object.assign({},orders[idx],obj);else orders.push(obj);
   _saveOrderStore(orders);
-  _upsertQuoteLinks(rec.id,{orderId:obj.id,st:'수주',status:'수주'});
+  var quotePatch={orderId:obj.id};
+  if(!existing||!existing.status||existing.status==='수주'||existing.status==='수주확정'){
+    quotePatch.st='수주';
+    quotePatch.status='수주';
+  }
+  _upsertQuoteLinks(rec.id,quotePatch);
   return obj;
 }
 

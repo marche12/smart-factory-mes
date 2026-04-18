@@ -374,10 +374,14 @@ def get_all_keys(user=Depends(get_current_user)):
 @app.get("/api/data/{key:path}")
 def get_data(key: str, user=Depends(get_current_user)):
     require_key_access(user, key)
-    value = db.get_data(key)
-    if value is None:
-        return JSONResponse(content={"key": key, "value": None})
-    return JSONResponse(content={"key": key, "value": value})
+    entry = db.get_data_entry(key)
+    if entry is None:
+        return JSONResponse(content={"key": key, "value": None, "updated_at": None})
+    return JSONResponse(content={
+        "key": key,
+        "value": entry["value"],
+        "updated_at": entry["updated_at"],
+    })
 
 
 @app.post("/api/data/{key:path}")
@@ -386,12 +390,26 @@ async def set_data(key: str, request: Request, user=Depends(get_current_user)):
     require_key_access(user, key, write=True)
     body = await request.json()
     value = body.get("value", "")
+    expected_updated_at = body.get("expected_updated_at")
     if not isinstance(value, str):
         value = _json.dumps(value, ensure_ascii=False)
-    db.set_data(key, value)
+    ok, current_value, current_updated_at = db.compare_and_set_data(
+        key, value, expected_updated_at
+    )
+    if not ok:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "ok": False,
+                "error": "conflict",
+                "key": key,
+                "current_value": current_value,
+                "current_updated_at": current_updated_at,
+            }
+        )
     target = extract_target(key)
     db.add_audit_log(user.get("sub"), user.get("name"), "update", target, key, None, get_client_ip(request))
-    return JSONResponse(content={"ok": True, "key": key})
+    return JSONResponse(content={"ok": True, "key": key, "updated_at": current_updated_at})
 
 
 @app.delete("/api/data/{key:path}")

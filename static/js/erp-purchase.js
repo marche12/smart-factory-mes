@@ -92,6 +92,66 @@ function calcIncAmt(){
   $('incAmount').value=fmt(q*p)+'원';
 }
 
+function findIncomeStock(stocks,rec){
+  return stocks.find(function(s){
+    return s.cat===rec.cat&&s.nm===rec.nm&&(s.spec||'')===(rec.spec||'');
+  });
+}
+
+function applyIncomeToStock(rec,multiplier){
+  if(!rec||!rec.nm)return;
+  const delta=(rec.qty||0)*(multiplier||1);
+  const stocks=DB.g('stock');
+  const exist=findIncomeStock(stocks,rec);
+  if(exist){
+    exist.qty=Math.max(0,(exist.qty||0)+delta);
+    if(multiplier>0){
+      exist.price=rec.price;
+      exist.vd=rec.vd;
+    }
+    exist.updated=nw();
+  }else if(delta>0){
+    stocks.push({id:gid(),cat:rec.cat,nm:rec.nm,spec:rec.spec||'',unit:rec.unit||'매',
+      qty:delta,safe:0,price:rec.price,vd:rec.vd,loc:'',note:'',updated:nw()});
+  }
+  DB.s('stock',stocks);
+}
+
+function syncPurchaseFromIncome(rec){
+  const amt=(rec.qty||0)*(rec.price||0);
+  const purList=DB.g('purchase');
+  const idx=purList.findIndex(function(p){return p.incId===rec.id});
+  if(amt<=0){
+    if(idx>=0){purList.splice(idx,1);DB.s('purchase',purList)}
+    return;
+  }
+  const existing=idx>=0?purList[idx]:null;
+  const linked={
+    id:existing?existing.id:gid(),
+    dt:rec.dt,
+    cli:rec.vd,
+    prod:rec.nm,
+    qty:rec.qty,
+    price:rec.price,
+    amt:amt,
+    paid:existing?existing.paid||0:0,
+    payType:existing?existing.payType||'미지급':'미지급',
+    note:'입고자동등록 ('+rec.cat+'/'+rec.nm+')',
+    incId:rec.id,
+    spec:rec.spec||''
+  };
+  if(idx>=0)purList[idx]=linked;
+  else purList.push(linked);
+  DB.s('purchase',purList);
+}
+
+function removePurchaseFromIncome(incId){
+  const purList=DB.g('purchase');
+  if(purList.some(function(p){return p.incId===incId;})){
+    DB.s('purchase',purList.filter(function(p){return p.incId!==incId;}));
+  }
+}
+
 function saveIncome(){
   const dt=$('incDt').value,vd=$('incVd').value.trim(),nm=$('incNm').value.trim();
   const qty=+$('incQty').value,price=+$('incPrice').value;
@@ -107,42 +167,23 @@ function saveIncome(){
 
   const list=DB.g('income');
   const idx=list.findIndex(x=>x.id===id);
+  const prev=idx>=0?Object.assign({},list[idx]):null;
   if(idx>=0){rec.st=list[idx].st;list[idx]=rec}else list.push(rec);
   DB.s('income',list);
 
-  // 재고에 자동 반영 (입고 시 재고 증가)
-  if(idx<0) autoUpdateStock(rec);
+  try{
+    if(prev)applyIncomeToStock(prev,-1);
+    applyIncomeToStock(rec,1);
+  }catch(e){console.warn('재고연계오류:',e);toast('⚠ 재고 자동반영 실패 — 재고현황 확인 필요','err')}
 
-  // 매입 자동 등록 (입고 → 매입 연동, 신규 입고 시에만)
-  if(idx<0){
-    try{
-      const amt=rec.qty*rec.price;
-      if(amt>0){
-        const purList=DB.g('purchase');
-        purList.push({id:gid(),dt:rec.dt,cli:rec.vd,prod:rec.nm,qty:rec.qty,price:rec.price,
-          amt:amt,paid:0,payType:'미지급',note:'입고자동등록 ('+rec.cat+'/'+rec.nm+')',incId:rec.id});
-        DB.s('purchase',purList);
-        if(typeof addLog==='function') addLog('매입자동등록: '+rec.vd+' '+rec.nm+' '+fmt(amt)+'원');
-      }
-    }catch(e){console.warn('매입연계오류:',e);toast('⚠ 매입 자동등록 실패 — 매입관리에서 수동 등록 필요','err')}
-  }
+  try{
+    syncPurchaseFromIncome(rec);
+    if(typeof addLog==='function'){
+      addLog((idx>=0?'매입자동수정: ':'매입자동등록: ')+rec.vd+' '+rec.nm+' '+fmt(rec.qty*rec.price)+'원');
+    }
+  }catch(e){console.warn('매입연계오류:',e);toast('⚠ 매입 자동등록 실패 — 매입관리에서 수동 등록 필요','err')}
 
   cMo('incMo');rIncome();toast('저장 완료','ok');
-}
-
-function autoUpdateStock(rec){
-  const stocks=DB.g('stock');
-  const exist=stocks.find(s=>s.cat===rec.cat&&s.nm===rec.nm&&s.spec===(rec.spec||''));
-  if(exist){
-    exist.qty=(exist.qty||0)+rec.qty;
-    exist.price=rec.price;
-    exist.vd=rec.vd;
-    exist.updated=nw();
-  }else{
-    stocks.push({id:gid(),cat:rec.cat,nm:rec.nm,spec:rec.spec||'',unit:rec.unit||'매',
-      qty:rec.qty,safe:0,price:rec.price,vd:rec.vd,loc:'',note:'',updated:nw()});
-  }
-  DB.s('stock',stocks);
 }
 
 function confirmInc(id){
@@ -153,17 +194,9 @@ function confirmInc(id){
 
 function dIncome(id){
   if(!confirm('삭제하시겠습니까?'))return;
-  // 삭제 전 해당 입고 데이터로 재고 차감
   const rec=DB.g('income').find(x=>x.id===id);
-  if(rec&&rec.qty){
-    const stocks=DB.g('stock');
-    const si=stocks.find(s=>s.nm===rec.nm&&s.cat===rec.cat);
-    if(si){si.qty=Math.max(0,(si.qty||0)-rec.qty);si.updated=nw();DB.s('stock',stocks)}
-  }
-  // 연동된 매입 데이터도 삭제
-  const purs=DB.g('purchase');
-  const purLinked=purs.filter(p=>p.incId===id);
-  if(purLinked.length){DB.s('purchase',purs.filter(p=>p.incId!==id))}
+  if(rec&&rec.qty)applyIncomeToStock(rec,-1);
+  removePurchaseFromIncome(id);
   DB.s('income',DB.g('income').filter(x=>x.id!==id));
   rIncome();if(typeof rStock==='function')rStock();if(typeof rPr==='function')rPr();
   toast('삭제 (재고/매입 반영)','ok');
@@ -563,4 +596,3 @@ function acBomProd(v){
 }
 
 /* ========== Init ========== */
-

@@ -9,6 +9,7 @@
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <title>팩플로우 | 패키지 제조 운영 시스템</title>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/theme-preview.css">
 <script src="js/xlsx.full.min.js"></script>
 <script src="/js/core.js?v=26"></script>
 <script src="/js/search-util.js?v=1"></script>
@@ -53,6 +54,7 @@
 <div class="sb-group open" role="button" aria-expanded="true">🧾 견적·수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-quote" title="패키지 견적 작성">패키지 견적</button>
+<button class="sb-item" type="button" onclick="openBoxDesigner()" title="박스 전개도와 취수 계산">박스 설계기</button>
 <button class="sb-item" data-mod="mes-order" title="수주 및 진행 추적">수주관리</button>
 <button class="sb-item" data-mod="mes-wo" title="생산할 제품 지시서">작업지시</button>
 </div>
@@ -1098,7 +1100,6 @@
 
 </div>
 <div class="module-page" id="pg-qc-equip"></div>
-<div class="module-page" id="pg-qc-quote"></div>
 <div class="module-page" id="pg-qc-approval"></div>
 </div></div></div>
 
@@ -1216,6 +1217,13 @@
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">패키지 견적</div>
       <div class="qlauncher-sub">패키지 단가 산출</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="openBoxDesigner()">
+    <div class="qlauncher-ico" style="background:#DCFCE7;color:#166534">📐</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">박스 설계기</div>
+      <div class="qlauncher-sub">전개도·취수 계산</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-order')">

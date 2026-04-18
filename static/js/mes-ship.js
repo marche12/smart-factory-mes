@@ -925,6 +925,9 @@ function _orderProdNm(o){if(o.items&&o.items.length){return o.items[0].nm+(o.ite
 function _makeOrderRow(o,woDateMap,now){
   var amt=_orderAmt(o);
   var prodNm=_orderProdNm(o);
+  var linkedWoIds=typeof orderWOIds==='function'?orderWOIds(o):(o.woId?[o.woId]:[]);
+  var linkedWoNos=typeof orderWONos==='function'?orderWONos(o):(o.woNo?[o.woNo]:[]);
+  var pendingWoCount=typeof orderPendingItemEntries==='function'?orderPendingItemEntries(o).length:0;
   var dday='';
   if(o.shipDt&&(o.status==='수주'||o.status==='수주확정'||o.status==='생산중')){
     var dd=Math.ceil((new Date(o.shipDt+'T00:00:00')-now)/(1000*60*60*24));
@@ -933,12 +936,12 @@ function _makeOrderRow(o,woDateMap,now){
     else dday='<span style="color:#94A3B8;font-size:11px;margin-left:4px">D-'+dd+'</span>';
   }
   // 진행흐름
-  var woDt=o.woId&&woDateMap[o.woId]?woDateMap[o.woId]:'';
+  var woDt=linkedWoIds.map(function(id){return woDateMap[id]}).filter(Boolean).sort().slice(-1)[0]||'';
   var flow='<div style="display:flex;align-items:center;gap:3px;font-size:11px">';
   flow+='<span style="background:#DCE8F5;color:#1D4ED8;padding:1px 6px;border-radius:3px">수주 '+(o.dt?o.dt.slice(5):'')+'</span>';
   if(woDt){
     flow+='<span style="color:#CBD5E1">→</span>';
-    flow+='<span style="background:#EDE9FE;color:#6D28D9;padding:1px 6px;border-radius:3px">WO '+woDt.slice(5)+'</span>';
+    flow+='<span style="background:#EDE9FE;color:#6D28D9;padding:1px 6px;border-radius:3px">WO '+(linkedWoIds.length>1?linkedWoIds.length+'건':woDt.slice(5))+'</span>';
   }else if(o.status==='수주확정'){
     flow+='<span style="color:#CBD5E1">→</span>';
     flow+='<span style="background:#F1F5F9;color:#94A3B8;padding:1px 6px;border-radius:3px">WO 미작성</span>';
@@ -959,7 +962,7 @@ function _makeOrderRow(o,woDateMap,now){
     '<td><div style="display:flex;gap:3px">'+
       '<button class="btn btn-sm btn-o" onclick="editOrder(\''+o.id+'\')">수정</button>'+
       (o.status==='수주'?'<button class="btn btn-sm btn-p" onclick="confirmOrder(\''+o.id+'\')">확정</button>':'')+
-      (o.status==='수주확정'?'<button class="btn btn-sm btn-s" onclick="orderToWO(\''+o.id+'\')">작업지시</button>':'')+
+      ((o.status==='수주확정'||(o.status==='생산중'&&pendingWoCount>0))?'<button class="btn btn-sm btn-s" onclick="orderToWO(\''+o.id+'\')">작업지시</button>':'')+
       '<button class="btn btn-sm btn-d" onclick="delOrder(\''+o.id+'\')">삭제</button>'+
     '</div></td></tr>';
 }
@@ -1092,7 +1095,7 @@ function removeOrdItem(i){if(_ordItems.length<=1){toast('최소 1개 품목이 �
 
 /* 거래처 검색 (수주용) */
 function openOrdCliSearch(){
-  var clis=DB.g('clients')||[];
+  var clis=DB.g('cli')||[];
   if(!clis.length){toast('거래처를 먼저 등록하세요','err');return}
   var el=document.createElement('div');el.className='mo-bg';el.id='ordCliSearchMo';
   el.innerHTML='<div style="background:#fff;border-radius:14px;width:500px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.15)">'+
@@ -1104,7 +1107,7 @@ function openOrdCliSearch(){
   document.getElementById('ordCliSchInput').focus();
 }
 function filterOrdCli(){
-  var clis=DB.g('clients')||[];
+  var clis=DB.g('cli')||[];
   var q=(document.getElementById('ordCliSchInput').value||'').toLowerCase();
   var list=clis.filter(function(c){return!q||(c.nm||'').toLowerCase().indexOf(q)>=0});
   document.getElementById('ordCliList').innerHTML=list.map(function(c){
@@ -1150,12 +1153,17 @@ function saveOrder(){
     cdt:existing&&existing.cdt||new Date().toISOString(),
     quoteId:existing&&existing.quoteId||'',
     quoteNum:existing&&existing.quoteNum||'',
-    quoteSnapshot:existing&&existing.quoteSnapshot||null
+    quoteSnapshot:existing&&existing.quoteSnapshot||null,
+    woId:existing&&existing.woId||'',
+    woNo:existing&&existing.woNo||'',
+    woIds:existing&&Array.isArray(existing.woIds)?existing.woIds.slice():(existing&&existing.woId?[existing.woId]:[]),
+    woNos:existing&&Array.isArray(existing.woNos)?existing.woNos.slice():(existing&&existing.woNo?[existing.woNo]:[]),
+    woLinks:existing&&Array.isArray(existing.woLinks)?existing.woLinks.map(function(link){return Object.assign({},link)}):[]
   };
 
   if(isEdit){
     var idx=orders.findIndex(function(o){return o.id===id});
-    if(idx>=0){obj.status=orders[idx].status;obj.woId=orders[idx].woId;obj.woNo=orders[idx].woNo;orders[idx]=obj}
+    if(idx>=0){obj.status=orders[idx].status;orders[idx]=obj}
   }else{
     orders.push(obj);
   }
@@ -1247,14 +1255,15 @@ function orderToWO(id){
   var o=orders.find(function(x){return x.id===id});
   if(!o)return;
 
-  var items=(o.items||[]).filter(function(it){return it.nm});
-  if(!items.length){toast('품목이 없습니다','err');return}
+  var entries=typeof orderPendingItemEntries==='function'?orderPendingItemEntries(o):((o.items||[]).map(function(it,idx){return{it:it,idx:idx}}).filter(function(entry){return entry.it&&entry.it.nm}));
+  if(!entries.length){toast('이미 모든 품목이 작업지시로 연결되었습니다','err');return}
 
   // 품목이 여러 개면 선택 팝업
-  if(items.length>1){
+  if(entries.length>1){
     var el=document.createElement('div');el.className='mo-bg';el.id='ordToWoMo';
-    var listH=items.map(function(it,i){
-      return '<div onclick="selectOrdItem(\''+id+'\','+i+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;transition:background .1s" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'\'">'
+    var listH=entries.map(function(entry){
+      var it=entry.it;
+      return '<div onclick="selectOrdItem(\''+id+'\','+entry.idx+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;transition:background .1s" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'\'">'
         +'<div><div style="font-weight:600;font-size:13px">'+(it.nm||'')+'</div><div style="font-size:11px;color:#64748B">'+(it.spec||'')+(it.qty?' | '+fmt(it.qty)+'매':'')+'</div></div>'
         +'<span style="font-size:12px;color:#1E3A5F;font-weight:600">선택 ›</span></div>';
     }).join('');
@@ -1268,16 +1277,16 @@ function orderToWO(id){
   }
 
   // 단일 품목
-  _fillWOFromOrder(o,items[0]);
+  _fillWOFromOrder(o,entries[0].it,entries[0].idx);
 }
 function selectOrdItem(ordId,idx){
   var el=document.getElementById('ordToWoMo');if(el)el.remove();
   var o=getOrders().find(function(x){return x.id===ordId});
   if(!o)return;
-  var items=(o.items||[]).filter(function(it){return it.nm});
-  if(items[idx])_fillWOFromOrder(o,items[idx]);
+  var item=(o.items||[])[idx];
+  if(item&&item.nm)_fillWOFromOrder(o,item,idx);
 }
-function _fillWOFromOrder(o,it){
+function _fillWOFromOrder(o,it,itemIdx){
   goMod('mes-wo');woSub('new');
   setTimeout(function(){
     $('woCli').value=o.cli||'';
@@ -1295,11 +1304,10 @@ function _fillWOFromOrder(o,it){
     if($('woPrice'))$('woPrice').value=it.price||o.price||'';
     _updateWoAmt();
     // 수주 ID 연결 (hidden field)
-    if($('woOrdId'))$('woOrdId').value=o.id;
-    // 수주 상태를 생산중으로
-    var orders=getOrders();
-    var ord=orders.find(function(x){return x.id===o.id});
-    if(ord){ord.status='생산중';saveOrders(orders)}
+    if($('woOrdId')){
+      $('woOrdId').value=o.id;
+      $('woOrdId').dataset.itemIdx=itemIdx===undefined||itemIdx===null?'':String(itemIdx);
+    }
     toast('패키지 작업지시 화면으로 이동합니다. 공정 흐름을 확인한 뒤 저장하세요.');
   },100);
 }
@@ -1442,7 +1450,8 @@ function openOrderMonthPopup(month){
       o.items.forEach(function(it){amt+=(Number(it.qty)||0)*(Number(it.price)||0);qty+=Number(it.qty)||0});
       prodNm=o.items[0].nm+(o.items.length>1?' 외 '+(o.items.length-1)+'건':'');
     }else{amt=(Number(o.qty)||0)*(Number(o.price)||0);qty=Number(o.qty)||0;prodNm=o.prodNm||''}
-    var woLink=o.woNo?'<a href="#" onclick="cMo(\'ordMonthPopMo\');goMod(\'mes-wo\');return false" style="color:#1E3A5F;font-weight:600">'+o.woNo+'</a>':'-';
+    var woNos=typeof orderWONos==='function'?orderWONos(o):(o.woNo?[o.woNo]:[]);
+    var woLink=woNos.length?'<a href="#" onclick="cMo(\'ordMonthPopMo\');goMod(\'mes-wo\');return false" style="color:#1E3A5F;font-weight:600">'+(woNos.length>1?woNos[0]+' 외 '+(woNos.length-1)+'건':woNos[0])+'</a>':'-';
     return '<tr><td style="font-weight:600">'+(o.no||'-')+'</td><td>'+(o.cli||'-')+'</td><td>'+prodNm+'</td><td style="text-align:right">'+fmt(qty)+'</td><td style="text-align:right;font-weight:600;color:#1E3A5F">'+fmt(amt)+'원</td><td>'+(o.shipDt||'-')+'</td><td style="text-align:center">'+woLink+'</td><td>'+badge(o.status||'수주')+'</td></tr>';
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#94A3B8">수주 내역이 없습니다</td></tr>';
   var h='<div class="cmb" style="width:780px;max-height:85vh;display:flex;flex-direction:column">';

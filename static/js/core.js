@@ -18,6 +18,60 @@ function badge(s){
   const m={'대기':'bd-w','진행중':'bd-p','완료':'bd-d','지연':'bd-x','임박':'bd-x','출고대기':'bd-o','출고완료':'bd-s','외주대기':'bd-o','외주진행':'bd-o','외주완료':'bd-o','완료대기':'bd-o','보류':'bd-hold','재작업':'bd-rework','LOT분할':'bd-o','외주진행중':'bd-e','입고확인대기':'bd-p','스킵':'bd-w','수주':'bd-o','수주확정':'bd-s','생산중':'bd-p','취소':'bd-cancel'};return '<span class="bd '+(m[s]||'bd-w')+'">'+s+'</span>';
 }
 
+function uniqVals(list){
+  var out=[];
+  (list||[]).forEach(function(v){
+    if(v===undefined||v===null||v==='')return;
+    if(out.indexOf(v)<0)out.push(v);
+  });
+  return out;
+}
+
+function orderWOIds(order){
+  if(!order)return [];
+  var ids=[];
+  if(Array.isArray(order.woIds))ids=ids.concat(order.woIds);
+  else if(order.woId)ids.push(order.woId);
+  if(Array.isArray(order.woLinks)){
+    order.woLinks.forEach(function(link){
+      if(link&&link.woId)ids.push(link.woId);
+    });
+  }
+  return uniqVals(ids);
+}
+
+function orderWONos(order){
+  if(!order)return [];
+  var nos=[];
+  if(Array.isArray(order.woNos))nos=nos.concat(order.woNos);
+  else if(order.woNo)nos.push(order.woNo);
+  if(Array.isArray(order.woLinks)){
+    order.woLinks.forEach(function(link){
+      if(link&&link.woNo)nos.push(link.woNo);
+    });
+  }
+  return uniqVals(nos);
+}
+
+function orderHasLinkedWO(order){
+  return orderWOIds(order).length>0;
+}
+
+function orderPendingItemEntries(order){
+  if(!order||!Array.isArray(order.items))return [];
+  var linked={};
+  if(Array.isArray(order.woLinks)){
+    order.woLinks.forEach(function(link){
+      if(link&&link.itemIdx!==undefined&&link.itemIdx!==null)linked[String(link.itemIdx)]=true;
+    });
+  }
+  return order.items.map(function(it,idx){
+    return {it:it,idx:idx};
+  }).filter(function(entry){
+    return entry.it&&entry.it.nm&&!linked[String(entry.idx)];
+  });
+}
+
 /* ===== 공정 관리 시스템 ===== */
 var DEFAULT_PROCS=[
   {id:'pr1',nm:'인쇄',tp:'external',icon:'',color:'#1E3A5F',ord:1},
@@ -133,6 +187,9 @@ async function _doRefresh(){
 }
 
 var _cache={};
+var _meta={};
+var _conflicts={};
+var _syncState={};
 var DB={
   _prefix:'ino_',
   _loaded:false,
@@ -145,6 +202,7 @@ var DB={
         var r=await authFetch('/api/data/'+encodeURIComponent(keys[i]));
         var d=await r.json();
         if(d.value!==null)_cache[keys[i]]=d.value;
+        _meta[keys[i]]=d.updated_at||null;
       }
       DB._loaded=true;
       DB._serverOk=true;
@@ -154,14 +212,73 @@ var DB={
       DB._serverOk=false;
     }
   },
+  _handleConflict:function(storeKey,localJson,data){
+    _conflicts[storeKey]={
+      localValue:localJson,
+      serverValue:data&&data.current_value!==undefined?data.current_value:null,
+      updatedAt:data&&data.current_updated_at?data.current_updated_at:null,
+      at:new Date().toISOString()
+    };
+    if(data&&data.current_value!==undefined&&data.current_value!==null){
+      _cache[storeKey]=data.current_value;
+      localStorage.setItem(storeKey,data.current_value);
+    }else{
+      delete _cache[storeKey];
+      localStorage.removeItem(storeKey);
+    }
+    _meta[storeKey]=data&&data.current_updated_at?data.current_updated_at:null;
+    if(typeof window!=='undefined'&&window.dispatchEvent&&typeof CustomEvent!=='undefined'){
+      window.dispatchEvent(new CustomEvent('packflow-db-conflict',{detail:{key:storeKey}}));
+    }
+    if(typeof toast==='function')toast('다른 사용자가 먼저 수정했습니다. 최신 데이터로 다시 확인해주세요: '+storeKey,'err');
+  },
   _syncToServer:function(storeKey,json){
     if(!DB._serverOk)return;
-    var _retries=0;var _maxRetry=2;var _doSync=function(){
-      authFetch('/api/data/'+encodeURIComponent(storeKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:json})}).catch(function(e){
-        _retries++;if(_retries<=_maxRetry){console.warn('Sync retry '+_retries+'/'+_maxRetry+':',storeKey);setTimeout(_doSync,2000*_retries)}
-        else{console.error('Sync failed after retries:',storeKey);if(typeof toast==='function')toast('서버 동기화 실패: '+storeKey,'err')}
-      });
-    };_doSync();
+    var state=_syncState[storeKey]||(_syncState[storeKey]={inFlight:false,pendingJson:null});
+    state.pendingJson=json;
+    if(state.inFlight)return;
+    var _maxRetry=2;
+    var _pump=function(){
+      if(state.pendingJson===null||state.pendingJson===undefined){state.inFlight=false;return}
+      state.inFlight=true;
+      var jsonToSend=state.pendingJson;
+      state.pendingJson=null;
+      var expectedUpdatedAt=_meta[storeKey]!==undefined?_meta[storeKey]:null;
+      var _retries=0;
+      var _doSync=function(){
+        authFetch('/api/data/'+encodeURIComponent(storeKey),{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({value:jsonToSend,expected_updated_at:expectedUpdatedAt})
+        }).then(function(res){
+          if(res.status===409){
+            return res.json().then(function(data){
+              state.inFlight=false;
+              state.pendingJson=null;
+              DB._handleConflict(storeKey,jsonToSend,data||{});
+            });
+          }
+          if(!res.ok)throw new Error('sync failed');
+          return res.json().then(function(data){
+            if(data&&data.updated_at)_meta[storeKey]=data.updated_at;
+            state.inFlight=false;
+            if(state.pendingJson!==null&&state.pendingJson!==undefined)_pump();
+          });
+        }).catch(function(e){
+          _retries++;
+          if(_retries<=_maxRetry){
+            console.warn('Sync retry '+_retries+'/'+_maxRetry+':',storeKey);
+            setTimeout(_doSync,2000*_retries);
+          }else{
+            state.inFlight=false;
+            console.error('Sync failed after retries:',storeKey);
+            if(typeof toast==='function')toast('서버 동기화 실패: '+storeKey,'err');
+          }
+        });
+      };
+      _doSync();
+    };
+    _pump();
   },
   _deleteFromServer:function(storeKey){
     if(!DB._serverOk)return;
@@ -810,6 +927,13 @@ var GROUPS={
 };
 var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.forEach(function(t){if(t.id!==gid)PARENT_MAP[t.id]=gid})});
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
+function openBoxDesigner(){
+  if(CU&&CU.perms&&CU.perms.indexOf('qc-quote')<0&&CU.role!=='admin'){
+    toast('접근 권한이 없습니다','err');
+    return;
+  }
+  window.open('/box-designer.html','_blank','noopener');
+}
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}
 var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'패키지 운영판','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','acc-vat':'부가세 신고','acc-bill':'어음 관리','acc-bank':'통장 관리','acc-expense':'지출결의서','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','qc-approval':'전자결재','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','biz-monthly':'월간보고서','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-monitor':'현장모니터'};

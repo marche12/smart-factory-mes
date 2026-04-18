@@ -39,6 +39,22 @@ def get_data(key: str):
     return None
 
 
+def get_data_entry(key: str):
+    """Get value and updated_at metadata for a key."""
+    conn = get_connection()
+    row = conn.execute(
+        'SELECT value, updated_at FROM data_store WHERE key = ?',
+        (key,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return None
+    return {
+        "value": row["value"],
+        "updated_at": row["updated_at"],
+    }
+
+
 def set_data(key: str, value: str):
     """Set data by key (upsert)."""
     conn = get_connection()
@@ -49,6 +65,38 @@ def set_data(key: str, value: str):
     ''', (key, value, datetime.now().isoformat()))
     conn.commit()
     conn.close()
+
+
+def compare_and_set_data(key: str, value: str, expected_updated_at=None):
+    """
+    Optimistic concurrency control for key-value updates.
+    Returns (ok, current_value, current_updated_at).
+    """
+    conn = get_connection()
+    row = conn.execute(
+        'SELECT value, updated_at FROM data_store WHERE key = ?',
+        (key,)
+    ).fetchone()
+    current_value = row["value"] if row else None
+    current_updated_at = row["updated_at"] if row else None
+
+    if row:
+        if expected_updated_at is not None and expected_updated_at != current_updated_at:
+            conn.close()
+            return False, current_value, current_updated_at
+    elif expected_updated_at not in (None, ""):
+        conn.close()
+        return False, current_value, current_updated_at
+
+    new_updated_at = datetime.now().isoformat()
+    conn.execute('''
+        INSERT INTO data_store (key, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    ''', (key, value, new_updated_at))
+    conn.commit()
+    conn.close()
+    return True, value, new_updated_at
 
 
 def get_all_keys():

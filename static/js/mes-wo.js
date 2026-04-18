@@ -51,7 +51,7 @@ function fillWOMgr(defaultVal){
   if(!sel.value&&us.length)sel.value=us[0].nm;
 }
 function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
-function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId'))$('woOrdId').value='';$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
+function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId')){$('woOrdId').value='';if($('woOrdId').dataset)delete $('woOrdId').dataset.itemIdx;}$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
 function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
@@ -812,17 +812,62 @@ DB.s('wo',os);lastSavedId=wo.id;
 // 수주 연동: WO 저장 시 order 레코드 자동 생성/연결
 if(!editId){
   var _ordId=$('woOrdId')?$('woOrdId').value:'';
+  var _ordItemIdxRaw=$('woOrdId')&&$('woOrdId').dataset?$('woOrdId').dataset.itemIdx:'';
+  var _ordItemIdx=_ordItemIdxRaw===''?null:+_ordItemIdxRaw;
   var _orders=getOrders();
   if(_ordId){
     // 기존 수주와 연결
     var _ord=_orders.find(function(x){return x.id===_ordId});
-    if(_ord){_ord.woNo=wo.wn;_ord.woId=wo.id;_ord.status='수주확정';if(wo.price)_ord.price=wo.price;if(wo.amt)_ord.amt=wo.amt;saveOrders(_orders)}
+    if(_ord){
+      var _woIds=typeof orderWOIds==='function'?orderWOIds(_ord):(_ord.woId?[_ord.woId]:[]);
+      var _woNos=typeof orderWONos==='function'?orderWONos(_ord):(_ord.woNo?[_ord.woNo]:[]);
+      var _woLinks=Array.isArray(_ord.woLinks)?_ord.woLinks.slice():[];
+      if(_woIds.indexOf(wo.id)<0)_woIds.push(wo.id);
+      if(_woNos.indexOf(wo.wn)<0)_woNos.push(wo.wn);
+      if(!_woLinks.some(function(link){return link&&link.woId===wo.id;})){
+        _woLinks.push({
+          woId:wo.id,
+          woNo:wo.wn,
+          itemIdx:_ordItemIdx,
+          itemNm:wo.pnm,
+          itemSpec:wo.spec||'',
+          linkedAt:nw()
+        });
+      }
+      _ord.woId=_woIds[0]||wo.id;
+      _ord.woNo=_woNos[0]||wo.wn;
+      _ord.woIds=_woIds;
+      _ord.woNos=_woNos;
+      _ord.woLinks=_woLinks;
+      _ord.status='생산중';
+      if(wo.price)_ord.price=wo.price;
+      if(wo.amt)_ord.amt=wo.amt;
+      saveOrders(_orders);
+    }
     if(typeof DocTrace!=='undefined')DocTrace.link('ORDER',_ordId,'WO',wo.id,_ord?_ord.no:'',wo.wn);
     wo.ordId=_ordId;
-    if($('woOrdId'))$('woOrdId').value='';
+    if($('woOrdId')){
+      $('woOrdId').value='';
+      if($('woOrdId').dataset)delete $('woOrdId').dataset.itemIdx;
+    }
   } else {
     // 수주 없이 WO 직접 등록 → order 레코드 자동 생성
-    var _newOrd={id:gid(),no:'ORD-'+wo.wn,dt:wo.dt,cli:wo.cnm,items:[{nm:wo.pnm,qty:wo.fq,price:wo.price||0}],price:wo.price||0,amt:wo.amt||0,due:wo.sd,status:'수주확정',woNo:wo.wn,woId:wo.id};
+    var _newOrd={
+      id:gid(),
+      no:'ORD-'+wo.wn,
+      dt:wo.dt,
+      cli:wo.cnm,
+      items:[{nm:wo.pnm,qty:wo.fq,price:wo.price||0}],
+      price:wo.price||0,
+      amt:wo.amt||0,
+      due:wo.sd,
+      status:'생산중',
+      woNo:wo.wn,
+      woId:wo.id,
+      woNos:[wo.wn],
+      woIds:[wo.id],
+      woLinks:[{woId:wo.id,woNo:wo.wn,itemIdx:0,itemNm:wo.pnm,itemSpec:wo.spec||'',linkedAt:nw()}]
+    };
     _orders.push(_newOrd);saveOrders(_orders);
     if(typeof DocTrace!=='undefined')DocTrace.link('ORDER',_newOrd.id,'WO',wo.id,_newOrd.no,wo.wn);
     wo.ordId=_newOrd.id;

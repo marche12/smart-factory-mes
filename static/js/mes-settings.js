@@ -235,7 +235,7 @@ if(_override){
   try{var _ov=JSON.parse(_override);_shipCnm=_ov.nm;_shipCid=_ov.id;_changeMeta=_ov;}catch(e){}
 }
 const rec={
-  id:gid(),woId,wn:o.wn,
+  id:gid(),woId,wn:o.wn,orderId:o.ordId||'',
   cnm:_shipCnm, origCnm:o.cnm,        // 얼마에요 BookId(변경) + OrigBookId(원본)
   isCliChanged: !!_changeMeta,         // 거래처 변경 표시
   amendedKindCode: _changeMeta?_changeMeta.amendedKindCode:0,  // 얼마에요 AmendedKindCode

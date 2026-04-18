@@ -44,67 +44,89 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div id="sbDate" style="padding:0 22px 14px;font-size:12px;color:#64748B;font-weight:600;letter-spacing:.3px;border-bottom:1px solid rgba(255,255,255,.08)"></div><div style="flex:1;overflow-y:auto">
-<div class="sb-group open" role="button" aria-expanded="true">매입/매출<span class="sb-arrow">▶</span></div>
+<!-- 홈 (단독) -->
+<button class="sb-item sb-home" data-mod="mes-dash" style="margin:4px 12px;padding:10px 14px;background:#1E40AF;color:#fff;border-radius:8px;font-weight:700;font-size:14px">🏠 홈</button>
+
+<!-- [펼침] 매일 업무 -->
+<div class="sb-group open" role="button" aria-expanded="true">📋 매일 업무<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="acc-sales">매출</button>
-<button class="sb-item" data-mod="acc-purchase">매입</button>
-<button class="sb-item" data-mod="acc-tax">세금계산서</button>
+<button class="sb-item" data-mod="mes-wo" title="생산할 제품 지시서">작업지시서</button>
+<button class="sb-item" data-mod="mes-ship" title="납품/출고 처리">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item" data-mod="acc-sales" title="매출 등록 및 조회">매출</button>
+<button class="sb-item" data-mod="acc-purchase" title="매입 등록 및 조회">매입</button>
+<button class="sb-item" data-mod="acc-tax" title="세금계산서 발행/수신">세금계산서</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">생산관리<span class="sb-arrow">▶</span></div>
+
+<!-- [펼침] 현황 보기 -->
+<div class="sb-group open" role="button" aria-expanded="true">📊 현황 보기<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-wo">작업지시서</button>
-<button class="sb-item" data-mod="mes-plan">생산계획</button>
-<button class="sb-item" data-mod="mes-dash">생산현황</button>
-<button class="sb-item" data-mod="mes-proc-log">공정실적</button>
-<button class="sb-item" data-mod="mes-outsource">외주관리</button>
+<button class="sb-item" data-mod="mes-plan" title="생산 계획 및 스케줄">생산계획</button>
+<button class="sb-item" data-mod="mat-stock" title="자재/제품 재고 현황">재고 현황</button>
+<button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">채권/자금</button>
+<button class="sb-item" data-mod="acc-cashflow" title="입출금 이력">입출금</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">구매/자재<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 거래처·품목 -->
+<div class="sb-group" role="button" aria-expanded="false">📇 거래처·품목<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mat-po">발주</button>
-<button class="sb-item" data-mod="mat-income">입고</button>
-<button class="sb-item" data-mod="mat-stock">재고</button>
-<button class="sb-item" data-mod="mat-bom">BOM</button>
+<button class="sb-item" data-mod="mes-cli" title="1,457개 거래처">거래처</button>
+<button class="sb-item" data-mod="mes-prod" title="7,459개 품목">품목</button>
+<button class="sb-item" data-mod="mes-mold" title="659개 목형">목형</button>
+<button class="sb-item" data-mod="mes-vendor" title="외주 인쇄소">인쇄소</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">출고/품질<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 구매/자재 -->
+<div class="sb-group" role="button" aria-expanded="false">📦 구매·자재<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-ship">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
-<button class="sb-item" data-mod="qc-inspect">품질</button>
+<button class="sb-item" data-mod="mat-po" title="자재 발주">발주</button>
+<button class="sb-item" data-mod="mat-income" title="자재 입고 처리">입고</button>
+<button class="sb-item" data-mod="mat-bom" title="원자재 소요량">BOM</button>
+<button class="sb-item" data-mod="mat-price" title="자재 단가 이력">자재 단가</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">회계관리<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 생산 관리 -->
+<div class="sb-group" role="button" aria-expanded="false">🏭 생산 관리<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" onclick="goMod('mes-rpt');setTimeout(function(){if(typeof rptSub==='function')rptSub('pl',document.querySelector('.s-tab'))},200)">손익</button>
-<button class="sb-item" data-mod="acc-recv">채권/자금</button>
-<button class="sb-item" data-mod="acc-cashflow">입출금</button>
-<button class="sb-item" data-mod="acc-closing">외상마감</button>
-<button class="sb-item" data-mod="acc-vat">부가세 신고</button>
-<button class="sb-item" data-mod="acc-bill">어음 관리</button>
-<button class="sb-item" data-mod="acc-bank">통장 관리</button>
-<button class="sb-item" data-mod="acc-expense">지출결의서</button>
-<button class="sb-item" data-mod="mat-price">자재 단가</button>
+<button class="sb-item" data-mod="mes-proc-log" title="공정별 실적">공정실적</button>
+<button class="sb-item" data-mod="mes-outsource" title="외주 업체 관리">외주관리</button>
+<button class="sb-item" data-mod="qc-inspect" title="품질 검사">품질</button>
+<button class="sb-item" data-mod="qc-equip" title="생산 설비">설비</button>
+<button class="sb-item" data-mod="mes-monitor" title="현장 모니터링">현장모니터</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">인사/급여<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 세무/회계 -->
+<div class="sb-group" role="button" aria-expanded="false">🏦 세무·자금<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="hr-emp">직원</button>
-<button class="sb-item" data-mod="hr-att">출퇴근</button>
-<button class="sb-item" data-mod="hr-pay">급여</button>
-<button class="sb-item" data-mod="hr-leave">연차</button>
+<button class="sb-item" onclick="goMod('mes-rpt');setTimeout(function(){if(typeof rptSub==='function')rptSub('pl',document.querySelector('.s-tab'))},200)" title="손익계산서">손익</button>
+<button class="sb-item" data-mod="acc-closing" title="월말 마감">외상마감</button>
+<button class="sb-item" data-mod="acc-vat" title="부가세 신고자료">부가세 신고</button>
+<button class="sb-item" data-mod="acc-bill" title="어음 만기 관리">어음 관리</button>
+<button class="sb-item" data-mod="acc-bank" title="통장 계좌별 관리">통장 관리</button>
+<button class="sb-item" data-mod="acc-expense" title="경비 지출결의">지출결의서</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">보고서<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 인사/급여 -->
+<div class="sb-group" role="button" aria-expanded="false">👥 인사·급여<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="biz-kpi">보고서</button>
+<button class="sb-item" data-mod="hr-emp" title="직원 정보">직원</button>
+<button class="sb-item" data-mod="hr-att" title="출퇴근 기록">출퇴근</button>
+<button class="sb-item" data-mod="hr-pay" title="급여 계산">급여</button>
+<button class="sb-item" data-mod="hr-leave" title="연차 관리">연차</button>
 </div>
-<div class="sb-group" role="button" aria-expanded="false">설정<span class="sb-arrow">▶</span></div>
+
+<!-- [접힘] 보고서 -->
+<div class="sb-group" role="button" aria-expanded="false">📈 보고서<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
-<button class="sb-item" data-mod="mes-cli">거래처</button>
-<button class="sb-item" data-mod="mes-prod">품목</button>
-<button class="sb-item" data-mod="mes-vendor">인쇄소</button>
-<button class="sb-item" data-mod="mes-mold">목형</button>
-<button class="sb-item" data-mod="qc-equip">설비</button>
-<button class="sb-item" data-mod="qc-approval">전자결재</button>
-<button class="sb-item" data-mod="adm-perm">권한</button>
-<button class="sb-item" data-mod="adm-backup">백업</button>
-<button class="sb-item" data-mod="mes-monitor">현장모니터</button>
-<button class="sb-item" data-mod="mes-queue" style="background:#FEF3C7;color:#92400E;font-weight:700">⚙️ 시스템설정</button>
+<button class="sb-item" data-mod="biz-kpi" title="경영 KPI 대시보드">경영 KPI</button>
+</div>
+
+<!-- [접힘] 시스템 -->
+<div class="sb-group" role="button" aria-expanded="false">⚙️ 시스템<span class="sb-arrow">▶</span></div>
+<div class="sb-tree">
+<button class="sb-item" data-mod="qc-approval" title="전자결재">전자결재</button>
+<button class="sb-item" data-mod="adm-perm" title="사용자 권한">권한 관리</button>
+<button class="sb-item" data-mod="adm-backup" title="데이터 백업">백업</button>
+<button class="sb-item" data-mod="mes-queue" style="background:#FEF3C7;color:#92400E;font-weight:700" title="회사 정보/팝빌 등">⚙️ 시스템설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -1156,7 +1178,84 @@
   <button onclick="rDash()" style="padding:4px 12px;border:1px solid #CBD5E1;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#475569">새로고침</button>
 </div>
 </div>
-<style>@keyframes mpulse{0%,100%{opacity:1}50%{opacity:0.3}}</style>
+<style>
+@keyframes mpulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.qlauncher{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.qlauncher-card{background:#fff;border-radius:12px;padding:16px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.04);border:1px solid #E5E7EB;transition:all 0.15s;display:flex;align-items:center;gap:12px}
+.qlauncher-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08);border-color:#1E40AF}
+.qlauncher-ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.qlauncher-body{flex:1;min-width:0}
+.qlauncher-ttl{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:2px}
+.qlauncher-sub{font-size:11px;color:#64748B}
+</style>
+
+<!-- 빠른 실행 런처 -->
+<div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#64748B;letter-spacing:0.5px">⚡ 빠른 실행</div>
+<div class="qlauncher">
+  <div class="qlauncher-card" onclick="goMod('mes-wo')">
+    <div class="qlauncher-ico" style="background:#DBEAFE;color:#1E40AF">📋</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">작업지시서</div>
+      <div class="qlauncher-sub">생산 지시 작성</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('mes-ship')">
+    <div class="qlauncher-ico" style="background:#FCE7F3;color:#BE185D">🚚</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">출고 처리</div>
+      <div class="qlauncher-sub">납품·거래명세</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('acc-sales')">
+    <div class="qlauncher-ico" style="background:#DCFCE7;color:#15803D">💰</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">매출 등록</div>
+      <div class="qlauncher-sub">매출 기입</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('acc-tax')">
+    <div class="qlauncher-ico" style="background:#EDE9FE;color:#6D28D9">📄</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">세금계산서</div>
+      <div class="qlauncher-sub">발행/수신</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('mat-stock')">
+    <div class="qlauncher-ico" style="background:#FED7AA;color:#9A3412">📦</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">재고 현황</div>
+      <div class="qlauncher-sub">자재/제품</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('acc-recv')">
+    <div class="qlauncher-ico" style="background:#FEE2E2;color:#B91C1C">📊</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">채권/미수금</div>
+      <div class="qlauncher-sub">받을 돈 확인</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('acc-bank')">
+    <div class="qlauncher-ico" style="background:#CCFBF1;color:#0F766E">🏦</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">통장 관리</div>
+      <div class="qlauncher-sub">계좌·입출금</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('mes-cli')">
+    <div class="qlauncher-ico" style="background:#E0E7FF;color:#3730A3">📇</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">거래처</div>
+      <div class="qlauncher-sub">거래처 정보</div>
+    </div>
+  </div>
+  <div class="qlauncher-card" onclick="goMod('biz-kpi')">
+    <div class="qlauncher-ico" style="background:#FEF3C7;color:#A16207">📈</div>
+    <div class="qlauncher-body">
+      <div class="qlauncher-ttl">보고서</div>
+      <div class="qlauncher-sub">경영 지표</div>
+    </div>
+  </div>
+</div>
 <!-- 근무 진행률 -->
 <div id="ndShift"></div>
 <!-- KPI 카드 -->
@@ -1867,6 +1966,10 @@
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-cashflow">입출금</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-monthly">월별비교</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-closing">외상마감</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-vat">부가세 신고</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-bill">어음 관리</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-bank">통장 관리</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-expense">지출결의서</label>
 <div style="font-weight:700;color:#7C3AED;margin:8px 0 4px">인사/급여</div>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-emp">직원</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="hr-att">출퇴근</label>

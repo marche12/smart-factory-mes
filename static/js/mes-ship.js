@@ -1560,12 +1560,22 @@ function resetOrder(){
 }
 
 /* 품목 행 렌더 */
+/* 수주 품목 행 자동완성 선택 시 규격·단가 자동 채움 */
+function _ordApplyProdMeta(idx){
+  var it = _ordItems[idx]; if(!it) return;
+  var p = (DB.g('prod')||[]).find(function(x){return x.nm===it.nm;});
+  if(!p) return;
+  if(!it.spec && p.spec) it.spec = p.spec;
+  if(!it.price && p.price) it.price = p.price;
+  renderOrdItems();
+}
+window._ordApplyProdMeta = _ordApplyProdMeta;
 function renderOrdItems(){
   var body=$('ordItemBody');
   body.innerHTML=_ordItems.map(function(it,i){
     var amt=(Number(it.qty)||0)*(Number(it.price)||0);
     return '<tr>'+
-      '<td><input value="'+(it.nm||'')+'" onchange="_ordItems['+i+'].nm=this.value;updateOrderAssist()" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="제품명"></td>'+
+      '<td><input list="ux-dl-prod" value="'+(it.nm||'').replace(/"/g,'&quot;')+'" onchange="_ordItems['+i+'].nm=this.value;_ordApplyProdMeta('+i+');updateOrderAssist()" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="제품명"></td>'+
       '<td><input value="'+(it.spec||'')+'" onchange="_ordItems['+i+'].spec=this.value;updateOrderAssist()" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="규격"></td>'+
       '<td><input type="number" value="'+(it.qty||'')+'" onchange="_ordItems['+i+'].qty=this.value;renderOrdItems()" style="width:70px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px;text-align:right"></td>'+
       '<td><input type="number" value="'+(it.price||'')+'" onchange="_ordItems['+i+'].price=this.value;renderOrdItems()" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px;text-align:right"></td>'+

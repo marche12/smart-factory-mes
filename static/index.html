@@ -904,6 +904,7 @@
 <div class="fg"><label>비고</label><textarea id="ordNote" rows="1" style="padding:6px 8px;font-size:12px;min-height:28px"></textarea></div>
 </div>
 <div id="ordClientHistory" class="pack-inline-note" style="margin-top:10px"></div>
+<div id="ordClientQuickPicks" class="pack-chip-row" style="margin-top:8px"></div>
 </div>
 </div>
 </div>
@@ -1278,10 +1279,16 @@
       <button class="on" onclick="setCliView('table',this)">목록</button>
       <button onclick="setCliView('gallery',this)">갤러리</button>
     </div>
+    <select id="cliDormantFilter" onchange="_cliPage=0;rCli()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
+      <option value="active">활성 거래처</option>
+      <option value="all">전체 보기</option>
+      <option value="dormant">휴면 거래처</option>
+    </select>
     <select id="cliFolderFilter" onchange="_cliPage=0;rCli()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px">
       <option value="">전체 폴더</option>
       <option value="__none__">미분류</option>
     </select>
+    <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">📒 거래 확인</button>
     <button class="btn btn-o btn-sm" onclick="openFolderMgr()">📁 폴더 관리</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">📥 엑셀 업로드</button>

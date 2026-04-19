@@ -7,6 +7,13 @@ var _dMold=debounce(function(){_moldPage=0;rMold()},200);
 // CLIENT
 var _cliView='table';
 function setCliView(v,btn){_cliView=v;_cliPage=0;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('cliTableView'),g=$('cliGalleryView');if(t)t.style.display=v==='table'?'':'none';if(g)g.style.display=v==='gallery'?'':'none';rCli()}
+function _cliDormant(c){return !!(c&&c.isDormant)}
+function _cliFavorite(c){return !!(c&&c.isFavorite)}
+function _cliSort(a,b){
+  if(_cliFavorite(a)!==_cliFavorite(b))return _cliFavorite(a)?-1:1;
+  if(_cliDormant(a)!==_cliDormant(b))return _cliDormant(a)?1:-1;
+  return (a.nm||'').localeCompare(b.nm||'','ko');
+}
 function _cliStats(c){
   var sales=DB.g('sales').filter(s=>s.cli===c.nm);
   var totalAmt=sales.reduce((s,r)=>s+(r.amt||0),0);
@@ -24,6 +31,7 @@ function rCli(page){
   const s=($('cliSch')?.value||'').toLowerCase();
   var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';
   var ff=$('cliFolderFilter')?$('cliFolderFilter').value:'';
+  var df=$('cliDormantFilter')?$('cliDormantFilter').value:'active';
   var cs;
   // 초성 검색 지원
   var matchFn = function(c){
@@ -40,36 +48,50 @@ function rCli(page){
     if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
     else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
   }
+  if(df==='active')cs=cs.filter(function(c){return !_cliDormant(c)});
+  else if(df==='dormant')cs=cs.filter(function(c){return _cliDormant(c)});
   // 폴더 필터
   if(ff === '__none__') cs = cs.filter(function(c){return !c.folderId});
   else if(ff) cs = cs.filter(function(c){return c.folderId === ff});
+  cs=cs.slice().sort(_cliSort);
   // KPI
   var allCli=DB.g('cli');
   var salesCnt=allCli.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType).length;
   var purchCnt=allCli.filter(c=>c.cType==='purchase'||c.cType==='both').length;
   var withSales=DB.g('sales').reduce((acc,r)=>{acc[r.cli]=true;return acc},{});
   var activeCnt=Object.keys(withSales).length;
+  var dormantCnt=allCli.filter(_cliDormant).length;
   var k=$('cliKpi');if(k)k.innerHTML=
     `<div class="sb blue"><div class="l">전체 거래처</div><div class="v">${allCli.length}</div></div>`+
     `<div class="sb green"><div class="l">매출처</div><div class="v">${salesCnt}</div></div>`+
     `<div class="sb orange"><div class="l">매입처</div><div class="v">${purchCnt}</div></div>`+
-    `<div class="sb purple"><div class="l">활성 거래처</div><div class="v">${activeCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">최근 매출 발생</div></div>`;
+    `<div class="sb purple"><div class="l">활성 거래처</div><div class="v">${activeCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">휴면 ${dormantCnt}개</div></div>`;
   var pg=paginate(cs,_cliPage);var vis=pg.items;
   if(_cliView==='table'){
     if(tf==='vendor'){
-      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(c=>`<tr><td style="font-weight:700">${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">인쇄소 없음</td></tr>';
+      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
+        var badges='';
+        if(_cliFavorite(c))badges+='<span class="bd bd-p">★</span> ';
+        if(_cliDormant(c))badges+='<span class="bd bd-w">휴면</span> ';
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')"><td style="font-weight:700">${c.nm||'-'} ${badges}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+      }).join(''):'<tr><td colspan="6" class="empty-cell">인쇄소 없음</td></tr>';
     }else{
-      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(c=>`<tr><td style="font-weight:700">${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="dCli('${c.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
+      $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
+        var badges='';
+        if(_cliFavorite(c))badges+='<span class="bd bd-p">★</span> ';
+        if(_cliDormant(c))badges+='<span class="bd bd-w">휴면</span> ';
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')"><td style="font-weight:700">${c.nm} ${badges}</td><td>${cTypeBadge(c)}</td><td>${c.biz||'-'}</td><td>${c.addr||'-'}</td><td>${c.tel||'-'}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="event.stopPropagation();openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+      }).join(''):'<tr><td colspan="6" class="empty-cell">거래처 없음</td></tr>';
     }
   }else{
     var html=vis.length?'<div class="gal">'+vis.map(c=>{var st=_cliStats(c);var ini=c.nm.charAt(0);var av=st.grade==='A'?'':st.grade==='B'?'gold':'';
-      return `<div class="gal-card" onclick="showCliHist('${c.id}')">
+      return `<div class="gal-card ${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">
         <div class="gal-hd"><div class="gal-avatar ${av}">${ini}</div><div class="gal-info"><div class="gal-nm">${c.nm}</div><div class="gal-sub">${cTypeBadge(c)}</div></div><div class="gal-grade ${st.grade}">${st.grade}</div></div>
         <div class="gal-stats">
           <div><div class="gal-stat-l">총 매출</div><div class="gal-stat-v pri">${(st.total/10000).toFixed(0)}만</div></div>
           <div><div class="gal-stat-l">미수금</div><div class="gal-stat-v ${st.unpaid>0?'dan':'suc'}">${st.unpaid>0?(st.unpaid/10000).toFixed(0)+'만':'완납'}</div></div>
         </div>
-        <div style="font-size:11px;color:var(--txt3);font-weight:600;margin-top:8px">최근 거래 ${st.last} · ${st.count}건</div>
+        <div style="font-size:11px;color:var(--txt3);font-weight:600;margin-top:8px">최근 거래 ${st.last} · ${st.count}건${_cliDormant(c)?' · 휴면':''}${_cliFavorite(c)?' · 즐겨찾기':''}</div>
       </div>`;
     }).join('')+'</div>':'<div class="empty-state"><div class="msg">거래처 없음</div></div>';
     $('cliGalleryArea').innerHTML=html;
@@ -158,11 +180,170 @@ function saveCli(){
     tel:$('cmTl').value,fax:$('cmFx').value,nt:$('cmNt').value,
     folderId: folderId, payTerm: payTerm, creditLimit: creditLimit,
     priceList: cleanPriceList,
+    isDormant:ei>=0?!!cs[ei].isDormant:false,
+    dormantAt:ei>=0?(cs[ei].dormantAt||''):'',
+    isFavorite:ei>=0?!!cs[ei].isFavorite:false,
     cat:ei>=0?cs[ei].cat:nw()};
   if(ei>=0)cs[ei]=c;else cs.push(c);
   DB.s('cli',cs);cMo('cliMo');rCli();toast('저장','ok');
 }
 function dCli(id){if(!confirm('삭제?'))return;DB.s('cli',DB.g('cli').filter(x=>x.id!==id));rCli();toast('삭제','ok')}
+function ensureCliContextMenu(){
+  if($('cliCtxMenu'))return;
+  var el=document.createElement('div');
+  el.id='cliCtxMenu';
+  el.className='cli-ctx-menu hidden';
+  document.body.appendChild(el);
+  document.addEventListener('click',closeCliContextMenu);
+  document.addEventListener('contextmenu',function(e){if(!e.target.closest('#cliCtxMenu'))closeCliContextMenu();});
+  window.addEventListener('scroll',closeCliContextMenu,true);
+}
+function openCliContextMenu(e,id){
+  e.preventDefault();
+  ensureCliContextMenu();
+  var c=(DB.g('cli')||[]).find(function(x){return x.id===id;});
+  if(!c)return false;
+  var box=$('cliCtxMenu');
+  box.innerHTML=''
+    +'<button onclick="openCliLedgerPanel(\''+id+'\');closeCliContextMenu()">상세 확인</button>'
+    +'<button onclick="toggleCliFavorite(\''+id+'\');closeCliContextMenu()">'+(_cliFavorite(c)?'즐겨찾기 해제':'즐겨찾기')+'</button>'
+    +'<button onclick="toggleCliDormant(\''+id+'\');closeCliContextMenu()">'+(_cliDormant(c)?'휴면 해제':'휴면 처리')+'</button>'
+    +'<button onclick="eCli(\''+id+'\');closeCliContextMenu()">수정</button>'
+    +'<button class="danger" onclick="dCli(\''+id+'\');closeCliContextMenu()">삭제</button>';
+  box.style.left=Math.min(e.clientX,window.innerWidth-190)+'px';
+  box.style.top=Math.min(e.clientY,window.innerHeight-220)+'px';
+  box.classList.remove('hidden');
+  return false;
+}
+function closeCliContextMenu(){if($('cliCtxMenu'))$('cliCtxMenu').classList.add('hidden')}
+function toggleCliFavorite(id){
+  var cs=DB.g('cli')||[];
+  var idx=cs.findIndex(function(c){return c.id===id});
+  if(idx<0)return;
+  cs[idx].isFavorite=!cs[idx].isFavorite;
+  DB.s('cli',cs);rCli();
+  toast(cs[idx].isFavorite?'즐겨찾기 등록':'즐겨찾기 해제','ok');
+}
+function toggleCliDormant(id){
+  var cs=DB.g('cli')||[];
+  var idx=cs.findIndex(function(c){return c.id===id});
+  if(idx<0)return;
+  var next=!cs[idx].isDormant;
+  cs[idx].isDormant=next;
+  cs[idx].dormantAt=next?td():'';
+  DB.s('cli',cs);rCli();
+  toast(next?'휴면 거래처로 이동':'휴면 해제','ok');
+}
+function _getCliTradeRows(cliNm,mode){
+  var rows=[];
+  var orders=(typeof getOrders==='function'?getOrders():DB.g('orders')||[]).filter(function(o){return o.cli===cliNm});
+  var ships=(DB.g('shipLog')||[]).filter(function(r){return r.cnm===cliNm});
+  var sales=(DB.g('sales')||[]).filter(function(r){return (r.cli||r.cnm)===cliNm});
+  var purchases=(DB.g('purchase')||[]).filter(function(r){return (r.cli||r.cnm)===cliNm});
+  orders.forEach(function(o){rows.push({dt:o.dt||'',kind:'수주',cli:cliNm,item:(o.items&&o.items[0]&&o.items[0].nm)||o.pnm||'',qty:(o.items||[]).reduce(function(s,it){return s+(Number(it.qty)||0)},0),amt:o.totalAmt||0,status:o.status||''});});
+  ships.forEach(function(r){rows.push({dt:r.dt||'',kind:'출고',cli:cliNm,item:r.pnm||'',qty:r.qty||0,amt:0,status:r.orderId?'수주연결':'직접출고'});});
+  sales.forEach(function(r){rows.push({dt:r.dt||'',kind:'매출',cli:cliNm,item:r.prod||r.pnm||'',qty:r.qty||0,amt:r.amt||0,status:Math.max(0,(r.amt||0)-(r.paid||0))>0?'미수':'완납'});});
+  purchases.forEach(function(r){rows.push({dt:r.dt||'',kind:'매입',cli:cliNm,item:r.prod||r.pnm||'',qty:r.qty||0,amt:r.amt||0,status:r.note||''});});
+  var today=td(),from='';
+  if(mode==='today')from=today;
+  else if(mode==='7d'){var d=new Date(today+'T00:00:00');d.setDate(d.getDate()-6);from=d.toISOString().slice(0,10);}
+  else if(mode==='30d'){var m=new Date(today+'T00:00:00');m.setDate(m.getDate()-29);from=m.toISOString().slice(0,10);}
+  if(from)rows=rows.filter(function(r){return r.dt&&r.dt>=from&&r.dt<=today});
+  return rows.sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')});
+}
+function openCliLedgerPanel(cid,mode){
+  var c=(DB.g('cli')||[]).find(function(x){return x.id===cid});if(!c)return;
+  mode=mode||'30d';
+  var orders=(typeof getOrders==='function'?getOrders():DB.g('orders')||[]).filter(function(o){return o.cli===c.nm});
+  var ships=(DB.g('shipLog')||[]).filter(function(r){return r.cnm===c.nm});
+  var sales=(DB.g('sales')||[]).filter(function(r){return (r.cli||r.cnm)===c.nm});
+  var purchases=(DB.g('purchase')||[]).filter(function(r){return (r.cli||r.cnm)===c.nm});
+  var unpaid=sales.reduce(function(s,r){return s+Math.max(0,(r.amt||0)-(r.paid||0))},0);
+  var totalSales=sales.reduce(function(s,r){return s+(r.amt||0)},0);
+  var totalPurchase=purchases.reduce(function(s,r){return s+(r.amt||0)},0);
+  var repeatItems=[...new Set(orders.flatMap(function(o){return (o.items||[]).map(function(it){return it.nm}).filter(Boolean);}))].slice(0,6);
+  var deliveries=(c.deliveries||[]).slice(0,4);
+  var rows=_getCliTradeRows(c.nm,mode);
+  var html=''
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">거래처</div><div class="ux-sp-field-v" style="font-size:18px;font-weight:800">'+c.nm+(_cliDormant(c)?' <span class="bd bd-w">휴면</span>':'')+(_cliFavorite(c)?' <span class="bd bd-p">★ 즐겨찾기</span>':'')+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">담당자</div><div class="ux-sp-field-v">'+(c.ps||c.ceo||'-')+'</div></div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">전화</div><div class="ux-sp-field-v">'+(c.tel||'-')+'</div></div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">사업자번호</div><div class="ux-sp-field-v">'+(c.biz||'-')+'</div></div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">휴면 전환</div><div class="ux-sp-field-v">'+(c.dormantAt||'-')+'</div></div>'
+    +'</div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">주소</div><div class="ux-sp-field-v">'+(c.addr||'-')+'</div></div>'
+    +'<div class="ux-sp-section"><div class="ux-sp-section-t">거래 원장 요약</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'
+    +'<div style="padding:12px;background:#EFF6FF;border-radius:10px"><div style="font-size:11px;color:#1D4ED8;font-weight:700">매출 합계</div><div style="font-size:18px;font-weight:800;color:#1E3A8A">'+fmt(totalSales)+'원</div></div>'
+    +'<div style="padding:12px;background:#FEF2F2;border-radius:10px"><div style="font-size:11px;color:#B91C1C;font-weight:700">미수 잔액</div><div style="font-size:18px;font-weight:800;color:#DC2626">'+fmt(unpaid)+'원</div></div>'
+    +'<div style="padding:12px;background:#F0FDF4;border-radius:10px"><div style="font-size:11px;color:#166534;font-weight:700">매입 합계</div><div style="font-size:18px;font-weight:800;color:#166534">'+fmt(totalPurchase)+'원</div></div>'
+    +'<div style="padding:12px;background:#FFF7ED;border-radius:10px"><div style="font-size:11px;color:#C2410C;font-weight:700">수주/출고</div><div style="font-size:18px;font-weight:800;color:#C2410C">'+orders.length+' / '+ships.length+'건</div></div>'
+    +'</div></div>'
+    +'<div class="ux-sp-section"><div class="ux-sp-section-t">반복 품목 / 납품처</div>'
+    +'<div class="pack-chip-row">'+(repeatItems.length?repeatItems.map(function(nm){return '<span class="pack-chip">'+nm+'</span>';}).join(''):'<span class="pack-chip">반복 품목 없음</span>')+'</div>'
+    +(deliveries.length?'<div style="margin-top:10px;display:grid;gap:6px">'+deliveries.map(function(d){return '<div style="padding:8px 10px;background:#F8FAFC;border-radius:8px;font-size:12px"><b>'+(d.nm||'-')+'</b>'+(d.addr?' · '+d.addr:'')+(d.mgr?' · '+d.mgr:'')+'</div>';}).join('')+'</div>':'<div style="font-size:12px;color:#94A3B8;margin-top:8px">등록된 납품처 없음</div>')
+    +'</div>'
+    +'<div class="ux-sp-section"><div class="ux-sp-section-t">거래 확인</div>'
+    +'<div class="pack-chip-row">'
+    +'<button class="pack-search-tag" onclick="openCliLedgerPanel(\''+cid+'\',\'today\')">오늘</button>'
+    +'<button class="pack-search-tag" onclick="openCliLedgerPanel(\''+cid+'\',\'7d\')">7일</button>'
+    +'<button class="pack-search-tag" onclick="openCliLedgerPanel(\''+cid+'\',\'30d\')">30일</button>'
+    +'<button class="pack-search-tag" onclick="openCliLedgerPanel(\''+cid+'\',\'all\')">전체</button>'
+    +'</div>'
+    +(rows.length?'<div style="margin-top:10px;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="background:#F8FAFC"><th style="padding:8px 10px;text-align:left">일자</th><th style="padding:8px 10px;text-align:left">구분</th><th style="padding:8px 10px;text-align:left">품목</th><th style="padding:8px 10px;text-align:right">수량/금액</th></tr></thead><tbody>'+rows.slice(0,12).map(function(r){return '<tr><td style="padding:8px 10px;border-top:1px solid #F1F5F9">'+(r.dt||'-')+'</td><td style="padding:8px 10px;border-top:1px solid #F1F5F9;font-weight:700">'+r.kind+'</td><td style="padding:8px 10px;border-top:1px solid #F1F5F9">'+(r.item||'-')+'<div style="font-size:11px;color:#94A3B8">'+(r.status||'')+'</div></td><td style="padding:8px 10px;border-top:1px solid #F1F5F9;text-align:right">'+(r.amt?fmt(r.amt)+'원':fmt(r.qty||0)+'매')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div style="font-size:12px;color:#94A3B8;margin-top:8px">선택 기간 거래 내역이 없습니다.</div>')
+    +'</div>'
+    +'<div class="ux-sp-section"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">'
+    +'<button class="btn btn-p" onclick="eCli(\''+cid+'\');if(window.UXAdv)UXAdv.closeSidePanel()">거래처 수정</button>'
+    +'<button class="btn btn-o" onclick="showCliHist(\''+cid+'\');if(window.UXAdv)UXAdv.closeSidePanel()">이력 모달</button>'
+    +'<button class="btn btn-o" onclick="openProdMWithCli(\''+cid+'\');if(window.UXAdv)UXAdv.closeSidePanel()">품목 등록</button>'
+    +'<button class="btn btn-o" onclick="openTradeDigestPanel(\''+cid+'\')">전체 거래 확인</button>'
+    +'</div></div>';
+  if(window.UXAdv&&typeof UXAdv.openSidePanel==='function')UXAdv.openSidePanel(c.nm+' 원장',html);
+  else showCliHist(cid);
+}
+var _tradeDigestState={mode:'today',cliId:''};
+function _renderTradeDigestPanel(){
+  var cliId=_tradeDigestState.cliId||'';
+  var c=cliId?(DB.g('cli')||[]).find(function(x){return x.id===cliId;}):null;
+  var cliNm=c?c.nm:'';
+  var rows=cliNm?_getCliTradeRows(cliNm,_tradeDigestState.mode):[].concat(
+    (DB.g('shipLog')||[]).map(function(r){return{dt:r.dt||'',kind:'출고',cli:r.cnm||'',item:r.pnm||'',qty:r.qty||0,amt:0,status:r.orderId?'수주연결':''};}),
+    (DB.g('sales')||[]).map(function(r){return{dt:r.dt||'',kind:'매출',cli:r.cli||r.cnm||'',item:r.prod||r.pnm||'',qty:r.qty||0,amt:r.amt||0,status:Math.max(0,(r.amt||0)-(r.paid||0))>0?'미수':'완납'};}),
+    (DB.g('purchase')||[]).map(function(r){return{dt:r.dt||'',kind:'매입',cli:r.cli||r.cnm||'',item:r.prod||r.pnm||'',qty:r.qty||0,amt:r.amt||0,status:r.note||''};}),
+    ((typeof getOrders==='function'?getOrders():DB.g('orders')||[])).map(function(o){return{dt:o.dt||'',kind:'수주',cli:o.cli||'',item:(o.items&&o.items[0]&&o.items[0].nm)||'',qty:(o.items||[]).reduce(function(s,it){return s+(Number(it.qty)||0)},0),amt:o.totalAmt||0,status:o.status||''};})
+  );
+  if(!cliNm){
+    var today=td(),from='';
+    if(_tradeDigestState.mode==='today')from=today;
+    else if(_tradeDigestState.mode==='7d'){var d=new Date(today+'T00:00:00');d.setDate(d.getDate()-6);from=d.toISOString().slice(0,10);}
+    else if(_tradeDigestState.mode==='30d'){var m=new Date(today+'T00:00:00');m.setDate(m.getDate()-29);from=m.toISOString().slice(0,10);}
+    if(from)rows=rows.filter(function(r){return r.dt&&r.dt>=from&&r.dt<=today});
+    rows=rows.sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')});
+  }
+  var totalAmt=rows.reduce(function(s,r){return s+(r.amt||0)},0);
+  var html='<div class="ux-sp-field"><div class="ux-sp-field-l">조회 기준</div><div class="ux-sp-field-v">'+(cliNm?cliNm+' 거래 확인':'전체 거래 확인')+'</div></div>'
+    +'<div class="pack-chip-row">'
+    +'<button class="pack-search-tag" onclick="setTradeDigestMode(\'today\')">오늘</button>'
+    +'<button class="pack-search-tag" onclick="setTradeDigestMode(\'7d\')">7일</button>'
+    +'<button class="pack-search-tag" onclick="setTradeDigestMode(\'30d\')">30일</button>'
+    +'<button class="pack-search-tag" onclick="setTradeDigestMode(\'all\')">전체</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px">'
+    +'<div style="padding:12px;background:#EFF6FF;border-radius:10px"><div style="font-size:11px;color:#1D4ED8;font-weight:700">거래 건수</div><div style="font-size:18px;font-weight:800;color:#1E3A8A">'+rows.length+'건</div></div>'
+    +'<div style="padding:12px;background:#F8FAFC;border-radius:10px"><div style="font-size:11px;color:#475569;font-weight:700">금액 합계</div><div style="font-size:18px;font-weight:800;color:#0F172A">'+fmt(totalAmt)+'원</div></div>'
+    +'</div>'
+    +(rows.length?'<div style="margin-top:12px;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="background:#F8FAFC"><th style="padding:8px 10px;text-align:left">일자</th><th style="padding:8px 10px;text-align:left">거래처</th><th style="padding:8px 10px;text-align:left">구분</th><th style="padding:8px 10px;text-align:left">품목</th><th style="padding:8px 10px;text-align:right">금액/수량</th></tr></thead><tbody>'+rows.slice(0,20).map(function(r){return '<tr><td style="padding:8px 10px;border-top:1px solid #F1F5F9">'+(r.dt||'-')+'</td><td style="padding:8px 10px;border-top:1px solid #F1F5F9">'+(r.cli||cliNm||'-')+'</td><td style="padding:8px 10px;border-top:1px solid #F1F5F9;font-weight:700">'+r.kind+'</td><td style="padding:8px 10px;border-top:1px solid #F1F5F9">'+(r.item||'-')+'<div style="font-size:11px;color:#94A3B8">'+(r.status||'')+'</div></td><td style="padding:8px 10px;border-top:1px solid #F1F5F9;text-align:right">'+(r.amt?fmt(r.amt)+'원':fmt(r.qty||0)+'매')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div style="font-size:12px;color:#94A3B8;margin-top:10px">선택 기간 거래가 없습니다.</div>');
+  if(window.UXAdv&&typeof UXAdv.openSidePanel==='function')UXAdv.openSidePanel(cliNm?cliNm+' 거래 확인':'전체 거래 확인',html);
+}
+function openTradeDigestPanel(cliId){
+  _tradeDigestState={mode:'today',cliId:cliId||''};
+  _renderTradeDigestPanel();
+}
+function setTradeDigestMode(mode){
+  _tradeDigestState.mode=mode;
+  _renderTradeDigestPanel();
+}
 // Client history + 납품처
 function showCliHist(cid){
   const c=DB.g('cli').find(x=>x.id===cid);if(!c)return;

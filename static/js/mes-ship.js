@@ -1168,7 +1168,7 @@ function rOrderList(){
 }
 
 function updateOrderAssist(){
-  var sum=$('ordQuickSummary');var note=$('ordClientHistory');
+  var sum=$('ordQuickSummary');var note=$('ordClientHistory');var picks=$('ordClientQuickPicks');
   if(!sum||!note)return;
   var cli=$('ordCli').value||'';
   var due=$('ordShipDt').value||'';
@@ -1186,6 +1186,7 @@ function updateOrderAssist(){
     +'<div class="item"><div class="k">납기 흐름</div><div class="v">'+(due||'미정')+'</div></div>';
   if(!cli){
     note.innerHTML='거래처를 선택하면 <b>최근 수주</b>, <b>반복 품목</b>, <b>최근 단가</b>를 이 자리에서 바로 보여줍니다.';
+    if(picks)picks.innerHTML='';
     return;
   }
   var dueTag='';
@@ -1197,10 +1198,42 @@ function updateOrderAssist(){
     .slice(0,4)
     .map(function(nm){return '<span class="pack-chip">'+nm+'</span>'})
     .join('');
+  var recentItemRows=sameCli.flatMap(function(o){
+    return (o.items||[]).map(function(it,idx){
+      return {orderId:o.id,itemIdx:idx,nm:it.nm||'',spec:it.spec||'',price:Number(it.price)||0,qty:Number(it.qty)||0,dt:o.dt||''};
+    });
+  }).filter(function(it){return it.nm;});
+  var seen={};
+  recentItemRows=recentItemRows.filter(function(it){
+    var key=[it.nm,it.spec,it.price].join('|');
+    if(seen[key])return false;
+    seen[key]=1;
+    return true;
+  }).slice(0,6);
   note.innerHTML='<div><b>'+cli+'</b> 기준 최근 수주 '+sameCli.length+'건'
     +(latest?' · 마지막 수주 '+latest.dt:'')
     +(latestItem&&latestItem.price?(' · 최근 단가 '+fmt(latestItem.price)+'원'):'')
     +'</div><div class="pack-chip-row">'+(dueTag||'')+(repeatProducts||'<span class="pack-chip">반복 품목 없음</span>')+'</div>';
+  if(picks){
+    picks.innerHTML=recentItemRows.length
+      ?recentItemRows.map(function(it,idx){
+        return '<button class="pack-search-tag" onclick="applyOrderQuickPick('+idx+')">'+it.nm+(it.spec?' · '+it.spec:'')+(it.price?(' · '+fmt(it.price)+'원'):'')+'</button>';
+      }).join('')
+      :'';
+    window._orderQuickPickRows=recentItemRows;
+  }
+}
+function applyOrderQuickPick(idx){
+  var row=(window._orderQuickPickRows||[])[idx];
+  if(!row)return;
+  var emptyIdx=_ordItems.findIndex(function(it){return !(it&&it.nm);});
+  if(emptyIdx<0){_ordItems.push({nm:'',spec:'',qty:'',price:'',note:''});emptyIdx=_ordItems.length-1;}
+  _ordItems[emptyIdx].nm=row.nm||'';
+  _ordItems[emptyIdx].spec=row.spec||'';
+  _ordItems[emptyIdx].price=row.price||'';
+  if(!_ordItems[emptyIdx].qty)_ordItems[emptyIdx].qty=row.qty||'';
+  renderOrdItems();
+  toast((row.nm||'최근 품목')+' 불러옴','ok');
 }
 
 function bindOrderAssistEvents(){
@@ -1261,7 +1294,7 @@ function openOrdCliSearch(){
     historyKey:'order-cli',
     fields:['nm','ps','tel','biz','addr'],
     getItems:function(){
-      return clis.filter(function(c){return !c.cType||c.cType==='sales'||c.cType==='both';}).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
+      return clis.filter(function(c){return (!c.cType||c.cType==='sales'||c.cType==='both')&&!c.isDormant;}).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
     },
     renderRow:function(item,q){
       var orderCount=(getOrders()||[]).filter(function(o){return o.cli===item.nm;}).length;

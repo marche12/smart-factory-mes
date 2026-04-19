@@ -391,7 +391,7 @@ function openCliSearch(){
     fields:['nm','ps','tel','biz','addr'],
     getItems:function(){
       return (DB.g('cli')||[]).filter(function(c){
-        return !c.cType||c.cType==='sales'||c.cType==='both';
+        return (!c.cType||c.cType==='sales'||c.cType==='both') && !c.isDormant;
       }).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
     },
     renderRow:function(item,q){

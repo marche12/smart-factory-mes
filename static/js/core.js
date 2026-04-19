@@ -257,7 +257,7 @@ function refreshProcSelects(){
 }
 
 /* ===== Unified Search Modal ===== */
-var _packSearchState={cfg:null,items:[],filtered:[],active:0,query:''};
+var _packSearchState={cfg:null,items:[],filtered:[],active:0,query:'',mode:'contains'};
 function _ensurePackSearchModal(){
   var ex=document.getElementById('packSearchMo');
   if(ex)return ex;
@@ -274,6 +274,8 @@ function _ensurePackSearchModal(){
     +'<input id="packSearchInput" class="pack-search-input" placeholder="검색" autocomplete="off">'
     +'<button class="btn btn-o btn-sm" id="packSearchClearBtn" onclick="clearPackSearchHistory()" style="white-space:nowrap">최근기록 삭제</button>'
     +'</div>'
+    +'<div id="packSearchModes" class="pack-search-modes"></div>'
+    +'<div id="packSearchRecentPicks" class="pack-search-recent"></div>'
     +'<div id="packSearchRecent" class="pack-search-recent"></div>'
     +'<div class="pack-search-table">'
     +'<div class="pack-search-table-head"><span>기준 정보</span><span>보조 정보</span><span>최근 / 상태</span></div>'
@@ -302,11 +304,16 @@ function openPackSearchModal(cfg){
   _packSearchState.filtered=_packSearchState.items.slice();
   _packSearchState.active=0;
   _packSearchState.query='';
+  _packSearchState.mode=(typeof SearchUtil!=='undefined'&&cfg&&cfg.modeKey)
+    ?(SearchUtil.getPref(cfg.modeKey,'mode',cfg.defaultMode||'contains')||'contains')
+    :(cfg.defaultMode||'contains');
   $('packSearchTitle').textContent=cfg.title||'검색';
   $('packSearchSub').textContent=cfg.subTitle||'이름, 코드, 최근 이력을 함께 찾습니다.';
   $('packSearchInput').placeholder=cfg.placeholder||'검색';
   $('packSearchInput').value=cfg.initialQuery||'';
   modal.classList.remove('hidden');
+  _renderPackSearchModes();
+  _renderPackSearchRecentPicks();
   _renderPackSearchRecent();
   _renderPackSearchResults(cfg.initialQuery||'');
   setTimeout(function(){$('packSearchInput').focus();$('packSearchInput').select();},40);
@@ -315,7 +322,7 @@ function openPackSearchModal(cfg){
 function closePackSearchModal(){
   var modal=$('packSearchMo');
   if(modal)modal.classList.add('hidden');
-  _packSearchState={cfg:null,items:[],filtered:[],active:0,query:''};
+  _packSearchState={cfg:null,items:[],filtered:[],active:0,query:'',mode:'contains'};
 }
 
 function _searchFieldTexts(item,cfg){
@@ -338,6 +345,64 @@ function _renderPackSearchRecent(){
     +recent.map(function(term){return '<button class="pack-search-tag" onclick="applyPackSearchRecent('+JSON.stringify(term)+')">'+term+'</button>';}).join('');
 }
 
+function _packSearchModes(cfg){
+  var all=(cfg&&cfg.modes)||[
+    {id:'contains',label:'포함'},
+    {id:'starts',label:'첫글자'},
+    {id:'recent',label:'최근'},
+    {id:'quick',label:'빠른품목'}
+  ];
+  return all.filter(function(mode){
+    if(mode.id==='quick'&&!(cfg&&cfg.enableQuickMode))return false;
+    return true;
+  });
+}
+
+function _renderPackSearchModes(){
+  var box=$('packSearchModes');
+  var cfg=_packSearchState.cfg||{};
+  if(!box)return;
+  var modes=_packSearchModes(cfg);
+  box.innerHTML=modes.map(function(mode){
+    var on=_packSearchState.mode===mode.id?' on':'';
+    return '<button class="pack-search-mode'+on+'" onclick="setPackSearchMode(\''+mode.id+'\')">'+mode.label+'</button>';
+  }).join('');
+}
+
+function setPackSearchMode(mode){
+  _packSearchState.mode=mode||'contains';
+  var cfg=_packSearchState.cfg||{};
+  if(typeof SearchUtil!=='undefined'&&cfg.modeKey)SearchUtil.savePref(cfg.modeKey,'mode',_packSearchState.mode);
+  _renderPackSearchModes();
+  _renderPackSearchResults($('packSearchInput').value||'');
+}
+
+function _renderPackSearchRecentPicks(){
+  var box=$('packSearchRecentPicks');
+  var cfg=_packSearchState.cfg||{};
+  if(!box)return;
+  var key=cfg.pickHistoryKey||cfg.historyKey;
+  var picks=(typeof SearchUtil!=='undefined'&&key)?SearchUtil.getRecentPicks(key):[];
+  if(!picks.length){box.innerHTML='';return;}
+  box.innerHTML='<div class="pack-search-recent-label">최근 선택</div>'
+    +picks.map(function(row){
+      var txt=row.label||'-';
+      if(row.sub)txt+=' · '+row.sub;
+      return '<button class="pack-search-tag" onclick="applyPackSearchRecentPick('+JSON.stringify(row.id)+')">'+txt+'</button>';
+    }).join('');
+}
+
+function applyPackSearchRecentPick(id){
+  var cfg=_packSearchState.cfg||{};
+  var items=(cfg.getItems?cfg.getItems():_packSearchState.items)||[];
+  var found=items.find(function(item){
+    return item&&(item.id===id||item.code===id||item.nm===id||item.label===id);
+  });
+  if(!found)return;
+  if(cfg.onPick)cfg.onPick(found);
+  closePackSearchModal();
+}
+
 function applyPackSearchRecent(term){
   $('packSearchInput').value=term||'';
   _renderPackSearchResults(term||'');
@@ -358,9 +423,31 @@ function _renderPackSearchResults(query){
     if(cfg.filter&&!cfg.filter(item,query||''))return false;
     if(!query)return true;
     var texts=_searchFieldTexts(item,cfg);
-    return texts.some(function(text){return SearchUtil.match(text,query);});
+    return texts.some(function(text){return SearchUtil.matchMode(text,query,_packSearchState.mode);});
   });
-  if(cfg.sort)filtered.sort(function(a,b){return cfg.sort(a,b,query||'');});
+  var recentKey=cfg.pickHistoryKey||cfg.historyKey;
+  var recentMap={};
+  if(typeof SearchUtil!=='undefined'&&recentKey){
+    (SearchUtil.getRecentPicks(recentKey)||[]).forEach(function(row,idx){
+      var key=row.id||row.label;
+      if(key)recentMap[key]=idx+1;
+    });
+  }
+  filtered.sort(function(a,b){
+    if(_packSearchState.mode==='recent'){
+      var ak=a&&(a.id||a.code||a.nm||a.label)||'';
+      var bk=b&&(b.id||b.code||b.nm||b.label)||'';
+      var ar=recentMap[ak]||999;
+      var br=recentMap[bk]||999;
+      if(ar!==br)return ar-br;
+    }
+    if(_packSearchState.mode==='quick'&&cfg.quickScore){
+      var qs=(cfg.quickScore(b)||0)-(cfg.quickScore(a)||0);
+      if(qs!==0)return qs;
+    }
+    if(cfg.sort)return cfg.sort(a,b,query||'');
+    return 0;
+  });
   _packSearchState.filtered=filtered;
   _packSearchState.active=0;
   var list=$('packSearchList');
@@ -398,6 +485,13 @@ function _pickPackSearch(idx){
   var item=(_packSearchState.filtered||[])[idx];
   if(!item)return;
   if(typeof SearchUtil!=='undefined'&&cfg.historyKey&&_packSearchState.query&&_packSearchState.query.trim())SearchUtil.saveHistory(cfg.historyKey,_packSearchState.query.trim());
+  if(typeof SearchUtil!=='undefined'&&(cfg.pickHistoryKey||cfg.historyKey)){
+    SearchUtil.saveRecentPick(cfg.pickHistoryKey||cfg.historyKey,{
+      id:item.id||item.code||item.nm||'',
+      label:item.nm||item.label||item.code||'',
+      sub:item.cnm||item.spec||item.tel||item.biz||''
+    });
+  }
   if(cfg.onPick)cfg.onPick(item);
   closePackSearchModal();
 }

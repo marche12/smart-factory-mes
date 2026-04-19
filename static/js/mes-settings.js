@@ -214,6 +214,53 @@ function cancelShipById(shipId,skipConfirm){
   toast('출고와 자동 연동 문서를 되돌렸습니다','ok');
   return true;
 }
+function ensureShipReadyContextMenu(){
+  var ex=document.getElementById('shipReadyContextMenu');
+  if(ex)return ex;
+  var el=document.createElement('div');
+  el.id='shipReadyContextMenu';
+  el.style.cssText='position:fixed;min-width:190px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 18px 40px rgba(15,23,42,.16);padding:6px;z-index:220;display:none';
+  document.body.appendChild(el);
+  document.addEventListener('click',closeShipReadyContextMenu);
+  return el;
+}
+function closeShipReadyContextMenu(){var el=document.getElementById('shipReadyContextMenu');if(el)el.style.display='none';}
+function openShipReadyContextMenu(e,woId){
+  e.preventDefault();
+  var o=(DB.g('wo')||[]).find(function(x){return x.id===woId;});if(!o)return false;
+  var remain=(o.fq||0)-getShipped(woId);
+  var el=ensureShipReadyContextMenu();
+  el.innerHTML=''
+    +'<button onclick="openShipReadyLedgerPanel(\''+woId+'\');closeShipReadyContextMenu()" style="width:100%;text-align:left;border:none;background:transparent;padding:10px 12px;border-radius:8px;cursor:pointer">상세 확인</button>'
+    +(remain>0?'<button onclick="openShipM(\''+woId+'\');closeShipReadyContextMenu()" style="width:100%;text-align:left;border:none;background:transparent;padding:10px 12px;border-radius:8px;cursor:pointer">출고 등록</button>':'')
+    +'<button onclick="showDet(\''+woId+'\');closeShipReadyContextMenu()" style="width:100%;text-align:left;border:none;background:transparent;padding:10px 12px;border-radius:8px;cursor:pointer">작업지시 상세</button>';
+  el.style.left=Math.min(e.clientX,window.innerWidth-220)+'px';
+  el.style.top=Math.min(e.clientY,window.innerHeight-220)+'px';
+  el.style.display='block';
+  return false;
+}
+function openShipReadyLedgerPanel(woId){
+  var o=(DB.g('wo')||[]).find(function(x){return x.id===woId;});if(!o)return;
+  var logs=(DB.g('shipLog')||[]).filter(function(r){return r.woId===woId;}).sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'');});
+  var sales=(DB.g('sales')||[]).filter(function(r){return r.woId===woId||r.orderId===(o.ordId||'');});
+  var tx=(DB.g('taxInvoice')||[]).filter(function(r){return r.woId===woId||r.orderId===(o.ordId||'');});
+  var remain=(o.fq||0)-getShipped(woId);
+  var body=''
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">작업지시</div><div class="ux-sp-field-v" style="font-size:18px;font-weight:800">'+(o.wn||woId)+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'
+    +'<div style="padding:12px;background:#EFF6FF;border-radius:10px"><div style="font-size:11px;color:#1D4ED8;font-weight:700">거래처</div><div style="font-size:16px;font-weight:800;color:#1E3A8A">'+(o.cnm||'-')+'</div></div>'
+    +'<div style="padding:12px;background:#F8FAFC;border-radius:10px"><div style="font-size:11px;color:#475569;font-weight:700">패키지 품목</div><div style="font-size:16px;font-weight:800;color:#0F172A">'+(o.pnm||'-')+'</div></div>'
+    +'<div style="padding:12px;background:#DCFCE7;border-radius:10px"><div style="font-size:11px;color:#166534;font-weight:700">출고 완료</div><div style="font-size:16px;font-weight:800;color:#166534">'+fmt(getShipped(woId))+'매</div></div>'
+    +'<div style="padding:12px;background:#FEF3C7;border-radius:10px"><div style="font-size:11px;color:#92400E;font-weight:700">출고 잔량</div><div style="font-size:16px;font-weight:800;color:#92400E">'+fmt(remain)+'매</div></div>'
+    +'</div>'
+    +'<div class="ux-sp-section"><div class="ux-sp-section-t">출고 문서 연결</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px"><div class="ux-sp-field"><div class="ux-sp-field-l">출고 건수</div><div class="ux-sp-field-v">'+logs.length+'건</div></div><div class="ux-sp-field"><div class="ux-sp-field-l">매출 연동</div><div class="ux-sp-field-v">'+sales.length+'건</div></div><div class="ux-sp-field"><div class="ux-sp-field-l">세금계산서</div><div class="ux-sp-field-v">'+tx.length+'건</div></div></div></div>'
+    +(logs.length?'<div class="ux-sp-section"><div class="ux-sp-section-t">최근 출고 이력</div>'+logs.slice(0,5).map(function(r){return '<div style="padding:8px 10px;background:#F8FAFC;border-radius:8px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;gap:8px"><span>'+r.dt+' · '+(r.car||'-')+'</span><b>'+fmt(r.qty||0)+'매</b></div>';}).join('')+'</div>':'')
+    +'<div class="ux-sp-section" style="display:flex;gap:8px;flex-wrap:wrap">'
+    +(remain>0?'<button class="btn btn-s" onclick="openShipM(\''+woId+'\');UXAdv.closeSidePanel()">출고 등록</button>':'')
+    +'<button class="btn btn-o" onclick="showDet(\''+woId+'\');UXAdv.closeSidePanel()">작업지시 상세</button>'
+    +'</div>';
+  if(window.UXAdv&&typeof UXAdv.openSidePanel==='function')UXAdv.openSidePanel((o.cnm||'거래처')+' 출고 준비',body);
+}
 function rShipReady(){
 // Fix status: 진행중이지만 모든 공정 완료된 WO → 완료로 자동 변경
 var _allWo=DB.g('wo');var _changed=false;
@@ -254,7 +301,7 @@ var shipDocCount=(DB.g('sales')||[]).filter(function(s){return s.woId===o.id||s.
 var orderChip=o.ordId?'<div style="font-size:11px;color:#64748B;margin-top:3px">수주 연결 · '+o.ordId+'</div>':'';
 var procChip=o.vendor?'<span class="pack-chip warn">'+o.vendor+'</span>':'<span class="pack-chip ok">자체 생산</span>';
 var docChip=shipDocCount?'<span class="pack-chip">매출 연동 '+shipDocCount+'건</span>':'<span class="pack-chip">출고 문서 대기</span>';
-return`<tr ${late?'class="row-late"':''}><td>${o.wn}</td><td>${o.cnm}</td><td><div style="font-weight:700">${o.pnm}</div>${orderChip}<div class="pack-chip-row">${procChip}${docChip}</div></td><td>${o.fq}</td><td style="color:var(--pri);font-weight:700">${compQty||'-'}</td><td style="color:var(--suc);font-weight:700">${shipped}</td><td style="color:${remain>0?'var(--dan)':'var(--suc)'};font-weight:700">${remain}</td><td ${late?'style="color:var(--dan);font-weight:700"':''}>${o.sd}</td><td>${o.dlv||'-'}</td><td>${remain<=0?badge('출고완료'):late?badge('지연'):badge('출고대기')}</td><td>${remain>0?`<button class="btn btn-sm btn-s" onclick="openShipM('${o.id}')">출고</button>`:''} <button class="btn btn-sm btn-o" onclick="showDet('${o.id}')">상세</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty-cell">출고 대기 없음</td></tr>'}
+return`<tr ${late?'class="row-late"':''} onclick="openShipReadyLedgerPanel('${o.id}')" oncontextmenu="return openShipReadyContextMenu(event,'${o.id}')"><td>${o.wn}</td><td>${o.cnm}</td><td><div style="font-weight:700">${o.pnm}</div>${orderChip}<div class="pack-chip-row">${procChip}${docChip}</div></td><td>${o.fq}</td><td style="color:var(--pri);font-weight:700">${compQty||'-'}</td><td style="color:var(--suc);font-weight:700">${shipped}</td><td style="color:${remain>0?'var(--dan)':'var(--suc)'};font-weight:700">${remain}</td><td ${late?'style="color:var(--dan);font-weight:700"':''}>${o.sd}</td><td>${o.dlv||'-'}</td><td>${remain<=0?badge('출고완료'):late?badge('지연'):badge('출고대기')}</td><td>${remain>0?`<button class="btn btn-sm btn-s" onclick="event.stopPropagation();openShipM('${o.id}')">출고</button>`:''} <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showDet('${o.id}')">상세</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty-cell">출고 대기 없음</td></tr>'}
 function openShipM(woId){const o=DB.g('wo').find(x=>x.id===woId);if(!o)return;$('smWoId').value=woId;$('smCli').innerHTML='<span id="smCliName">'+o.cnm+'</span>';$('smCliOverride').value='';$('smProd').textContent=o.pnm;$('smTotal').textContent=o.fq;const shipped=getShipped(woId);$('smShipped').textContent=shipped;$('smRemain').textContent=o.fq-shipped;$('smQty').value=o.fq-shipped;$('smDefect').value=0;$('smGood').textContent=o.fq-shipped;$('smInspNote').value='';$('smCar').value='';$('smDriver').value='';$('smDlv').value=o.dlv||'';$('smMemo').value='';$('shipMoT').textContent=shipped>0?'부분 출고':'출고 처리';
   // 얼마에요 GroupId — 매출 귀속회사 라디오 렌더링
   if(typeof renderGrpRadio==='function'){

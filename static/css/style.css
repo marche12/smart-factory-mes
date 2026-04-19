@@ -263,6 +263,9 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .pack-search-toolbar{display:flex;gap:8px;align-items:center;padding:14px 20px 10px}
 .pack-search-input{flex:1;padding:12px 14px;border:1px solid var(--bdr);border-radius:12px;background:#fff;font-size:14px;box-shadow:var(--sh-xs)}
 .pack-search-input:focus{border-color:var(--pri);box-shadow:0 0 0 4px var(--pri-ring),var(--sh-xs)}
+.pack-search-modes{padding:0 20px 8px;display:flex;gap:6px;flex-wrap:wrap}
+.pack-search-mode{background:#fff;border:1px solid #CBD5E1;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;color:#475569;cursor:pointer}
+.pack-search-mode.on{background:#1E3A5F;border-color:#1E3A5F;color:#fff}
 .pack-search-recent{padding:0 20px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .pack-search-recent-label{font-size:11px;font-weight:700;color:#64748B;margin-right:4px}
 .pack-search-tag{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700;color:#475569;cursor:pointer}
@@ -303,6 +306,39 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .kb-key{background:#F8FAFC;border:1px solid #CBD5E1;border-bottom-width:2px;border-radius:5px;padding:3px 8px;font-family:ui-monospace,monospace;font-size:12px;font-weight:700;color:#1E293B;min-width:22px;text-align:center;display:inline-block}
 .kb-sep{color:#94A3B8;font-size:11px;padding:0 2px}
 .kb-label{font-size:13px;color:#334155;flex:1}
+
+/* ==== 매출/매입 거래처 원장 레이아웃 (얼마에요 스타일) ==== */
+.acc-ledger-layout{display:flex;gap:12px;align-items:flex-start;min-height:600px}
+.acc-ledger-side{flex:0 0 240px;max-width:240px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;position:sticky;top:8px;max-height:calc(100vh - 140px);display:flex;flex-direction:column}
+.acc-ledger-main{flex:1;min-width:0}
+.acc-side-head{padding:0 0 8px;border-bottom:1px solid #E2E8F0;margin-bottom:8px}
+.acc-side-search{width:100%;padding:7px 10px;font-size:12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;margin-bottom:6px}
+.acc-side-search:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-ring)}
+.acc-side-filters{display:flex;gap:3px;flex-wrap:wrap}
+.acc-side-filter{flex:1;padding:5px 4px;font-size:11px;font-weight:700;border:1px solid #CBD5E1;background:#fff;color:#475569;border-radius:6px;cursor:pointer}
+.acc-side-filter.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.acc-side-filter.dormant.on{background:#64748B;border-color:#64748B}
+.acc-side-list{flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.acc-side-item{padding:9px 10px;margin-bottom:4px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;transition:all .12s;font-size:12px}
+.acc-side-item:hover{background:#EFF6FF;border-color:#BFDBFE}
+.acc-side-item.active{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:700}
+.acc-side-item.active .acc-side-sub,.acc-side-item.active .acc-side-amt{color:#DBEAFE}
+.acc-side-item.dormant{opacity:.75;background:#F1F5F9;border-style:dashed}
+.acc-side-nm{font-weight:700;color:#0F172A;display:flex;align-items:center;gap:4px;justify-content:space-between}
+.acc-side-item.active .acc-side-nm{color:#fff}
+.acc-side-sub{font-size:10px;color:#64748B;margin-top:2px;display:flex;justify-content:space-between;gap:4px}
+.acc-side-amt{font-size:13px;font-weight:800;color:#DC2626;margin-top:4px;text-align:right}
+.acc-side-amt.paid{color:#059669}
+.acc-side-empty{padding:20px 10px;text-align:center;color:#94A3B8;font-size:11px}
+.acc-active-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(90deg,#EFF6FF,#F8FAFC);border:1px solid #BFDBFE;border-radius:10px;margin-bottom:10px;font-size:13px}
+.acc-active-bar b{color:var(--pri);font-weight:800}
+.acc-active-bar .clear{margin-left:auto;padding:4px 10px;background:#fff;border:1px solid #CBD5E1;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;color:#475569}
+.acc-active-bar .clear:hover{background:#F1F5F9}
+
+@media (max-width:1100px){
+  .acc-ledger-layout{flex-direction:column}
+  .acc-ledger-side{flex:none;max-width:none;width:100%;position:static;max-height:300px}
+}
 
 .mo-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt2);padding:4px 8px;border-radius:6px;transition:all .15s}
 .mo-x:hover{background:var(--bg3);color:var(--txt)}

@@ -448,16 +448,31 @@
 
 <!-- 매출 장부 -->
 <div class="tc on" id="t-sales">
+ <div class="acc-ledger-layout">
+  <aside class="acc-ledger-side" id="slSideBar">
+    <div class="acc-side-head">
+      <input type="text" id="slSideSearch" class="acc-side-search" placeholder="거래처 검색..." oninput="renderAccSideList('sales')">
+      <div class="acc-side-filters">
+        <button class="acc-side-filter on" data-mode="all" onclick="setAccSideFilter('sales','all')">전체</button>
+        <button class="acc-side-filter" data-mode="unpaid" onclick="setAccSideFilter('sales','unpaid')">미수</button>
+        <button class="acc-side-filter" data-mode="paid" onclick="setAccSideFilter('sales','paid')">완납</button>
+        <button class="acc-side-filter" data-mode="dormant" onclick="setAccSideFilter('sales','dormant')">휴면</button>
+      </div>
+    </div>
+    <div class="acc-side-list" id="slSideList"></div>
+  </aside>
+  <div class="acc-ledger-main">
   <div class="sg">
     <div class="sb blue"><div class="l">금월 매출</div><div class="v" id="slT">0원</div></div>
     <div class="sb red"><div class="l">미수금</div><div class="v" id="slU">0원</div></div>
     <div class="sb green"><div class="l">금월 입금</div><div class="v" id="slP">0원</div></div>
     <div class="sb purple"><div class="l">거래처</div><div class="v" id="slC">0</div></div>
   </div>
+  <div id="slActiveCliBar"></div>
   <div class="tb">
     <button class="btn btn-p" onclick="openSM()">+ 매출등록</button>
     <button class="btn btn-s btn-sm" onclick="openPay('sales')">입금처리</button>
-    <input type="text" id="slSch" placeholder="거래처 검색" oninput="rSl()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;font-size:13px">
+    <input type="text" id="slSch" placeholder="품명/내용 검색" oninput="rSl()" style="padding:6px 12px;border:1px solid var(--bdr);border-radius:6px;font-size:13px">
     <label><input type="checkbox" id="slUO" onchange="rSl()"> 미수만</label>
   </div>
   <div id="slPrdBar"></div>
@@ -469,19 +484,36 @@
     <div id="recvList"><div class="recv-empty">미수금이 없습니다.</div></div>
     <div class="recv-foot">* 30일 이상 미수금은 빨간색, 14일 이상은 주황색으로 표시</div>
   </div>
+  </div>
+ </div>
 </div>
 
 <!-- 매입 장부 -->
 <div class="tc" id="t-purchase">
+ <div class="acc-ledger-layout">
+  <aside class="acc-ledger-side" id="prSideBar">
+    <div class="acc-side-head">
+      <input type="text" id="prSideSearch" class="acc-side-search" placeholder="거래처 검색..." oninput="renderAccSideList('purchase')">
+      <div class="acc-side-filters">
+        <button class="acc-side-filter on" data-mode="all" onclick="setAccSideFilter('purchase','all')">전체</button>
+        <button class="acc-side-filter" data-mode="unpaid" onclick="setAccSideFilter('purchase','unpaid')">미지급</button>
+        <button class="acc-side-filter" data-mode="paid" onclick="setAccSideFilter('purchase','paid')">완납</button>
+        <button class="acc-side-filter" data-mode="dormant" onclick="setAccSideFilter('purchase','dormant')">휴면</button>
+      </div>
+    </div>
+    <div class="acc-side-list" id="prSideList"></div>
+  </aside>
+  <div class="acc-ledger-main">
   <div class="sg">
     <div class="sb orange"><div class="l">금월 매입</div><div class="v" id="prT">0원</div></div>
     <div class="sb red"><div class="l">미지급</div><div class="v" id="prU">0원</div></div>
     <div class="sb green"><div class="l">금월 지급</div><div class="v" id="prP">0원</div></div>
     <div class="sb purple"><div class="l">거래처</div><div class="v" id="prC">0</div></div>
   </div>
+  <div id="prActiveCliBar"></div>
   <div class="fbar">
     <div class="fbar-row">
-      <input type="text" id="prSch" placeholder="거래처로 검색" oninput="rPr()" class="fbar-grow">
+      <input type="text" id="prSch" placeholder="품명/내용 검색" oninput="rPr()" class="fbar-grow">
       <label><input type="checkbox" id="prUO" onchange="rPr()"> 미지급만</label>
       <div class="fbar-spacer"></div>
       <button class="btn btn-s btn-sm" onclick="openPay('purchase')">지급처리</button>
@@ -490,6 +522,8 @@
   </div>
   <div id="prPrdBar"></div>
   <table class="dt" id="prTbl"><thead><tr><th>일자</th><th>거래처</th><th>품명</th><th>수량</th><th>단가</th><th>매입액</th><th>지급</th><th>미지급</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+  </div>
+ </div>
 </div>
 
 <!-- 세금계산서 -->
@@ -879,12 +913,16 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <span id="orderFormTitle" style="font-size:14px;font-weight:600">패키지 수주 등록</span>
 <div style="display:flex;gap:5px">
+<button class="btn btn-o btn-sm" onclick="saveCurrentOrderTemplate()">템플릿 저장</button>
 <button class="btn btn-o btn-sm" onclick="resetOrder()">초기화</button>
 <button class="btn btn-p btn-sm" onclick="saveOrder()">저장</button>
 </div>
 </div>
 <input type="hidden" id="ordId">
 <div id="ordQuickSummary" class="pack-form-summary" style="margin-bottom:10px"></div>
+<div id="ordClientShortcutPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
+<div id="ordProdShortcutPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
+<div id="ordTemplatePicks" class="pack-chip-row" style="margin-bottom:8px"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
 <div class="fg"><label>수주번호</label><input id="ordNo" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
 <div class="fg"><label>수주일</label><input type="date" id="ordDt" class="u-input-md"></div>
@@ -1062,6 +1100,7 @@
 <div class="wo-modal-sub">거래처, 자재, 공정, 납품 흐름을 한 화면에서 정리합니다.</div>
 </div>
 <div class="wo-modal-actions">
+<button class="btn btn-o btn-sm" onclick="saveCurrentWOTemplate()">템플릿 저장</button>
 <button class="btn btn-o btn-sm" onclick="resetWO()">초기화</button>
 <button class="btn btn-p btn-sm" onclick="saveWO()">저장</button>
 <button class="btn btn-s btn-sm" onclick="if(saveWO())setTimeout(function(){printWO(lastSavedId)},300)">저장+출력</button>
@@ -1108,10 +1147,13 @@
 <div class="fg"><label class="req">거래처</label><input id="woCli" placeholder="거래처 선택" readonly class="wo-select-input" onclick="openCliSearch()"></div>
 <button type="button" class="btn btn-o btn-sm" onclick="openCliSearch()">검색</button>
 </div>
+<div id="woCliQuickPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
 <div class="wo-search-row">
 <div class="fg"><label class="req">패키지 품목</label><input id="woProd" placeholder="품목 선택" readonly class="wo-select-input" onclick="openProdSearch()"></div>
 <button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()">검색</button>
 </div>
+<div id="woProdQuickPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
+<div id="woTemplatePicks" class="pack-chip-row" style="margin-bottom:8px"></div>
 <div id="woOrderBridge" class="pack-inline-note" style="margin-bottom:10px;display:none"></div>
 <div id="woPastPanel" class="wo-history-panel" style="display:none"></div>
 </section>
@@ -1310,6 +1352,10 @@
     <div class="fbar-pills" id="prodViewPills">
       <button class="on" onclick="setProdView('table',this)">목록</button>
       <button onclick="setProdView('gallery',this)">갤러리</button>
+    </div>
+    <div class="fbar-pills" id="prodDetailPills">
+      <button data-mode="summary" class="on" onclick="setProdDetailView('summary',this)">간략</button>
+      <button data-mode="detail" onclick="setProdDetailView('detail',this)">상세</button>
     </div>
     <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">📥 엑셀 업로드</button>

@@ -113,6 +113,114 @@ function cAmt(p){const q=+$(p+'Qty').value||1,pr=+$(p+'Price').value||0;$(p+'Amt
 function cTax(){const s=+$('txSup').value||0;var _vr=typeof SysCode!=='undefined'?SysCode.vatRate():0.1;$('txVat').value=Math.round(s*_vr);$('txTot').value=fmt(s+Math.round(s*_vr))+'원'}
 
 /* === 매출 === */
+/* ======================================================
+   얼마에요 스타일: 매출/매입 보조 사이드바 (거래처 원장)
+   ====================================================== */
+var _accLedgerState={
+  sales:{activeCli:'', filterMode:'all'},
+  purchase:{activeCli:'', filterMode:'all'}
+};
+function setAccSideFilter(kind,mode){
+  _accLedgerState[kind].filterMode=mode;
+  _accLedgerState[kind].activeCli='';
+  var wrap=kind==='sales'?document.getElementById('slSideBar'):document.getElementById('prSideBar');
+  if(wrap){
+    wrap.querySelectorAll('.acc-side-filter').forEach(function(b){
+      b.classList.toggle('on',b.dataset.mode===mode);
+      b.classList.toggle('dormant',mode==='dormant');
+    });
+  }
+  renderAccSideList(kind);
+  if(kind==='sales')rSl();else rPr();
+}
+function pickAccSideCli(kind,nm){
+  _accLedgerState[kind].activeCli=nm===_accLedgerState[kind].activeCli?'':nm;
+  renderAccSideList(kind);
+  if(kind==='sales')rSl();else rPr();
+}
+function clearAccSideCli(kind){
+  _accLedgerState[kind].activeCli='';
+  renderAccSideList(kind);
+  if(kind==='sales')rSl();else rPr();
+}
+function renderAccSideList(kind){
+  var storeKey=kind==='sales'?'sales':'purchase';
+  var listEl=document.getElementById(kind==='sales'?'slSideList':'prSideList');
+  var srchEl=document.getElementById(kind==='sales'?'slSideSearch':'prSideSearch');
+  var activeEl=document.getElementById(kind==='sales'?'slActiveCliBar':'prActiveCliBar');
+  if(!listEl)return;
+  var state=_accLedgerState[kind];
+  var q=(srchEl?srchEl.value:'').toLowerCase().trim();
+  var all=DB.g(storeKey)||[];
+  var cliMaster=DB.g('cli')||[];
+  var isDormant=function(nm){var c=cliMaster.find(function(x){return x.nm===nm;});return c&&c.isDormant;};
+  var agg={};
+  all.forEach(function(r){
+    var nm=r.cli||r.cnm||'';if(!nm)return;
+    if(!agg[nm])agg[nm]={nm:nm,amt:0,paid:0,unpaid:0,count:0,last:''};
+    agg[nm].amt+=(+r.amt||0);
+    agg[nm].paid+=(+r.paid||0);
+    agg[nm].unpaid+=Math.max(0,(+r.amt||0)-(+r.paid||0));
+    agg[nm].count++;
+    if(r.dt&&r.dt>agg[nm].last)agg[nm].last=r.dt;
+  });
+  /* 휴면 모드일 땐 거래 이력이 있든 없든 휴면 거래처 전체 표시 */
+  if(state.filterMode==='dormant'){
+    cliMaster.filter(function(c){return c.isDormant;}).forEach(function(c){
+      if(!agg[c.nm])agg[c.nm]={nm:c.nm,amt:0,paid:0,unpaid:0,count:0,last:''};
+    });
+  }
+  var rows=Object.keys(agg).map(function(n){return agg[n];});
+  if(state.filterMode==='unpaid')rows=rows.filter(function(r){return r.unpaid>0;});
+  else if(state.filterMode==='paid')rows=rows.filter(function(r){return r.amt>0&&r.unpaid<=0;});
+  else if(state.filterMode==='dormant')rows=rows.filter(function(r){return isDormant(r.nm);});
+  else /* all */ rows=rows.filter(function(r){return !isDormant(r.nm);});
+  if(q)rows=rows.filter(function(r){return r.nm.toLowerCase().indexOf(q)>=0;});
+  rows.sort(function(a,b){
+    if(state.filterMode==='unpaid')return b.unpaid-a.unpaid;
+    if(state.filterMode==='dormant')return (a.nm||'').localeCompare(b.nm||'','ko');
+    return b.amt-a.amt||(a.nm||'').localeCompare(b.nm||'','ko');
+  });
+  if(!rows.length){
+    listEl.innerHTML='<div class="acc-side-empty">'+(state.filterMode==='dormant'?'휴면 거래처 없음':'거래 내역 없음')+'</div>';
+  }else{
+    listEl.innerHTML=rows.map(function(r){
+      var cls=r.nm===state.activeCli?'active':'';
+      if(isDormant(r.nm))cls+=' dormant';
+      var amtTxt=r.unpaid>0?fmt(r.unpaid)+'원 미회수':(r.amt>0?fmt(r.amt)+'원 완납':'거래 없음');
+      var amtCls=r.unpaid>0?'':(r.amt>0?'paid':'');
+      var dormantFlag=isDormant(r.nm)?'<span style="font-size:9px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:4px">휴면</span>':'';
+      return '<div class="acc-side-item '+cls+'" onclick="pickAccSideCli(\''+kind+'\',\''+r.nm.replace(/\'/g,"\\'")+'\')">'
+        +'<div class="acc-side-nm"><span>'+r.nm+'</span>'+dormantFlag+'</div>'
+        +'<div class="acc-side-sub"><span>'+r.count+'건</span><span>'+(r.last||'-')+'</span></div>'
+        +'<div class="acc-side-amt '+amtCls+'">'+amtTxt+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  /* 활성 거래처 안내바 */
+  if(activeEl){
+    if(state.activeCli){
+      var a=agg[state.activeCli]||{amt:0,unpaid:0,count:0};
+      activeEl.className='acc-active-bar';
+      activeEl.innerHTML='<span>📒 거래처 원장: <b>'+state.activeCli+'</b></span>'
+        +'<span style="color:#64748B;font-size:12px">'+a.count+'건 · 누적 '+fmt(a.amt)+'원 · 미'+(kind==='sales'?'수':'지급')+' '+fmt(a.unpaid)+'원</span>'
+        +'<button class="clear" onclick="clearAccSideCli(\''+kind+'\')">전체 보기</button>';
+    }else{
+      activeEl.className='';activeEl.innerHTML='';
+    }
+  }
+}
+/* 휴면 장부 단축 버튼: 매출/매입 사이드바에 "휴면" 필터 토글 */
+function toggleDormantLedger(kind){
+  var cur=_accLedgerState[kind].filterMode;
+  setAccSideFilter(kind,cur==='dormant'?'all':'dormant');
+  var wrap=kind==='sales'?document.getElementById('slSideBar'):document.getElementById('prSideBar');
+  if(wrap){
+    var btn=wrap.querySelector('[data-mode="dormant"]');
+    if(btn)btn.classList.toggle('on',cur!=='dormant');
+  }
+}
+
 function rSl(){
   // 기간 필터 초기화
   if(!$('slPrdBar').innerHTML)$('slPrdBar').innerHTML=periodFilterHTML('sl');
@@ -122,7 +230,9 @@ function rSl(){
   const rawAll=DB.g('sales');
   const all=_currentGroupId==='ALL'?rawAll:rawAll.filter(function(r){return !r.groupId||r.groupId===_currentGroupId;});
   const ma=prdFilterData(all,'sl','dt');
-  const fl=ma.filter(r=>{if(sch&&!r.cli.toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
+  /* 선택된 거래처가 있으면 해당 거래처만 */
+  var _activeCli=(_accLedgerState&&_accLedgerState.sales.activeCli)||'';
+  const fl=ma.filter(r=>{if(_activeCli&&r.cli!==_activeCli)return false;if(sch&&!(r.prod||'').toLowerCase().includes(sch)&&!(r.cli||'').toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
   $('slT').textContent=fmt(ma.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('slU').textContent=fmt(ma.reduce((s,r)=>s+Math.max(0,(r.amt||0)-(r.paid||0)),0))+'원';
   $('slP').textContent=fmt(ma.reduce((s,r)=>s+(r.paid||0),0))+'원';
@@ -142,6 +252,7 @@ function rSl(){
   // 엑셀 내보내기 데이터
   _prdExportData['sl']={headers:['일자','거래처','품명','수량','단가','공급가액','부가세','합계','입금','미수금','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));const supply=Math.round((r.amt||0)/(1+(typeof SysCode!=='undefined'?SysCode.vatRate():0.1))),vat=(r.amt||0)-supply;return[r.dt,r.cli,r.prod,r.qty,r.price,supply,vat,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미수']}),sheetName:'매출장부',fileName:'매출장부'};
   rRecv();
+  if(typeof renderAccSideList==='function')renderAccSideList('sales');
 }
 window._prdCb_sl=rSl;
 function rRecv(){
@@ -227,7 +338,8 @@ function rPr(){
   const rawAll=DB.g('purchase');
   const all=_currentGroupId==='ALL'?rawAll:rawAll.filter(function(r){return !r.groupId||r.groupId===_currentGroupId;});
   const ma=prdFilterData(all,'pr','dt');
-  const fl=ma.filter(r=>{if(sch&&!r.cli.toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
+  var _prActiveCli=(_accLedgerState&&_accLedgerState.purchase.activeCli)||'';
+  const fl=ma.filter(r=>{if(_prActiveCli&&r.cli!==_prActiveCli)return false;if(sch&&!(r.prod||'').toLowerCase().includes(sch)&&!(r.cli||'').toLowerCase().includes(sch))return false;if(uo&&(r.paid||0)>=(r.amt||0))return false;return true}).sort((a,b)=>b.dt>a.dt?1:-1);
   $('prT').textContent=fmt(ma.reduce((s,r)=>s+(r.amt||0),0))+'원';
   $('prU').textContent=fmt(ma.reduce((s,r)=>s+Math.max(0,(r.amt||0)-(r.paid||0)),0))+'원';
   $('prP').textContent=fmt(ma.reduce((s,r)=>s+(r.paid||0),0))+'원';
@@ -236,6 +348,7 @@ function rPr(){
     return `<tr${u>0?' class="row-warn"':''}><td>${r.dt}</td><td style="font-weight:700">${r.cli}</td><td>${r.prod}</td><td style="text-align:right">${fmt(r.qty)}</td><td style="text-align:right">${fmt(r.price)}</td><td style="text-align:right;font-weight:700">${fmt(r.amt)}</td><td style="text-align:right;color:var(--suc)">${fmt(r.paid||0)}</td><td style="text-align:right;color:var(--dan);font-weight:700">${fmt(u)}</td><td>${st}</td><td><button class="btn btn-sm btn-o" onclick="ePrr('${r.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dPrr('${r.id}')">삭제</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty-cell">등록된 내역이 없습니다. 상단 버튼으로 등록해주세요.</td></tr>';
   // 엑셀 내보내기 데이터
   _prdExportData['pr']={headers:['일자','거래처','품명','수량','단가','매입액','지급','미지급','상태'],rows:fl.map(r=>{const u=Math.max(0,(r.amt||0)-(r.paid||0));return[r.dt,r.cli,r.prod,r.qty,r.price,r.amt,r.paid||0,u,u<=0?'완납':r.paid>0?'부분':'미지급']}),sheetName:'매입장부',fileName:'매입장부'};
+  if(typeof renderAccSideList==='function')renderAccSideList('purchase');
 }
 window._prdCb_pr=rPr;
 function openPM(){['pId','pProd','pNote'].forEach(x=>$(x).value='');$('pDt').value=td();$('pCli').value='';$('pQty').value='';$('pPrice').value='';$('pAmt').value='';$('pPaid').value=0;$('pPayT').value='미지급';$('pMoT').textContent='매입 등록';

@@ -56,6 +56,26 @@ var SearchUtil = (function(){
     return false;
   }
 
+  function startsWithMatch(text, query){
+    if(!query) return true;
+    if(!text) return false;
+    var t = String(text).toLowerCase();
+    var q = String(query).toLowerCase().trim();
+    if(!q) return true;
+    if(t.indexOf(q) === 0) return true;
+    if(isChosungOnly(q)){
+      var cho = getChosung(t);
+      if(cho.indexOf(q) === 0) return true;
+    }
+    return false;
+  }
+
+  function matchMode(text, query, mode){
+    if(!query) return true;
+    if(mode === 'starts') return startsWithMatch(text, query);
+    return match(text, query);
+  }
+
   /**
    * HTML 안전 이스케이프
    */
@@ -109,6 +129,8 @@ var SearchUtil = (function(){
    * 최근 검색어 저장/로드
    */
   var HISTORY_KEY = 'ino_searchHist';
+  var PICK_KEY = 'ino_searchRecentPick';
+  var PREF_KEY = 'ino_searchPrefs';
   var MAX_HISTORY = 10;
 
   function saveHistory(type, term){
@@ -137,6 +159,58 @@ var SearchUtil = (function(){
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); } catch(e){}
   }
 
+  function loadPrefs(){
+    try { return JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+
+  function savePref(scope, key, value){
+    if(!scope || !key) return;
+    var prefs = loadPrefs();
+    if(!prefs[scope]) prefs[scope] = {};
+    prefs[scope][key] = value;
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch(e){}
+  }
+
+  function getPref(scope, key, fallback){
+    var prefs = loadPrefs();
+    if(scope && prefs[scope] && prefs[scope][key] !== undefined) return prefs[scope][key];
+    return fallback;
+  }
+
+  function loadRecentPicks(){
+    try { return JSON.parse(localStorage.getItem(PICK_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+
+  function saveRecentPick(type, item){
+    if(!type || !item) return;
+    var picks = loadRecentPicks();
+    if(!picks[type]) picks[type] = [];
+    var row = {
+      id: item.id || item.code || item.nm || item.label || '',
+      label: item.label || item.nm || item.name || '',
+      sub: item.sub || item.cnm || item.spec || '',
+      at: td()
+    };
+    if(!row.id && !row.label) return;
+    picks[type] = [row].concat((picks[type] || []).filter(function(x){
+      return !(row.id && x.id === row.id) && !(row.label && x.label === row.label);
+    })).slice(0, 8);
+    try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch(e){}
+  }
+
+  function getRecentPicks(type){
+    return loadRecentPicks()[type] || [];
+  }
+
+  function clearRecentPicks(type){
+    var picks = loadRecentPicks();
+    if(type) delete picks[type];
+    else picks = {};
+    try { localStorage.setItem(PICK_KEY, JSON.stringify(picks)); } catch(e){}
+  }
+
   /**
    * 디바운스 헬퍼
    */
@@ -151,12 +225,19 @@ var SearchUtil = (function(){
 
   return {
     match: match,
+    startsWithMatch: startsWithMatch,
+    matchMode: matchMode,
     highlight: highlight,
     getChosung: getChosung,
     isChosungOnly: isChosungOnly,
     saveHistory: saveHistory,
     getRecent: getRecent,
     clearHistory: clearHistory,
+    savePref: savePref,
+    getPref: getPref,
+    saveRecentPick: saveRecentPick,
+    getRecentPicks: getRecentPicks,
+    clearRecentPicks: clearRecentPicks,
     debounce: debounce
   };
 })();

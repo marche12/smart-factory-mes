@@ -12,13 +12,14 @@ if(window.PACKFLOW_EXPERIMENTAL.topModes === undefined){
   window.PACKFLOW_EXPERIMENTAL.topModes = true;
 }
 
+/* 얼마에요/더존 스타일: 상단 탭 = 주 카테고리, 사이드바 = 해당 탭의 텍스트 하위 메뉴 */
 var MODES = [
-  {id:'all',     label:'전체',   ico:'☰',   groups:null /* null = 전부 보임 */},
-  {id:'prod',    label:'제조',   ico:'🏭',  groups:['견적','생산','자재']},
-  {id:'acct',    label:'회계',   ico:'📒',  groups:['출고','기준']},
-  {id:'tax',     label:'신고',   ico:'📋',  gotoMod:'acc-tax', groups:['출고']},
-  {id:'report',  label:'분석',   ico:'📊',  gotoMod:'mes-dash', groups:['견적','생산','출고']},
-  {id:'setup',   label:'설정',   ico:'⚙️',  groups:['시스템']}
+  {id:'all',     label:'홈',     ico:'🏠',  gotoMod:'mes-dash', groupKw:null /* 전부 표시 */},
+  {id:'prod',    label:'제조',   ico:'🏭',  gotoMod:'mes-wo',    groupKw:['견적','생산','자재']},
+  {id:'acct',    label:'회계',   ico:'📒',  gotoMod:'acc-sales', groupKw:['출고','기준']},
+  {id:'tax',     label:'신고',   ico:'📋',  gotoMod:'acc-tax',   groupKw:['출고']},
+  {id:'report',  label:'분석',   ico:'📊',  gotoMod:'mes-dash',  groupKw:null},
+  {id:'setup',   label:'설정',   ico:'⚙️',  gotoMod:'mes-queue', groupKw:['시스템']}
 ];
 
 var CURRENT_MODE_KEY = 'packflow_topMode';
@@ -34,33 +35,42 @@ function renderTabs(){
   var bar = document.getElementById('tmBar');
   if(!bar) return;
   var cur = getCurrentMode();
-  bar.innerHTML = MODES.map(function(m){
+  var tabs = MODES.map(function(m){
     return '<button class="tm-tab'+(m.id===cur?' on':'')+'" data-mode="'+m.id+'" onclick="setTopMode(\''+m.id+'\')" title="'+m.label+'">'
       + '<span class="tm-tab-ico">'+m.ico+'</span><span>'+m.label+'</span>'
       + '</button>';
   }).join('');
+  // 우측 액션 (알림·프로필·로그아웃)
+  var userName = (typeof CU !== 'undefined' && CU && CU.nm) ? CU.nm : '관리자';
+  var userRole = (typeof CU !== 'undefined' && CU && CU.role) ? CU.role : 'admin';
+  var roleMap = {admin:'관리자',office:'사무실',sales:'영업',material:'자재',accounting:'회계',quality:'품질'};
+  var initial = (userName||'관').charAt(0);
+  var right = '<div class="tm-right">'
+    + '<button class="tm-right-btn has-noti" title="알림" onclick="if(typeof UX!==\'undefined\'&&UX.toggleNotifPanel)UX.toggleNotifPanel();else alert(\'알림 센터\')">🔔<span class="tm-noti-dot"></span></button>'
+    + '<button class="tm-right-btn" title="키보드 단축키" onclick="if(typeof openShortcuts===\'function\')openShortcuts()">⌨</button>'
+    + '<div class="tm-user" title="'+userName+' ('+(roleMap[userRole]||userRole)+')">'
+    +   '<div class="tm-avatar">'+initial+'</div>'
+    +   '<span>'+userName+'</span>'
+    + '</div>'
+    + '<button class="tm-right-btn" title="로그아웃" onclick="if(typeof unifiedLogout===\'function\')unifiedLogout()">↩</button>'
+    + '</div>';
+  bar.innerHTML = tabs + right;
 }
 
-/* 모드에 따라 사이드바 그룹 필터링 — 그룹을 "숨김" 하지 않고 "펼침/접힘"만 제어 */
+/* 모드 선택 시 대표 화면으로 이동 (사이드바는 항상 전체 아이콘 그대로 유지) */
 function applyMode(modeId){
   var m = MODES.find(function(x){return x.id===modeId;});
   if(!m) return;
-  var groups = document.querySelectorAll('.sb-group');
-  groups.forEach(function(g){
+  document.querySelectorAll('.sb-group').forEach(function(g){
+    var next = g.nextElementSibling;
     var txt = (g.textContent||'').replace(/▶|▼/g,'').trim();
-    if(m.groups === null){
-      // 전체 모드: 모든 그룹 펼침
-      g.classList.add('open');
-      return;
-    }
-    var match = m.groups.some(function(kw){return txt.indexOf(kw)>=0;});
+    if(!m.groupKw){ g.style.display=''; if(next)next.style.display=''; g.classList.add('open'); return; }
+    var match = m.groupKw.some(function(k){return txt.indexOf(k)>=0;});
+    g.style.display = match?'':'none';
+    if(next) next.style.display = match?'':'none';
     if(match) g.classList.add('open');
-    else g.classList.remove('open');
   });
-  // gotoMod가 있으면 해당 화면으로 이동
-  if(m.gotoMod && typeof goMod==='function'){
-    try{ goMod(m.gotoMod); }catch(e){ console.warn('[pc-top-modes] goMod 실패', e); }
-  }
+  if(m.gotoMod && typeof goMod==='function') try{goMod(m.gotoMod)}catch(e){}
 }
 
 function setTopMode(id){
@@ -87,9 +97,7 @@ function enable(){
 
   document.body.classList.add('tm-enabled');
   renderTabs();
-  // 초기 모드는 'all' → 사이드바 건드리지 않음 (안전)
-  var cur = getCurrentMode();
-  if(cur !== 'all') applyMode(cur);
+  applyMode(getCurrentMode());
 }
 
 function disable(){

@@ -7,35 +7,83 @@
 /* 탭 컨테이너 (기본 숨김) */
 .tm-bar{display:none}
 
-/* 활성화 시에만 표시 */
+/* 활성화 시 — 상단이 메인 네비 (크고 존재감 있게) */
 body.tm-enabled .tm-bar{
   display:flex;
   align-items:center;
-  gap:4px;
-  padding:8px 18px;
-  background:#0F172A;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  position:sticky;top:0;z-index:50;
-  min-height:46px;
+  gap:8px;
+  padding:0 22px;
+  background:linear-gradient(180deg,#0F172A 0%,#0B1222 100%);
+  border-bottom:2px solid #1E3A5F;
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
+  position:sticky;top:0;z-index:60;
+  min-height:62px;
   flex-wrap:wrap;
+}
+body.tm-enabled .tm-bar::before{
+  content:'팩플로우';
+  color:#E8913A;font-weight:900;font-size:15px;letter-spacing:.5px;
+  padding:0 18px 0 0;margin-right:8px;
+  border-right:1px solid rgba(255,255,255,.1);
+  height:32px;display:flex;align-items:center;
 }
 
 .tm-tab{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 16px;font-size:13px;font-weight:700;
-  color:#CBD5E1;background:transparent;
-  border:1px solid transparent;border-radius:10px;
-  cursor:pointer;transition:all .15s ease;
-  letter-spacing:.2px;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 20px;font-size:14px;font-weight:700;
+  color:#94A3B8;background:transparent;
+  border:none;border-bottom:3px solid transparent;
+  border-radius:0;cursor:pointer;transition:all .15s ease;
+  letter-spacing:.3px;position:relative;
+  height:62px;
 }
-.tm-tab:hover{background:rgba(255,255,255,.06);color:#fff}
-.tm-tab.on{background:#1E3A5F;color:#fff;border-color:#2B4C7E}
-.tm-tab-ico{font-size:15px;line-height:1}
+.tm-tab:hover{color:#fff;background:rgba(255,255,255,.04)}
+.tm-tab.on{
+  color:#fff;
+  border-bottom-color:#E8913A;
+  background:rgba(232,145,58,.08);
+}
+.tm-tab.on .tm-tab-ico{transform:scale(1.1)}
+.tm-tab-ico{font-size:18px;line-height:1;transition:transform .2s}
 
 /* 모바일 - 숨김 (데스크톱 전용) */
 @media (max-width:767px){
   body.tm-enabled .tm-bar{display:none}
 }
 
-/* 접힌 사이드바와 공존: 탭이 상단에 있으니 사이드는 더 좁혀도 OK */
-body.tm-enabled.sb-collapsed .tm-bar{padding:8px 12px}
+/* 상단 모드 활성 시 */
+body.tm-enabled.sb-collapsed .tm-bar{padding:0 12px}
+
+/* 상단 바 오른쪽 액션 (알림·프로필·로그아웃) */
+.tm-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+.tm-right-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:transparent;border:1px solid transparent;
+  color:#CBD5E1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .15s;position:relative;
+}
+.tm-right-btn:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.1)}
+.tm-user{
+  display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:999px;color:#fff;font-size:12px;font-weight:700;
+}
+.tm-user .tm-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,#E8913A,#C2710C);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:12px;
+}
+.tm-noti-dot{
+  position:absolute;top:6px;right:6px;width:8px;height:8px;
+  background:#EF4444;border-radius:50%;border:2px solid #0F172A;
+  display:none;
+}
+.tm-right-btn.has-noti .tm-noti-dot{display:block}
+
+/* 얼마에요/더존 스타일: 사이드바는 텍스트 트리 그대로 */
+@media (min-width:768px){
+  body.tm-enabled .sb-logo{display:none !important}
+  body.tm-enabled #sbDate{display:none !important}
+  body.tm-enabled .sb-user,body.tm-enabled .sb-logout{display:none !important}
+}

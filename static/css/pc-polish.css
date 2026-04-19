@@ -44,8 +44,32 @@ body.tm-enabled .tm-tab-ico{font-size:19px}
 
 /* 우측 사용자/액션 톤 조정 */
 body.tm-enabled .tm-right-btn{width:40px;height:40px;font-size:17px}
-body.tm-enabled .tm-user{padding:6px 14px 6px 8px;font-size:13px;border-radius:999px}
+body.tm-enabled .tm-user{padding:6px 14px 6px 8px;font-size:13px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);cursor:pointer;font-weight:700}
+body.tm-enabled .tm-user:hover{background:rgba(255,255,255,.09)}
 body.tm-enabled .tm-user .tm-avatar{width:28px;height:28px;font-size:13px}
+body.tm-enabled .tm-user-caret{font-size:10px;color:rgba(255,255,255,.6);margin-left:2px}
+
+/* 사용자 드롭다운 메뉴 */
+.tm-user-wrap{position:relative}
+.tm-user-menu{
+  position:absolute;right:0;top:calc(100% + 8px);z-index:120;
+  min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;
+  box-shadow:0 18px 40px rgba(15,23,42,.18),0 2px 6px rgba(15,23,42,.06);
+  padding:6px;overflow:hidden;
+}
+.tm-user-menu.hidden{display:none}
+.tm-user-menu-hd{padding:10px 12px;border-bottom:1px solid #F1F5F9;margin-bottom:4px}
+.tm-user-menu-nm{font-size:13px;font-weight:800;color:#0F172A}
+.tm-user-menu-role{font-size:11px;color:#64748B;margin-top:2px}
+.tm-user-menu-item{
+  display:block;width:100%;text-align:left;
+  padding:9px 12px;border-radius:7px;border:none;background:transparent;
+  font-size:13px;font-weight:600;color:#1F2937;cursor:pointer;
+}
+.tm-user-menu-item:hover{background:#F1F5F9}
+.tm-user-menu-item.danger{color:#DC2626}
+.tm-user-menu-item.danger:hover{background:#FEF2F2}
+.tm-user-menu-sep{height:1px;background:#F1F5F9;margin:4px 2px}
 
 /* =========================================================
    2. 좌측 사이드바 — 가독성 + 현재 위치 강조

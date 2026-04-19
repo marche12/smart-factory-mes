@@ -33,6 +33,7 @@
 <script src="/js/pc-ux-inputs.js?v=1" defer></script>
 <script src="/js/pc-ux-excel-paste.js?v=1" defer></script>
 <script src="/js/pc-ux-ticker.js?v=1" defer></script>
+<script src="/js/pc-ux-nav-guard.js?v=1" defer></script>
 </head>
 <body>
 <div id="toast" class="toast"></div>
@@ -183,7 +184,9 @@
 <div class="noti-list" id="notiList"></div>
 </div>
 </div>
-<button onclick="goMod('qc-quote')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">견적</button><button onclick="openQuickCli()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">거래처</button><button onclick="openQuickProd()" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">품목</button><button onclick="goMod('mes-wo');woSub('new')" style="background:var(--pri);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ 패키지 작업지시</button><button onclick="goMod('mes-ship')" class="u-tab-btn" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">출고 준비</button></div>
+<!-- 전역 이동 버튼은 상단 탭 / 좌측 사이드 / 즐겨찾기로 이동됨.
+     헤더 우측에는 "현재 화면 전용 액션" 만 유지 (각 모듈이 필요 시 자체 삽입). -->
+</div>
 </div>
 <div class="main-content" role="main">
 <div class="module-page" id="pg-mes-admin"></div>

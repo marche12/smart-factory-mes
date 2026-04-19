@@ -1249,14 +1249,8 @@
 </div>
 <span class="wo-section-tag">필수</span>
 </div>
-<div class="wo-chip-bar">
-<button type="button" class="pb u-input-pill" onclick="addP('인쇄')">인쇄</button>
-<button type="button" class="pb u-input-pill" onclick="addP('코팅')">코팅</button>
-<button type="button" class="pb u-input-pill" onclick="addP('합지')">합지</button>
-<button type="button" class="pb u-input-pill" onclick="addP('톰슨')">톰슨</button>
-<button type="button" class="pb u-input-pill" onclick="addP('접착')">접착</button>
-<button type="button" class="pb out u-input-pill" onclick="addP('외주가공','out')">외주가공</button>
-</div>
+<!-- 시스템 설정의 공정 목록을 그대로 반영 (fillWOProcButtons) -->
+<div class="wo-chip-bar" id="woProcBtnArea"></div>
 <div id="selP"></div>
 <div id="pDet"></div>
 <input type="hidden" id="woGold"><input type="hidden" id="woMold"><div id="acMoldL" class="ac-l hidden" style="display:none"></div>

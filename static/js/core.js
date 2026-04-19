@@ -199,6 +199,17 @@ function fillProcButtons(containerId){
     return '<button type="button" class="'+cls+'" onclick="addPP(\''+p.nm+'\')">'+p.nm+(p.tp==='external'?' (외)':'')+'</button>'
   }).join('');
 }
+/* WO 모달 전용 — addP 를 호출해야 함 (addPP 는 품목용) */
+function fillWOProcButtons(){
+  var el=document.getElementById('woProcBtnArea');if(!el)return;
+  var procs=getProcs().filter(function(p){return p.nm && p.nm!=='생산완료';});
+  el.innerHTML=procs.map(function(p){
+    var cls=p.tp==='external'?'pb out u-input-pill':'pb u-input-pill';
+    var tp=p.tp==='external'?'out':'n';
+    return '<button type="button" class="'+cls+'" onclick="addP(\''+p.nm+'\',\''+tp+'\')">'+p.nm+(p.tp==='external'?' (외)':'')+'</button>';
+  }).join('');
+}
+window.fillWOProcButtons = fillWOProcButtons;
 /* 공정 관리 UI 렌더링 */
 function renderProcManager(){
   var el=document.getElementById('procManagerArea');if(!el)return;

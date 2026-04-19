@@ -126,14 +126,16 @@ function sbFavRemove(mod){
 }
 window.sbFavRemove = sbFavRemove;
 
-/* goMod 훅: 최근 사용 기록 */
+/* goMod 훅: 최근 사용 기록
+   순서 주의 — pushRecent 가 recent 섹션 DOM 을 재빌드하므로
+   orig 실행 전에 호출해야 한다. 그렇지 않으면 orig 가 설정한 sb-item.active 가
+   재렌더로 사라진다. */
 function hookGoMod(){
   if(typeof window.goMod !== 'function' || window.goMod.__sbRecentWrapped) return;
   var orig = window.goMod;
   var wrapped = function(mod){
-    var r = orig.apply(this, arguments);
     try{ pushRecent(mod); }catch(e){}
-    return r;
+    return orig.apply(this, arguments);
   };
   wrapped.__sbRecentWrapped = true;
   window.goMod = wrapped;

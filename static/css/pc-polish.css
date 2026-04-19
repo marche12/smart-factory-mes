@@ -11,26 +11,26 @@
    1. 상단 모드 탭 — 현재 위치 강조 + 타이포 정리
    ========================================================= */
 body.tm-enabled .tm-bar{
-  min-height:70px; /* 78 → 70, 과한 높이 축소 */
-  padding:0 22px;
-  background:linear-gradient(180deg,#0B1222 0%,#070B14 100%); /* 더 깊은 네이비 */
-  border-bottom:1px solid rgba(232,145,58,.12);
-  box-shadow:0 1px 0 rgba(255,255,255,.03), 0 4px 14px rgba(0,0,0,.18);
+  min-height:56px;   /* 70 → 56, 더 가볍게 */
+  padding:0 20px;
+  background:linear-gradient(180deg,#0B1222 0%,#070B14 100%);
+  border-bottom:1px solid rgba(232,145,58,.1);
+  box-shadow:0 1px 0 rgba(255,255,255,.02), 0 2px 10px rgba(0,0,0,.15);
 }
 body.tm-enabled .tm-bar::before{
-  font-size:18px;
-  padding:0 22px 0 0;
-  height:40px;
-  letter-spacing:-.01em;
+  font-size:16px;
+  padding:0 18px 0 0;
+  height:34px;
+  letter-spacing:-.02em;
 }
 body.tm-enabled .tm-tab{
-  height:70px;
-  padding:0 22px;
-  font-size:15px;
+  height:56px;
+  padding:0 18px;
+  font-size:13px;
   font-weight:700;
   letter-spacing:0;
-  border-bottom-width:3px;
-  gap:9px;
+  border-bottom-width:2px;
+  gap:7px;
   display:inline-flex;align-items:center;
 }
 body.tm-enabled .tm-tab:not(.on){opacity:.72}
@@ -40,10 +40,10 @@ body.tm-enabled .tm-tab.on{
   background:linear-gradient(180deg,transparent 0,rgba(232,145,58,.06) 100%);
   border-bottom-color:#E8913A;
 }
-body.tm-enabled .tm-tab-ico{font-size:19px}
+body.tm-enabled .tm-tab-ico{font-size:15px}
 
 /* 우측 사용자/액션 톤 조정 */
-body.tm-enabled .tm-right-btn{width:40px;height:40px;font-size:17px}
+body.tm-enabled .tm-right-btn{width:34px;height:34px;font-size:15px}
 body.tm-enabled .tm-user{padding:6px 14px 6px 8px;font-size:13px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);cursor:pointer;font-weight:700}
 body.tm-enabled .tm-user:hover{background:rgba(255,255,255,.09)}
 body.tm-enabled .tm-user .tm-avatar{width:28px;height:28px;font-size:13px}
@@ -75,10 +75,30 @@ body.tm-enabled .tm-user-caret{font-size:10px;color:rgba(255,255,255,.6);margin-
    2. 좌측 사이드바 — 가독성 + 현재 위치 강조
    ========================================================= */
 @media (min-width:768px){
-  /* 섹션 헤더: 작지만 명확 */
-  .sb-section{margin:8px 0 2px;padding-bottom:4px}
-  .sb-section-hd{padding:6px 18px 4px;font-size:10px;color:#64748B}
+  /* 홈 버튼: 큰 파란 배경 제거 → 일반 아이템 톤으로 축소 */
+  .sidebar .sb-home{
+    margin:10px 8px 4px !important;padding:8px 14px !important;
+    background:transparent !important;color:#CBD5E1 !important;
+    border-radius:8px !important;font-size:13px !important;font-weight:600 !important;
+    border-left:3px solid transparent !important;
+    width:calc(100% - 16px);text-align:left;
+  }
+  .sidebar .sb-home:hover{background:rgba(255,255,255,.06) !important;color:#fff !important}
+  .sidebar .sb-home.active{
+    background:linear-gradient(90deg,rgba(232,145,58,.22) 0%,rgba(232,145,58,.05) 100%) !important;
+    color:#fff !important;border-left-color:#E8913A !important;
+  }
+
+  /* 섹션 헤더 */
+  .sb-section{margin:4px 0 2px;padding-bottom:2px}
+  .sb-section-hd{padding:8px 18px 4px;font-size:10px;color:#64748B;letter-spacing:.5px;text-transform:uppercase}
   .sb-section-act{width:20px;height:20px;font-size:12px}
+
+  /* 즐겨찾기/최근: 강도 살짝 낮춤 (현재영역보다 덜 강조) */
+  .sb-section-fav .sb-item,
+  .sb-section-recent .sb-item{opacity:.88}
+  .sb-section-fav .sb-item:hover,
+  .sb-section-recent .sb-item:hover{opacity:1}
 
   /* 메뉴 항목: 편안한 hit area + 현재 위치 선명 */
   .sidebar .sb-item{
@@ -86,6 +106,9 @@ body.tm-enabled .tm-user-caret{font-size:10px;color:rgba(255,255,255,.6);margin-
     border-radius:8px;font-size:13px;font-weight:500;
     color:#CBD5E1;border-left:3px solid transparent;
     transition:all .12s ease;letter-spacing:-.01em;
+    display:block;width:calc(100% - 16px);text-align:left;
+    border:none;border-left:3px solid transparent;
+    background:transparent;cursor:pointer;
   }
   .sidebar .sb-item:hover{background:rgba(255,255,255,.06);color:#fff}
   .sidebar .sb-item.active{
@@ -95,16 +118,27 @@ body.tm-enabled .tm-user-caret{font-size:10px;color:rgba(255,255,255,.6);margin-
     box-shadow:inset 0 0 0 1px rgba(232,145,58,.15);
   }
 
-  /* 그룹 헤더: 강도 낮춤 → 섹션 헤더에 맞춤 */
+  /* 그룹 헤더: 현재 업무영역 섹션은 상단 여백과 구분선으로 메인 축임을 표시 */
   .sidebar .sb-group{
-    padding:10px 18px 4px;font-size:10px;font-weight:800;
-    color:#64748B;letter-spacing:.4px;text-transform:uppercase;
+    padding:16px 18px 6px;font-size:11px;font-weight:800;
+    color:#94A3B8;letter-spacing:.4px;text-transform:uppercase;
     cursor:default;border-left:none;
+    position:relative;
+    margin-top:8px;
   }
+  .sidebar .sb-group::before{
+    content:'';position:absolute;left:18px;right:18px;top:6px;height:1px;
+    background:rgba(255,255,255,.06);
+  }
+  .sidebar .sb-group:first-of-type::before{display:none}
   .sidebar .sb-group .sb-arrow{display:none}
 
+  /* 기준정보 / 시스템 그룹: 추가 강도 낮춤 */
+  .sidebar .sb-group[data-group-key="master"],
+  .sidebar .sb-group[data-group-key="system"]{color:#64748B}
+
   /* 사이드바 배경 한 톤 깊게 */
-  body.tm-enabled .sidebar{background:#0B1222}
+  body.tm-enabled .sidebar{background:#0B1222;width:232px;min-width:232px}
 
   /* 즐겨찾기 아이템 — 별 표시 선명하게 */
   .sb-fav-item .sb-item-ico{color:#E8913A}
@@ -283,11 +317,15 @@ body.tm-enabled .tm-user-caret{font-size:10px;color:rgba(255,255,255,.6);margin-
    12. 브레드크럼 / 메인 헤더 정돈
    ========================================================= */
 .main-header{
-  padding:10px 20px;background:#fff;
-  border-bottom:1px solid #EEF2F6;min-height:52px;
+  padding:8px 22px;background:#fff;
+  border-bottom:1px solid #EEF2F6;min-height:48px;
+  display:flex;align-items:center;gap:10px;
 }
-#mainTitle{font-size:16px !important;letter-spacing:-.01em}
-#mainBreadcrumb{font-size:12px !important;color:#94A3B8 !important}
+#mainTitle{font-size:15px !important;letter-spacing:-.01em;font-weight:700 !important;margin-right:0 !important}
+#mainBreadcrumb{font-size:11px !important;color:#94A3B8 !important;font-weight:500}
+.main-header .noti-bell{width:32px;height:32px}
+/* 헤더 내 tab pill 톤 — 과한 외곽 제거 */
+.main-header .hd-tab,.main-header .s-tab{font-size:12px;padding:4px 10px}
 
 /* =========================================================
    13. 안내·빈상태 공통 문구 톤

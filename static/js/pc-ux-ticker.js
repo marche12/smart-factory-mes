@@ -42,11 +42,17 @@ function render(){
     if(right) bar.insertBefore(tick, right);
     else bar.appendChild(tick);
   }
-  var parts = [];
-  if(c.overdue) parts.push('<span class="tk-danger">지연 '+c.overdue+'</span>');
-  if(c.dueToday) parts.push('<span class="tk-warn">오늘 '+c.dueToday+'</span>');
-  if(c.soon) parts.push('<span class="tk-info">3일내 '+c.soon+'</span>');
-  tick.innerHTML = '<span class="tk-ico">📅</span>' + parts.join('<span class="tk-sep">·</span>');
+  // 신호형(작은 점+숫자)로 축소. 지연 우선, 없으면 오늘, 없으면 3일내
+  var dotCls='', label='';
+  if(c.overdue){ dotCls='dot-danger'; label='지연 '+c.overdue; }
+  else if(c.dueToday){ dotCls='dot-warn'; label='오늘 '+c.dueToday; }
+  else if(c.soon){ dotCls='dot-info'; label='3일내 '+c.soon; }
+  var tip='';
+  if(c.overdue) tip+='지연 '+c.overdue+' · ';
+  if(c.dueToday) tip+='오늘 '+c.dueToday+' · ';
+  if(c.soon) tip+='3일내 '+c.soon;
+  tick.title = '납기: '+tip.replace(/ · $/,'');
+  tick.innerHTML = '<span class="tk-dot '+dotCls+'"></span><span class="tk-lbl">'+label+'</span>';
 }
 
 /* tm-bar 렌더 후 호출 */
@@ -68,16 +74,19 @@ if(document.readyState === 'loading'){
   setTimeout(init, 1500);
 }
 
-/* 최소한의 CSS (tm-bar 안) */
+/* 신호형 CSS: 아주 얇은 상태 배지 (상단 바 톤 방해 안 함) */
 var style = document.createElement('style');
 style.textContent = ''
-  +'.tm-ticker{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;margin:0 6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#CBD5E1;cursor:pointer;font-size:12px;font-weight:700;transition:all .12s}'
-  +'.tm-ticker:hover{background:rgba(255,255,255,.1);color:#fff}'
-  +'.tm-ticker .tk-ico{font-size:13px;opacity:.9}'
-  +'.tm-ticker .tk-danger{color:#FCA5A5}'
-  +'.tm-ticker .tk-warn{color:#FDE68A}'
-  +'.tm-ticker .tk-info{color:#BFDBFE}'
-  +'.tm-ticker .tk-sep{color:rgba(255,255,255,.2);margin:0 2px}';
+  +'.tm-ticker{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;margin:0 4px;'
+    +'background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:999px;'
+    +'color:#CBD5E1;cursor:pointer;font-size:11px;font-weight:700;transition:all .12s;height:28px}'
+  +'.tm-ticker:hover{background:rgba(255,255,255,.06);color:#fff;border-color:rgba(255,255,255,.18)}'
+  +'.tm-ticker .tk-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}'
+  +'.tm-ticker .dot-danger{background:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.18);animation:tkPulse 1.8s ease infinite}'
+  +'.tm-ticker .dot-warn{background:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,.18)}'
+  +'.tm-ticker .dot-info{background:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}'
+  +'.tm-ticker .tk-lbl{letter-spacing:-.01em}'
+  +'@keyframes tkPulse{0%,100%{box-shadow:0 0 0 3px rgba(239,68,68,.18)}50%{box-shadow:0 0 0 5px rgba(239,68,68,.28)}}';
 document.head.appendChild(style);
 
 window.refreshTicker = render;

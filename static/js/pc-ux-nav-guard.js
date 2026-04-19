@@ -33,23 +33,22 @@ function installGuard(){
 }
 
 /* 다른 wrapper(pc-top-modes, pc-sidebar-blocks)가 goMod 를 감싸고 난 뒤 최상위에서
-   한 번 더 감싸야 전역 가드 역할을 한다. 로그인 이후 1.8초 + 재시도. */
+   한 번 더 감싸야 전역 가드 역할을 한다. 장시간 폴링으로 안정 확보. */
 function tryInstall(){
-  installGuard();
-  // 다른 래퍼가 뒤늦게 덮으면 다시 감쌈 (최대 5회, 900ms 간격)
+  // 장기간 폴링 (최대 30초, 600ms 간격) — 로그인 지연 등 다양한 시나리오 대응
   var tries = 0;
   var t = setInterval(function(){
     tries++;
     if(window.goMod && !window.goMod.__navGuardWrapped){
       installGuard();
     }
-    if(tries >= 5) clearInterval(t);
-  }, 900);
+    if(tries >= 50) clearInterval(t); // 30초 후 종료
+  }, 600);
 }
 if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', function(){ setTimeout(tryInstall, 1800); });
+  document.addEventListener('DOMContentLoaded', tryInstall);
 } else {
-  setTimeout(tryInstall, 1800);
+  tryInstall();
 }
 
 console.log('[pc-ux-nav-guard] loaded. goMod 중복 호출 300ms 디바운스');

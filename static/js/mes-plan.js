@@ -425,7 +425,15 @@ function restoreData(){
 }
 
 /* ===== 7/9 ROLE ACCESS ===== */
-var ROLE_MENUS={'admin':null,'office':null,'worker':['worker-screen'],'sales':['mes-dash','mes-order','mes-wo','mes-ship','mes-cli','qc-quote','acc-sales'],'material':['mes-dash','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','mes-vendor'],'accounting':['mes-dash','mes-order','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow'],'quality':['mes-dash','qc-inspect','qc-equip','qc-quote']};
+var ROLE_MENUS={
+  'admin':null,
+  'office':['mes-dash','qc-quote','mes-order','mes-wo','mes-plan','mes-proc-log','mes-outsource','mes-ship','mat-stock','mat-po','mat-income','mat-bom','mes-vendor','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','mes-cli','mes-prod','mes-mold'],
+  'worker':['worker-screen','mes-dash','mes-plan','mes-proc-log','mes-worker'],
+  'sales':['mes-dash','qc-quote','mes-order','mes-wo','mes-ship','mes-cli','mes-prod','acc-sales','acc-recv'],
+  'material':['mes-dash','mes-outsource','mat-stock','mat-po','mat-income','mat-bom','mes-vendor','mes-prod'],
+  'accounting':['mes-dash','mes-order','mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','mes-cli','mes-prod'],
+  'quality':['mes-dash','qc-inspect','qc-equip','qc-quote','mes-wo','mes-proc-log']
+};
 function applyRoleAccess(){if(!CU)return;var role=CU.role||'admin';
   // admin은 전체 접근
   if(role==='admin'){CU.perms=null;return}

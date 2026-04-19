@@ -96,79 +96,6 @@ function calcQtAuto(){
   return {base:base,supply:supply,vat:vat,total:total,unit:unit,margin:margin};
 }
 
-function _qtDimsFromSpec(txt){
-  var m=String(txt||'').match(/(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)/);
-  return m?{L:+m[1],W:+m[2],H:+m[3]}:null;
-}
-
-function _qtBoxType(packType){
-  var map={
-    '단상자':'mattuk',
-    '합지박스':'cross',
-    '쇼핑백':'handle',
-    '슬리브':'sleeve',
-    '싸바리':'ssabari'
-  };
-  return map[packType]||'mattuk';
-}
-
-function openQtDesigner(){
-  if(typeof openBoxDesigner!=='function'){
-    toast('박스 설계기를 열 수 없습니다','err');
-    return;
-  }
-  var dims=_qtDimsFromSpec($('qtSpec')?$('qtSpec').value:'');
-  openBoxDesigner({
-    mode:'quote',
-    sourceName:'패키지 견적',
-    boxType:_qtBoxType($('qtPackType')?$('qtPackType').value:'단상자'),
-    boxL:dims&&dims.L||'',
-    boxW:dims&&dims.W||'',
-    boxH:dims&&dims.H||'',
-    spec:$('qtSpec')?$('qtSpec').value:'',
-    orderQty:_qtNum('qtQty')||'',
-    marginRate:_qtNum('qtMargin')||18
-  });
-}
-
-function importQtFromDesigner(showToast){
-  var payload=typeof getBoxDesignerPayload==='function'?getBoxDesignerPayload():null;
-  if(!payload){
-    if(showToast)toast('설계기에서 가져올 값이 없습니다','err');
-    return false;
-  }
-  if(payload.target&&payload.target!=='quote'&&payload.target!==''){
-    if(showToast)toast('작업지시용 설계값입니다. 견적용으로 다시 적용해 주세요','wrn');
-    return false;
-  }
-  if($('qtPackType')){
-    var packMap={mattuk:'단상자',cross:'합지박스','3glue':'단상자',ssabari:'싸바리',sleeve:'슬리브',tray:'기타',handle:'쇼핑백'};
-    $('qtPackType').value=packMap[payload.boxType]||$('qtPackType').value||'단상자';
-  }
-  if($('qtQty')&&!$('qtQty').value)$('qtQty').value=payload.qty||'';
-  if($('qtSpec')){
-    $('qtSpec').value=(payload.dims?payload.dims.L+'x'+payload.dims.W+'x'+payload.dims.H:'')
-      +(payload.specText?' / '+payload.specText.split(' / ').slice(1).join(' / '):'');
-  }
-  if($('qtPaperCost'))$('qtPaperCost').value=payload.costs&&payload.costs.paperCostTotal?payload.costs.paperCostTotal:'';
-  if($('qtPrintCost'))$('qtPrintCost').value=payload.costs&&payload.costs.printCostTotal?payload.costs.printCostTotal:'';
-  if($('qtPostCost'))$('qtPostCost').value=payload.costs&&payload.costs.postCostTotal?payload.costs.postCostTotal:'';
-  if($('qtMoldCost'))$('qtMoldCost').value=payload.costs&&payload.costs.mold?payload.costs.mold:'';
-  if($('qtMargin'))$('qtMargin').value=payload.costs&&payload.costs.margin?payload.costs.margin:$('qtMargin').value;
-  var memo=[
-    '[박스 설계기 연동]',
-    payload.summary||'',
-    payload.sheet&&payload.sheet.name?'원지 선택: '+payload.sheet.name:''
-  ].filter(Boolean).join('\n');
-  if($('qtContent')){
-    $('qtContent').value=memo+( $('qtContent').value?'\n\n'+$('qtContent').value:'');
-  }
-  calcQtAuto();
-  if(typeof clearBoxDesignerPayload==='function')clearBoxDesignerPayload();
-  if(showToast)toast('설계값을 패키지 견적에 반영했습니다','ok');
-  return true;
-}
-
 function _quoteStatusText(rec){return rec.status||rec.st||'작성중'}
 
 function _quotePayload(existing){
@@ -340,13 +267,6 @@ function eQt(id){
   $('qtMoT').textContent='패키지 견적 수정';oMo('qtMo2');
   calcQtAuto();
 }
-
-window.addEventListener('storage',function(e){
-  if(e.key!=='packflow_box_designer_payload')return;
-  var mo=$('qtMo2');
-  if(!mo||mo.classList.contains('hidden'))return;
-  importQtFromDesigner(false);
-});
 
 function saveQt(){
   var cli=$('qtCli').value.trim();var prod=$('qtProd').value.trim();

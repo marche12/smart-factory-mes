@@ -53,73 +53,6 @@ function fillWOMgr(defaultVal){
 function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
 function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId')){$('woOrdId').value='';if($('woOrdId').dataset)delete $('woOrdId').dataset.itemIdx;}$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
-function _woBoxType(){
-  var mold=($('woMold')?$('woMold').value:'')||($('woMoldDisplay')?$('woMoldDisplay').value:'');
-  if(/싸바리/.test(mold))return 'ssabari';
-  if(/슬리브/.test(mold))return 'sleeve';
-  if(/손잡이/.test(($('woHand')?$('woHand').value:'')))return 'handle';
-  return 'mattuk';
-}
-function openWODesigner(){
-  if(typeof openBoxDesigner!=='function'){
-    toast('박스 설계기를 열 수 없습니다','err');
-    return;
-  }
-  openBoxDesigner({
-    mode:'wo',
-    sourceName:'패키지 작업지시',
-    boxType:_woBoxType(),
-    orderQty:+($('woFQ')?$('woFQ').value:0)||'',
-    spec:$('woSpec')?$('woSpec').value:'',
-    marginRate:0
-  });
-}
-function _woMoneyNum(txt){
-  return +(String(txt||'').replace(/[^\d.-]/g,''))||0;
-}
-function importWOFromDesigner(showToast){
-  var payload=typeof getBoxDesignerPayload==='function'?getBoxDesignerPayload():null;
-  if(!payload){
-    if(showToast)toast('설계기에서 가져올 값이 없습니다','err');
-    return false;
-  }
-  if(payload.target&&payload.target!=='wo'&&payload.target!==''){
-    if(showToast)toast('견적용 설계값입니다. 작업지시용으로 다시 적용해 주세요','wrn');
-    return false;
-  }
-  if(!cPapers||!cPapers.length)_initPapersFabrics();
-  if(!cPapers[0])cPapers[0]={paper:'',spec:'',qm:0,qe:0};
-  var paperLabel=(payload.material&&payload.material.paperLabel?payload.material.paperLabel:'')+(payload.material&&payload.material.gsm?' '+payload.material.gsm+'g':'');
-  cPapers[0].paper=paperLabel.trim();
-  cPapers[0].spec=payload.sheet&&payload.sheet.w&&payload.sheet.h?(payload.sheet.w+'x'+payload.sheet.h):cPapers[0].spec;
-  cPapers[0].qm=payload.production&&payload.production.cleanSheets||cPapers[0].qm||0;
-  cPapers[0].qe=payload.production&&payload.production.extraSheets||0;
-  renPapers();
-  if($('woPaper'))$('woPaper').value=cPapers[0].paper||'';
-  if($('woSpec'))$('woSpec').value=payload.specText||'';
-  if($('woQM'))$('woQM').value=cPapers[0].qm||'';
-  if($('woQE'))$('woQE').value=cPapers[0].qe||'';
-  if($('woFQ')&&(!$('woFQ').value||+$('woFQ').value<=0))$('woFQ').value=payload.qty||'';
-  if($('woPrice'))$('woPrice').value=payload.costs&&payload.costs.unitPriceNumber?payload.costs.unitPriceNumber:_woMoneyNum(payload.costs&&payload.costs.unitPriceText);
-  if($('woPrint')){
-    $('woPrint').value=[
-      payload.material&&payload.material.colors?payload.material.colors+'도':'',
-      payload.material&&payload.material.coatingLabel?payload.material.coatingLabel:''
-    ].filter(Boolean).join(' / ');
-  }
-  var noteBits=[
-    '[박스 설계기 연동]',
-    payload.summary||'',
-    payload.production?'정매 '+(payload.production.cleanSheets||0)+'장 / 여분 '+(payload.production.extraSheets||0)+'장':''
-  ].filter(Boolean).join('\n');
-  if($('woNote')){
-    $('woNote').value=noteBits+($('woNote').value?'\n\n'+$('woNote').value:'');
-  }
-  _updateWoAmt();
-  if(typeof clearBoxDesignerPayload==='function')clearBoxDesignerPayload();
-  if(showToast)toast('설계값을 작업지시에 반영했습니다','ok');
-  return true;
-}
 function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
 // Process arrow reorder
@@ -805,12 +738,6 @@ function woImgDrop(e){e.preventDefault();var zone=$('woImgZone');if(zone)zone.st
 function woImgClear(){var pv=$('woImgP');var hint=$('woImgHint');var zone=$('woImgZone');if(pv)pv.innerHTML='';if(hint)hint.style.display='';if(zone)zone.style.borderColor='var(--bdr)';var inp=$('woImg');if(inp)inp.value=''}
 // 클립보드 붙여넣기 (모달이 열려 있을 때만)
 document.addEventListener('paste',function(e){var ov=document.getElementById('woFormOv');if(!ov||ov.classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;for(var i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){_setWoImg(items[i].getAsFile());toast('이미지 붙여넣기 완료','ok');break}}});
-window.addEventListener('storage',function(e){
-  if(e.key!=='packflow_box_designer_payload')return;
-  var ov=document.getElementById('woFormOv');
-  if(!ov||ov.classList.contains('hidden'))return;
-  importWOFromDesigner(false);
-});
 function saveWO(){
 const cn=$('woCli').value.trim(),pn=$('woProd').value.trim(),fq=$('woFQ').value,sd=$('woShip').value;
 var _p0=cPapers[0]||{};var qm=_p0.qm||0;

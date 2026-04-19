@@ -183,7 +183,27 @@ function renderWOOrderBridge(meta){
     +'<div class="pack-chip-row">'+(chips||'<span class="pack-chip">수주 메타 없음</span>')+'</div>';
 }
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
-function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
+function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',price:0,st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
+/* 공정 비용 즉시 업데이트 (전체 re-render 없이) */
+function _updateProcCost(i){
+  var p=cProcs[i];if(!p)return;
+  var el=document.getElementById('procCost'+i);if(!el)return;
+  var wofq=+($('woFQ')?.value||0)||0;
+  if(p.price && wofq){
+    var total=p.price*wofq;
+    el.innerHTML='예상 '+p.nm+' 비용: <b style="color:#0F172A">'+total.toLocaleString('ko-KR')+'원</b> ('+p.price.toLocaleString('ko-KR')+'원 × '+wofq.toLocaleString('ko-KR')+'매)';
+    el.style.color='#64748B';
+  }else{
+    el.innerHTML='';
+  }
+  // 총 외주비 합계 업데이트
+  var totalOut=cProcs.reduce(function(s,x){return s+((+x.price||0)*wofq);},0);
+  var box=document.getElementById('woProcTotal');
+  if(box){
+    box.innerHTML=totalOut?'<span style="font-weight:700;color:#0F172A">총 공정 비용</span> <span style="color:#DC2626;font-weight:800">'+totalOut.toLocaleString('ko-KR')+'원</span>':'';
+  }
+}
+window._updateProcCost = _updateProcCost;
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
 // Process arrow reorder
 function pMove(i,dir){
@@ -203,7 +223,16 @@ var procSub=p.tp!=='n'?'외주 공정':'내부 공정';
 var h='<div class="wo-proc-card'+cardClass+'"><div class="wo-proc-card-head"><div class="wo-proc-card-index">'+(i+1)+'</div><div class="wo-proc-card-copy"><div class="wo-proc-card-title">'+p.nm+'</div><div class="wo-proc-card-sub">'+procSub+'</div></div></div><div class="fr">';
 h+='<div class="fg"><label>방식</label><input value="'+(p.mt||'')+'" onchange="cProcs['+i+'].mt=this.value" placeholder="방식 또는 장비명"></div>';
 h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div>';
+h+='<div class="fg"><label>단가 (매당)</label><input type="number" value="'+(p.price||'')+'" onchange="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" oninput="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" placeholder="0" style="text-align:right"></div>';
 h+='</div>';
+// 단가 × 수량(WO 총 수량) = 예상 금액 표시
+var wofq = +($('woFQ')?.value||0)||0;
+if(p.price && wofq){
+  var total = p.price * wofq;
+  h+='<div id="procCost'+i+'" class="wo-proc-cost" style="margin:4px 0 0;font-size:11px;color:#64748B;text-align:right">예상 '+p.nm+' 비용: <b style="color:#0F172A">'+total.toLocaleString('ko-KR')+'원</b> ('+p.price.toLocaleString('ko-KR')+'원 × '+wofq.toLocaleString('ko-KR')+'매)</div>';
+}else{
+  h+='<div id="procCost'+i+'" class="wo-proc-cost" style="margin:4px 0 0;font-size:11px;color:#94A3B8;text-align:right"></div>';
+}
 if(p.nm==='인쇄'){
   h+='<div class="wo-inline-check"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(협력사에서 일괄 처리)</span></label></div>';
 }
@@ -211,11 +240,20 @@ if(p.nm==='톰슨'){
   h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">🔍 검색</button></div></div>';
 }
 if(p.nm==='외주가공'){
-h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div></div>';
+h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div><div class="fg"><label>단가 (매당)</label><input type="number" value="'+(p.price||'')+'" onchange="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" oninput="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" placeholder="0" style="text-align:right"></div></div>';
 }
 h+='</div>';
 return h;
-}).join('')}
+}).join('');
+// 총 공정 비용 합계
+var wofq2=+($('woFQ')?.value||0)||0;
+var totalOut=cProcs.reduce(function(s,x){return s+((+x.price||0)*wofq2);},0);
+if(totalOut>0 && cProcs.length){
+  $('pDet').innerHTML+='<div id="woProcTotal" style="margin-top:10px;padding:10px 14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-size:13px"><span style="font-weight:700;color:#0F172A">총 공정 비용</span> <span style="color:#DC2626;font-weight:800">'+totalOut.toLocaleString('ko-KR')+'원</span></div>';
+}else if(cProcs.length){
+  $('pDet').innerHTML+='<div id="woProcTotal"></div>';
+}
+}
 // 기계코팅 토글: 인쇄 공정에서 체크 시 코팅 공정 방식/업체 자동 세팅
 function toggleMechCoat(printIdx,checked){
   cProcs[printIdx].mechCoat=checked;
@@ -1202,7 +1240,7 @@ return '<tr '+_rowCls+'><td><a href="#" onclick="showDet(\''+o.id+'\');return fa
 function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();}
 function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';if($('woOrdId'))$('woOrdId').value=o.ordId||'';_updateWoAmt();if(o.img){$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr);border-radius:10px">`;if($('woImgHint'))$('woImgHint').style.display='none';}else{woImgClear()}_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';renderWOOrderBridge();renderWOQuickBars();if(typeof fillWOProcButtons==='function')fillWOProcButtons();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
 // Copy work order
-function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';if($('woOrdId'))$('woOrdId').value='';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';renderWOOrderBridge(null);renderWOQuickBars();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
+function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';if($('woOrdId'))$('woOrdId').value='';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,price:+p.price||0,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';renderWOOrderBridge(null);renderWOQuickBars();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
 function delWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(o.status!=='대기'&&o.status!=='취소'){toast('대기/취소 상태만 삭제 가능','err');return}if(!confirm(`삭제: ${o.cnm} - ${o.pnm}`))return;if(!confirm('복구 불가. 최종 확인?'))return;DB.s('wo',DB.g('wo').filter(x=>x.id!==id));addLog(`삭제: ${o.wn} ${o.pnm}`);rWOList();if(typeof rDash==='function')rDash();if(typeof rPlan==='function')rPlan();toast('삭제','ok')}
 function chgProcSt(woId,pi,newSt){
 var wos=DB.g('wo');var oi=wos.findIndex(function(x){return x.id===woId});if(oi<0)return;

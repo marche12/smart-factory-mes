@@ -1769,19 +1769,29 @@ function orderToWO(id){
   var entries=typeof orderPendingItemEntries==='function'?orderPendingItemEntries(o):((o.items||[]).map(function(it,idx){return{it:it,idx:idx}}).filter(function(entry){return entry.it&&entry.it.nm}));
   if(!entries.length){toast('이미 모든 품목이 작업지시로 연결되었습니다','err');return}
 
-  // 품목이 여러 개면 선택 팝업
+  // 품목이 여러 개면 체크박스 선택 팝업 (개선)
   if(entries.length>1){
     var el=document.createElement('div');el.className='mo-bg';el.id='ordToWoMo';
     var listH=entries.map(function(entry){
       var it=entry.it;
-      return '<div onclick="selectOrdItem(\''+id+'\','+entry.idx+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;transition:background .1s" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'\'">'
-        +'<div><div style="font-weight:600;font-size:13px">'+(it.nm||'')+'</div><div style="font-size:11px;color:#64748B">'+(it.spec||'')+(it.qty?' | '+fmt(it.qty)+'매':'')+'</div></div>'
-        +'<span style="font-size:12px;color:#1E3A5F;font-weight:600">선택 ›</span></div>';
+      return '<label class="ord-wo-row" style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #F1F5F9;cursor:pointer;align-items:center;transition:background .1s" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'\'">'
+        +'<input type="checkbox" class="ord-wo-chk" data-idx="'+entry.idx+'" checked style="width:16px;height:16px;cursor:pointer">'
+        +'<div style="flex:1"><div style="font-weight:700;font-size:13px;color:#0F172A">'+(it.nm||'')+'</div><div style="font-size:11px;color:#64748B;margin-top:2px">'+(it.spec||'-')+(it.qty?' · '+fmt(it.qty)+'매':'')+(it.price?' · '+fmt(it.price)+'원':'')+'</div></div>'
+        +'<button type="button" onclick="event.preventDefault();event.stopPropagation();selectOrdItem(\''+id+'\','+entry.idx+')" class="btn btn-o btn-sm" style="padding:5px 10px;font-size:11px;white-space:nowrap">개별 작성 ›</button>'
+        +'</label>';
     }).join('');
-    el.innerHTML='<div style="background:#fff;border-radius:14px;width:420px;box-shadow:0 25px 50px rgba(0,0,0,.15)">'
-      +'<div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">작업지시로 넘길 품목 선택</span><button onclick="document.getElementById(\'ordToWoMo\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>'
-      +'<div style="padding:4px 0;max-height:60vh;overflow-y:auto">'+listH+'</div>'
-      +'<div style="padding:10px 14px;border-top:1px solid var(--bdr);font-size:11px;color:#94A3B8">품목마다 별도 패키지 작업지시가 생성됩니다</div></div>';
+    el.innerHTML='<div style="background:#fff;border-radius:14px;width:480px;box-shadow:0 25px 50px rgba(0,0,0,.15)">'
+      +'<div style="padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div style="font-weight:800;font-size:15px;color:#0F172A">작업지시로 넘길 품목</div><div style="font-size:11px;color:#64748B;margin-top:2px">체크된 품목마다 별도 패키지 작업지시가 생성됩니다</div></div>'
+      +'<button onclick="document.getElementById(\'ordToWoMo\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8">&times;</button></div>'
+      +'<div style="padding:4px 0;max-height:50vh;overflow-y:auto">'+listH+'</div>'
+      +'<div style="padding:10px 16px;border-top:1px solid var(--bdr);display:flex;gap:8px;align-items:center">'
+      +'<button onclick="_ordWoChkAll(true)" class="btn btn-o btn-sm" style="font-size:11px">전체 선택</button>'
+      +'<button onclick="_ordWoChkAll(false)" class="btn btn-o btn-sm" style="font-size:11px">해제</button>'
+      +'<div style="margin-left:auto;display:flex;gap:6px">'
+      +'<button onclick="document.getElementById(\'ordToWoMo\').remove()" class="btn btn-o btn-sm">취소</button>'
+      +'<button onclick="_batchOrdToWO(\''+id+'\')" class="btn btn-p btn-sm" style="font-weight:700">선택 일괄 생성</button>'
+      +'</div></div></div>';
     document.body.appendChild(el);
     window._orderToWoId=id;
     return;
@@ -1797,6 +1807,72 @@ function selectOrdItem(ordId,idx){
   var item=(o.items||[])[idx];
   if(item&&item.nm)_fillWOFromOrder(o,item,idx);
 }
+/* 체크된 품목들 일괄 선택 (전체/해제) */
+function _ordWoChkAll(on){
+  document.querySelectorAll('.ord-wo-chk').forEach(function(c){c.checked=!!on;});
+}
+window._ordWoChkAll = _ordWoChkAll;
+/* 체크된 품목 일괄 WO 생성 — 각 품목마다 드래프트 WO 를 대기 상태로 저장 */
+function _batchOrdToWO(ordId){
+  var chks = [...document.querySelectorAll('.ord-wo-chk:checked')];
+  if(!chks.length){ toast('선택된 품목이 없습니다','err'); return; }
+  var o = getOrders().find(function(x){return x.id===ordId;});
+  if(!o) return;
+  if(chks.length === 1){
+    // 1개면 기존 플로우 그대로 (폼 열고 사용자 검토)
+    var idx = +chks[0].getAttribute('data-idx');
+    _fillWOFromOrder(o, o.items[idx], idx);
+    document.getElementById('ordToWoMo')?.remove();
+    return;
+  }
+  if(!confirm(chks.length+'개 품목을 한번에 작업지시로 생성합니다.\n각 WO 는 "대기" 상태로 저장되며, 필요 시 개별 수정 가능합니다.\n계속하시겠습니까?')) return;
+  var wos = DB.g('wo') || [];
+  var created = [];
+  chks.forEach(function(c){
+    var idx = +c.getAttribute('data-idx');
+    var it  = (o.items||[])[idx];
+    if(!it || !it.nm) return;
+    var wn = (typeof gWN === 'function') ? gWN() : ('WO-'+Date.now());
+    // 같은 tick 내 중복 방지
+    while(wos.some(function(w){return w.wn===wn;})) wn = wn + '-' + Math.random().toString(36).substr(2,3);
+    var noteBits = [];
+    if(o.quoteNum) noteBits.push('견적번호: '+o.quoteNum);
+    if(o.no)       noteBits.push('수주번호: '+o.no);
+    if(it.spec)    noteBits.push('사양: '+it.spec);
+    if(o.note)     noteBits.push(o.note);
+    var newWO = {
+      id: (typeof gid==='function'?gid():Date.now().toString(36)+Math.random().toString(36).substr(2,5)),
+      wn: wn,
+      dt: (typeof td==='function'?td():new Date().toISOString().slice(0,10)),
+      cnm: o.cli || '',
+      pnm: it.nm || '',
+      spec: it.spec || '',
+      fq: Number(it.qty)||0,
+      qm: Number(it.qty)||0,
+      qe: 0,
+      price: Number(it.price)||Number(o.price)||0,
+      sd: o.shipDt || o.due || '',
+      dlv: o.dlv || '',
+      nt: noteBits.join(' / '),
+      status: '대기',
+      procs: [],
+      mgr: (typeof CU !== 'undefined' && CU && CU.nm) ? CU.nm : '',
+      ordId: o.id,
+      cat: (typeof nw==='function'?nw():new Date().toISOString())
+    };
+    wos.push(newWO);
+    created.push(newWO);
+  });
+  DB.s('wo', wos);
+  // 수주 상태 갱신 (연결 WO 존재하므로 '생산중' 혹은 기존 로직에 맡김)
+  if(typeof syncOrderFlowState === 'function') try{ syncOrderFlowState(o.id, null, DB.g('wo'), null); }catch(e){}
+  if(typeof rWOList === 'function') rWOList();
+  if(typeof rOrderList === 'function') rOrderList();
+  if(typeof rDash === 'function') rDash();
+  document.getElementById('ordToWoMo')?.remove();
+  toast(created.length+'개 작업지시 일괄 생성 완료 ('+created.map(function(w){return w.wn;}).join(', ')+')','ok');
+}
+window._batchOrdToWO = _batchOrdToWO;
 function _fillWOFromOrder(o,it,itemIdx){
   goMod('mes-wo');woSub('new');
   setTimeout(function(){

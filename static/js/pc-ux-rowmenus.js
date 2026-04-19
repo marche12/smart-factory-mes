@@ -90,14 +90,15 @@ function buildOrderMenu(id){
   ];
   items.push({separator:true});
   if(hasLinkedDocs){
+    var bits=[];
+    if(summary.woIds&&summary.woIds.length)bits.push('작업지시 '+summary.woIds.length);
+    if(summary.shipCount)bits.push('출고 '+summary.shipCount);
+    if(salesCount)bits.push('매출 '+salesCount);
+    var bitsLabel = bits.length ? ' · '+bits.join(', ') : '';
     items.push({
-      label:'삭제 불가 (연결 문서 있음)',
+      label:'삭제 불가'+bitsLabel,
       action:function(){
-        var bits=[];
-        if(summary.woIds&&summary.woIds.length)bits.push('작업지시 '+summary.woIds.length+'건');
-        if(summary.shipCount)bits.push('출고 '+summary.shipCount+'건');
-        if(salesCount)bits.push('매출 '+salesCount+'건');
-        alert('이 수주는 연결 문서가 있어 삭제할 수 없습니다.\n\n'+bits.join(', ')+'\n\n삭제 대신 상세 화면에서 진행 상태를 확인하세요.');
+        safe('toast',['연결 문서가 있어 삭제할 수 없습니다','err']);
       }
     });
   }else{
@@ -111,13 +112,13 @@ function buildWOMenu(id){
   if(!w) return [];
   var cli = (DB.g('cli')||[]).find(function(x){return x.nm===w.cnm;});
   var items = [
-    {label:'상세 보기',      action:function(){ safe('showDet',[id]); }},
+    {label:'상세 확인',      action:function(){ safe('showDet',[id]); }},
     {label:'수정',           action:function(){ safe('editWO',[id]); }},
     {label:'복제',           action:function(){ safe('copyWO',[id]); }},
     {separator:true},
     {label:'외주 등록',       action:function(){ safe('goMod',['mes-outsource']); }},
     {label:'출고 준비 보기',  action:function(){ safe('goMod',['mes-ship']); }},
-    {label:'인쇄 / 출력',     action:function(){ safe('printWO',[id]); }},
+    {label:'인쇄',            action:function(){ safe('printWO',[id]); }},
     {label:'템플릿 저장',     action:function(){ safe('saveAsTpl',[id]); }},
     {separator:true}
   ];
@@ -152,15 +153,15 @@ function buildShipHistMenu(shipId){
   var s = (DB.g('shipLog')||[]).find(function(x){return x.id===shipId;});
   if(!s) return [];
   return [
-    {label:'상세 보기',       action:function(){ safe('openShipHistLedgerPanel',[shipId]); }},
-    {label:'거래명세서',      action:function(){ safe('printTransStatement',[shipId]); }},
-    {label:'명세표 (구형)',    action:function(){ safe('printShipOne',[shipId]); }},
+    {label:'상세 확인',        action:function(){ safe('openShipHistLedgerPanel',[shipId]); }},
+    {label:'거래명세서 인쇄',   action:function(){ safe('printTransStatement',[shipId]); }},
+    {label:'명세표 인쇄',       action:function(){ safe('printShipOne',[shipId]); }},
     {separator:true},
-    {label:'재출고용 복제',    action:function(){
-      if(s.woId){ safe('openShipM',[s.woId]); toast && toast('같은 WO로 새 출고 창을 열었습니다','ok'); }
+    {label:'재출고용 복제',     action:function(){
+      if(s.woId){ safe('openShipM',[s.woId]); safe('toast',['같은 작업지시로 새 출고 창을 열었습니다','ok']); }
     }},
     {separator:true},
-    {label:'출고 취소',       action:function(){ safe('cancelShipById',[shipId]); }, danger:true}
+    {label:'출고 취소',         action:function(){ safe('cancelShipById',[shipId]); }, danger:true}
   ];
 }
 

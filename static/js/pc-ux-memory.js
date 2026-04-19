@@ -33,7 +33,9 @@ document.addEventListener('click', function(e){
 });
 
 // 표가 다시 렌더된 후 저장된 정렬 자동 적용
+var _applying = {}; // 테이블별 재적용 중 플래그 (jitter 방지)
 function applyStoredSort(tableId){
+  if(_applying[tableId]) return;
   var memo = loadSort()[tableId];
   if(!memo) return;
   var table = document.getElementById(tableId);
@@ -42,16 +44,21 @@ function applyStoredSort(tableId){
   if(!th) return;
   // 이미 정렬된 상태면 skip
   if(th.classList.contains('sort-'+memo.dir)) return;
-  // 클릭 시뮬레이션: 현재 상태 확인 후 필요 회수 클릭
-  var currentAsc = th.classList.contains('sort-asc');
-  var currentDesc = th.classList.contains('sort-desc');
-  if(!currentAsc && !currentDesc){
-    th.click(); // 1st click → asc
-    if(memo.dir === 'desc') th.click(); // 2nd click → desc
-  } else if(currentAsc && memo.dir === 'desc'){
-    th.click();
-  } else if(currentDesc && memo.dir === 'asc'){
-    th.click(); th.click();
+  _applying[tableId] = true;
+  try{
+    var currentAsc = th.classList.contains('sort-asc');
+    var currentDesc = th.classList.contains('sort-desc');
+    if(!currentAsc && !currentDesc){
+      th.click();
+      if(memo.dir === 'desc') th.click();
+    } else if(currentAsc && memo.dir === 'desc'){
+      th.click();
+    } else if(currentDesc && memo.dir === 'asc'){
+      th.click(); th.click();
+    }
+  }finally{
+    // 약간 지연 후 해제 (tbody 변이 debounce 시간과 매칭)
+    setTimeout(function(){ _applying[tableId] = false; }, 300);
   }
 }
 

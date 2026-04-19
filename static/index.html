@@ -9,7 +9,6 @@
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <title>팩플로우 | 패키지 제조 운영 시스템</title>
 <link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/theme-preview.css">
 <script src="js/xlsx.full.min.js"></script>
 <script src="/js/core.js?v=26"></script>
 <script src="/js/search-util.js?v=1"></script>
@@ -18,6 +17,35 @@
 </head>
 <body>
 <div id="toast" class="toast"></div>
+<div class="mo-bg hidden" id="conflictMo" onclick="event.target===this&&cMo('conflictMo')">
+<div class="mo" style="max-width:640px">
+  <div class="mo-t">동시 수정 충돌</div>
+  <div class="mo-b">
+    <div class="flow-note danger" style="margin:0 0 14px">
+      <div class="flow-note-copy">다른 사용자가 먼저 저장해 최신 서버 데이터와 충돌했습니다. 서버값을 유지하거나, 내 변경을 다시 저장할 수 있습니다.</div>
+    </div>
+    <div class="conflict-meta">
+      <div><b>대상</b> <span id="conflictKeyLabel">-</span></div>
+      <div><b>서버 최신 시각</b> <span id="conflictUpdatedAt">-</span></div>
+    </div>
+    <div class="conflict-grid">
+      <div class="conflict-pane">
+        <div class="conflict-pane-title">서버 최신값</div>
+        <pre id="conflictServerValue" class="conflict-pre"></pre>
+      </div>
+      <div class="conflict-pane">
+        <div class="conflict-pane-title">내 저장 시도값</div>
+        <pre id="conflictLocalValue" class="conflict-pre"></pre>
+      </div>
+    </div>
+  </div>
+  <div class="mo-f">
+    <button class="btn btn-g" onclick="cMo('conflictMo')">닫기</button>
+    <button class="btn btn-o" onclick="keepServerConflict()">서버값 유지</button>
+    <button class="btn btn-p" onclick="retryConflictSave()">내 변경 다시 저장</button>
+  </div>
+</div>
+</div>
 <div id="loginOverlay" class="login-overlay">
 <div class="login-card">
 <h1 class="login-title">팩플로우</h1>
@@ -125,23 +153,6 @@
 </div>
 <div class="main-content" role="main">
 <div class="module-page" id="pg-mes-admin"></div>
-<div class="module-page" id="pg-mes-monitor">
-  <div class="app">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:22px;font-weight:900;color:var(--pri)">🖥️ 현장 모니터</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span id="monClock" style="font-size:18px;font-weight:800;color:var(--pri);font-feature-settings:'tnum'"></span>
-        <button class="btn btn-sm btn-p" onclick="rMonitor()">새로고침</button>
-        <button class="btn btn-sm btn-o" onclick="openMonitorFull()">전체화면</button>
-      </div>
-    </div>
-    <div id="monSummary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
-    <div style="font-size:15px;font-weight:800;color:var(--pri);margin-bottom:8px">공정별 진행 현황</div>
-    <div id="monProcs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px"></div>
-    <div style="font-size:15px;font-weight:800;color:var(--pri);margin-bottom:8px">진행중 패키지 작업</div>
-    <div style="overflow-x:auto"><table class="dt" id="monWOTbl"><thead><tr><th>작업번호</th><th>거래처</th><th>제품</th><th>수량</th><th>현재공정</th><th>진행률</th><th>납기</th><th>상태</th></tr></thead><tbody></tbody></table></div>
-  </div>
-</div>
 <div class="module-page" id="pg-mat-income"><div class="app">
 <!-- Header removed - sidebar handles navigation -->
 
@@ -618,285 +629,6 @@
 </div>
 <div class="module-page" id="pg-acc-purchase"></div>
 <div class="module-page" id="pg-acc-tax"></div>
-<div class="module-page" id="pg-hr-emp"><div class="app">
-<div class="hd">
-  <span class="hd-logo">팩플로우</span><span class="hd-title">인사/급여</span>
-  <div class="hd-tabs" role="tablist">
-    <button class="hd-tab on" data-tab="emp" role="tab" aria-selected="true">직원 정보</button>
-    <button class="hd-tab" data-tab="att" role="tab" aria-selected="false">출퇴근 기록</button>
-    <button class="hd-tab" data-tab="pay" role="tab" aria-selected="false">급여 관리</button>
-    <button class="hd-tab" data-tab="leave" role="tab" aria-selected="false">연차/휴가</button>
-  </div>
-  <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
-</div>
-<div class="body">
-
-<!-- 직원정보 -->
-<div class="tc on" id="t-emp">
-  <div class="sg">
-    <div class="sb blue"><div class="l">총 직원수</div><div class="v" id="empCnt">0</div></div>
-    <div class="sb orange"><div class="l">현장 인원</div><div class="v" id="empField">0</div></div>
-    <div class="sb purple"><div class="l">사무 인원</div><div class="v" id="empOffice">0</div></div>
-    <div class="sb green"><div class="l">금일 출근</div><div class="v" id="empToday">0</div></div>
-  </div>
-  <div class="fbar">
-    <div class="fbar-row">
-      <input type="text" id="empSch" placeholder="이름으로 검색" oninput="rEmp()" class="fbar-grow">
-      <select id="empFilter" onchange="rEmp()">
-        <option value="">전체</option><option value="현장">현장</option><option value="사무">사무</option>
-      </select>
-      <button class="btn btn-p btn-sm" onclick="openEmpM()">+ 직원등록</button>
-    </div>
-  </div>
-  <div id="empList"></div>
-</div>
-
-<!-- 출퇴근 -->
-<div class="tc" id="t-att">
-  <div class="sg">
-    <div class="sb green"><div class="l">금일 출근</div><div class="v" id="attIn">0</div></div>
-    <div class="sb blue"><div class="l">금일 퇴근</div><div class="v" id="attOut">0</div></div>
-    <div class="sb red"><div class="l">미출근</div><div class="v" id="attAbsent">0</div></div>
-    <div class="sb orange"><div class="l">초과근무</div><div class="v" id="attOT">0</div></div>
-  </div>
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">날짜</span>
-      <input type="date" id="attDt" onchange="rAtt()">
-      <button class="btn btn-o btn-sm" onclick="$('attDt').value=td();rAtt()">오늘</button>
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="expAttCSV()">엑셀</button>
-    </div>
-  </div>
-  <table class="dt" id="attTbl">
-    <thead><tr><th>이름</th><th>부서</th><th>담당공정</th><th>출근</th><th>퇴근</th><th>근무시간</th><th>초과</th><th>상태</th><th>관리</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<!-- 급여 -->
-<div class="tc" id="t-pay">
-  <div class="sg">
-    <div class="sb blue"><div class="l">총 급여</div><div class="v" id="payTotal">0원</div></div>
-    <div class="sb purple"><div class="l">기본급 합</div><div class="v" id="payBase">0원</div></div>
-    <div class="sb green"><div class="l">수당 합</div><div class="v" id="payAllow">0원</div></div>
-    <div class="sb red"><div class="l">공제 합</div><div class="v" id="payDeduct">0원</div></div>
-  </div>
-  <div class="fbar">
-    <div class="fbar-row">
-      <input type="month" id="payMo2" onchange="rPay()">
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="printPayAll()">전체 명세서</button>
-      <button class="btn btn-o btn-sm" onclick="expPayCSV()">엑셀</button>
-      <button class="btn btn-p btn-sm" onclick="genPay()">급여 자동계산</button>
-    </div>
-  </div>
-  <table class="dt" id="payTbl">
-    <thead><tr><th>이름</th><th>부서</th><th>근무일</th><th>기본급</th><th>야근수당</th><th>기타수당</th><th>공제</th><th>실수령</th><th>관리</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<!-- 연차/휴가 -->
-<div class="tc" id="t-leave">
-  <div class="sg">
-    <div class="sb blue"><div class="l">금월 사용</div><div class="v" id="lvUsed">0</div></div>
-    <div class="sb orange"><div class="l">승인대기</div><div class="v" id="lvPend">0</div></div>
-    <div class="sb green"><div class="l">금년 총 사용</div><div class="v" id="lvYear">0</div></div>
-  </div>
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">연도</span>
-      <select id="lvYear2" onchange="rLeave()"></select>
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-p btn-sm" onclick="openLvM()">+ 휴가등록</button>
-    </div>
-  </div>
-  <table class="dt" id="lvTbl">
-    <thead><tr><th>이름</th><th>구분</th><th>시작일</th><th>종료일</th><th>일수</th><th>사유</th><th>상태</th><th>관리</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <div class="card" style="margin-top:12px">
-    <div class="card-t">직원별 연차 현황</div>
-    <table class="dt" id="lvSumTbl">
-      <thead><tr><th>이름</th><th>부서</th><th>총 연차</th><th>사용</th><th>잔여</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-</div></div>
-
-<!-- 직원 등록 모달 -->
-<div class="mo-bg hidden" id="empMo" onclick="event.target===this&&cMo('empMo')"><div class="mo">
-  <div class="mo-t" id="empMoT">직원 등록</div><input type="hidden" id="eId">
-  <div class="fr"><div class="fg"><label>이름 *</label><input type="text" id="eNm"></div><div class="fg"><label>부서 *</label><select id="eDept"><option value="현장">현장</option><option value="사무">사무</option></select></div></div>
-  <div class="fr"><div class="fg"><label>직급</label><select id="eRank"><option value="사원">사원</option><option value="주임">주임</option><option value="대리">대리</option><option value="과장">과장</option><option value="부장">부장</option><option value="이사">이사</option><option value="대표">대표</option></select></div><div class="fg"><label>담당공정</label><select id="eProc"><option value="">없음</option><option value="코팅">코팅</option><option value="합지">합지</option><option value="톰슨">톰슨</option><option value="접착">접착</option><option value="인쇄">인쇄</option></select></div></div>
-  <div class="fr"><div class="fg"><label>입사일</label><input type="date" id="eJoin"></div><div class="fg"><label>생년월일</label><input type="date" id="eBirth"></div></div>
-  <div class="fr"><div class="fg"><label>연락처</label><input type="tel" id="eTel" placeholder="010-0000-0000"></div><div class="fg"><label>긴급연락처</label><input type="tel" id="eEmg"></div></div>
-  <div class="fr"><div class="fg"><label>기본급 (월)</label><input type="number" id="eBase" placeholder="0"></div><div class="fg"><label>시급 (야근용)</label><input type="number" id="eHourly" placeholder="0"></div></div>
-  <div class="fr"><div class="fg"><label>총 연차</label><input type="number" id="eAnnual" value="15"></div><div class="fg"><label>상태</label><select id="eSt"><option value="재직">재직</option><option value="퇴직">퇴직</option><option value="휴직">휴직</option></select></div></div>
-  <div class="fg"><label>비고</label><textarea id="eNote" rows="2"></textarea></div>
-  <div class="mo-f"><button class="btn btn-g" onclick="cMo('empMo')">취소</button><button class="btn btn-p" onclick="saveEmp()">저장</button></div>
-</div></div>
-
-<!-- 출퇴근 수정 모달 -->
-<div class="mo-bg hidden" id="attMo" onclick="event.target===this&&cMo('attMo')"><div class="mo">
-  <div class="mo-t">출퇴근 수정</div><input type="hidden" id="attEmpId">
-  <div class="fg"><label>이름</label><div id="attNm" class="u-fw700-15"></div></div>
-  <div class="fr"><div class="fg"><label>출근시간</label><input type="time" id="attInT"></div><div class="fg"><label>퇴근시간</label><input type="time" id="attOutT"></div></div>
-  <div class="fg"><label>비고</label><input type="text" id="attNote"></div>
-  <div class="mo-f"><button class="btn btn-g" onclick="cMo('attMo')">취소</button><button class="btn btn-p" onclick="saveAtt()">저장</button></div>
-</div></div>
-
-<!-- 급여 수정 모달 -->
-<div class="mo-bg hidden" id="payEditMo" onclick="event.target===this&&cMo('payEditMo')"><div class="mo">
-  <div class="mo-t">급여 수정</div><input type="hidden" id="peId">
-  <div class="fg"><label>이름</label><div id="peNm" class="u-fw700-15"></div></div>
-  <div class="fr"><div class="fg"><label>근무일수</label><input type="number" id="peDays"></div><div class="fg"><label>기본급</label><input type="number" id="peBase" oninput="calcPe()"></div></div>
-  <div class="fr"><div class="fg"><label>야근수당</label><input type="number" id="peOT" oninput="calcPe()"></div><div class="fg"><label>기타수당</label><input type="number" id="peEtc" oninput="calcPe()"></div></div>
-  <div class="fr"><div class="fg"><label>공제 (4대보험+세금 자동)</label><input type="number" id="peDed" readonly style="background:var(--bg2)"></div><div class="fg"><label>실수령</label><input type="text" id="peNet" readonly style="background:var(--bg2);font-weight:800;font-size:16px"></div></div>
-  <div id="peDedInfo"></div>
-  <div class="mo-f"><button class="btn btn-g" onclick="cMo('payEditMo')">취소</button><button class="btn btn-o" onclick="printPayOne()">명세서</button><button class="btn btn-p" onclick="savePayEdit()">저장</button></div>
-</div></div>
-
-<!-- 경비 모달 -->
-<div class="mo-bg hidden" id="expMo" onclick="event.target===this&&cMo('expMo')"><div class="mo">
-  <div class="mo-t">경비 등록</div><input type="hidden" id="expId">
-  <div class="fr"><div class="fg"><label>날짜 *</label><input type="date" id="expDt"></div><div class="fg"><label>항목 *</label><select id="expCat"><option>임대료</option><option>수도광열비</option><option>통신비</option><option>소모품비</option><option>차량유지비</option><option>접대비</option><option>보험료</option><option>감가상각비</option><option>수선비</option><option>운반비</option><option>세금공과</option><option>기타</option></select></div></div>
-  <div class="fr"><div class="fg"><label>금액 *</label><input type="number" id="expAmt" placeholder="원"></div><div class="fg"><label>비고</label><input type="text" id="expNote"></div></div>
-  <div class="mo-f"><button class="btn btn-g" onclick="cMo('expMo')">취소</button><button class="btn btn-p" onclick="saveExp()">저장</button></div>
-</div></div>
-
-<!-- 휴가 모달 -->
-<div class="mo-bg hidden" id="lvMo" onclick="event.target===this&&cMo('lvMo')"><div class="mo">
-  <div class="mo-t" id="lvMoT">휴가 등록</div><input type="hidden" id="lvId">
-  <div class="fr"><div class="fg"><label>직원 *</label><select id="lvEmp"></select></div><div class="fg"><label>구분</label><select id="lvType"><option>연차</option><option>반차(오전)</option><option>반차(오후)</option><option>병가</option><option>경조사</option><option>무급</option></select></div></div>
-  <div class="fr"><div class="fg"><label>시작일 *</label><input type="date" id="lvFrom"></div><div class="fg"><label>종료일 *</label><input type="date" id="lvTo"></div></div>
-  <div class="fg"><label>사유</label><input type="text" id="lvReason"></div>
-  <div class="fr"><div class="fg"><label>상태</label><select id="lvSt"><option value="승인대기">승인대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div></div>
-  <div class="mo-f"><button class="btn btn-g" onclick="cMo('lvMo')">취소</button><button class="btn btn-p" onclick="saveLv()">저장</button></div>
-</div></div>
-
-</div>
-<div class="module-page" id="pg-hr-att"></div>
-<div class="module-page" id="pg-hr-pay"></div>
-<div class="module-page" id="pg-hr-leave"></div>
-<div class="module-page" id="pg-biz-trend"><div class="app">
-<div class="hd">
-  <span class="hd-logo">팩플로우</span><span class="hd-title">경영분석</span>
-  <div class="hd-tabs" role="tablist">
-    <button class="hd-tab on" data-tab="trend" role="tab" aria-selected="true">매출/매입 추이</button>
-    <button class="hd-tab" data-tab="rank" role="tab" aria-selected="false">거래처 순위</button>
-    <button class="hd-tab" data-tab="cost" role="tab" aria-selected="false">원가/이익률</button>
-    <button class="hd-tab" data-tab="productivity" role="tab" aria-selected="false">생산성 분석</button>
-  </div>
-  <div class="hd-right"><a href="#" onclick="goMod('mes-dash');return false">홈</a></div>
-</div>
-<div class="body">
-
-<!-- 매출/매입 추이 -->
-<div class="tc on" id="t-trend">
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">연도</span>
-      <select id="trY" onchange="renderTrend()"></select>
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="printSection('trendPrint')">인쇄</button>
-    </div>
-  </div>
-  <div class="sg" id="trendStats"></div>
-  <div class="card" id="trendPrint">
-    <div class="card-t">월별 매출/매입 추이</div>
-    <div id="trendChart"></div>
-  </div>
-  <div class="card">
-    <div class="card-t">월별 상세 데이터</div>
-    <table class="dt" id="trendTable">
-      <thead><tr><th>월</th><th>매출</th><th>매입</th><th>차이(매출-매입)</th><th>매출 전월비</th><th>매입 전월비</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div class="card">
-    <div class="card-t">YoY 월별 비교</div>
-    <div id="monthlyArea"></div>
-  </div>
-  <div class="card">
-    <div class="card-t">거래처별 매출 추이 TOP 5</div>
-    <div id="salesTrendArea"></div>
-  </div>
-</div>
-
-<!-- 거래처 순위 -->
-<div class="tc" id="t-rank">
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">기간</span>
-      <select id="rankPeriod" onchange="renderRank()">
-        <option value="month">금월</option><option value="quarter">금분기</option><option value="year">금년</option><option value="all">전체</option>
-      </select>
-      <span class="fbar-label">기준</span>
-      <select id="rankType" onchange="renderRank()">
-        <option value="sales">매출 기준</option><option value="count">건수 기준</option>
-      </select>
-    </div>
-  </div>
-  <div id="rankPodium"></div>
-  <div class="card">
-    <div class="card-t" id="rankTitle">거래처별 매출 순위</div>
-    <div id="rankChart"></div>
-  </div>
-  <div class="card">
-    <div class="card-t">상세 데이터</div>
-    <table class="dt" id="rankTable">
-      <thead><tr><th>순위</th><th>거래처</th><th>매출액</th><th>건수</th><th>평균단가</th><th>점유율</th><th>미수금</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- 원가/이익률 -->
-<div class="tc" id="t-cost">
-  <div class="fbar">
-    <div class="fbar-row">
-      <input type="text" id="costSearch" placeholder="제품명으로 검색" oninput="renderCost()" class="fbar-grow">
-    </div>
-  </div>
-  <div class="sg" id="costStats"></div>
-  <div class="card">
-    <div class="card-t">제품별 원가 · 이익률 분석</div>
-    <table class="dt" id="costTable">
-      <thead><tr><th>제품명</th><th>거래처</th><th>평균 매출단가</th><th>자재 원가</th><th>단위 이익</th><th>이익률</th><th>매출건수</th><th>총 매출</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- 생산성 분석 -->
-<div class="tc" id="t-productivity">
-  <div class="fbar">
-    <div class="fbar-row">
-      <span class="fbar-label">월</span>
-      <input type="month" id="prodMonth" onchange="renderProductivity()">
-      <div class="fbar-spacer"></div>
-      <button class="btn btn-o btn-sm" onclick="printSection('prodPrint')">인쇄</button>
-    </div>
-  </div>
-  <div class="sg" id="prodStats"></div>
-  <div class="card" id="prodPrint">
-    <div class="card-t">공정별 생산성 비교</div>
-    <div id="prodChart"></div>
-    <table class="dt" id="prodTable" style="margin-top:12px">
-      <thead><tr><th>공정</th><th>처리건수</th><th>총 수량</th><th>총 작업시간</th><th>건당 평균</th><th>시간당 생산량</th><th>효율</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-</div></div>
-</div>
-<div class="module-page" id="pg-biz-rank"></div>
-<div class="module-page" id="pg-biz-cost"></div>
 <div class="module-page" id="pg-qc-inspect"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
@@ -1089,7 +821,6 @@
 
 </div>
 <div class="module-page" id="pg-qc-equip"></div>
-<div class="module-page" id="pg-qc-approval"></div>
 </div></div></div>
 
 <!-- MES -->
@@ -2215,14 +1946,6 @@
 <button class="btn btn-sm btn-o" onclick="var n=prompt('거래처명:');if(!n)return;var a=prompt('출금액:');if(!a)return;addPayment('expense',n,+a)">+ 출금</button></div></div>
 <div id="cashflowArea"></div></div>
 </div>
-<!-- 거래처 계약 -->
-<div id="pg-biz-contract" class="module-page">
-<div class="card"><div id="contractArea"></div></div>
-</div>
-<!-- CEO 대시보드 -->
-<div id="pg-biz-ceo" class="module-page">
-<div class="card"><div class="card-t">경영 대시보드</div><div id="ceoArea"></div></div>
-</div>
 <!-- 재고실사 모달 -->
 <div id="auditMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('auditMo')"><div class="mo" style="max-width:700px"></div></div>
 
@@ -2231,302 +1954,12 @@
 <div id="tplListMo" class="mo-ov hidden"><div class="mo" style="max-width:800px"><div class="mh"><h3>📋 반복 주문 템플릿</h3><button class="mc" onclick="cMo('tplListMo')">&times;</button></div><div class="mo-b"><div id="tplListBody"></div></div></div></div>
 <!-- 템플릿 수정 모달 -->
 <div id="tplEditMo" class="mo-ov hidden"><div class="mo" style="max-width:420px"><div class="mh"><h3>템플릿 수정</h3><button class="mc" onclick="cMo('tplEditMo')">&times;</button></div><div class="mo-b"><input type="hidden" id="tplEditId"><div class="fg"><label>거래처/제품</label><div id="tplEditInfo" style="font-weight:700;padding:6px 0"></div></div><div class="fg"><label>템플릿명</label><input id="tplEditName"></div><div class="fg"><label>반복주기</label><select id="tplEditCycle"><option value="weekly">주간</option><option value="biweekly">격주</option><option value="monthly">월간</option><option value="quarterly">분기</option></select></div><div class="fg"><label>기본수량</label><input type="number" id="tplEditFQ"></div><div class="fg"><label>기본단가</label><input type="number" id="tplEditPrice"></div><div class="fg"><label>비고</label><textarea id="tplEditNote" rows="2"></textarea></div><div style="text-align:right;margin-top:12px"><button class="btn btn-p" onclick="saveTplEdit()">저장</button></div></div></div></div>
-<!-- 외상마감 -->
-<div id="pg-acc-closing" class="module-page"><div class="card"><div id="closingArea"></div></div></div>
-
-<!-- 부가세 신고 자료 -->
-<div id="pg-acc-vat" class="module-page">
-  <div class="card" style="padding:16px">
-    <div class="u-flex-between" style="margin-bottom:14px">
-      <div class="card-t" style="margin:0">📄 부가세 신고 자료</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select id="vatPeriod" onchange="renderVatReport()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="Q1">1분기 (1-3월)</option>
-          <option value="Q2">2분기 (4-6월)</option>
-          <option value="Q3">3분기 (7-9월)</option>
-          <option value="Q4">4분기 (10-12월)</option>
-          <option value="H1">상반기 (1-6월)</option>
-          <option value="H2">하반기 (7-12월)</option>
-          <option value="Y">연간</option>
-        </select>
-        <input type="number" id="vatYear" value="2026" min="2020" max="2030" onchange="renderVatReport()" style="padding:6px 8px;width:90px;border:1px solid var(--bdr);border-radius:6px">
-        <select id="vatCompany" onchange="renderVatReport()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="">전체 회사</option>
-          <option value="A">이노패키지 (개인)</option>
-          <option value="B">주식회사 이노패키지</option>
-        </select>
-        <button class="btn btn-p btn-sm" onclick="renderVatReport()">조회</button>
-        <button class="btn btn-o btn-sm" onclick="exportVatCSV()">CSV</button>
-        <button class="btn btn-s btn-sm" onclick="printVatReport()">인쇄</button>
-      </div>
-    </div>
-    <div id="vatReportArea"><div style="padding:40px;text-align:center;color:var(--txt3)">상단 조건 선택 후 [조회] 클릭</div></div>
-  </div>
-</div>
-
-<!-- 어음 관리 -->
-<div id="pg-acc-bill" class="module-page">
-  <div class="card" style="padding:16px">
-    <div class="u-flex-between" style="margin-bottom:14px">
-      <div class="card-t" style="margin:0">💳 어음 관리</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="billFilter" onchange="renderBills()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="all">전체</option>
-          <option value="pending">미만기 (보유중)</option>
-          <option value="due7">7일 이내 만기</option>
-          <option value="overdue">만기 경과</option>
-          <option value="settled">결제완료</option>
-          <option value="dishonored">부도</option>
-        </select>
-        <select id="billType" onchange="renderBills()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="">매출/매입 전체</option>
-          <option value="R">받은 어음 (매출)</option>
-          <option value="P">발행 어음 (매입)</option>
-        </select>
-        <button class="btn btn-p btn-sm" onclick="openBillM()">+ 어음 등록</button>
-      </div>
-    </div>
-    <div id="billSummary" class="sg" style="margin-bottom:12px"></div>
-    <div id="billArea"></div>
-  </div>
-</div>
-
-<!-- 통장 관리 -->
-<div id="pg-acc-bank" class="module-page">
-  <div class="card" style="padding:16px">
-    <div class="u-flex-between" style="margin-bottom:14px">
-      <div class="card-t" style="margin:0">🏦 통장 관리</div>
-      <div style="display:flex;gap:8px">
-        <select id="bankAccSel" onchange="rBankTxn()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="">-- 계좌 선택 --</option>
-        </select>
-        <button class="btn btn-o btn-sm" onclick="openBankAccM()">+ 계좌 등록</button>
-        <button class="btn btn-p btn-sm" onclick="openBankTxnM()">+ 거래 등록</button>
-      </div>
-    </div>
-    <div id="bankSummary" class="sg" style="margin-bottom:12px"></div>
-    <div id="bankTxnArea"></div>
-  </div>
-</div>
-
-<!-- 계좌 등록 모달 -->
-<div class="mo-bg hidden" id="bankAccMo" onclick="event.target===this&&cMo('bankAccMo')"><div class="mo" style="max-width:500px">
-  <div class="mo-t" id="bankAccMoT">계좌 등록</div><input type="hidden" id="bankAccId">
-  <div class="fr">
-    <div class="fg"><label>은행 *</label><select id="bankAccBank">
-      <option>국민은행</option><option>신한은행</option><option>우리은행</option><option>하나은행</option>
-      <option>IBK기업은행</option><option>NH농협은행</option><option>카카오뱅크</option><option>토스뱅크</option>
-      <option>SC제일은행</option><option>수협은행</option><option>대구은행</option><option>부산은행</option>
-      <option>광주은행</option><option>전북은행</option><option>제주은행</option><option>경남은행</option>
-      <option>새마을금고</option><option>신협</option><option>우체국</option><option>기타</option>
-    </select></div>
-    <div class="fg"><label>계좌번호 *</label><input type="text" id="bankAccNo" placeholder="000-0000-000000"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>계좌별칭</label><input type="text" id="bankAccNm" placeholder="운영계좌 / 급여계좌 등"></div>
-    <div class="fg"><label>예금주</label><input type="text" id="bankAccHolder"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>용도</label><select id="bankAccPurpose">
-      <option value="main">운영</option>
-      <option value="vat">부가세</option>
-      <option value="salary">급여</option>
-      <option value="saving">적립/예비</option>
-      <option value="other">기타</option>
-    </select></div>
-    <div class="fg"><label>회사 귀속</label><select id="bankAccCompany">
-      <option value="">공용</option>
-      <option value="A">이노패키지 (개인)</option>
-      <option value="B">주식회사 이노패키지</option>
-    </select></div>
-  </div>
-  <div class="fg"><label>시작 잔액</label><input type="number" id="bankAccBalance" value="0"></div>
-  <div class="fg"><label>비고</label><textarea id="bankAccNote" rows="2"></textarea></div>
-  <div class="mo-f">
-    <button class="btn btn-g" onclick="cMo('bankAccMo')">취소</button>
-    <button class="btn btn-d" id="bankAccDelBtn" onclick="deleteBankAcc()" style="display:none">삭제</button>
-    <button class="btn btn-p" onclick="saveBankAcc()">저장</button>
-  </div>
-</div></div>
-
-<!-- 통장 거래 등록 모달 -->
-<div class="mo-bg hidden" id="bankTxnMo" onclick="event.target===this&&cMo('bankTxnMo')"><div class="mo">
-  <div class="mo-t" id="bankTxnMoT">거래 등록</div><input type="hidden" id="bankTxnId">
-  <div class="fr">
-    <div class="fg"><label>계좌 *</label><select id="bankTxnAcc"></select></div>
-    <div class="fg"><label>구분 *</label><select id="bankTxnKind">
-      <option value="in">입금</option>
-      <option value="out">출금</option>
-    </select></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>일자 *</label><input type="date" id="bankTxnDt"></div>
-    <div class="fg"><label>금액 *</label><input type="number" id="bankTxnAmt"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>거래처/상대</label><input type="text" id="bankTxnCli" placeholder="상대 거래처 또는 명세"></div>
-    <div class="fg"><label>적요/내용</label><input type="text" id="bankTxnMemo"></div>
-  </div>
-  <div class="fg"><label>비고</label><textarea id="bankTxnNote" rows="2"></textarea></div>
-  <div class="mo-f">
-    <button class="btn btn-g" onclick="cMo('bankTxnMo')">취소</button>
-    <button class="btn btn-d" id="bankTxnDelBtn" onclick="deleteBankTxn()" style="display:none">삭제</button>
-    <button class="btn btn-p" onclick="saveBankTxn()">저장</button>
-  </div>
-</div></div>
-
-<!-- 지출결의서 -->
-<div id="pg-acc-expense" class="module-page">
-  <div class="card" style="padding:16px">
-    <div class="u-flex-between" style="margin-bottom:14px">
-      <div class="card-t" style="margin:0">📝 지출결의서</div>
-      <div style="display:flex;gap:8px">
-        <select id="expStatus" onchange="rExpense()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-          <option value="">전체</option>
-          <option value="draft">작성중</option>
-          <option value="pending">승인대기</option>
-          <option value="approved">승인</option>
-          <option value="rejected">반려</option>
-          <option value="paid">지급완료</option>
-        </select>
-        <input type="month" id="expMonth" onchange="rExpense()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px">
-        <button class="btn btn-p btn-sm" onclick="openExpM()">+ 결의서 작성</button>
-      </div>
-    </div>
-    <div id="expSummary" class="sg" style="margin-bottom:12px"></div>
-    <div id="expArea"></div>
-  </div>
-</div>
-
-<!-- 지출결의서 모달 -->
-<div class="mo-bg hidden" id="expMo" onclick="event.target===this&&cMo('expMo')"><div class="mo" style="max-width:680px">
-  <div class="mo-t" id="expMoT">지출결의서 작성</div><input type="hidden" id="expId">
-  <div class="fr">
-    <div class="fg"><label>지출일자 *</label><input type="date" id="expDt"></div>
-    <div class="fg"><label>작성자</label><input type="text" id="expWriter" readonly style="background:#F3F4F6"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>계정과목 *</label><select id="expCategory">
-      <option value="접대비">접대비</option>
-      <option value="회의비">회의비</option>
-      <option value="복리후생비">복리후생비</option>
-      <option value="소모품비">소모품비</option>
-      <option value="차량유지비">차량유지비</option>
-      <option value="통신비">통신비</option>
-      <option value="운반비">운반비</option>
-      <option value="수도광열비">수도광열비</option>
-      <option value="임차료">임차료</option>
-      <option value="도서인쇄비">도서인쇄비</option>
-      <option value="여비교통비">여비교통비</option>
-      <option value="수선비">수선비</option>
-      <option value="외주용역비">외주용역비</option>
-      <option value="기타">기타</option>
-    </select></div>
-    <div class="fg"><label>지급처</label><input type="text" id="expVendor"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>금액 *</label><input type="number" id="expAmt" oninput="calcExpWithholding()"></div>
-    <div class="fg"><label>결제수단</label><select id="expPayment">
-      <option value="cash">현금</option>
-      <option value="card">카드</option>
-      <option value="bank">계좌이체</option>
-      <option value="petty">소액현금</option>
-    </select></div>
-  </div>
-
-  <!-- 원천세 섹션 -->
-  <div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin:10px 0;background:#FFFBEB">
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:6px">
-      <input type="checkbox" id="expWithhold" onchange="calcExpWithholding()"> 원천징수 적용
-    </label>
-    <div class="fr" style="font-size:12px">
-      <div class="fg"><label>세율 (%)</label><select id="expWhRate" onchange="calcExpWithholding()">
-        <option value="3.3">사업소득 3.3%</option>
-        <option value="8.8">기타소득 8.8%</option>
-        <option value="0">직접입력</option>
-      </select></div>
-      <div class="fg"><label>소득세</label><input type="number" id="expWhIncomeTax" readonly style="background:#F3F4F6"></div>
-      <div class="fg"><label>주민세</label><input type="number" id="expWhResTax" readonly style="background:#F3F4F6"></div>
-      <div class="fg"><label>실지급액</label><input type="text" id="expNetAmt" readonly style="background:#F3F4F6;font-weight:700"></div>
-    </div>
-  </div>
-
-  <div class="fg"><label>사용내역 / 적요</label><textarea id="expDesc" rows="3" placeholder="예: 거래처 대한제과 접대 저녁식사"></textarea></div>
-  <div class="fr">
-    <div class="fg"><label>증빙</label><select id="expEvidence">
-      <option value="">-- 없음 --</option>
-      <option value="card">신용카드 매출전표</option>
-      <option value="cash">현금영수증</option>
-      <option value="tax">세금계산서</option>
-      <option value="simple">간이영수증</option>
-      <option value="internal">내부증빙</option>
-    </select></div>
-    <div class="fg"><label>상태</label><select id="expStatusSel">
-      <option value="draft">작성중</option>
-      <option value="pending">승인대기</option>
-      <option value="approved">승인</option>
-      <option value="rejected">반려</option>
-      <option value="paid">지급완료</option>
-    </select></div>
-  </div>
-  <div class="mo-f">
-    <button class="btn btn-g" onclick="cMo('expMo')">취소</button>
-    <button class="btn btn-d" id="expDelBtn" onclick="deleteExpense()" style="display:none">삭제</button>
-    <button class="btn btn-o" onclick="printExpense()">인쇄</button>
-    <button class="btn btn-p" onclick="saveExpense()">저장</button>
-  </div>
-</div></div>
-
-<!-- 어음 등록 모달 -->
-<div class="mo-bg hidden" id="billMo" onclick="event.target===this&&cMo('billMo')"><div class="mo">
-  <div class="mo-t" id="billMoT">어음 등록</div><input type="hidden" id="billId">
-  <div class="fr">
-    <div class="fg"><label>구분 *</label><select id="billKind"><option value="R">받은 어음 (매출)</option><option value="P">발행 어음 (매입)</option></select></div>
-    <div class="fg"><label>어음번호</label><input type="text" id="billNo" placeholder="어음번호"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>거래처 *</label><input type="text" id="billCli" placeholder="거래처명"></div>
-    <div class="fg"><label>금액 *</label><input type="number" id="billAmt"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>발행일 *</label><input type="date" id="billIssueDt"></div>
-    <div class="fg"><label>만기일 *</label><input type="date" id="billDueDt"></div>
-  </div>
-  <div class="fr">
-    <div class="fg"><label>은행/지급처</label><input type="text" id="billBank" placeholder="국민은행 등"></div>
-    <div class="fg"><label>상태</label><select id="billStatus">
-      <option value="holding">보유중</option>
-      <option value="settled">결제완료</option>
-      <option value="dishonored">부도</option>
-      <option value="discounted">할인</option>
-      <option value="endorsed">배서양도</option>
-    </select></div>
-  </div>
-  <div class="fg"><label>비고</label><textarea id="billNote" rows="2"></textarea></div>
-  <div class="mo-f">
-    <button class="btn btn-g" onclick="cMo('billMo')">취소</button>
-    <button class="btn btn-d" id="billDelBtn" onclick="deleteBill()" style="display:none">삭제</button>
-    <button class="btn btn-p" onclick="saveBill()">저장</button>
-  </div>
-</div></div>
 <!-- 입출고이력 -->
 <div id="pg-mat-lot" class="module-page"><div class="card"><div id="lotArea"></div></div></div>
 <!-- ABC분석 -->
 <div id="pg-mat-abc" class="module-page"><div class="card"><div id="abcArea"></div></div></div>
 <!-- 리드타임 -->
 <div id="pg-mat-lead" class="module-page"><div class="card"><div id="leadArea"></div></div></div>
-<!-- 출퇴근통계 -->
-<div id="pg-hr-attstats" class="module-page"><div class="card"><div id="attStatsArea"></div></div></div>
-<!-- 인사카드 -->
-<div id="pg-hr-card" class="module-page"><div class="card"><div class="card-t" style="display:flex;justify-content:space-between;align-items:center">인사카드
-<select id="empCardSel" onchange="var v=this.value;if(v)$('empCardArea').innerHTML=renderEmpCard(v)" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:13px"><option value="">직원 선택</option></select></div>
-<div id="empCardArea"></div></div></div>
-<!-- 조직도 -->
-<div id="pg-hr-org" class="module-page"><div class="card"><div class="card-t" style="margin-bottom:12px">조직도</div><div id="orgArea"></div></div></div>
-<!-- 급여이력 -->
-<div id="pg-hr-payhist" class="module-page"><div class="card"><div id="payHistArea"></div></div></div>
-
-
 <!-- 작업 스케줄 보드 -->
 <div id="pg-mes-sched" class="module-page">
 <div class="card" style="padding:16px">
@@ -2833,65 +2266,6 @@
 <div id="pg-acc-aging" class="module-page"><div class="card" style="padding:16px">
 <div class="card-t" style="margin-bottom:12px">매출 채권 Aging 분석</div>
 <div id="agingArea"></div>
-</div></div>
-
-<!-- ===== 교대스케줄 ===== -->
-<div id="pg-hr-shift" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">교대/근무 스케줄</div>
-<div class="fbar"><div class="fbar-row">
-<input type="week" id="shiftWeek" onchange="rShift()">
-<select id="shiftType" onchange="rShift()"><option value="2">2교대</option><option value="3">3교대</option></select>
-<div class="fbar-spacer"></div>
-<button class="btn btn-o btn-sm" onclick="autoGenShift()">자동생성</button>
-</div></div>
-<div id="shiftArea"></div>
-</div></div>
-
-<!-- ===== 4대보험 ===== -->
-<div id="pg-hr-insurance" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">4대보험 관리</div>
-<div class="fbar"><div class="fbar-row">
-<input type="month" id="insMonth" onchange="rInsurance()">
-</div></div>
-<div id="insuranceArea"></div>
-</div></div>
-
-<!-- ===== 실시간KPI ===== -->
-<div id="pg-biz-kpi" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">실시간 KPI 대시보드</div>
-<div id="kpiArea"></div>
-</div></div>
-
-<!-- ===== 수익성분석 ===== -->
-<div id="pg-biz-profit" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">수익성 분석</div>
-<div class="fbar"><div class="fbar-row">
-<input type="month" id="profitMonth" onchange="rProfit()">
-<select id="profitView" onchange="rProfit()"><option value="client">거래처별</option><option value="product">제품별</option></select>
-</div></div>
-<div id="profitArea"></div>
-</div></div>
-
-<!-- ===== 납기준수율 ===== -->
-<div id="pg-biz-ontime" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">납기 준수율</div>
-<div class="fbar"><div class="fbar-row">
-<input type="month" id="ontimeMonth" onchange="rOntime()">
-</div></div>
-<div id="ontimeArea"></div>
-</div></div>
-
-<!-- ===== 월간보고서 ===== -->
-<div id="pg-biz-monthly" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">월간 경영보고서</div>
-<div class="fbar"><div class="fbar-row">
-<input type="month" id="monthlyRptMonth" onchange="rMonthlyReport()">
-<button class="btn btn-p btn-sm" onclick="rMonthlyReport()">조회</button>
-<button class="btn btn-o btn-sm" onclick="runMonthlyClosing()">월마감 생성</button>
-<button class="btn btn-o btn-sm" onclick="if(typeof recalcClientBalances==='function')recalcClientBalances()">거래처 잔액정산</button>
-</div></div>
-<div id="monthlyClosingArea" style="margin-bottom:16px"></div>
-<div id="monthlyRptArea"></div>
 </div></div>
 
 <!-- ===== 클레임 ===== -->

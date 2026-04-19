@@ -498,11 +498,79 @@ var DB={
   getWOMonths:function(){
     var keys=DB._getWOKeys();
     return keys.map(function(k){return k.replace('ino_wo_','')}).sort().reverse();
+  },
+  getConflict:function(k){
+    var storeKey=k&&k.indexOf('ino_')===0?k:'ino_'+k;
+    return _conflicts[storeKey]||null;
+  },
+  clearConflict:function(k){
+    var storeKey=k&&k.indexOf('ino_')===0?k:'ino_'+k;
+    delete _conflicts[storeKey];
+  },
+  retryConflict:function(k,useLocal){
+    var storeKey=k&&k.indexOf('ino_')===0?k:'ino_'+k;
+    var conflict=_conflicts[storeKey];
+    if(!conflict)return false;
+    if(useLocal){
+      _cache[storeKey]=conflict.localValue;
+      localStorage.setItem(storeKey,conflict.localValue);
+      _meta[storeKey]=conflict.updatedAt||null;
+      DB._syncToServer(storeKey,conflict.localValue);
+    }
+    delete _conflicts[storeKey];
+    return true;
   }
 }
 var gid=()=>Date.now().toString(36)+Math.random().toString(36).substr(2,5);
 const td=()=>new Date().toISOString().slice(0,10);
 const nw=()=>new Date().toISOString().slice(0,16).replace('T',' ');
+function _conflictLabel(storeKey){
+  var m={
+    'ino_cli':'거래처',
+    'ino_prod':'품목',
+    'ino_orders':'수주',
+    'ino_quotes':'견적',
+    'ino_wo':'작업지시',
+    'ino_shipLog':'출고',
+    'ino_stock':'재고',
+    'ino_income':'입고',
+    'ino_purchase':'매입',
+    'ino_sales':'매출',
+    'ino_taxInvoice':'세금계산서',
+    'ino_etax':'전자세금계산서'
+  };
+  return m[storeKey]||storeKey.replace(/^ino_/,'');
+}
+function _conflictPretty(value){
+  if(value===null||value===undefined||value==='')return '(비어 있음)';
+  try{return JSON.stringify(JSON.parse(value),null,2)}catch(e){return String(value)}
+}
+function openConflictMo(storeKey){
+  var conflict=DB.getConflict(storeKey);
+  if(!conflict)return;
+  window._activeConflictKey=storeKey;
+  $('conflictKeyLabel').textContent=_conflictLabel(storeKey);
+  $('conflictUpdatedAt').textContent=conflict.updatedAt||'-';
+  $('conflictServerValue').textContent=_conflictPretty(conflict.serverValue);
+  $('conflictLocalValue').textContent=_conflictPretty(conflict.localValue);
+  oMo('conflictMo');
+}
+function keepServerConflict(){
+  if(!window._activeConflictKey)return;
+  DB.clearConflict(window._activeConflictKey);
+  cMo('conflictMo');
+  toast('서버 최신값을 유지했습니다','ok');
+}
+function retryConflictSave(){
+  if(!window._activeConflictKey)return;
+  var key=window._activeConflictKey;
+  DB.retryConflict(key,true);
+  cMo('conflictMo');
+  toast('내 변경을 최신 서버 기준으로 다시 저장했습니다','ok');
+}
+window.addEventListener('packflow-db-conflict',function(e){
+  if(e&&e.detail&&e.detail.key)openConflictMo(e.detail.key);
+});
 
 /* ===== SysCode: 공통코드 체계 ===== */
 var SysCode={
@@ -979,7 +1047,7 @@ function _onWindowResize(){
     var mod=active.getAttribute('data-mod');
     if(!mod)return;
     // 캔버스/SVG 차트가 있는 모듈만 재렌더
-    if(['mes-dash','biz-trend','biz-rank','biz-cost','mes-rpt','mes-ship','mes-wo','acc-cashflow'].indexOf(mod)>-1){
+    if(['mes-dash','mes-rpt','mes-ship','mes-wo','acc-cashflow'].indexOf(mod)>-1){
       try{
         if(typeof MR!=='undefined'&&MR[mod])MR[mod]();
         if(typeof ER!=='undefined'&&ER[mod])ER[mod]();
@@ -998,8 +1066,8 @@ if(window.matchMedia){
   });
 }
 
-var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin','mes-wo':'mes-admin','mes-ship':'mes-admin','mes-cli':'mes-admin','mes-prod':'mes-admin','mes-vendor':'mes-admin','mes-mold':'mes-admin','mes-rpt':'mes-admin','mes-plan':'mes-admin','mes-queue':'mes-admin','mes-worker':'mes-admin','mes-perf':'mes-admin','mes-cal':'mes-admin','mat-stock':'mat-income','mat-po':'mat-income','mat-bom':'mat-income','acc-purchase':'acc-sales','acc-tax':'acc-sales','hr-att':'hr-emp','hr-pay':'hr-emp','hr-leave':'hr-emp','biz-rank':'biz-trend','biz-cost':'biz-trend','qc-equip':'qc-inspect','qc-quote':'qc-inspect','qc-approval':'qc-inspect'};
-var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','hr-emp':'emp','hr-att':'att','hr-pay':'pay','hr-leave':'leave','biz-trend':'trend','biz-rank':'rank','biz-cost':'cost','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote','qc-approval':'approval'};
+var PG={'mes-order':'mes-admin','mes-shiplog':'mes-admin','mes-dash':'mes-admin','mes-wo':'mes-admin','mes-ship':'mes-admin','mes-cli':'mes-admin','mes-prod':'mes-admin','mes-vendor':'mes-admin','mes-mold':'mes-admin','mes-rpt':'mes-admin','mes-plan':'mes-admin','mes-queue':'mes-admin','mes-worker':'mes-admin','mes-perf':'mes-admin','mes-cal':'mes-admin','mat-stock':'mat-income','mat-po':'mat-income','mat-bom':'mat-income','acc-purchase':'acc-sales','acc-tax':'acc-sales','qc-equip':'qc-inspect','qc-quote':'qc-inspect'};
+var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'bom','acc-sales':'sales','acc-purchase':'purchase','acc-tax':'tax','qc-inspect':'qc','qc-equip':'equip','qc-quote':'quote'};
 var GROUPS={
 'mes-order':{tabs:[{id:'mes-order',l:'수주목록'},{id:'mes-order-track',l:'납기추적'}]},
 'mes-ship':{tabs:[{id:'mes-ship',l:'출고'},{id:'ship-partial',l:'부분출고'},{id:'ship-return',l:'반품'},{id:'qc-claim',l:'클레임'}]},
@@ -1013,18 +1081,15 @@ var GROUPS={
 'acc-sales':{tabs:[{id:'acc-sales',l:'매출'},{id:'acc-purchase',l:'매입'},{id:'acc-costing',l:'원가분석'}]},
 'acc-tax':{tabs:[{id:'acc-tax',l:'세금계산서'},{id:'acc-etax',l:'전자세금계산서'}]},
 'acc-recv':{tabs:[{id:'acc-recv',l:'미수미지급'},{id:'acc-cashflow',l:'입출금'}]},
-'hr-emp':{tabs:[{id:'hr-emp',l:'직원'},{id:'hr-att',l:'출퇴근'},{id:'hr-leave',l:'연차'}]},
-'hr-pay':{tabs:[{id:'hr-pay',l:'급여'},{id:'hr-shift',l:'교대스케줄'},{id:'hr-insurance',l:'4대보험'}]},
 'mes-cli':{tabs:[{id:'mes-cli',l:'거래처'},{id:'mes-vendor',l:'협력사'},{id:'mes-prod',l:'패키지 품목'},{id:'mes-mold',l:'목형'},{id:'adm-code',l:'공통코드'}]},
-'adm-backup':{tabs:[{id:'adm-backup',l:'백업/복원'},{id:'adm-audit',l:'감사로그'},{id:'mes-queue',l:'설정'}]},
-'biz-kpi':{tabs:[{id:'biz-kpi',l:'KPI'},{id:'biz-trend',l:'추이'},{id:'biz-rank',l:'순위'},{id:'biz-profit',l:'수익성'},{id:'biz-ontime',l:'납기준수율'},{id:'biz-monthly',l:'월간보고서'},{id:'mes-rpt',l:'생산보고'}]}
+'adm-backup':{tabs:[{id:'adm-backup',l:'백업/복원'},{id:'adm-audit',l:'감사로그'},{id:'mes-queue',l:'설정'}]}
 };
 var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.forEach(function(t){if(t.id!==gid)PARENT_MAP[t.id]=gid})});
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}
-var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'패키지 운영판','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','acc-closing':'외상 마감','acc-vat':'부가세 신고','acc-bill':'어음 관리','acc-bank':'통장 관리','acc-expense':'지출결의서','hr-emp':'직원','hr-att':'출퇴근','hr-pay':'급여','hr-leave':'연차','biz-trend':'추이','biz-rank':'순위','biz-cost':'원가','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','qc-approval':'전자결재','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','hr-shift':'교대스케줄','hr-insurance':'4대보험','biz-kpi':'실시간KPI','biz-profit':'수익성분석','biz-ontime':'납기준수율','biz-monthly':'월간보고서','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-monitor':'현장모니터'};
-if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mes-monitor':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기준정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-pl':'보고·분석','acc-recv':'출고·정산','acc-cashflow':'출고·정산','acc-closing':'보고·분석','acc-aging':'출고·정산','acc-monthly':'보고·분석','hr-emp':'시스템','hr-att':'시스템','hr-leave':'시스템','hr-pay':'시스템','hr-shift':'시스템','hr-insurance':'시스템','biz-trend':'보고·분석','biz-rank':'보고·분석','biz-cost':'보고·분석','biz-kpi':'보고·분석','biz-profit':'보고·분석','biz-ontime':'보고·분석','biz-monthly':'보고·분석','mes-rpt':'보고·분석','mes-cli':'기준정보','mes-vendor':'자재·외주','mes-prod':'기준정보','mes-mold':'기준정보','qc-equip':'기준정보','qc-pm':'기준정보','qc-breakdown':'기준정보','mes-downtime':'기준정보','mes-oee':'기준정보','mes-mold-hist':'기준정보','adm-code':'시스템','qc-approval':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}}
+var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'패키지 운영판','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드'};
+if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기준정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-recv':'출고·정산','acc-cashflow':'출고·정산','mes-cli':'기준정보','mes-vendor':'자재·외주','mes-prod':'기준정보','mes-mold':'기준정보','qc-equip':'기준정보','qc-pm':'기준정보','qc-breakdown':'기준정보','mes-downtime':'기준정보','mes-oee':'기준정보','mes-mold-hist':'기준정보','adm-code':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}}
 var _gid=PARENT_MAP[id]||id;var _gtb=$('groupTabBar');if(GROUPS[_gid]){var _grp=GROUPS[_gid];_gtb.innerHTML=_grp.tabs.map(function(t){return'<button style="padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:1px solid '+(t.id===id?'var(--pri)':'var(--bdr)')+';background:'+(t.id===id?'var(--pri)':'var(--bg1)')+';color:'+(t.id===id?'#fff':'var(--txt2)')+';transition:all .15s" onclick="goMod(\''+t.id+'\')">'+t.l+'</button>'}).join('');_gtb.style.display='flex'}else{_gtb.style.display='none';_gtb.innerHTML=''}
 if(MR[id])MR[id]();if(ER[id])ER[id]();}
 var _mesInited=false;
@@ -1038,22 +1103,9 @@ function mesGoTab(tab,btn){if(btn){var p=btn.parentElement;if(p)p.querySelectorA
 function activateMesAdmin(tab){initMesInAdmin();document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pg=$('pg-mes-admin');if(pg)pg.classList.add('active');mesGoTab(tab);}
 MR['mes-order']=function(){activateMesAdmin('order')};MR['mes-shiplog']=function(){activateMesAdmin('ship');setTimeout(function(){if(typeof shipSub==='function')shipSub('hist')},50)};MR['mes-dash']=function(){activateMesAdmin('dash')};MR['mes-wo']=function(){activateMesAdmin('wo')};MR['mes-ship']=function(){activateMesAdmin('ship')};MR['mes-cli']=function(){activateMesAdmin('cli')};MR['mes-prod']=function(){activateMesAdmin('prod')};MR['mes-mold']=function(){activateMesAdmin('mold')};MR['mes-rpt']=function(){activateMesAdmin('rpt')};MR['mes-plan']=function(){activateMesAdmin('plan')};MR['mes-vendor']=function(){activateMesAdmin('vendor')};MR['mes-queue']=function(){activateMesAdmin('set')};MR['mes-perf']=function(){activateMesAdmin('perf')};MR['mes-cal']=function(){activateMesAdmin('cal')};MR['mes-worker']=function(){activateMesAdmin('worker')};
 
-MR['acc-closing']=function(){$('closingArea').innerHTML=renderClosing()};
-MR['acc-vat']=function(){if(typeof renderVatReport==='function')renderVatReport()};
-MR['acc-bill']=function(){if(typeof rBill==='function')rBill()};
-MR['acc-bank']=function(){if(typeof rBank==='function')rBank()};
-MR['acc-expense']=function(){if(typeof rExpense==='function')rExpense()};
 MR['mat-lot']=function(){$('lotArea').innerHTML=renderStockHistory()};
 MR['mat-abc']=function(){$('abcArea').innerHTML=renderStockABC()};
 MR['mat-lead']=function(){$('leadArea').innerHTML=renderLeadTime()};
-MR['hr-attstats']=function(){$('attStatsArea').innerHTML=renderAttStats()};
-MR['hr-card']=function(){
-  var sel=$('empCardSel');var emps=DB.g('emp');
-  sel.innerHTML='<option value="">직원 선택</option>'+emps.map(function(e){return'<option value="'+e.id+'">'+e.nm+' ('+( e.dept||'')+')'+' </option>'}).join('');
-  $('empCardArea').innerHTML='<div style="text-align:center;padding:20px;color:var(--txt3)">직원을 선택하세요</div>';
-};
-MR['hr-org']=function(){$('orgArea').innerHTML=renderOrgChart()};
-MR['hr-payhist']=function(){$('payHistArea').innerHTML=renderPayHistory()};
 
 MR['mes-sched']=function(){renderSchedBoard()};
 /* ===== 확장 모듈 라우팅 ===== */
@@ -1065,7 +1117,6 @@ MR['mes-defect']=function(){if(typeof rDefect==='function')rDefect()};
 MR['mes-outsource']=function(){if(typeof rOutsource==='function'){_vendorSelect('osVendor');rOutsource()}};
 MR['mes-mold-hist']=function(){if(typeof rMoldHist==='function')rMoldHist()};
 MR['mes-oee']=function(){if(typeof rOEE==='function'){_equipSelect('oeeEquip');rOEE()}};
-MR['mes-monitor']=function(){if(typeof rMonitor==='function')rMonitor()};
 MR['ship-partial']=function(){if(typeof rShipPartial==='function')rShipPartial()};
 MR['ship-return']=function(){if(typeof rReturn==='function')rReturn()};
 MR['ship-inspect']=function(){if(typeof rShipInspect==='function')rShipInspect()};
@@ -1076,12 +1127,6 @@ MR['mat-price']=function(){if(typeof rPriceHist==='function')rPriceHist()};
 MR['acc-etax']=function(){if(typeof rEtax==='function')rEtax()};
 MR['acc-costing']=function(){if(typeof rCosting==='function')rCosting()};
 MR['acc-aging']=function(){if(typeof rAging==='function')rAging()};
-MR['hr-shift']=function(){if(typeof rShift==='function')rShift()};
-MR['hr-insurance']=function(){if(typeof rInsurance==='function')rInsurance()};
-MR['biz-kpi']=function(){if(typeof rKPI==='function')rKPI()};
-MR['biz-profit']=function(){if(typeof rProfit==='function')rProfit()};
-MR['biz-ontime']=function(){if(typeof rOntime==='function')rOntime()};
-MR['biz-monthly']=function(){if(typeof rMonthlyReport==='function')rMonthlyReport()};
 MR['qc-claim']=function(){if(typeof rClaims==='function')rClaims()};
 MR['qc-pm']=function(){if(typeof rPM==='function'){_equipSelect('pmEquip');rPM()}};
 MR['qc-breakdown']=function(){if(typeof rBreakdown==='function'){_equipSelect('bdEquip');rBreakdown()}};
@@ -1094,14 +1139,9 @@ MR['adm-docflow']=function(){if(typeof rDocFlow==='function')rDocFlow()};
 MR['mat-ledger']=function(){if(typeof rProductLedger==='function')rProductLedger()};
 MR['acc-recv']=function(){if(typeof rAging==='function')rAging();else $('recvArea').innerHTML=renderReceivables()};
 MR['acc-cashflow']=function(){$('cashflowArea').innerHTML=renderPayments()};
-MR['biz-contract']=function(){$('contractArea').innerHTML=renderContracts()};
-MR['biz-ceo']=function(){$('ceoArea').innerHTML=renderCEODash()};
 ER['mat-income']=function(){if(typeof rIncome==='function')rIncome()};ER['mat-stock']=function(){if(typeof rStock==='function')rStock()};ER['mat-po']=function(){if(typeof rPO==='function')rPO()};ER['mat-bom']=function(){if(typeof rBOM==='function')rBOM()};
 ER['acc-sales']=function(){if(typeof rSl==='function')rSl()};ER['acc-purchase']=function(){if(typeof rPr==='function')rPr()};ER['acc-pl']=function(){if(typeof rPl==='function')rPl()};ER['acc-tax']=function(){if(typeof rTx==='function')rTx()};
-ER['hr-emp']=function(){if(typeof rEmp==='function')rEmp()};ER['hr-att']=function(){if(typeof rAtt==='function')rAtt()};ER['hr-pay']=function(){if(typeof rPay==='function')rPay();var _prEl=$('payrollAutoArea');if(_prEl&&typeof renderPayrollAuto==='function')_prEl.innerHTML=renderPayrollAuto()};ER['hr-leave']=function(){if(typeof rLeave==='function')rLeave();var _laEl=$('leaveAutoArea');if(_laEl&&typeof renderLeaveAuto==='function')_laEl.innerHTML=renderLeaveAuto()};
-ER['biz-trend']=function(){var y=$('trY');if(y&&!y.options.length){var yr=new Date().getFullYear();for(var i=yr;i>=yr-3;i--){var o=document.createElement('option');o.value=i;o.textContent=i+'년';y.appendChild(o)}}if(typeof renderTrend==='function')renderTrend();var mA=$('monthlyArea');if(mA&&typeof renderSalesMonthly==='function')mA.innerHTML=renderSalesMonthly();var sA=$('salesTrendArea');if(sA&&typeof renderSalesTrend==='function')sA.innerHTML=renderSalesTrend()};
-ER['biz-rank']=function(){if(typeof renderRank==='function')renderRank()};ER['biz-cost']=function(){if(typeof renderCost==='function')renderCost()};
-ER['qc-inspect']=function(){if(typeof rQc==='function')rQc()};ER['qc-equip']=function(){if(typeof rEq==='function'){rEq();renderEqUtil()}};ER['qc-quote']=function(){if(typeof rQt==='function')rQt()};ER['qc-approval']=function(){if(typeof rAp==='function')rAp()};
+ER['qc-inspect']=function(){if(typeof rQc==='function')rQc()};ER['qc-equip']=function(){if(typeof rEq==='function'){rEq();renderEqUtil()}};ER['qc-quote']=function(){if(typeof rQt==='function')rQt()};
 
 
 // ===== LOGIN USER SELECT =====

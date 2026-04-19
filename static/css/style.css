@@ -587,6 +587,28 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 }
 .flow-note.danger{border-color:#FECACA;background:linear-gradient(180deg,#FFF7F7,#FEF2F2)}
 .flow-note.danger .flow-note-chip{background:#FEE2E2;color:#B91C1C}
+.conflict-meta{
+  display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;
+  font-size:12px;color:var(--txt2)
+}
+.conflict-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px
+}
+.conflict-pane{
+  border:1px solid var(--bdr);border-radius:12px;background:#fff;overflow:hidden
+}
+.conflict-pane-title{
+  padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--bdr);
+  font-size:12px;font-weight:700;color:var(--txt)
+}
+.conflict-pre{
+  margin:0;padding:12px;min-height:220px;max-height:340px;overflow:auto;
+  font-size:11px;line-height:1.45;color:var(--txt2);background:#FCFCFD;white-space:pre-wrap;word-break:break-word
+}
+@media (max-width: 900px){
+  .conflict-grid{grid-template-columns:1fr}
+  .conflict-pre{min-height:160px}
+}
 .mo-hd{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center}
 .mo-b{padding:28px}
 .mo-f{padding:16px 28px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:10px;background:var(--bg2)}

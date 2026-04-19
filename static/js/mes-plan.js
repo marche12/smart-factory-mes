@@ -2251,8 +2251,6 @@ function applyAutoWONum(){
 if(typeof ER!=='undefined'){
   var _origMatStock=ER['mat-stock'];
   ER['mat-stock']=function(){if(typeof rStock==='function')rStock();if(_origMatStock)_origMatStock()};
-  var _origBizMonthly=ER['biz-monthly'];
-  ER['biz-monthly']=function(){if(typeof loadClosingReport==='function')loadClosingReport();if(_origBizMonthly)_origBizMonthly()};
 }
 
 initDB();

@@ -35,6 +35,13 @@ function getActiveFieldSearch(){
   return null;
 }
 
+function isEditableField(el){
+  if(!el) return false;
+  if(el.isContentEditable) return true;
+  var tag = (el.tagName || '').toUpperCase();
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
 /* 기본 fallback: 현재 페이지 성격에 따라 */
 function getDefaultSearch(){
   var activeMod = document.querySelector('.sb-item.active')?.getAttribute('data-mod') || '';
@@ -51,7 +58,12 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'F3' || e.key === 'F4'){
     // Ctrl+F3 같은 브라우저 단축은 제외
     if(e.ctrlKey || e.metaKey || e.altKey) return;
-    var fn = getActiveFieldSearch() || getDefaultSearch();
+    var activeEl = document.activeElement;
+    var fn = getActiveFieldSearch();
+    if(!fn){
+      if(isEditableField(activeEl)) return;
+      fn = getDefaultSearch();
+    }
     if(!fn) return;
     e.preventDefault();
     if(fn === '__global__'){

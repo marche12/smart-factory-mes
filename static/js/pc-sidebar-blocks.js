@@ -40,7 +40,20 @@ function getModuleMeta(mod){
     'qc-equip':      {l:'설비',           i:'⚙️'},
     'adm-perm':      {l:'권한 관리',      i:'🔐'},
     'adm-backup':    {l:'백업',           i:'💾'},
-    'mes-queue':     {l:'시스템설정',     i:'⚙️'}
+    'mes-queue':     {l:'시스템설정',     i:'⚙️'},
+    /* 신규 서브 항목 */
+    'mes-order-track':{l:'납기추적',       i:'📅'},
+    'mat-safety':    {l:'안전재고',       i:'📦'},
+    'ship-partial':  {l:'부분출고',       i:'📤'},
+    'ship-return':   {l:'반품',           i:'↩'},
+    'qc-claim':      {l:'클레임',         i:'⚠'},
+    'acc-costing':   {l:'원가분석',       i:'📊'},
+    'acc-etax':      {l:'전자세금계산서', i:'📋'},
+    'ship-inspect':  {l:'출하검사',       i:'✓'},
+    'qc-cert':       {l:'검사성적서',     i:'📃'},
+    'mes-defect':    {l:'불량등록',       i:'⚠'},
+    'adm-audit':     {l:'감사로그',       i:'🔍'},
+    'adm-code':      {l:'공통코드',       i:'🔖'}
   };
   return map[mod] || {l:mod, i:'•'};
 }

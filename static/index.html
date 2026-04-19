@@ -119,6 +119,7 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-quote" title="패키지 견적 작성">패키지 견적</button>
 <button class="sb-item" data-mod="mes-order" title="수주 및 진행 추적">수주관리</button>
+<button class="sb-item sb-sub" data-mod="mes-order-track" title="수주 납기 추적">납기추적</button>
 <button class="sb-item" data-mod="mes-wo" title="생산할 제품 지시서">작업지시</button>
 </div>
 
@@ -135,6 +136,7 @@
 <div class="sb-group" data-group-key="material" role="button" aria-expanded="false">📦 자재·외주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-stock" title="자재/제품 재고 현황">재고 현황</button>
+<button class="sb-item sb-sub" data-mod="mat-safety" title="안전재고/발주점">안전재고</button>
 <button class="sb-item" data-mod="mat-po" title="자재 발주">발주</button>
 <button class="sb-item" data-mod="mat-income" title="자재 입고 처리">입고</button>
 <button class="sb-item" data-mod="mat-bom" title="원자재 소요량">BOM</button>
@@ -145,9 +147,14 @@
 <div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">🚚 출고·정산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" title="납품/출고 처리">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
+<button class="sb-item sb-sub" data-mod="ship-partial" title="부분 출고">부분출고</button>
+<button class="sb-item sb-sub" data-mod="ship-return" title="반품 관리">반품</button>
+<button class="sb-item sb-sub" data-mod="qc-claim" title="클레임 관리">클레임</button>
 <button class="sb-item" data-mod="acc-sales" title="매출 등록 및 조회">매출</button>
+<button class="sb-item sb-sub" data-mod="acc-costing" title="원가 분석">원가분석</button>
 <button class="sb-item" data-mod="acc-purchase" title="매입 등록 및 조회">매입</button>
 <button class="sb-item" data-mod="acc-tax" title="세금계산서 발행/수신">세금계산서</button>
+<button class="sb-item sb-sub" data-mod="acc-etax" title="전자세금계산서">전자세금계산서</button>
 <button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">채권/자금</button>
 <button class="sb-item" data-mod="acc-cashflow" title="입출금 이력">입출금</button>
 </div>
@@ -159,6 +166,9 @@
 <button class="sb-item" data-mod="mes-prod" title="패키지 품목">패키지 품목</button>
 <button class="sb-item" data-mod="mes-mold" title="목형 관리">목형</button>
 <button class="sb-item" data-mod="qc-inspect" title="품질 검사">품질</button>
+<button class="sb-item sb-sub" data-mod="ship-inspect" title="출하 검사">출하검사</button>
+<button class="sb-item sb-sub" data-mod="qc-cert" title="검사성적서">검사성적서</button>
+<button class="sb-item sb-sub" data-mod="mes-defect" title="불량 등록">불량등록</button>
 <button class="sb-item" data-mod="qc-equip" title="생산 설비">설비</button>
 </div>
 
@@ -167,6 +177,8 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="adm-perm" title="사용자 권한">권한 관리</button>
 <button class="sb-item" data-mod="adm-backup" title="데이터 백업">백업</button>
+<button class="sb-item sb-sub" data-mod="adm-audit" title="감사 로그">감사로그</button>
+<button class="sb-item sb-sub" data-mod="adm-code" title="공통 코드">공통코드</button>
 <button class="sb-item" data-mod="mes-queue" style="background:#FEF3C7;color:#92400E;font-weight:700" title="회사 정보/팝빌 등">⚙️ 시스템설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>

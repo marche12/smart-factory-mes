@@ -1,0 +1,41 @@
+/* ================================================================
+   pc-top-modes.css — 상단 모드 탭 (얼마에요식 상단 메인 리본)
+   활성화 조건: body.tm-enabled 가 붙을 때만 적용.
+   기본은 DOM에 있어도 display:none 이라 시각 영향 0.
+   ================================================================ */
+
+/* 탭 컨테이너 (기본 숨김) */
+.tm-bar{display:none}
+
+/* 활성화 시에만 표시 */
+body.tm-enabled .tm-bar{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:8px 18px;
+  background:#0F172A;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  position:sticky;top:0;z-index:50;
+  min-height:46px;
+  flex-wrap:wrap;
+}
+
+.tm-tab{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;font-size:13px;font-weight:700;
+  color:#CBD5E1;background:transparent;
+  border:1px solid transparent;border-radius:10px;
+  cursor:pointer;transition:all .15s ease;
+  letter-spacing:.2px;
+}
+.tm-tab:hover{background:rgba(255,255,255,.06);color:#fff}
+.tm-tab.on{background:#1E3A5F;color:#fff;border-color:#2B4C7E}
+.tm-tab-ico{font-size:15px;line-height:1}
+
+/* 모바일 - 숨김 (데스크톱 전용) */
+@media (max-width:767px){
+  body.tm-enabled .tm-bar{display:none}
+}
+
+/* 접힌 사이드바와 공존: 탭이 상단에 있으니 사이드는 더 좁혀도 OK */
+body.tm-enabled.sb-collapsed .tm-bar{padding:8px 12px}

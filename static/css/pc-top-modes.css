@@ -12,30 +12,30 @@ body.tm-enabled .tm-bar{
   display:flex;
   align-items:center;
   gap:8px;
-  padding:0 22px;
+  padding:0 26px;
   background:linear-gradient(180deg,#0F172A 0%,#0B1222 100%);
   border-bottom:2px solid #1E3A5F;
   box-shadow:0 2px 8px rgba(0,0,0,.12);
   position:sticky;top:0;z-index:60;
-  min-height:62px;
+  min-height:78px;
   flex-wrap:wrap;
 }
 body.tm-enabled .tm-bar::before{
   content:'팩플로우';
-  color:#E8913A;font-weight:900;font-size:15px;letter-spacing:.5px;
-  padding:0 18px 0 0;margin-right:8px;
+  color:#E8913A;font-weight:900;font-size:20px;letter-spacing:.5px;
+  padding:0 24px 0 0;margin-right:12px;
   border-right:1px solid rgba(255,255,255,.1);
-  height:32px;display:flex;align-items:center;
+  height:44px;display:flex;align-items:center;
 }
 
 .tm-tab{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:11px 20px;font-size:14px;font-weight:700;
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 26px;font-size:17px;font-weight:800;
   color:#94A3B8;background:transparent;
-  border:none;border-bottom:3px solid transparent;
+  border:none;border-bottom:4px solid transparent;
   border-radius:0;cursor:pointer;transition:all .15s ease;
   letter-spacing:.3px;position:relative;
-  height:62px;
+  height:78px;
 }
 .tm-tab:hover{color:#fff;background:rgba(255,255,255,.04)}
 .tm-tab.on{
@@ -44,7 +44,7 @@ body.tm-enabled .tm-bar::before{
   background:rgba(232,145,58,.08);
 }
 .tm-tab.on .tm-tab-ico{transform:scale(1.1)}
-.tm-tab-ico{font-size:18px;line-height:1;transition:transform .2s}
+.tm-tab-ico{font-size:22px;line-height:1;transition:transform .2s}
 
 /* 모바일 - 숨김 (데스크톱 전용) */
 @media (max-width:767px){
@@ -55,24 +55,24 @@ body.tm-enabled .tm-bar::before{
 body.tm-enabled.sb-collapsed .tm-bar{padding:0 12px}
 
 /* 상단 바 오른쪽 액션 (알림·프로필·로그아웃) */
-.tm-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+.tm-right{margin-left:auto;display:flex;align-items:center;gap:6px}
 .tm-right-btn{
-  width:38px;height:38px;border-radius:50%;
+  width:46px;height:46px;border-radius:50%;
   background:transparent;border:1px solid transparent;
   color:#CBD5E1;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:16px;transition:all .15s;position:relative;
+  font-size:20px;transition:all .15s;position:relative;
 }
 .tm-right-btn:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.1)}
 .tm-user{
-  display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+  display:flex;align-items:center;gap:10px;padding:8px 16px 8px 10px;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-  border-radius:999px;color:#fff;font-size:12px;font-weight:700;
+  border-radius:999px;color:#fff;font-size:14px;font-weight:700;
 }
 .tm-user .tm-avatar{
-  width:26px;height:26px;border-radius:50%;
+  width:32px;height:32px;border-radius:50%;
   background:linear-gradient(135deg,#E8913A,#C2710C);
   display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:12px;
+  font-weight:800;font-size:14px;
 }
 .tm-noti-dot{
   position:absolute;top:6px;right:6px;width:8px;height:8px;

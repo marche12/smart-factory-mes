@@ -340,6 +340,19 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
   .acc-ledger-side{flex:none;max-width:none;width:100%;position:static;max-height:300px}
 }
 
+/* ==== 일일 거래 현황 (미니) ==== */
+.daily-tx-mini{background:linear-gradient(90deg,#F8FAFC,#FFFFFF);border:1px solid #E2E8F0;border-radius:12px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.daily-tx-mini .dtm-hd{font-size:12px;font-weight:800;color:#0F172A;display:flex;align-items:center;gap:6px;padding-right:12px;border-right:1px solid #E2E8F0}
+.daily-tx-mini .dtm-hd small{font-weight:500;color:#64748B;margin-left:4px}
+.daily-tx-mini .dtm-kpi{display:flex;gap:14px;flex:1;flex-wrap:wrap}
+.daily-tx-mini .dtm-item{display:flex;align-items:baseline;gap:6px;font-size:12px}
+.daily-tx-mini .dtm-item .k{color:#64748B;font-weight:700}
+.daily-tx-mini .dtm-item .v{font-size:15px;font-weight:800;color:#0F172A}
+.daily-tx-mini .dtm-item.sales .v{color:#1E40AF}
+.daily-tx-mini .dtm-item.purchase .v{color:#C2410C}
+.daily-tx-mini .dtm-item.in .v{color:#059669}
+.daily-tx-mini .dtm-item.out .v{color:#DC2626}
+
 .mo-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt2);padding:4px 8px;border-radius:6px;transition:all .15s}
 .mo-x:hover{background:var(--bg3);color:var(--txt)}
 .drag-h{cursor:grab;color:var(--txt3);margin-right:4px;font-size:14px;user-select:none}

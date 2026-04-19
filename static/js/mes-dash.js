@@ -719,6 +719,35 @@ function renderDashTodayCards(os, quotes){
     +'</div>';
 }
 
+/* 일일 거래 현황 — 오늘/7일/이번달 토글, 4개 KPI만 */
+var _dailyTxRng='today';
+function setDailyTxRange(r,btn){_dailyTxRng=r;if(btn){btn.parentElement.querySelectorAll('button').forEach(function(b){b.classList.remove('on')});btn.classList.add('on')}renderDailyTxMini()}
+window.setDailyTxRange=setDailyTxRange;
+function renderDailyTxMini(){
+  var box=document.getElementById('dailyTxCard');if(!box)return;
+  var today=td();var from=today,to=today,label='오늘 '+today;
+  if(_dailyTxRng==='week'){var d=new Date(today+'T00:00:00');d.setDate(d.getDate()-6);from=d.toISOString().slice(0,10);label='최근 7일 ('+from+' ~ '+to+')';}
+  else if(_dailyTxRng==='month'){from=today.slice(0,7)+'-01';label='이번달 ('+today.slice(0,7)+')';}
+  var inR=function(dt){return dt&&dt>=from&&dt<=to;};
+  var sales=(DB.g('sales')||[]).filter(function(r){return inR(r.dt);});
+  var purchase=(DB.g('purchase')||[]).filter(function(r){return inR(r.dt);});
+  var saleAmt=sales.reduce(function(s,r){return s+(+r.amt||0);},0);
+  var paidIn=sales.reduce(function(s,r){return s+(+r.paid||0);},0);
+  var purAmt=purchase.reduce(function(s,r){return s+(+r.amt||0);},0);
+  var paidOut=purchase.reduce(function(s,r){return s+(+r.paid||0);},0);
+  var tb=function(r,lbl){return '<button class="btn btn-sm btn-o'+(_dailyTxRng===r?' on':'')+'" onclick="setDailyTxRange(\''+r+'\',this)" style="padding:4px 10px;font-size:11px'+(_dailyTxRng===r?';background:var(--pri);color:#fff;border-color:var(--pri)':'')+'">'+lbl+'</button>';};
+  box.innerHTML=''
+    +'<div class="dtm-hd">📒 거래 현황<small>'+label+'</small></div>'
+    +'<div class="dtm-kpi">'
+    +'<div class="dtm-item sales"><span class="k">매출</span><span class="v">'+fmt(saleAmt)+'원</span><span style="font-size:10px;color:#94A3B8">('+sales.length+'건)</span></div>'
+    +'<div class="dtm-item in"><span class="k">입금</span><span class="v">'+fmt(paidIn)+'원</span></div>'
+    +'<div class="dtm-item purchase"><span class="k">매입</span><span class="v">'+fmt(purAmt)+'원</span><span style="font-size:10px;color:#94A3B8">('+purchase.length+'건)</span></div>'
+    +'<div class="dtm-item out"><span class="k">지급</span><span class="v">'+fmt(paidOut)+'원</span></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:4px">'+tb('today','오늘')+tb('week','7일')+tb('month','이번달')+'</div>';
+}
+window.renderDailyTxMini=renderDailyTxMini;
+
 function renderDashOpsGrid(os, stock){
   var inProgress=os.filter(function(o){return o.status==='진행중';}).length;
   var outsourceWait=os.filter(function(o){
@@ -888,9 +917,7 @@ pns2.forEach(function(pn,idx){
 pipH+='</div></div>';
 if($('ndPipeline'))$('ndPipeline').innerHTML=pipH;
 if($('dashOps'))$('dashOps').innerHTML=renderDashOpsGrid(os,stock);
-if($('dashClientArea'))$('dashClientArea').innerHTML=renderDashClientArea(os,sales);
-if($('dashVendorArea'))$('dashVendorArea').innerHTML=renderDashVendorArea(os);
-if($('dashExec'))$('dashExec').innerHTML=typeof renderCEODash==='function'?renderCEODash():'<div class="dash-empty">경영 요약 데이터를 준비 중입니다</div>';
+if($('dailyTxCard'))renderDailyTxMini();
 // === 5. 실시간 알림 ===
 var feeds=[];
 if(dl>0)os.filter(function(o){return isLate(o)}).slice(0,2).forEach(function(o){feeds.push({cls:'nd-f-red',icon:'🚨',msg:o.pnm+' — 출고일 초과 (D+'+(Math.abs(dLeft(o)))+')',time:''})});

@@ -1,0 +1,284 @@
+/* ================================================================
+   pc-polish.css — 최종 마감 레이어 (95% 체감 완성도)
+   원칙:
+   - 새 컴포넌트 X, 기존 컴포넌트만 톤/간격/타이포/강조 다듬기
+   - 패키지 제조 전용 프로그램 느낌 (네이비+골드 일관)
+   - 얼마에요/더존/이카운트 사용자도 덜 낯설게
+   - 핵심 연동 로직 무수정
+   ================================================================ */
+
+/* =========================================================
+   1. 상단 모드 탭 — 현재 위치 강조 + 타이포 정리
+   ========================================================= */
+body.tm-enabled .tm-bar{
+  min-height:70px; /* 78 → 70, 과한 높이 축소 */
+  padding:0 22px;
+  background:linear-gradient(180deg,#0B1222 0%,#070B14 100%); /* 더 깊은 네이비 */
+  border-bottom:1px solid rgba(232,145,58,.12);
+  box-shadow:0 1px 0 rgba(255,255,255,.03), 0 4px 14px rgba(0,0,0,.18);
+}
+body.tm-enabled .tm-bar::before{
+  font-size:18px;
+  padding:0 22px 0 0;
+  height:40px;
+  letter-spacing:-.01em;
+}
+body.tm-enabled .tm-tab{
+  height:70px;
+  padding:0 22px;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:0;
+  border-bottom-width:3px;
+  gap:9px;
+  display:inline-flex;align-items:center;
+}
+body.tm-enabled .tm-tab:not(.on){opacity:.72}
+body.tm-enabled .tm-tab:hover{opacity:1;color:#fff}
+body.tm-enabled .tm-tab.on{
+  opacity:1;
+  background:linear-gradient(180deg,transparent 0,rgba(232,145,58,.06) 100%);
+  border-bottom-color:#E8913A;
+}
+body.tm-enabled .tm-tab-ico{font-size:19px}
+
+/* 우측 사용자/액션 톤 조정 */
+body.tm-enabled .tm-right-btn{width:40px;height:40px;font-size:17px}
+body.tm-enabled .tm-user{padding:6px 14px 6px 8px;font-size:13px;border-radius:999px}
+body.tm-enabled .tm-user .tm-avatar{width:28px;height:28px;font-size:13px}
+
+/* =========================================================
+   2. 좌측 사이드바 — 가독성 + 현재 위치 강조
+   ========================================================= */
+@media (min-width:768px){
+  /* 섹션 헤더: 작지만 명확 */
+  .sb-section{margin:8px 0 2px;padding-bottom:4px}
+  .sb-section-hd{padding:6px 18px 4px;font-size:10px;color:#64748B}
+  .sb-section-act{width:20px;height:20px;font-size:12px}
+
+  /* 메뉴 항목: 편안한 hit area + 현재 위치 선명 */
+  .sidebar .sb-item{
+    margin:1px 8px;padding:8px 14px;
+    border-radius:8px;font-size:13px;font-weight:500;
+    color:#CBD5E1;border-left:3px solid transparent;
+    transition:all .12s ease;letter-spacing:-.01em;
+  }
+  .sidebar .sb-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sidebar .sb-item.active{
+    background:linear-gradient(90deg,rgba(232,145,58,.22) 0%,rgba(232,145,58,.05) 100%);
+    color:#fff;font-weight:700;
+    border-left-color:#E8913A;
+    box-shadow:inset 0 0 0 1px rgba(232,145,58,.15);
+  }
+
+  /* 그룹 헤더: 강도 낮춤 → 섹션 헤더에 맞춤 */
+  .sidebar .sb-group{
+    padding:10px 18px 4px;font-size:10px;font-weight:800;
+    color:#64748B;letter-spacing:.4px;text-transform:uppercase;
+    cursor:default;border-left:none;
+  }
+  .sidebar .sb-group .sb-arrow{display:none}
+
+  /* 사이드바 배경 한 톤 깊게 */
+  body.tm-enabled .sidebar{background:#0B1222}
+
+  /* 즐겨찾기 아이템 — 별 표시 선명하게 */
+  .sb-fav-item .sb-item-ico{color:#E8913A}
+  .sb-fav-x{font-size:14px;background:transparent}
+
+  /* 빈 상태 */
+  .sb-empty{padding:10px 18px;font-size:10px;color:#64748B;line-height:1.5;font-style:normal}
+}
+
+/* =========================================================
+   3. 공통 우클릭 메뉴 — 여백/타이포 정리
+   ========================================================= */
+.ux-ctx-menu{
+  min-width:210px;padding:5px;border-radius:12px;
+  border:1px solid #E2E8F0;
+  box-shadow:0 14px 36px rgba(15,23,42,.16),0 2px 6px rgba(15,23,42,.05);
+  font-size:13px;
+  animation:uxCtxIn .14s cubic-bezier(.2,.9,.25,1);
+}
+@keyframes uxCtxIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+.ux-ctx-item{
+  padding:8px 14px;border-radius:7px;
+  font-size:13px;font-weight:500;color:#1F2937;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  transition:background .1s;
+}
+.ux-ctx-item:hover{background:#F1F5F9}
+.ux-ctx-item.danger{color:#DC2626;font-weight:600}
+.ux-ctx-item.danger:hover{background:#FEF2F2;color:#B91C1C}
+.ux-ctx-sep{height:1px;background:#F1F5F9;margin:4px 2px}
+
+/* =========================================================
+   4. 통합 검색 모달 — 여백·타이포·강조 정리
+   ========================================================= */
+.pack-search-modal{
+  border-radius:16px;
+  box-shadow:0 24px 60px rgba(15,23,42,.28),0 4px 10px rgba(15,23,42,.06);
+}
+.pack-search-head{padding:18px 22px 10px}
+.pack-search-title{font-size:16px;font-weight:800;color:#0F172A;letter-spacing:-.01em}
+.pack-search-sub{font-size:12px;color:#64748B;margin-top:2px}
+.pack-search-input{
+  padding:12px 16px;font-size:14px;
+  border:1.5px solid #E2E8F0;border-radius:10px;
+}
+.pack-search-input:focus{border-color:#1E3A5F;box-shadow:0 0 0 4px rgba(30,58,95,.1)}
+
+.pack-search-modes{padding:4px 22px 8px}
+.pack-search-mode{
+  padding:5px 12px;font-size:11px;
+  border-radius:999px;border:1px solid #E2E8F0;
+  background:#fff;color:#64748B;font-weight:700;letter-spacing:0;
+}
+.pack-search-mode.on{background:#1E3A5F;border-color:#1E3A5F;color:#fff}
+.pack-search-recent{padding:4px 22px 8px}
+.pack-search-recent-label{font-size:10px;color:#94A3B8}
+.pack-search-tag{
+  padding:4px 10px;font-size:11px;
+  background:#F8FAFC;border:1px solid #E2E8F0;border-radius:999px;
+  color:#334155;transition:all .1s;
+}
+.pack-search-tag:hover{background:#1E3A5F;color:#fff;border-color:#1E3A5F}
+
+.pack-search-table-head{
+  padding:8px 22px;font-size:10px;color:#94A3B8;
+  letter-spacing:.5px;text-transform:uppercase;
+  background:#F8FAFC;border-top:1px solid #F1F5F9;
+}
+.pack-search-row{padding:11px 22px;gap:12px}
+.pack-search-row:hover,.pack-search-row.is-active{background:#EFF6FF}
+.pack-search-row.is-active{box-shadow:inset 3px 0 0 #1E3A5F}
+.pack-search-primary{font-size:14px;font-weight:700;color:#0F172A;letter-spacing:-.01em}
+.pack-search-secondary{font-size:12px;color:#64748B;line-height:1.5}
+.pack-search-meta{font-size:11px;color:#64748B;text-align:right}
+.pack-search-empty{padding:36px 20px;color:#94A3B8;font-size:13px}
+
+/* =========================================================
+   5. 컨텍스트 바 (최근 거래처·품목) — 더 얇고 자연스럽게
+   ========================================================= */
+.ctx-bar{
+  background:#F1F5F9;border:1px solid #E2E8F0;
+  padding:3px 8px;border-radius:999px;
+  margin-left:12px;gap:6px;
+}
+.ctx-item{
+  background:transparent;border:none;padding:3px 10px;
+  border-radius:999px;max-width:200px;
+}
+.ctx-item:hover{background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.08);border:none}
+.ctx-lbl{font-size:10px;color:#94A3B8;font-weight:600}
+.ctx-val{font-size:12px;color:#0F172A;font-weight:700}
+.ctx-sep{color:#CBD5E1}
+
+/* =========================================================
+   6. 데이터 테이블 — 행간·헤더·빈상태 정돈
+   ========================================================= */
+.dt thead th{
+  padding:10px 12px;font-size:11px;font-weight:700;
+  color:#475569;letter-spacing:.3px;text-transform:uppercase;
+  background:#F8FAFC;border-bottom:1px solid #E2E8F0;white-space:nowrap;
+}
+.dt tbody td{padding:11px 12px;font-size:13px;border-bottom:1px solid #F1F5F9}
+.dt tbody tr:hover td{background:#FAFBFC}
+.dt tbody tr[onclick]{cursor:pointer}
+
+.empty-cell{
+  padding:36px 20px !important;
+  text-align:center;color:#94A3B8;font-size:13px;
+  font-weight:500;
+}
+.empty-cell::before{
+  content:'';display:block;width:36px;height:36px;
+  margin:0 auto 8px;border-radius:50%;
+  background:#F1F5F9 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg>") center/20px no-repeat;
+}
+
+/* =========================================================
+   7. 상태 배지 — 일관된 팔레트
+   ========================================================= */
+.bd{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;letter-spacing:0}
+.bd-p{background:#DBEAFE;color:#1E3A8A;border:none}  /* 처리중 */
+.bd-s{background:#DCFCE7;color:#14532D;border:none}  /* 완료 */
+.bd-o{background:#FEF3C7;color:#854D0E;border:none}  /* 주의 */
+.bd-d{background:#FEE2E2;color:#991B1B;border:none}  /* 경고/미수 */
+.bd-w{background:#F1F5F9;color:#475569;border:none}  /* 대기/휴면 */
+.bd-e{background:#EDE9FE;color:#5B21B6;border:none}  /* 외주/협력 */
+
+/* =========================================================
+   8. 버튼 — 패키지 제조 톤 (네이비 + 골드)
+   ========================================================= */
+.btn{font-weight:700;letter-spacing:0;transition:all .12s}
+.btn-p{background:#1E3A5F;color:#fff;border:none}
+.btn-p:hover{background:#152B47;transform:translateY(-1px);box-shadow:0 4px 10px rgba(30,58,95,.25)}
+.btn-s{background:#059669;color:#fff;border:none}
+.btn-s:hover{background:#047857}
+.btn-o{background:#fff;color:#334155;border:1px solid #CBD5E1}
+.btn-o:hover{background:#F1F5F9;border-color:#94A3B8}
+.btn-d{background:#DC2626;color:#fff;border:none}
+.btn-d:hover{background:#B91C1C}
+.btn-gold{background:#E8913A;color:#fff;border:none}
+.btn-gold:hover{background:#C2710C}
+
+/* 2차 테두리 버튼 hover 색감 통일 */
+.btn-blue{background:#DBEAFE;color:#1E3A5F;border:none}
+.btn-blue:hover{background:#BFDBFE}
+
+/* =========================================================
+   9. 사이드 패널 (openCliLedgerPanel 등) 정돈
+   ========================================================= */
+.ux-sp-section{margin-top:18px;padding-top:14px;border-top:1px solid #F1F5F9}
+.ux-sp-section:first-child{margin-top:0;padding-top:0;border-top:none}
+.ux-sp-section-t{
+  font-size:11px;font-weight:800;color:#64748B;
+  letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px;
+}
+.ux-sp-field{padding:8px 0;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ux-sp-field-l{font-size:11px;color:#94A3B8;font-weight:600;min-width:80px}
+.ux-sp-field-v{font-size:13px;color:#0F172A;font-weight:700;text-align:right;flex:1}
+
+/* =========================================================
+   10. 빠른입력 FAB — 위치·그림자 한 톤 고급스럽게
+   ========================================================= */
+.qe-fab{
+  box-shadow:0 10px 28px rgba(30,58,95,.32),0 2px 6px rgba(15,23,42,.12);
+}
+.qe-fab:hover{
+  box-shadow:0 14px 36px rgba(30,58,95,.4),0 4px 10px rgba(15,23,42,.15);
+}
+
+/* =========================================================
+   11. 토스트 — 부드러운 그림자
+   ========================================================= */
+.toast{box-shadow:0 10px 30px rgba(15,23,42,.24),0 2px 6px rgba(15,23,42,.08);font-weight:600}
+
+/* =========================================================
+   12. 브레드크럼 / 메인 헤더 정돈
+   ========================================================= */
+.main-header{
+  padding:10px 20px;background:#fff;
+  border-bottom:1px solid #EEF2F6;min-height:52px;
+}
+#mainTitle{font-size:16px !important;letter-spacing:-.01em}
+#mainBreadcrumb{font-size:12px !important;color:#94A3B8 !important}
+
+/* =========================================================
+   13. 안내·빈상태 공통 문구 톤
+   ========================================================= */
+.pack-inline-note{
+  border-style:solid;border-color:#E2E8F0;
+  background:#FAFBFC;color:#334155;font-size:12px;line-height:1.55;
+}
+.pack-inline-note b{color:#0F172A}
+.recv-empty{padding:20px;text-align:center;color:#94A3B8;font-size:13px}
+
+/* =========================================================
+   14. 출고 준비/이력 행 — 납기 지연 시 시각 강조
+   ========================================================= */
+.dt tbody tr.row-late{background:#FEF2F2}
+.dt tbody tr.row-late:hover td{background:#FEE2E2}
+.dt tbody tr.row-warn{background:#FFFBEB}
+.dt tbody tr.row-warn:hover td{background:#FEF3C7}

@@ -75,16 +75,35 @@ function buildOrderMenu(id){
   var o = (typeof getOrders==='function'?getOrders():DB.g('orders')||[]).find(function(x){return x.id===id;});
   if(!o) return [];
   var cli = (DB.g('cli')||[]).find(function(x){return x.nm===o.cli;});
-  return [
+  var summary = (typeof summarizeOrderFlow==='function')
+    ? summarizeOrderFlow(o, DB.g('wo')||[], DB.g('shipLog')||[])
+    : {woIds:[], shipCount:0};
+  var salesCount = (DB.g('sales')||[]).filter(function(s){ return s && s.orderId===id; }).length;
+  var hasLinkedDocs = !!((summary.woIds&&summary.woIds.length) || summary.shipCount || salesCount);
+  var items = [
     {label:'상세 확인',      action:function(){ safe('openOrderLedgerPanel',[id]); }},
     {label:'수정',           action:function(){ safe('editOrder',[id]); }},
     {label:'복제',           action:function(){ safe('cloneOrder',[id]); }},
     {separator:true},
     {label:'작업지시 생성',   action:function(){ safe('orderToWO',[id]); }},
-    {label:'거래처 원장 보기', action:function(){ if(cli) safe('openCliLedgerPanel',[cli.id]); }},
-    {separator:true},
-    {label:'삭제',           action:function(){ safe('delOrder',[id]); }, danger:true}
+    {label:'거래처 원장 보기', action:function(){ if(cli) safe('openCliLedgerPanel',[cli.id]); }}
   ];
+  items.push({separator:true});
+  if(hasLinkedDocs){
+    items.push({
+      label:'삭제 불가 (연결 문서 있음)',
+      action:function(){
+        var bits=[];
+        if(summary.woIds&&summary.woIds.length)bits.push('작업지시 '+summary.woIds.length+'건');
+        if(summary.shipCount)bits.push('출고 '+summary.shipCount+'건');
+        if(salesCount)bits.push('매출 '+salesCount+'건');
+        alert('이 수주는 연결 문서가 있어 삭제할 수 없습니다.\n\n'+bits.join(', ')+'\n\n삭제 대신 상세 화면에서 진행 상태를 확인하세요.');
+      }
+    });
+  }else{
+    items.push({label:'삭제', action:function(){ safe('delOrder',[id]); }, danger:true});
+  }
+  return items;
 }
 
 function buildWOMenu(id){
@@ -102,14 +121,13 @@ function buildWOMenu(id){
     {label:'템플릿 저장',     action:function(){ safe('saveAsTpl',[id]); }},
     {separator:true}
   ];
-  if(w.status!=='완료' && w.status!=='출고완료'){
-    if(w.status==='보류') items.push({label:'보류 해제', action:function(){ safe('restoreWO',[id]); }});
-    else items.push({label:'보류 처리', action:function(){ safe('holdWO',[id]); }});
-    items.push({label:'취소',           action:function(){ safe('cancelWO',[id]); }, danger:true});
-  }
   if(w.status==='취소'){
     items.push({label:'복원', action:function(){ safe('restoreWO',[id]); }});
     items.push({label:'삭제', action:function(){ safe('delWO',[id]); }, danger:true});
+  } else if(w.status!=='완료' && w.status!=='출고완료'){
+    if(w.status==='보류') items.push({label:'보류 해제', action:function(){ safe('restoreWO',[id]); }});
+    else items.push({label:'보류 처리', action:function(){ safe('holdWO',[id]); }});
+    items.push({label:'취소',           action:function(){ safe('cancelWO',[id]); }, danger:true});
   }
   if(cli){
     items.push({separator:true});

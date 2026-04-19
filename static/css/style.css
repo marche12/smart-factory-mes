@@ -254,6 +254,28 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .pack-chip{background:#EFF6FF;color:#1E3A5F;border:1px solid #BFDBFE;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}
 .pack-chip.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
 .pack-chip.ok{background:#ECFDF5;color:#166534;border-color:#BBF7D0}
+
+/* ==== 월말 마감 리포트 (ux-ext.js) ==== */
+.mr-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.mr-kpi{padding:14px 16px;border:1px solid #E2E8F0;border-radius:12px;background:linear-gradient(180deg,#FFFFFF,#F8FAFC);box-shadow:var(--sh-xs)}
+.mr-kpi-label{font-size:11px;color:#64748B;font-weight:700;letter-spacing:.2px;margin-bottom:4px}
+.mr-kpi-value{font-size:18px;font-weight:800;color:#0F172A;line-height:1.3}
+.mr-kpi-sub{font-size:11px;color:#94A3B8;margin-top:4px}
+.mr-kpi-pri{border-color:#BFDBFE}
+.mr-kpi-warn{border-color:#FED7AA;background:linear-gradient(180deg,#FFFBEB,#FFF7ED)}
+.mr-kpi-green{border-color:#BBF7D0;background:linear-gradient(180deg,#F0FDF4,#ECFDF5)}
+.mr-kpi-danger{border-color:#FECACA;background:linear-gradient(180deg,#FEF2F2,#FEE2E2)}
+.mr-section{margin-top:14px}
+.mr-section-t{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:8px;border-left:3px solid var(--pri);padding-left:8px}
+
+/* ==== 키보드 단축키 치트시트 (ux-ext.js) ==== */
+.kb-row{display:flex;align-items:center;gap:16px;padding:9px 4px;border-bottom:1px solid #F1F5F9}
+.kb-row:last-child{border-bottom:none}
+.kb-keys{display:flex;align-items:center;gap:4px;min-width:150px}
+.kb-key{background:#F8FAFC;border:1px solid #CBD5E1;border-bottom-width:2px;border-radius:5px;padding:3px 8px;font-family:ui-monospace,monospace;font-size:12px;font-weight:700;color:#1E293B;min-width:22px;text-align:center;display:inline-block}
+.kb-sep{color:#94A3B8;font-size:11px;padding:0 2px}
+.kb-label{font-size:13px;color:#334155;flex:1}
+
 .mo-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt2);padding:4px 8px;border-radius:6px;transition:all .15s}
 .mo-x:hover{background:var(--bg3);color:var(--txt)}
 .drag-h{cursor:grab;color:var(--txt3);margin-right:4px;font-size:14px;user-select:none}

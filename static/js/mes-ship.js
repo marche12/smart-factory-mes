@@ -112,6 +112,77 @@ if(_claimView==='table'){
 }}
 function openClaimM(){['clmId','clmCli','clmProd','clmQty','clmReason','clmNote'].forEach(x=>$(x).value='');$('clmType').value='반품';$('clmSt').value='접수';$('claimMoT').textContent='반품/클레임 등록';oMo('claimMo')}
 function eClaim(id){const c=DB.g('claims').find(x=>x.id===id);if(!c)return;$('clmId').value=c.id;$('clmCli').value=c.cnm;$('clmProd').value=c.pnm;$('clmType').value=c.type;$('clmQty').value=c.qty;$('clmReason').value=c.reason;$('clmSt').value=c.st;$('clmNote').value=c.note||'';$('claimMoT').textContent='반품/클레임 수정';oMo('claimMo')}
+/* ================================================================
+   반품 역동기화: type=반품 && st=완료 일 때 자동 실행
+   - 재고 원복 (동일 품명)
+   - 매출 차감 (최근 매출 음수 entry 추가)
+   - 세금계산서 환입 코드 마킹 (amendedKindCode=1)
+   저장된 claim.synced 플래그로 중복 적용 방지.
+   ================================================================ */
+function _applyReturnSync(claim){
+  if(!claim||claim.type!=='반품'||claim.st!=='완료')return false;
+  if(claim.synced)return false;
+  var qty=Number(claim.qty)||0; if(qty<=0)return false;
+  /* 1) 재고 복원 */
+  var stocks=DB.g('stock')||[];
+  var si=stocks.findIndex(function(s){return (s.nm||'')===claim.pnm;});
+  if(si>=0){stocks[si].qty=(Number(stocks[si].qty)||0)+qty;}
+  else{stocks.push({id:gid(),nm:claim.pnm,spec:'',qty:qty,cat:'완제품',note:'반품 복원'});}
+  DB.s('stock',stocks);
+  if(typeof addStockLog==='function')addStockLog(claim.pnm,'반품입고',qty,'CLAIM:'+claim.id,'반품 복원');
+  /* 2) 매출 차감 (음수 매출 entry) */
+  var sales=DB.g('sales')||[];
+  var origShip=claim.shipId?(DB.g('shipLog')||[]).find(function(x){return x.id===claim.shipId;}):null;
+  var unitPrice=0;
+  if(origShip){
+    var origSale=sales.find(function(s){return s.shipId===claim.shipId;});
+    if(origSale&&origSale.qty)unitPrice=Math.round((origSale.amt||0)/origSale.qty);
+  }
+  if(!unitPrice){
+    var wo=claim.woId?(DB.g('wo')||[]).find(function(x){return x.id===claim.woId;}):null;
+    unitPrice=wo&&wo.price?wo.price:0;
+  }
+  if(unitPrice>0){
+    var retAmt=-qty*unitPrice;
+    sales.push({
+      id:gid(),dt:td(),cnm:claim.cnm,pnm:claim.pnm,
+      qty:-qty,amt:retAmt,
+      type:'반품',claimId:claim.id,shipId:claim.shipId||'',woId:claim.woId||'',
+      note:'반품 차감 (환입): '+(claim.reason||'')
+    });
+    DB.s('sales',sales);
+  }
+  /* 3) 세금계산서 환입 마킹 */
+  if(claim.shipId){
+    var txs=DB.g('taxInvoice')||[];
+    txs.forEach(function(tx){
+      if(tx.shipId===claim.shipId){tx.amendedKindCode=1;tx.amendedNote='반품 환입: '+claim.id;}
+    });
+    DB.s('taxInvoice',txs);
+    var etax=DB.g('etax')||[];
+    etax.forEach(function(e){
+      if(e.shipId===claim.shipId){e.amendedKindCode=1;e.amendedNote='반품 환입: '+claim.id;}
+    });
+    DB.s('etax',etax);
+  }
+  return true;
+}
+function _undoReturnSync(claim){
+  if(!claim||!claim.synced)return false;
+  var qty=Number(claim.qty)||0;
+  var stocks=DB.g('stock')||[];
+  var si=stocks.findIndex(function(s){return (s.nm||'')===claim.pnm;});
+  if(si>=0){stocks[si].qty=Math.max(0,(Number(stocks[si].qty)||0)-qty);DB.s('stock',stocks);}
+  if(typeof addStockLog==='function')addStockLog(claim.pnm,'반품취소',qty,'CLAIM:'+claim.id,'반품 역처리 취소');
+  DB.s('sales',(DB.g('sales')||[]).filter(function(s){return s.claimId!==claim.id;}));
+  var txs=DB.g('taxInvoice')||[];
+  txs.forEach(function(tx){if(tx.amendedNote==='반품 환입: '+claim.id){tx.amendedKindCode=0;delete tx.amendedNote;}});
+  DB.s('taxInvoice',txs);
+  var etax=DB.g('etax')||[];
+  etax.forEach(function(e){if(e.amendedNote==='반품 환입: '+claim.id){e.amendedKindCode=0;delete e.amendedNote;}});
+  DB.s('etax',etax);
+  return true;
+}
 function saveClaim(){const cn=$('clmCli').value.trim(),pn=$('clmProd').value.trim(),qty=+$('clmQty').value;if(!cn||!pn){toast('거래처/제품 필요','err');return}if(!qty){toast('수량 필요','err');return}if(!$('clmReason').value.trim()){toast('사유 필요','err');return}
 const id=$('clmId').value||gid();
 /* WO/출고 자동 연결: 같은 거래처+품목의 최근 WO/출고 매칭 */
@@ -120,8 +191,18 @@ try{
   var _ws=DB.g('wo').filter(function(w){return w.cnm===cn&&w.pnm===pn}).sort(function(a,b){return b.cat>a.cat?1:-1});
   if(_ws.length){_clmWoId=_ws[0].id;var _sl=(DB.g('shipLog')||[]).filter(function(s){return s.woId===_clmWoId}).sort(function(a,b){return b.dt>a.dt?1:-1});if(_sl.length)_clmShipId=_sl[0].id}
 }catch(e){}
-const c={id,cnm:cn,pnm:pn,type:$('clmType').value,qty,reason:$('clmReason').value,st:$('clmSt').value,note:$('clmNote').value,dt:td(),woId:_clmWoId,shipId:_clmShipId};const cs=DB.g('claims');const i=cs.findIndex(x=>x.id===id);if(i>=0)cs[i]=c;else cs.push(c);DB.s('claims',cs);addLog(`${c.type}: ${cn} ${pn} ${qty}매`);cMo('claimMo');rClaim();toast('저장','ok')}
-function dClaim(id){if(!confirm('삭제?'))return;DB.s('claims',DB.g('claims').filter(x=>x.id!==id));rClaim();toast('삭제','ok')}
+var prev=(DB.g('claims')||[]).find(function(x){return x.id===id;})||null;
+const c={id,cnm:cn,pnm:pn,type:$('clmType').value,qty,reason:$('clmReason').value,st:$('clmSt').value,note:$('clmNote').value,dt:prev?prev.dt:td(),woId:_clmWoId||(prev&&prev.woId)||'',shipId:_clmShipId||(prev&&prev.shipId)||'',synced:prev?prev.synced:false};
+/* 상태 전이에 따른 역동기화 처리 */
+var syncMsg='';
+if(prev&&prev.synced&&(c.type!=='반품'||c.st!=='완료')){
+  if(_undoReturnSync(prev)){c.synced=false;syncMsg=' · 역처리 취소됨';}
+}
+if(c.type==='반품'&&c.st==='완료'&&!c.synced){
+  if(_applyReturnSync(c)){c.synced=true;syncMsg=' · 재고+매출-세금 역처리 완료';}
+}
+const cs=DB.g('claims');const i=cs.findIndex(x=>x.id===id);if(i>=0)cs[i]=c;else cs.push(c);DB.s('claims',cs);addLog(`${c.type}: ${cn} ${pn} ${qty}매`+syncMsg);cMo('claimMo');rClaim();if(typeof rStock==='function')rStock();if(typeof rDash==='function')rDash();toast('저장'+syncMsg,'ok')}
+function dClaim(id){var prev=(DB.g('claims')||[]).find(function(x){return x.id===id;});if(!confirm('삭제?'))return;if(prev&&prev.synced){_undoReturnSync(prev);}DB.s('claims',DB.g('claims').filter(x=>x.id!==id));rClaim();if(typeof rStock==='function')rStock();if(typeof rDash==='function')rDash();toast('삭제','ok')}
 function acClmCli(v){const l=$('acClmCliL');const cs=DB.g('cli').filter(c=>!v||!v.trim()||v.trim()===' '||c.nm.toLowerCase().includes(v.toLowerCase()));if(!cs.length){l.classList.add('hidden');return}l.innerHTML=cs.map(c=>{var sn=c.nm.replace(/'/g,"&#39;");return`<div class="ac-i" onclick="$('clmCli').value='${sn}';$('acClmCliL').classList.add('hidden')">${c.nm}</div>`}).join('');l.classList.remove('hidden')}
 
 

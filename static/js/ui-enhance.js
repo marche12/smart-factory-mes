@@ -183,6 +183,23 @@ var UX = (function(){
       }
     });
 
+    // 4. 안전재고 미만 자재
+    (DB.g('stock')||[]).forEach(function(s){
+      var cur = +(s.qty||0), safe = +(s.safeQty||s.safe||s.minQty||0);
+      if(safe <= 0) return;
+      if(cur <= 0){
+        noti.push({icon:'🛑', title:(s.nm||'자재')+' 재고 소진', sub:'즉시 발주 필요 · 안전재고 '+safe, level:'danger', action:"goMod('mat-safety')"});
+      } else if(cur < safe){
+        noti.push({icon:'📦', title:(s.nm||'자재')+' 안전재고 미만', sub:'현재 '+cur+' / 안전 '+safe, level:'warn', action:"goMod('mat-safety')"});
+      }
+    });
+
+    // 5. 반품 미처리 (접수/처리중)
+    var pendingClaims = (DB.g('claims')||[]).filter(function(c){return c.type==='반품' && c.st!=='완료';});
+    if(pendingClaims.length > 0){
+      noti.push({icon:'↩️', title:'처리 대기 반품 '+pendingClaims.length+'건', sub:'완료 처리 시 재고·매출 자동 역동기화', level:'info', action:"goMod('mes-claim')"});
+    }
+
     return noti.slice(0, 20);
   }
 

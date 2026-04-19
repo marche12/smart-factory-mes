@@ -48,7 +48,7 @@ function renderCtx(){
       +'</span>');
   }
   if(ctx.lastProd){
-    parts.push('<span class="ctx-item" onclick="goMod(\'mes-prod\')" title="최근 품목: '+ctx.lastProd+'">'
+    parts.push('<span class="ctx-item" onclick="_ctxOpenProd(\''+(ctx.lastProd||'').replace(/\'/g,"\\'")+'\')" title="최근 품목: '+ctx.lastProd+'">'
       +'<span class="ctx-lbl">품목</span>'
       +'<span class="ctx-val">'+ctx.lastProd+'</span>'
       +'</span>');
@@ -56,11 +56,28 @@ function renderCtx(){
   bar.innerHTML = parts.join('<span class="ctx-sep">·</span>');
 }
 window._ctxOpenCli = function(nm){
-  // 해당 거래처 원장 패널로 이동
   var cli = (DB.g('cli')||[]).find(function(c){return c.nm===nm;});
   if(cli && typeof openCliLedgerPanel==='function'){ openCliLedgerPanel(cli.id); return; }
   if(typeof goMod==='function') goMod('mes-cli');
 };
+window._ctxOpenProd = function(nm){
+  var prod = (DB.g('prod')||[]).find(function(p){return p.nm===nm;});
+  if(prod && typeof openProdLedgerPanel==='function'){ openProdLedgerPanel(prod.id); return; }
+  if(typeof goMod==='function') goMod('mes-prod');
+};
+
+/* F9 단축키: 최근 컨텍스트 기반 원장 빠르게 열기 */
+document.addEventListener('keydown', function(e){
+  var t = e.target;
+  if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable)) return;
+  if(e.key === 'F9' || (e.shiftKey && e.key.toLowerCase() === 'f9')){
+    e.preventDefault();
+    var ctx = loadCtx();
+    if(e.shiftKey && ctx.lastProd){ window._ctxOpenProd(ctx.lastProd); }
+    else if(ctx.lastCli){ window._ctxOpenCli(ctx.lastCli); }
+    else if(ctx.lastProd){ window._ctxOpenProd(ctx.lastProd); }
+  }
+});
 
 /* 자동 감지: 주요 함수 호출 시 ctx 기록 */
 function hookAutoCapture(){

@@ -1909,6 +1909,8 @@ function _fillWOFromOrder(o,it,itemIdx){
         }
       }
       $('woPrice').value = _p || '';
+      // 수주 경로에서 들어온 가격은 잠금 (직접 품목 재선택해도 유지)
+      if($('woPrice').dataset) $('woPrice').dataset.priceSource = 'order';
     }
     _updateWoAmt();
     // 수주 ID 연결 (hidden field)

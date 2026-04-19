@@ -1220,7 +1220,7 @@
 <!-- 1행: 수량·단가·금액 (한 줄로 강조) -->
 <div class="wo-inline-grid wo-inline-grid-4 wo-qty-grid" style="background:#F8FAFC;padding:10px 12px;border-radius:10px;margin-bottom:10px">
 <div class="fg"><label class="req">수량</label><input type="number" id="woFQ" min="0" oninput="_updateWoAmt()"></div>
-<div class="fg"><label>단가 (매당)</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()"></div>
+<div class="fg"><label>단가 (매당)</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()" onchange="if(this.dataset)this.dataset.priceSource='manual'"></div>
 <div class="fg"><label>금액 (수량×단가)</label><div id="woAmtDisplay" class="wo-amount-box">-</div></div>
 <div class="fg"><label class="req">납품예정</label><input type="date" id="woShip"></div>
 </div>

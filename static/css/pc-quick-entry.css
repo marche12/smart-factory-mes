@@ -1,0 +1,95 @@
+/* ================================================================
+   pc-quick-entry.css — 우측 하단 플로팅 빠른 거래입력 버튼 + 모달
+   얼마에요 "번개입력" 패턴. 매출/매입/입금/지급 한 줄 입력.
+   모바일(m.html)에는 영향 없음.
+   ================================================================ */
+
+/* 플로팅 FAB 버튼 */
+.qe-fab{
+  position:fixed;right:24px;bottom:24px;z-index:110;
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#1E3A5F 0%,#16304F 100%);
+  color:#fff;border:none;cursor:pointer;
+  box-shadow:0 6px 18px rgba(30,58,95,.32),0 2px 6px rgba(0,0,0,.08);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s ease;
+  font-size:28px;line-height:1;font-weight:300;
+}
+.qe-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 24px rgba(30,58,95,.4),0 4px 8px rgba(0,0,0,.1)}
+.qe-fab:active{transform:translateY(0) scale(.98)}
+.qe-fab-tip{
+  position:absolute;right:66px;top:50%;transform:translateY(-50%);
+  background:#0F172A;color:#fff;padding:6px 12px;border-radius:8px;
+  font-size:12px;font-weight:600;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+.qe-fab:hover .qe-fab-tip{opacity:.95}
+
+/* 모달 */
+.qe-modal-bg{
+  position:fixed;inset:0;background:rgba(15,23,42,.42);
+  z-index:10000;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.qe-modal-bg.on{display:flex}
+.qe-modal{
+  width:min(460px,95vw);max-height:90vh;overflow:auto;
+  background:#fff;border-radius:16px;box-shadow:0 24px 56px rgba(15,23,42,.28);
+  padding:20px 22px;
+}
+.qe-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.qe-hd-t{font-size:16px;font-weight:800;color:#0F172A}
+.qe-hd-x{background:none;border:none;font-size:22px;cursor:pointer;color:#94A3B8;padding:2px 8px;border-radius:6px}
+.qe-hd-x:hover{background:#F1F5F9;color:#0F172A}
+
+/* 거래 종류 탭 */
+.qe-types{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
+.qe-type{
+  padding:10px 8px;font-size:12px;font-weight:700;
+  border:1.5px solid #E2E8F0;background:#fff;color:#64748B;
+  border-radius:10px;cursor:pointer;transition:all .15s;
+}
+.qe-type:hover{background:#F8FAFC;border-color:#CBD5E1}
+.qe-type.on{background:#1E3A5F;border-color:#1E3A5F;color:#fff}
+.qe-type[data-kind="sale-pay"].on{background:#059669;border-color:#059669}
+.qe-type[data-kind="purchase-pay"].on{background:#DC2626;border-color:#DC2626}
+.qe-type[data-kind="purchase"].on{background:#C2410C;border-color:#C2410C}
+
+/* 폼 */
+.qe-field{margin-bottom:10px}
+.qe-field label{display:block;font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px;letter-spacing:.2px}
+.qe-field input,.qe-field textarea{
+  width:100%;padding:10px 12px;font-size:13px;
+  border:1.5px solid #E2E8F0;border-radius:8px;background:#fff;
+  transition:border-color .15s;
+}
+.qe-field input:focus,.qe-field textarea:focus{outline:none;border-color:#1E3A5F;box-shadow:0 0 0 3px rgba(30,58,95,.12)}
+.qe-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qe-amt-hint{font-size:11px;color:#64748B;margin-top:3px}
+.qe-amt-hint b{color:#0F172A;font-weight:800}
+
+/* 최근 거래처 칩 */
+.qe-recent{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.qe-recent-chip{
+  padding:4px 10px;font-size:11px;font-weight:700;
+  background:#F1F5F9;border:1px solid #CBD5E1;color:#475569;
+  border-radius:999px;cursor:pointer;transition:all .12s;
+}
+.qe-recent-chip:hover{background:#1E3A5F;color:#fff;border-color:#1E3A5F}
+
+/* 액션 */
+.qe-actions{display:flex;gap:8px;margin-top:16px;border-top:1px solid #F1F5F9;padding-top:14px}
+.qe-btn{flex:1;padding:11px;font-size:13px;font-weight:700;border-radius:9px;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+.qe-btn-cancel{background:#fff;border-color:#CBD5E1;color:#475569}
+.qe-btn-cancel:hover{background:#F8FAFC}
+.qe-btn-save{background:#1E3A5F;color:#fff}
+.qe-btn-save:hover{background:#16304F}
+
+/* 기본은 숨김, .qe-ready 클래스 붙을 때만 노출 (JS가 관리) */
+.qe-fab{display:none}
+body.qe-ready .qe-fab{display:flex}
+
+/* 모바일에선 자동 숨김 */
+@media (max-width:767px){
+  body.qe-ready .qe-fab{display:none}
+}

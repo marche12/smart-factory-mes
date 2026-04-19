@@ -42,14 +42,7 @@ var UX = (function(){
       {t:'목형', mod:'mes-mold', ico:'🔲'},
       {t:'채권/자금', mod:'acc-recv', ico:'💳'},
       {t:'입출금', mod:'acc-cashflow', ico:'💵'},
-      {t:'통장 관리', mod:'acc-bank', ico:'🏦'},
-      {t:'어음 관리', mod:'acc-bill', ico:'📜'},
-      {t:'부가세 신고', mod:'acc-vat', ico:'📊'},
-      {t:'지출결의서', mod:'acc-expense', ico:'📝'},
-      {t:'직원', mod:'hr-emp', ico:'👤'},
-      {t:'보고서', mod:'biz-kpi', ico:'📈'},
       {t:'생산현황', mod:'mes-dash', ico:'🏭'},
-      {t:'현장모니터', mod:'mes-monitor', ico:'🖥️'},
       {t:'시스템설정', mod:'mes-queue', ico:'⚙️'}
     ];
     menus.forEach(function(m){
@@ -130,22 +123,18 @@ var UX = (function(){
       'mes-wo':'매일 업무', 'mes-ship':'매일 업무', 'acc-sales':'매일 업무', 'acc-purchase':'매일 업무', 'acc-tax':'매일 업무',
       'mes-plan':'현황', 'mat-stock':'현황', 'acc-recv':'현황', 'acc-cashflow':'현황', 'mes-dash':'현황',
       'mes-cli':'거래처·품목', 'mes-prod':'거래처·품목', 'mes-mold':'거래처·품목', 'mes-vendor':'거래처·품목',
-      'mat-po':'구매·자재', 'mat-income':'구매·자재', 'mat-bom':'구매·자재', 'mat-price':'구매·자재',
-      'mes-proc-log':'생산관리', 'mes-outsource':'생산관리', 'qc-inspect':'생산관리', 'qc-equip':'생산관리', 'mes-monitor':'생산관리',
-      'acc-closing':'세무·자금', 'acc-vat':'세무·자금', 'acc-bill':'세무·자금', 'acc-bank':'세무·자금', 'acc-expense':'세무·자금', 'mes-rpt':'세무·자금',
-      'hr-emp':'인사·급여', 'hr-att':'인사·급여', 'hr-pay':'인사·급여', 'hr-leave':'인사·급여',
-      'biz-kpi':'보고서', 'qc-approval':'시스템', 'adm-perm':'시스템', 'adm-backup':'시스템', 'mes-queue':'시스템'
+      'mat-po':'구매·자재', 'mat-income':'구매·자재', 'mat-bom':'구매·자재',
+      'mes-proc-log':'생산관리', 'mes-outsource':'생산관리', 'qc-inspect':'생산관리', 'qc-equip':'생산관리',
+      'adm-perm':'시스템', 'adm-backup':'시스템', 'mes-queue':'시스템'
     };
 
     var titleMap = {
       'mes-wo':'작업지시서', 'mes-ship':'출고', 'acc-sales':'매출', 'acc-purchase':'매입', 'acc-tax':'세금계산서',
       'mes-plan':'생산계획', 'mat-stock':'재고 현황', 'acc-recv':'채권/자금', 'acc-cashflow':'입출금', 'mes-dash':'생산현황',
       'mes-cli':'거래처', 'mes-prod':'품목', 'mes-mold':'목형', 'mes-vendor':'인쇄소',
-      'mat-po':'발주', 'mat-income':'입고', 'mat-bom':'BOM', 'mat-price':'자재 단가',
-      'mes-proc-log':'공정실적', 'mes-outsource':'외주관리', 'qc-inspect':'품질', 'qc-equip':'설비', 'mes-monitor':'현장모니터',
-      'acc-closing':'외상마감', 'acc-vat':'부가세 신고', 'acc-bill':'어음 관리', 'acc-bank':'통장 관리', 'acc-expense':'지출결의서',
-      'hr-emp':'직원', 'hr-att':'출퇴근', 'hr-pay':'급여', 'hr-leave':'연차',
-      'biz-kpi':'보고서', 'qc-approval':'전자결재', 'adm-perm':'권한 관리', 'adm-backup':'백업', 'mes-queue':'시스템설정'
+      'mat-po':'발주', 'mat-income':'입고', 'mat-bom':'BOM',
+      'mes-proc-log':'공정실적', 'mes-outsource':'외주관리', 'qc-inspect':'품질', 'qc-equip':'설비',
+      'adm-perm':'권한 관리', 'adm-backup':'백업', 'mes-queue':'시스템설정'
     };
 
     var group = groupMap[mod] || '';
@@ -174,17 +163,6 @@ var UX = (function(){
         noti.push({icon:'🔴', title:(w.cnm||'')+' 납기 지연 '+(-Math.ceil(diff))+'일', sub:w.pnm+' · '+(w.wn||''), level:'danger', action:"goMod('mes-wo')"});
       } else if(diff <= 3){
         noti.push({icon:'🟠', title:(w.cnm||'')+' 납기 '+Math.ceil(diff)+'일 남음', sub:w.pnm+' · '+(w.wn||''), level:'warn', action:"goMod('mes-wo')"});
-      }
-    });
-
-    // 2. 만기 임박 어음 (7일 이내)
-    (DB.g('bills')||[]).forEach(function(b){
-      if(b.status !== 'holding') return;
-      var diff = (new Date(b.dueDt) - new Date(td)) / 86400000;
-      if(diff < 0){
-        noti.push({icon:'🔴', title:'어음 만기 경과', sub:b.cli+' '+fmt(b.amt)+'원 ('+b.dueDt+')', level:'danger', action:"goMod('acc-bill')"});
-      } else if(diff <= 7){
-        noti.push({icon:'💳', title:'어음 만기 '+Math.ceil(diff)+'일 남음', sub:b.cli+' '+fmt(b.amt)+'원', level:'warn', action:"goMod('acc-bill')"});
       }
     });
 

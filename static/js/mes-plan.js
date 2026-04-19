@@ -425,7 +425,7 @@ function restoreData(){
 }
 
 /* ===== 7/9 ROLE ACCESS ===== */
-var ROLE_MENUS={'admin':null,'office':null,'worker':['worker-screen'],'sales':['mes-dash','mes-order','mes-wo','mes-ship','mes-cli','mes-cal','mes-rpt','qc-quote','acc-sales'],'material':['mes-dash','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','mes-vendor'],'accounting':['mes-dash','mes-order','acc-sales','acc-purchase','acc-pl','acc-tax','acc-recv','acc-cashflow','hr-emp','hr-att','hr-pay','hr-leave'],'quality':['mes-dash','qc-inspect','qc-equip','qc-quote','qc-approval']};
+var ROLE_MENUS={'admin':null,'office':null,'worker':['worker-screen'],'sales':['mes-dash','mes-order','mes-wo','mes-ship','mes-cli','qc-quote','acc-sales'],'material':['mes-dash','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','mes-vendor'],'accounting':['mes-dash','mes-order','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow'],'quality':['mes-dash','qc-inspect','qc-equip','qc-quote']};
 function applyRoleAccess(){if(!CU)return;var role=CU.role||'admin';
   // admin은 전체 접근
   if(role==='admin'){CU.perms=null;return}

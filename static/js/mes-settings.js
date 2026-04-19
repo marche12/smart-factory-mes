@@ -1,6 +1,6 @@
 // SETTINGS
 // === 권한 체크박스 유틸 ===
-var ALL_PERMS=['mes-dash','mes-order','mes-plan','mes-wo','mes-cli','mes-vendor','mes-prod','mes-mold','mes-ship','mes-rpt','mes-worker','mes-queue','mes-monitor','mes-proc-log','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','mat-price','acc-sales','acc-purchase','acc-pl','acc-tax','acc-recv','acc-cashflow','acc-monthly','acc-closing','acc-vat','acc-bill','acc-bank','acc-expense','hr-emp','hr-att','hr-pay','hr-leave','biz-trend','biz-rank','biz-cost','biz-kpi','qc-inspect','qc-equip','qc-quote','qc-approval','adm-perm','adm-backup'];
+var ALL_PERMS=['mes-dash','mes-order','mes-plan','mes-wo','mes-cli','mes-vendor','mes-prod','mes-mold','mes-ship','mes-worker','mes-queue','mes-proc-log','mes-outsource','mat-income','mat-stock','mat-po','mat-bom','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','qc-inspect','qc-equip','qc-quote','adm-perm','adm-backup'];
 function toggleAllPerms(on){document.querySelectorAll('.perm-cb').forEach(function(cb){cb.checked=on})}
 function getPermsFromUI(){var perms=[];document.querySelectorAll('.perm-cb:checked').forEach(function(cb){perms.push(cb.value)});return perms}
 function setPermsUI(perms){document.querySelectorAll('.perm-cb').forEach(function(cb){cb.checked=perms?perms.indexOf(cb.value)>=0:false})}

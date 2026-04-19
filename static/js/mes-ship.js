@@ -1086,8 +1086,54 @@ function rOrderList(){
   tb.innerHTML=html;
 }
 
+function updateOrderAssist(){
+  var sum=$('ordQuickSummary');var note=$('ordClientHistory');
+  if(!sum||!note)return;
+  var cli=$('ordCli').value||'';
+  var due=$('ordShipDt').value||'';
+  var activeItems=_ordItems.filter(function(it){return it&&it.nm;});
+  var totalQty=activeItems.reduce(function(acc,it){return acc+(Number(it.qty)||0);},0);
+  var totalAmt=activeItems.reduce(function(acc,it){return acc+((Number(it.qty)||0)*(Number(it.price)||0));},0);
+  var orders=getOrders();
+  var sameCli=orders.filter(function(o){return cli&&o.cli===cli}).sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')});
+  var latest=sameCli[0]||null;
+  var latestItem=latest&&latest.items&&latest.items[0]?latest.items[0]:null;
+  sum.innerHTML=''
+    +'<div class="item"><div class="k">품목 수</div><div class="v">'+(activeItems.length||0)+'개</div></div>'
+    +'<div class="item"><div class="k">총 수량</div><div class="v">'+(totalQty?fmt(totalQty)+'매':'미입력')+'</div></div>'
+    +'<div class="item"><div class="k">예상 수주금액</div><div class="v">'+(totalAmt?fmt(totalAmt)+'원':'0원')+'</div></div>'
+    +'<div class="item"><div class="k">납기 흐름</div><div class="v">'+(due||'미정')+'</div></div>';
+  if(!cli){
+    note.innerHTML='거래처를 선택하면 <b>최근 수주</b>, <b>반복 품목</b>, <b>최근 단가</b>를 이 자리에서 바로 보여줍니다.';
+    return;
+  }
+  var dueTag='';
+  if(due){
+    var diff=Math.round((new Date(due+'T00:00:00')-new Date(td()+'T00:00:00'))/86400000);
+    dueTag='<span class="pack-chip '+(diff<0?'warn':diff<=2?'warn':'ok')+'">'+(diff<0?(''+Math.abs(diff)+'일 지연 위험'):diff===0?'오늘 납기':('D-'+diff))+'</span>';
+  }
+  var repeatProducts=[...new Set(sameCli.flatMap(function(o){return (o.items||[]).map(function(it){return it.nm}).filter(Boolean);}))]
+    .slice(0,4)
+    .map(function(nm){return '<span class="pack-chip">'+nm+'</span>'})
+    .join('');
+  note.innerHTML='<div><b>'+cli+'</b> 기준 최근 수주 '+sameCli.length+'건'
+    +(latest?' · 마지막 수주 '+latest.dt:'')
+    +(latestItem&&latestItem.price?(' · 최근 단가 '+fmt(latestItem.price)+'원'):'')
+    +'</div><div class="pack-chip-row">'+(dueTag||'')+(repeatProducts||'<span class="pack-chip">반복 품목 없음</span>')+'</div>';
+}
+
+function bindOrderAssistEvents(){
+  ['ordDt','ordShipDt','ordDlv','ordNote'].forEach(function(id){
+    var el=$(id);if(!el||el.dataset.assistBound)return;
+    el.addEventListener('input',updateOrderAssist);
+    el.addEventListener('change',updateOrderAssist);
+    el.dataset.assistBound='1';
+  });
+}
+
 /* 수주 초기화 */
 function resetOrder(){
+  bindOrderAssistEvents();
   $('ordId').value='';
   $('ordNo').value=genOrderNo();
   $('ordDt').value=new Date().toISOString().slice(0,10);
@@ -1098,6 +1144,7 @@ function resetOrder(){
   $('orderFormTitle').textContent='패키지 수주 등록';
   _ordItems=[{nm:'',spec:'',qty:'',price:'',note:''}];
   renderOrdItems();
+  updateOrderAssist();
 }
 
 /* 품목 행 렌더 */
@@ -1106,16 +1153,17 @@ function renderOrdItems(){
   body.innerHTML=_ordItems.map(function(it,i){
     var amt=(Number(it.qty)||0)*(Number(it.price)||0);
     return '<tr>'+
-      '<td><input value="'+(it.nm||'')+'" onchange="_ordItems['+i+'].nm=this.value" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="제품명"></td>'+
-      '<td><input value="'+(it.spec||'')+'" onchange="_ordItems['+i+'].spec=this.value" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="규격"></td>'+
+      '<td><input value="'+(it.nm||'')+'" onchange="_ordItems['+i+'].nm=this.value;updateOrderAssist()" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="제품명"></td>'+
+      '<td><input value="'+(it.spec||'')+'" onchange="_ordItems['+i+'].spec=this.value;updateOrderAssist()" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px" placeholder="규격"></td>'+
       '<td><input type="number" value="'+(it.qty||'')+'" onchange="_ordItems['+i+'].qty=this.value;renderOrdItems()" style="width:70px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px;text-align:right"></td>'+
       '<td><input type="number" value="'+(it.price||'')+'" onchange="_ordItems['+i+'].price=this.value;renderOrdItems()" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px;text-align:right"></td>'+
       '<td style="text-align:right;font-weight:600">'+fmt(amt)+'</td>'+
-      '<td><input value="'+(it.note||'')+'" onchange="_ordItems['+i+'].note=this.value" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px"></td>'+
+      '<td><input value="'+(it.note||'')+'" onchange="_ordItems['+i+'].note=this.value;updateOrderAssist()" style="width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--bdr);border-radius:4px"></td>'+
       '<td><button class="btn btn-sm btn-d" onclick="removeOrdItem('+i+')">X</button></td></tr>';
   }).join('');
   var total=0;_ordItems.forEach(function(it){total+=(Number(it.qty)||0)*(Number(it.price)||0)});
   $('ordTotalAmt').textContent=fmt(total);
+  updateOrderAssist();
 }
 
 function addOrdItem(){_ordItems.push({nm:'',spec:'',qty:'',price:'',note:''});renderOrdItems()}
@@ -1148,6 +1196,7 @@ function filterOrdCli(){
 function selectOrdCli(nm){
   $('ordCli').value=nm;
   var el=document.getElementById('ordCliSearchMo');if(el)el.remove();
+  updateOrderAssist();
 }
 
 /* 수주 저장 */
@@ -1196,6 +1245,7 @@ function saveOrder(){
     orders.push(obj);
   }
   saveOrders(orders);
+  updateOrderAssist();
   toast(isEdit?'패키지 수주 수정 완료':'패키지 수주 등록 완료','ok');
   if(isEdit){orderSub('list');return}
   // 신규 저장 → 작업지시서 바로 작성 여부 묻기
@@ -1240,6 +1290,7 @@ function _skipWO(){
 
 /* 수주 수정 */
 function editOrder(id){
+  bindOrderAssistEvents();
   var orders=getOrders();
   var o=orders.find(function(x){return x.id===id});
   if(!o)return;
@@ -1253,6 +1304,7 @@ function editOrder(id){
   $('orderFormTitle').textContent='패키지 수주 수정';
   _ordItems=o.items&&o.items.length?o.items.map(function(it){return{nm:it.nm,spec:it.spec,qty:it.qty,price:it.price,note:it.note}}):[{nm:o.prodNm||'',spec:'',qty:o.qty||'',price:o.price||'',note:''}];
   renderOrdItems();
+  updateOrderAssist();
   orderSub('new');
 }
 
@@ -1335,8 +1387,11 @@ function _fillWOFromOrder(o,it,itemIdx){
     if($('woOrdId')){
       $('woOrdId').value=o.id;
       $('woOrdId').dataset.itemIdx=itemIdx===undefined||itemIdx===null?'':String(itemIdx);
+      $('woOrdId').dataset.orderNo=o.no||'';
+      $('woOrdId').dataset.quoteNum=o.quoteNum||'';
     }
     toast('패키지 작업지시 화면으로 이동합니다. 공정 흐름을 확인한 뒤 저장하세요.');
+    if(typeof renderWOOrderBridge==='function')renderWOOrderBridge({orderId:o.id,orderNo:o.no||'',quoteNum:o.quoteNum||'',client:o.cli||'',product:it.nm||'',spec:it.spec||'',qty:it.qty||0,due:o.shipDt||o.due||''});
   },100);
 }
 

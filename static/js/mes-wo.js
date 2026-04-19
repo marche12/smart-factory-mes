@@ -51,7 +51,40 @@ function fillWOMgr(defaultVal){
   if(!sel.value&&us.length)sel.value=us[0].nm;
 }
 function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
-function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId')){$('woOrdId').value='';if($('woOrdId').dataset)delete $('woOrdId').dataset.itemIdx;}$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();}
+function resetWO(){editId=null;cProcs=[];cColors=[];['woNum','woDt','woCli','woAddr','woTel','woFax','woProd','woPaper','woSpec','woQM','woQE','woFabric','woFabricSpec','woFabricQty','woFabricExtra','woPrint','woGold','woMold','woMoldDisplay','woHand','woFQ','woShip','woDlv','woNote','woCaut','woPrice'].forEach(x=>{if($(x))$(x).value=''});if($('woOrdId')){$('woOrdId').value='';if($('woOrdId').dataset){delete $('woOrdId').dataset.itemIdx;delete $('woOrdId').dataset.orderNo;delete $('woOrdId').dataset.quoteNum;}}$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();_initPapersFabrics();renColors();renP();woImgClear();$('woFormTitle').textContent='패키지 작업지시 등록';$('woWarnBox').innerHTML='';_updateWoAmt();if(typeof renderWOOrderBridge==='function')renderWOOrderBridge(null);}
+
+function renderWOOrderBridge(meta){
+  var box=$('woOrderBridge');if(!box)return;
+  if(!meta&&$('woOrdId')&&$('woOrdId').value){
+    var orderId=$('woOrdId').value;
+    var order=(typeof getOrders==='function'?getOrders():DB.g('orders')||[]).find(function(o){return o.id===orderId;});
+    if(order){
+      meta={
+        orderId:order.id,
+        orderNo:order.no||($('woOrdId').dataset&&$('woOrdId').dataset.orderNo)||'',
+        quoteNum:order.quoteNum||($('woOrdId').dataset&&$('woOrdId').dataset.quoteNum)||'',
+        client:order.cli||'',
+        product:$('woProd')?$('woProd').value.trim():'',
+        spec:$('woSpec')?$('woSpec').value.trim():'',
+        qty:$('woFQ')?+$('woFQ').value||0:0,
+        due:order.shipDt||order.due||''
+      };
+    }
+  }
+  if(!meta){
+    box.style.display='none';
+    box.innerHTML='';
+    return;
+  }
+  var chips='';
+  if(meta.quoteNum)chips+='<span class="pack-chip">견적 '+meta.quoteNum+'</span>';
+  if(meta.due)chips+='<span class="pack-chip warn">납기 '+meta.due+'</span>';
+  if(meta.qty)chips+='<span class="pack-chip ok">수량 '+fmt(meta.qty)+'매</span>';
+  box.style.display='';
+  box.innerHTML='<div><b>수주 연결 작업지시</b> · '+(meta.orderNo||meta.orderId||'-')+' · '+(meta.client||'-')+'</div>'
+    +'<div style="margin-top:4px">'+(meta.product||'-')+(meta.spec?(' / '+meta.spec):'')+'</div>'
+    +'<div class="pack-chip-row">'+(chips||'<span class="pack-chip">수주 메타 없음</span>')+'</div>';
+}
 function _updateWoAmt(){var fq=+($('woFQ')?$('woFQ').value:0)||0;var pr=+($('woPrice')?$('woPrice').value:0)||0;var box=$('woAmtDisplay');if(box)box.textContent=(fq&&pr)?''+fq*pr+'원':'-';}
 function addP(nm,tp='n'){cProcs.push({nm,tp,mt:'',vd:'',st:'대기',qty:0,t1:'',t2:''});renP();checkProcWarn()}
 function rmP(i){cProcs.splice(i,1);renP();checkProcWarn()}
@@ -928,9 +961,9 @@ if(o.status!=='완료'&&o.status!=='출고완료'&&o.sd){
 var _rowCls=isLate(o)?'class="row-late"':'';
 return '<tr '+_rowCls+'><td><a href="#" onclick="showDet(\''+o.id+'\');return false" style="color:var(--pri);font-weight:700">'+o.wn+'</a></td><td>'+o.dt+'</td><td>'+o.cnm+'</td><td>'+o.pnm+'</td><td>'+o.fq+'</td><td style="color:var(--pri);font-weight:700">'+_amtStr+'</td><td>'+_sdDisp+'</td><td>'+(o.vendor||'자체')+'</td><td>'+progBar(o)+'</td><td>'+(isLate(o)?badge('지연'):badge(o.status))+'</td><td>'+acts+'</td></tr>'}).join('')||'<tr><td colspan="11" class="empty-cell">작업지시 없음</td></tr>'}
 function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();}
-function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();if(o.img){$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr);border-radius:10px">`;if($('woImgHint'))$('woImgHint').style.display='none';}else{woImgClear()}_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
+function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';if($('woOrdId'))$('woOrdId').value=o.ordId||'';_updateWoAmt();if(o.img){$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr);border-radius:10px">`;if($('woImgHint'))$('woImgHint').style.display='none';}else{woImgClear()}_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';renderWOOrderBridge();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
 // Copy work order
-function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
+function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice'))$('woPrice').value=o.price||'';if($('woOrdId'))$('woOrdId').value='';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';renderWOOrderBridge(null);var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}
 function delWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(o.status!=='대기'&&o.status!=='취소'){toast('대기/취소 상태만 삭제 가능','err');return}if(!confirm(`삭제: ${o.cnm} - ${o.pnm}`))return;if(!confirm('복구 불가. 최종 확인?'))return;DB.s('wo',DB.g('wo').filter(x=>x.id!==id));addLog(`삭제: ${o.wn} ${o.pnm}`);rWOList();if(typeof rDash==='function')rDash();if(typeof rPlan==='function')rPlan();toast('삭제','ok')}
 function chgProcSt(woId,pi,newSt){
 var wos=DB.g('wo');var oi=wos.findIndex(function(x){return x.id===woId});if(oi<0)return;

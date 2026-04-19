@@ -752,6 +752,7 @@
     <div class="fg"><label>규격 / 사양</label><input type="text" id="qtSpec" placeholder="예: 350x250x120 / 백판지 350g"></div>
     <div class="fg"><label>패키지 유형</label><select id="qtPackType"><option value="단상자">단상자</option><option value="합지박스">합지박스</option><option value="쇼핑백">쇼핑백</option><option value="슬리브">슬리브</option><option value="싸바리">싸바리</option><option value="기타">기타</option></select></div>
   </div>
+  <div id="qtAssistBar" class="pack-assist-grid" style="margin:10px 0 14px"></div>
   <div style="margin:10px 0 14px;padding:14px;border:1px solid var(--bdr);border-radius:14px;background:#F8FAFC">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
       <div>
@@ -882,6 +883,7 @@
 </div>
 </div>
 <input type="hidden" id="ordId">
+<div id="ordQuickSummary" class="pack-form-summary" style="margin-bottom:10px"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
 <div class="fg"><label>수주번호</label><input id="ordNo" readonly style="background:#F3F4F6;padding:6px 8px;font-size:12px"></div>
 <div class="fg"><label>수주일</label><input type="date" id="ordDt" class="u-input-md"></div>
@@ -900,6 +902,7 @@
 <div class="fg"><label>배송지</label><input id="ordDlv" class="u-input-md" placeholder="배송지 주소"></div>
 <div class="fg"><label>비고</label><textarea id="ordNote" rows="1" style="padding:6px 8px;font-size:12px;min-height:28px"></textarea></div>
 </div>
+<div id="ordClientHistory" class="pack-inline-note" style="margin-top:10px"></div>
 </div>
 </div>
 </div>
@@ -1107,6 +1110,7 @@
 <div class="fg"><label class="req">패키지 품목</label><input id="woProd" placeholder="품목 선택" readonly class="wo-select-input" onclick="openProdSearch()"></div>
 <button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()">검색</button>
 </div>
+<div id="woOrderBridge" class="pack-inline-note" style="margin-bottom:10px;display:none"></div>
 <div id="woPastPanel" class="wo-history-panel" style="display:none"></div>
 </section>
 

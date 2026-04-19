@@ -93,7 +93,41 @@ function calcQtAuto(){
   if($('qtVatAmt'))$('qtVatAmt').textContent=fmt(vat)+'원';
   if($('qtFinalAmt'))$('qtFinalAmt').textContent=fmt(total)+'원';
   if($('qtUnitPriceView'))$('qtUnitPriceView').value=unit?fmt(unit)+'원':'';
+  if(typeof updateQtAssist==='function')updateQtAssist();
   return {base:base,supply:supply,vat:vat,total:total,unit:unit,margin:margin};
+}
+
+function _bindQtAssistEvents(){
+  ['qtCli','qtProd','qtSpec','qtQty','qtPackType','qtPaperCost','qtPrintCost','qtPostCost','qtOutCost','qtMoldCost','qtMargin'].forEach(function(id){
+    var el=$(id);if(!el||el.dataset.packAssistBound)return;
+    var ev=(el.tagName==='SELECT'||el.type==='date')?'change':'input';
+    el.addEventListener(ev,updateQtAssist);
+    if(ev!=='input')el.addEventListener('input',updateQtAssist);
+    el.dataset.packAssistBound='1';
+  });
+}
+
+function updateQtAssist(){
+  var wrap=$('qtAssistBar');if(!wrap)return;
+  var cli=$('qtCli')?$('qtCli').value.trim():'';
+  var prod=$('qtProd')?$('qtProd').value.trim():'';
+  var spec=$('qtSpec')?$('qtSpec').value.trim():'';
+  var qty=_qtNum('qtQty');
+  var packType=$('qtPackType')?$('qtPackType').value:'단상자';
+  var quotes=DB.g('quotes')||[];
+  var sameCli=quotes.filter(function(q){return cli&&(q.cli||q.cnm||'')===cli});
+  var sameProd=quotes.filter(function(q){
+    return prod&&(q.prod||q.pnm||'')===prod&&(!cli||((q.cli||q.cnm||'')===cli));
+  }).sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')});
+  var recent=sameProd[0]||sameCli.sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')})[0]||null;
+  var supply=_qtNum('qtPrice');
+  var vat=Math.round(supply*_qtVatRate());
+  var total=supply+vat;
+  wrap.innerHTML=''
+    +'<div class="pack-assist-card"><div class="k">패키지 요약</div><div class="v">'+(packType||'단상자')+(prod?' · '+prod:'')+'</div><div class="s">'+(spec||'사양을 입력하면 반복 주문 비교가 더 빨라집니다.')+'</div></div>'
+    +'<div class="pack-assist-card"><div class="k">반복 거래 힌트</div><div class="v">'+(sameCli.length?('누적 '+sameCli.length+'건'):'첫 거래처 견적')+'</div><div class="s">'+(cli?(cli+' 기준 최근 견적을 비교합니다.'):('거래처를 선택하면 최근 단가를 보여줍니다.'))+'</div></div>'
+    +'<div class="pack-assist-card"><div class="k">최근 단가</div><div class="v">'+(recent&&recent.unitPrice?fmt(recent.unitPrice)+'원/매':'기록 없음')+'</div><div class="s">'+(recent&&recent.dt?(recent.dt+' · '+((recent.spec||recent.packType||'사양 미기록'))):'기존 실적이 없어서 현재 입력값 기준으로 계산합니다.')+'</div></div>'
+    +'<div class="pack-assist-card"><div class="k">현재 계산 기준</div><div class="v">'+(qty?fmt(qty)+'매':'수량 미입력')+'</div><div class="s">'+(supply?('공급가 '+fmt(supply)+'원 · 합계 '+fmt(total)+'원'):'원가 항목을 넣으면 예상 공급가를 바로 계산합니다.')+'</div></div>';
 }
 
 function _quoteStatusText(rec){return rec.status||rec.st||'작성중'}
@@ -228,6 +262,7 @@ function _makeOrderFromQuote(rec){
 }
 
 function openQtM(){
+  _bindQtAssistEvents();
   $('qtId').value='';$('qtNum').value=genQtNum();$('qtDt').value=td();
   $('qtCli').value='';$('qtProd').value='';$('qtQty').value='';
   if($('qtSpec'))$('qtSpec').value='';
@@ -244,9 +279,11 @@ function openQtM(){
   if($('qtToWOBtn'))$('qtToWOBtn').style.display='inline-block';
   $('qtMoT').textContent='패키지 견적 등록';oMo('qtMo2');
   calcQtAuto();
+  updateQtAssist();
 }
 
 function eQt(id){
+  _bindQtAssistEvents();
   var r=DB.g('quotes').find(function(x){return x.id===id});if(!r)return;
   $('qtId').value=r.id;$('qtNum').value=r.num;$('qtDt').value=r.dt;
   $('qtCli').value=r.cli;$('qtProd').value=r.prod||'';
@@ -266,6 +303,7 @@ function eQt(id){
   if($('qtToWOBtn'))$('qtToWOBtn').style.display='inline-block';
   $('qtMoT').textContent='패키지 견적 수정';oMo('qtMo2');
   calcQtAuto();
+  updateQtAssist();
 }
 
 function saveQt(){
@@ -273,6 +311,7 @@ function saveQt(){
   if(!cli){toast('거래처를 입력하세요','err');return}
   if(!prod){toast('제품명을 입력하세요','err');return}
   _saveQuoteRecord(true);
+  updateQtAssist();
 }
 
 function dQt(id){

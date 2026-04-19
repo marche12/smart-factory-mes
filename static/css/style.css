@@ -238,6 +238,22 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr);background:#fff;font-size:13px;cursor:pointer;transition:all .15s;font-weight:500}
 .filter-btn:hover{background:var(--bg2)}
 .filter-btn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+
+.pack-assist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.pack-assist-card{background:linear-gradient(180deg,#FFFFFF,#F8FAFC);border:1px solid #E2E8F0;border-radius:14px;padding:12px 14px;box-shadow:var(--sh-xs)}
+.pack-assist-card .k{font-size:11px;color:#64748B;margin-bottom:4px;font-weight:700;letter-spacing:.2px}
+.pack-assist-card .v{font-size:15px;font-weight:800;color:#0F172A;line-height:1.35}
+.pack-assist-card .s{font-size:11px;color:#94A3B8;margin-top:4px;line-height:1.45}
+.pack-form-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.pack-form-summary .item{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px}
+.pack-form-summary .item .k{font-size:11px;color:#64748B;margin-bottom:3px;font-weight:700}
+.pack-form-summary .item .v{font-size:14px;font-weight:800;color:#0F172A}
+.pack-inline-note{border:1px dashed #CBD5E1;background:#F8FAFC;border-radius:12px;padding:10px 12px;font-size:12px;color:#475569;line-height:1.65}
+.pack-inline-note b{color:#0F172A}
+.pack-chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pack-chip{background:#EFF6FF;color:#1E3A5F;border:1px solid #BFDBFE;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}
+.pack-chip.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+.pack-chip.ok{background:#ECFDF5;color:#166534;border-color:#BBF7D0}
 .mo-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt2);padding:4px 8px;border-radius:6px;transition:all .15s}
 .mo-x:hover{background:var(--bg3);color:var(--txt)}
 .drag-h{cursor:grab;color:var(--txt3);margin-right:4px;font-size:14px;user-select:none}

@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/css/pc-quick-entry.css?v=1">
 <link rel="stylesheet" href="/css/pc-sidebar-collapse.css?v=1">
 <link rel="stylesheet" href="/css/pc-top-modes.css?v=1">
+<link rel="stylesheet" href="/css/pc-sidebar-blocks.css?v=1">
 <script src="js/xlsx.full.min.js"></script>
 <script src="/js/core.js?v=26"></script>
 <script src="/js/search-util.js?v=1"></script>
@@ -21,6 +22,7 @@
 <script src="/js/pc-quick-entry.js?v=1" defer></script>
 <script src="/js/pc-sidebar-collapse.js?v=1" defer></script>
 <script src="/js/pc-top-modes.js?v=1" defer></script>
+<script src="/js/pc-sidebar-blocks.js?v=1" defer></script>
 </head>
 <body>
 <div id="toast" class="toast"></div>
@@ -85,8 +87,23 @@
 <!-- 홈 (단독) -->
 <button class="sb-item sb-home" data-mod="mes-dash" style="margin:4px 12px;padding:10px 14px;background:#1E40AF;color:#fff;border-radius:8px;font-weight:700;font-size:14px">🏠 패키지 운영판</button>
 
+<!-- [즐겨찾기] -->
+<div class="sb-section sb-section-fav" id="sbFavSection">
+  <div class="sb-section-hd">
+    <span>★ 즐겨찾기</span>
+    <button class="sb-section-act" onclick="sbFavToggle()" title="현재 화면 추가/제거">＋</button>
+  </div>
+  <div class="sb-tree" id="sbFavList"></div>
+</div>
+
+<!-- [최근 사용] -->
+<div class="sb-section sb-section-recent" id="sbRecentSection">
+  <div class="sb-section-hd"><span>🕒 최근</span></div>
+  <div class="sb-tree" id="sbRecentList"></div>
+</div>
+
 <!-- [펼침] 견적·수주 -->
-<div class="sb-group open" role="button" aria-expanded="true">🧾 견적·수주<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" data-group-key="order" role="button" aria-expanded="true">🧾 견적·수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-quote" title="패키지 견적 작성">패키지 견적</button>
 <button class="sb-item" data-mod="mes-order" title="수주 및 진행 추적">수주관리</button>
@@ -94,7 +111,7 @@
 </div>
 
 <!-- [펼침] 생산·공정 -->
-<div class="sb-group open" role="button" aria-expanded="true">🏭 생산·공정<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" data-group-key="prod" role="button" aria-expanded="true">🏭 생산·공정<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-plan" title="생산 계획 및 스케줄">생산계획</button>
 <button class="sb-item" data-mod="mes-proc-log" title="공정별 실적">공정실적</button>
@@ -103,7 +120,7 @@
 </div>
 
 <!-- [접힘] 자재·외주 -->
-<div class="sb-group" role="button" aria-expanded="false">📦 자재·외주<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="material" role="button" aria-expanded="false">📦 자재·외주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-stock" title="자재/제품 재고 현황">재고 현황</button>
 <button class="sb-item" data-mod="mat-po" title="자재 발주">발주</button>
@@ -113,7 +130,7 @@
 </div>
 
 <!-- [접힘] 출고·정산 -->
-<div class="sb-group" role="button" aria-expanded="false">🚚 출고·정산<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">🚚 출고·정산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" title="납품/출고 처리">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 <button class="sb-item" data-mod="acc-sales" title="매출 등록 및 조회">매출</button>
@@ -124,7 +141,7 @@
 </div>
 
 <!-- [접힘] 기준정보 -->
-<div class="sb-group" role="button" aria-expanded="false">📇 기준정보<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="master" role="button" aria-expanded="false">📇 기준정보<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-cli" title="거래처 관리">거래처</button>
 <button class="sb-item" data-mod="mes-prod" title="패키지 품목">패키지 품목</button>
@@ -134,7 +151,7 @@
 </div>
 
 <!-- [접힘] 시스템 -->
-<div class="sb-group" role="button" aria-expanded="false">⚙️ 시스템<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="system" role="button" aria-expanded="false">⚙️ 시스템<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="adm-perm" title="사용자 권한">권한 관리</button>
 <button class="sb-item" data-mod="adm-backup" title="데이터 백업">백업</button>

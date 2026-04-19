@@ -1207,22 +1207,24 @@
 </div>
 </section>
 
+<!-- 수량·단가 블록 (작업/출고 조건) -->
 <section class="wo-section-card">
 <div class="wo-section-head">
 <div>
-<div class="wo-section-kicker">Delivery</div>
-<h3>납품 · 메모</h3>
-<p>수량, 납품예정, 금액, 참고 이미지를 한 번에 정리합니다.</p>
+<div class="wo-section-kicker">Quantity & Price</div>
+<h3>수량 · 단가 · 납품</h3>
+<p>작업 수량과 판매 단가, 납품 정보를 정리합니다. 품목 선택 시 단가가 자동 채워집니다.</p>
 </div>
-<span class="wo-section-tag">출고</span>
+<span class="wo-section-tag">출고·매출 기준</span>
 </div>
-<div class="wo-inline-grid wo-inline-grid-5 wo-qty-grid">
+<!-- 1행: 수량·단가·금액 (한 줄로 강조) -->
+<div class="wo-inline-grid wo-inline-grid-4 wo-qty-grid" style="background:#F8FAFC;padding:10px 12px;border-radius:10px;margin-bottom:10px">
 <div class="fg"><label class="req">수량</label><input type="number" id="woFQ" min="0" oninput="_updateWoAmt()"></div>
+<div class="fg"><label>단가 (매당)</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()"></div>
+<div class="fg"><label>금액 (수량×단가)</label><div id="woAmtDisplay" class="wo-amount-box">-</div></div>
 <div class="fg"><label class="req">납품예정</label><input type="date" id="woShip"></div>
-<div class="fg"><label>손잡이</label><input id="woHand"></div>
-<div class="fg"><label>단가</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()"></div>
-<div class="fg"><label>금액</label><div id="woAmtDisplay" class="wo-amount-box">-</div></div>
 </div>
+<!-- 2행: 납품처 + 참고이미지 -->
 <div class="wo-inline-grid wo-inline-grid-2">
 <div class="fg"><label>납품처</label><div class="wo-inline-actions"><input id="woDlv" class="u-input-md"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()">🔍 검색</button></div></div>
 <div class="fg"><label>참고이미지</label>
@@ -1233,10 +1235,13 @@
 <input type="file" id="woImg" accept="image/*" onchange="prevImg(this)" style="display:none">
 </div>
 </div>
+<!-- 3행: 메모 -->
 <div class="wo-inline-grid wo-inline-grid-2">
 <div class="fg"><label>특이사항</label><textarea id="woNote" rows="2"></textarea></div>
 <div class="fg"><label>주의사항</label><textarea id="woCaut" rows="2"></textarea></div>
 </div>
+<!-- 손잡이(hand)는 품목 메타로만 사용, UI 숨김 -->
+<input type="hidden" id="woHand">
 </section>
 </div>
 

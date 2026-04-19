@@ -935,6 +935,19 @@ function getDefectHistory(pnm){
   return '이전 불량 이력\n'+lines.join('\n');
 }
 function selProd(id){const p=DB.g('prod').find(x=>x.id===id);if(!p)return;$('woProd').value=p.nm;$('woPrint').value=p.ps||'';$('woGold').value=p.gold||'';$('woMold').value=p.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=p.mold||'';$('woHand').value=p.hand||'';$('woNote').value=p.nt||'';_loadPapersFabrics(p);
+  // 단가 자동 입력 (거래처 예외단가 > 품목 기본단가), 이미 값 있으면 유지
+  if($('woPrice') && !$('woPrice').value){
+    var _cli = $('woCli') ? $('woCli').value.trim() : '';
+    var _autoPrice = 0;
+    if(_cli && typeof getCliPrice === 'function'){
+      try{ _autoPrice = getCliPrice(_cli, p.nm) || 0; }catch(e){}
+    }
+    if(!_autoPrice) _autoPrice = Number(p.price) || 0;
+    if(_autoPrice){
+      $('woPrice').value = _autoPrice;
+      if(typeof _updateWoAmt === 'function') _updateWoAmt();
+    }
+  }
   // 불량 이력 자동 삽입
   var defHist=getDefectHistory(p.nm);
   $('woCaut').value=defHist?(defHist+(p.caut?'\n\n'+p.caut:'')):(p.caut||'');

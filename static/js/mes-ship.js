@@ -1898,7 +1898,18 @@ function _fillWOFromOrder(o,it,itemIdx){
     if(it.spec)noteBits.push('사양: '+it.spec);
     if(o.note)noteBits.push(o.note);
     $('woNote').value=noteBits.join(' / ');
-    if($('woPrice'))$('woPrice').value=it.price||o.price||'';
+    if($('woPrice')){
+      var _p = it.price || o.price;
+      // 수주에 가격 없으면 거래처 예외단가 → 품목 기본단가 폴백
+      if(!_p && o.cli && it.nm){
+        if(typeof getCliPrice==='function') try{ _p = getCliPrice(o.cli, it.nm) || 0; }catch(e){}
+        if(!_p){
+          var _prod = (DB.g('prod')||[]).find(function(x){return x.nm===it.nm;});
+          if(_prod) _p = Number(_prod.price) || 0;
+        }
+      }
+      $('woPrice').value = _p || '';
+    }
     _updateWoAmt();
     // 수주 ID 연결 (hidden field)
     if($('woOrdId')){

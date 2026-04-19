@@ -809,7 +809,28 @@ function showPastWOPanel(pnm,cnm){
   if(!box)return;
   var os=DB.g('wo').filter(function(o){return o.pnm===pnm||(cnm&&o.cnm===cnm&&o.pnm===pnm)}).sort(function(a,b){return b.cat>a.cat?1:-1});
   if(!os.length){box.innerHTML='';box.style.display='none';return}
+  /* 단가 추이 요약 (가장 최근 8건, 오름차순) */
+  var priceHistory=os.filter(function(o){return o.price&&+o.price>0}).slice(0,8).reverse();
+  var prices=priceHistory.map(function(o){return +o.price||0});
+  var lastPrice=prices.length?prices[prices.length-1]:0;
+  var prevPrice=prices.length>1?prices[prices.length-2]:lastPrice;
+  var diff=lastPrice-prevPrice;
+  var diffColor=diff>0?'#DC2626':diff<0?'#059669':'#64748B';
+  var diffTxt=diff>0?('▲ '+Math.abs(diff).toLocaleString()+'원 인상'):diff<0?('▼ '+Math.abs(diff).toLocaleString()+'원 인하'):'변동 없음';
+  var spark='';
+  if(prices.length>=2){
+    var mx=Math.max.apply(null,prices),mn=Math.min.apply(null,prices),rng=mx-mn||1;
+    var pts=prices.map(function(v,i){return (i*90/(prices.length-1))+','+(24-((v-mn)/rng)*18);}).join(' ');
+    spark='<svg width="92" height="26" viewBox="0 0 90 26" style="display:inline-block;vertical-align:middle"><polyline points="'+pts+'" fill="none" stroke="'+diffColor+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
   var h='<div style="padding:12px;background:#EFF6FF;border-radius:12px;margin-top:10px">';
+  if(lastPrice){
+    h+='<div style="padding:10px 12px;background:#fff;border:1px solid #BFDBFE;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
+      +'<div><div style="font-size:11px;color:#64748B;font-weight:700">최근 단가 ('+priceHistory.length+'건)</div>'
+      +'<div style="font-size:16px;font-weight:800;color:#0F172A">'+lastPrice.toLocaleString()+'원</div>'
+      +'<div style="font-size:11px;color:'+diffColor+';font-weight:700;margin-top:2px">'+diffTxt+'</div></div>'
+      +'<div style="text-align:right">'+spark+'</div></div>';
+  }
   h+='<div style="font-size:13px;font-weight:600;color:#1E3A5F;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">이 품목의 이전 작업지시 ('+os.length+'건)<button class="btn btn-sm btn-o" onclick="$(\'woPastPanel\').style.display=\'none\'" style="font-size:11px;padding:3px 8px">닫기</button></div>';
   h+='<div style="max-height:180px;overflow-y:auto">';
   os.slice(0,10).forEach(function(o){
@@ -1199,9 +1220,29 @@ function exportCSV(){const os=DB.g('wo');let csv='\\uFEFF지시번호,작성일,
 function printWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;const co=DB.g1('co')||{nm:'팩플로우',addr:'파주시 월롱산로89',tel:'031-957-5921',fax:'031-957-5925'};
 function pVal(nm){const p=o.procs.find(x=>x.nm===nm);return p?{mt:p.mt||'',vd:p.vd||'',tp:p.tp}:{mt:'',vd:'',tp:'n'}}
 const pi=pVal('인쇄'),pk=pVal('코팅'),psk=pVal('실크코팅'),pg=pVal('금박'),ph=pVal('합지'),pt=pVal('톰슨'),pj=pVal('접착'),phg=pVal('후가공'),pe=pVal('기타');
-/* QR 코드: 모바일에서 해당 WO로 바로 이동 */
+/* QR 코드: 모바일에서 해당 WO로 바로 이동. 오프라인 폴백 위해 dataURL 캐시 사용 */
 var _qrPayload=(window.location.origin||'')+'/m.html?wo='+encodeURIComponent(o.id||'');
-var _qrImg='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(_qrPayload);
+var _qrCacheKey='qr_v1:'+(o.id||'');
+var _qrCached=null;
+try{_qrCached=localStorage.getItem(_qrCacheKey);}catch(e){}
+var _qrImg=_qrCached||('https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(_qrPayload));
+/* 백그라운드로 dataURL 캐싱 (다음 인쇄부터 오프라인 가능) */
+if(!_qrCached){
+  (function(){
+    try{
+      var img=new Image();img.crossOrigin='anonymous';
+      img.onload=function(){
+        try{
+          var c=document.createElement('canvas');c.width=120;c.height=120;
+          c.getContext('2d').drawImage(img,0,0,120,120);
+          var du=c.toDataURL('image/png');
+          localStorage.setItem(_qrCacheKey,du);
+        }catch(e){}
+      };
+      img.src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(_qrPayload);
+    }catch(e){}
+  })();
+}
 const h=`
 <div style="position:relative;text-align:center;font-size:24px;font-weight:900;letter-spacing:4px;padding:16px 0;border:3px solid #000;margin-bottom:12px">
   <div style="position:absolute;top:6px;right:10px;width:72px;text-align:center">

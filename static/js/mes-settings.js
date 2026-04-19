@@ -328,6 +328,14 @@ var _shipCnm=o.cnm, _shipCid='', _changeMeta=null;
 if(_override){
   try{var _ov=JSON.parse(_override);_shipCnm=_ov.nm;_shipCid=_ov.id;_changeMeta=_ov;}catch(e){}
 }
+/* 모바일에서 예약한 거래처 변경 자동 적용 (1회만) */
+if(!_changeMeta && o.nextShipCliOverride){
+  _changeMeta=o.nextShipCliOverride;
+  _shipCnm=_changeMeta.nm; _shipCid=_changeMeta.id;
+  var _wos2=DB.g('wo'); var _i2=_wos2.findIndex(function(x){return x.id===woId;});
+  if(_i2>=0){delete _wos2[_i2].nextShipCliOverride; DB.s('wo',_wos2);}
+  if(typeof toast==='function')toast('모바일 예약 거래처 변경 적용: '+_shipCnm,'ok');
+}
 const rec={
   id:gid(),woId,wn:o.wn,orderId:o.ordId||'',
   cnm:_shipCnm, origCnm:o.cnm,        // 얼마에요 BookId(변경) + OrigBookId(원본)

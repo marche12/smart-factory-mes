@@ -595,7 +595,11 @@ function mShowWODetail(id){
     + '</div>'
     + (r.nt ? '<div style="padding:10px;background:var(--m-bg);border-radius:8px;font-size:13px;color:var(--m-text2);margin-bottom:10px">'+r.nt+'</div>' : '')
     + '<div class="m-progress" style="height:8px"><div class="m-progress-bar '+progress.color+'" style="width:'+progress.pct+'%"></div></div>'
-    + '<div style="text-align:right;font-size:12px;color:var(--m-text3);margin-top:4px">진행률 '+progress.pct+'%</div>';
+    + '<div style="text-align:right;font-size:12px;color:var(--m-text3);margin-top:4px">진행률 '+progress.pct+'%</div>'
+    + '<div style="display:flex;gap:6px;margin-top:12px">'
+    +   '<button class="m-btn-sm m-btn" onclick="mChangeShipCli(\''+id+'\')" style="flex:1;padding:10px;background:#F59E0B;color:#fff">거래처 변경</button>'
+    +   '<button class="m-btn-sm m-btn" onclick="mShowShipHistory(\''+id+'\')" style="flex:1;padding:10px">출고 이력</button>'
+    + '</div>';
 
   // 공정 렌더
   var procs = r.procs || [];
@@ -655,6 +659,130 @@ function mSetProcStatus(idx, status){
   mToast(status+' 처리됨', 'ok');
   mShowWODetail(id); // 새로고침
 }
+
+/* ===== 모바일: 출고 이력 + 개별 출고 취소 ===== */
+function mShowShipHistory(woId){
+  var logs = (DB.g('shipLog') || []).filter(function(s){return s.woId === woId}).sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'')});
+  var wo = (DB.g('wo')||[]).find(function(x){return x.id === woId});
+  if(!logs.length){ mToast('출고 이력 없음', ''); return; }
+  var html = '<div style="padding:14px"><div style="font-weight:700;margin-bottom:10px">'+(wo?wo.wn:'-')+' 출고 이력 ('+logs.length+'건)</div>';
+  logs.forEach(function(s){
+    var chg = s.isCliChanged ? '<span class="m-badge red" style="margin-left:6px">거래처변경</span>' : '';
+    html += '<div style="padding:10px;border:1px solid var(--m-bdr);border-radius:10px;margin-bottom:8px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center"><b>'+s.dt+'</b>'+chg+'</div>'
+      + '<div style="font-size:13px;margin-top:4px">'+(s.cnm||'-')+' · '+mFmt(s.qty||0)+'매'
+      + (s.defect?' <span style="color:#DC2626">(불량 '+s.defect+')</span>':'')
+      + '</div>'
+      + (s.origCnm&&s.origCnm!==s.cnm?'<div style="font-size:11px;color:var(--m-text3)">원거래처: '+s.origCnm+'</div>':'')
+      + '<button class="m-btn-sm m-btn gray" onclick="mCancelShip(\''+s.id+'\')" style="margin-top:8px;padding:8px 14px;background:#DC2626;color:#fff">이 출고 취소</button>'
+      + '</div>';
+  });
+  html += '<button class="m-btn-sm" onclick="mCloseModal(\'mShipHistMo\')" style="width:100%;margin-top:8px;padding:10px;background:var(--m-bg2);border:1px solid var(--m-bdr);border-radius:10px">닫기</button></div>';
+  var el = document.getElementById('mShipHistMo');
+  if(!el){ el = document.createElement('div'); el.id = 'mShipHistMo'; el.className = 'm-modal'; document.body.appendChild(el); }
+  el.innerHTML = '<div class="m-modal-body" style="max-height:85vh;overflow:auto">'+html+'</div>';
+  el.classList.add('on');
+}
+function mCancelShip(shipId){
+  if(!confirm('이 출고를 취소합니다.\n재고/매출/세금계산서도 자동으로 원복됩니다. 계속?')) return;
+  if(typeof cancelShipById === 'function'){
+    cancelShipById(shipId, true);
+    mToast('출고 취소 완료', 'ok');
+    mCloseModal('mShipHistMo');
+    // 현재 WO 상세 새로고침
+    var wid = mq('mWOId').value;
+    if(wid) mShowWODetail(wid);
+    mRenderOrders();
+    return;
+  }
+  // cancelShipById 없으면 수동 처리 (최소 shipLog만 제거)
+  var logs = (DB.g('shipLog')||[]).filter(function(s){return s.id !== shipId});
+  DB.s('shipLog', logs);
+  mToast('출고만 취소 (매출/세금은 PC에서 확인)', 'warn');
+  mCloseModal('mShipHistMo');
+}
+/* ===== 모바일: 출고 거래처 변경 (다음 출고에 적용) ===== */
+function mChangeShipCli(woId){
+  var wo = (DB.g('wo')||[]).find(function(x){return x.id === woId});
+  if(!wo) return;
+  var clis = (DB.g('cli')||[]).filter(function(c){return !c.cType || c.cType === 'sales' || c.cType === 'both'}).slice(0, 30);
+  var html = '<div style="padding:14px">'
+    + '<div style="font-weight:700;margin-bottom:6px">납품 거래처 변경</div>'
+    + '<div style="font-size:12px;color:var(--m-text2);margin-bottom:10px">원 거래처: <b>'+(wo.cnm||'-')+'</b><br>변경된 거래처는 다음 출고부터 매출/세금계산서에 반영됩니다</div>'
+    + '<select id="mCliChangeReason" style="width:100%;padding:10px;border:1px solid var(--m-bdr);border-radius:8px;margin-bottom:8px;font-size:13px">'
+    + '<option value="4|기재사항의 착오 정정">4. 기재사항의 착오 정정</option>'
+    + '<option value="3|공급가액의 변동">3. 공급가액의 변동</option>'
+    + '<option value="1|환입">1. 환입</option>'
+    + '<option value="2|계약의 해제">2. 계약의 해제</option>'
+    + '</select>'
+    + '<input id="mCliSearch" placeholder="거래처명 검색..." oninput="mFilterCliChange()" style="width:100%;padding:10px;border:1px solid var(--m-bdr);border-radius:8px;margin-bottom:8px">'
+    + '<div id="mCliChangeList" style="max-height:50vh;overflow:auto"></div>'
+    + '<button class="m-btn-sm" onclick="mCloseModal(\'mCliChangeMo\')" style="width:100%;margin-top:8px;padding:10px;background:var(--m-bg2);border:1px solid var(--m-bdr);border-radius:10px">취소</button>'
+    + '</div>';
+  var el = document.getElementById('mCliChangeMo');
+  if(!el){ el = document.createElement('div'); el.id = 'mCliChangeMo'; el.className = 'm-modal'; document.body.appendChild(el); }
+  el.dataset.woid = woId;
+  el.innerHTML = '<div class="m-modal-body" style="max-height:90vh;overflow:auto">'+html+'</div>';
+  el.classList.add('on');
+  mFilterCliChange();
+}
+function mFilterCliChange(){
+  var q = (document.getElementById('mCliSearch')||{}).value || '';
+  q = q.toLowerCase();
+  var clis = (DB.g('cli')||[]).filter(function(c){
+    if(c.cType && c.cType!=='sales' && c.cType!=='both') return false;
+    if(!q) return true;
+    return (c.nm||'').toLowerCase().includes(q) || (c.tel||'').includes(q);
+  }).slice(0, 40);
+  var html = clis.length ? clis.map(function(c){
+    return '<div onclick="mPickCliChange(\''+c.id+'\')" style="padding:12px;border:1px solid var(--m-bdr);border-radius:8px;margin-bottom:6px;cursor:pointer">'
+      + '<div style="font-weight:700">'+(c.nm||'')+'</div>'
+      + '<div style="font-size:11px;color:var(--m-text3);margin-top:2px">'+(c.bizNo||'')+(c.tel?' · '+c.tel:'')+'</div>'
+      + '</div>';
+  }).join('') : '<div style="padding:20px;text-align:center;color:var(--m-text3)">검색 결과 없음</div>';
+  document.getElementById('mCliChangeList').innerHTML = html;
+}
+function mPickCliChange(cid){
+  var c = (DB.g('cli')||[]).find(function(x){return x.id===cid});
+  if(!c) return;
+  var el = document.getElementById('mCliChangeMo');
+  var woId = el.dataset.woid;
+  var reasonVal = (document.getElementById('mCliChangeReason')||{}).value || '4|기재사항의 착오 정정';
+  var parts = reasonVal.split('|');
+  /* 저장: WO에 nextShipCliOverride 필드로 보관 → PC의 다음 출고에서 사용 */
+  var all = DB.g('wo')||[];
+  var i = all.findIndex(function(x){return x.id===woId});
+  if(i < 0){ mToast('WO 없음','err'); return; }
+  all[i].nextShipCliOverride = {
+    id: c.id, nm: c.nm,
+    amendedKindCode: parseInt(parts[0]),
+    reason: parts[1]||reasonVal,
+    changedAt: mNw(),
+    changedBy: (window.CU && CU.nm) || '모바일'
+  };
+  /* 변경 이력 기록 */
+  var chg = DB.g('changeLog') || [];
+  chg.push({
+    id: Date.now().toString(36)+Math.random().toString(36).substr(2,5),
+    dt: mTd(), tm: mNw(),
+    type: '출고거래처변경(모바일 예약)',
+    target: 'WO:'+all[i].wn,
+    amendedKindCode: parseInt(parts[0]),
+    amendedKindName: parts[1]||reasonVal,
+    from: all[i].cnm, to: c.nm,
+    by: (window.CU && CU.nm) || '모바일'
+  });
+  DB.s('changeLog', chg);
+  DB.s('wo', all);
+  mToast('다음 출고부터 '+c.nm+' 으로 적용됩니다', 'ok');
+  mCloseModal('mCliChangeMo');
+  mShowWODetail(woId);
+}
+window.mShowShipHistory = mShowShipHistory;
+window.mCancelShip = mCancelShip;
+window.mChangeShipCli = mChangeShipCli;
+window.mFilterCliChange = mFilterCliChange;
+window.mPickCliChange = mPickCliChange;
 
 function mWOComplete(){
   var id = mq('mWOId').value;

@@ -134,6 +134,40 @@ function renderMonthlyReport(){
     }).join(''):'<tr><td colspan="6" class="empty-cell">발행 내역 없음</td></tr>')
     +'</tbody></table></div>';
 
+  /* 부가세 신고용 요약 (매출세액 - 매입세액) */
+  var salesSupply=0,salesVat=0,salesTax=0;
+  sales.forEach(function(s){
+    var amt=+s.amt||0;
+    var supply=Math.round(amt/1.1);
+    salesSupply+=supply;salesVat+=(amt-supply);
+  });
+  var taxSupply=_sumAmt(tax,'supply'),taxVat=_sumAmt(tax,'vat');
+  var etaxSupply=_sumAmt(etax,'supply'),etaxVat=_sumAmt(etax,'vat');
+  var purchaseSupply=0,purchaseVat=0;
+  purchase.forEach(function(p){
+    var amt=+p.amt||0;
+    var supply=+p.supply||Math.round(amt/1.1);
+    var vat=+p.vat||(amt-supply);
+    purchaseSupply+=supply;purchaseVat+=vat;
+  });
+  var vatOwed=salesVat-purchaseVat;
+  var vatColor=vatOwed>=0?'danger':'green';
+  var vatMsg=vatOwed>=0?'납부 예정':'환급 예상';
+
+  html+='<div class="mr-section" style="margin-top:18px"><div class="mr-section-t">부가세 신고 자료 ('+ym+')</div>'
+    +'<div class="mr-kpi-grid">'
+    +kpi('매출 공급가',f(salesSupply)+'원','부가세 '+f(salesVat)+'원','pri')
+    +kpi('매입 공급가',f(purchaseSupply)+'원','부가세 '+f(purchaseVat)+'원','warn')
+    +kpi('부가세 '+vatMsg,(vatOwed>=0?'+':'')+f(vatOwed)+'원','매출세 − 매입세',vatColor)
+    +kpi('세금계산서',tax.length+'건','공급가 '+f(taxSupply)+'원','pri')
+    +kpi('전자세금계산서',etax.length+'건','공급가 '+f(etaxSupply)+'원','pri')
+    +kpi('수정 세금계산서',tax.filter(function(t){return t.amendedKindCode;}).length+'건','사유코드 보유','warn')
+    +'</div>'
+    +'<div style="margin-top:10px;padding:10px 12px;background:#FEF3C7;border-left:3px solid #F59E0B;border-radius:6px;font-size:12px;color:#92400E">'
+    +'※ 이 자료는 세무사 제출 참고용입니다. 실제 신고는 홈택스 또는 세무사 자료를 기준으로 해주세요. '
+    +'매출세 계산은 sales 테이블의 amt 를 공급가+세액(10%)로 역산한 값이고, 매입세는 purchase.supply/vat 를 사용합니다.'
+    +'</div></div>';
+
   body.innerHTML=html;
   window._mrLatest={ym:ym,sales:sales,purchase:purchase,tax:tax,topCli:topCli,topProd:topProd,salesSum:salesSum,purchaseSum:purchaseSum,profit:profit};
 }

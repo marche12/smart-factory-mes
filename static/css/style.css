@@ -255,6 +255,27 @@ html,body{font-feature-settings:"ss01","tnum","kern";letter-spacing:-.01em;heigh
 .pack-chip.warn{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
 .pack-chip.ok{background:#ECFDF5;color:#166534;border-color:#BBF7D0}
 
+.pack-search-modal{width:min(920px,94vw);max-height:86vh;background:#fff;border:1px solid var(--bdr);border-radius:18px;box-shadow:var(--sh-lg);display:flex;flex-direction:column;overflow:hidden}
+.pack-search-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 20px 12px;border-bottom:1px solid #E5E7EB;background:linear-gradient(180deg,#FFFFFF,#F8FAFC)}
+.pack-search-title{font-size:18px;font-weight:800;color:#0F172A}
+.pack-search-sub{font-size:12px;color:#64748B;margin-top:3px}
+.pack-search-close{background:none;border:none;font-size:24px;line-height:1;color:#64748B;cursor:pointer;padding:0 2px}
+.pack-search-toolbar{display:flex;gap:8px;align-items:center;padding:14px 20px 10px}
+.pack-search-input{flex:1;padding:12px 14px;border:1px solid var(--bdr);border-radius:12px;background:#fff;font-size:14px;box-shadow:var(--sh-xs)}
+.pack-search-input:focus{border-color:var(--pri);box-shadow:0 0 0 4px var(--pri-ring),var(--sh-xs)}
+.pack-search-recent{padding:0 20px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pack-search-recent-label{font-size:11px;font-weight:700;color:#64748B;margin-right:4px}
+.pack-search-tag{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700;color:#475569;cursor:pointer}
+.pack-search-table{display:flex;flex-direction:column;min-height:240px;overflow:hidden}
+.pack-search-table-head{display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(220px,1.6fr) minmax(150px,1fr);gap:12px;padding:10px 20px;border-top:1px solid #F1F5F9;border-bottom:1px solid #E5E7EB;background:#F8FAFC;font-size:11px;font-weight:800;color:#64748B}
+.pack-search-list{overflow:auto;padding:4px 0 12px}
+.pack-search-row{width:100%;display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(220px,1.6fr) minmax(150px,1fr);gap:12px;align-items:center;padding:12px 20px;background:#fff;border:none;border-bottom:1px solid #F1F5F9;text-align:left}
+.pack-search-row:hover,.pack-search-row.is-active{background:#F8FAFC}
+.pack-search-primary{font-size:14px;font-weight:700;color:#0F172A}
+.pack-search-secondary{font-size:12px;color:#475569;line-height:1.5}
+.pack-search-meta{font-size:12px;color:#64748B;justify-self:end;text-align:right}
+.pack-search-empty{padding:28px 20px;text-align:center;color:#94A3B8;font-size:13px}
+
 /* ==== 월말 마감 리포트 (ux-ext.js) ==== */
 .mr-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
 .mr-kpi{padding:14px 16px;border:1px solid #E2E8F0;border-radius:12px;background:linear-gradient(180deg,#FFFFFF,#F8FAFC);box-shadow:var(--sh-xs)}

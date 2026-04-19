@@ -144,6 +144,16 @@ function mStartApp(){
       } else {
         mToast('데이터 로드 완료 ('+mFmt(cnt)+'건)', 'ok');
       }
+      /* QR 딥링크: ?wo=xxx 있으면 바로 WO 상세 */
+      try{
+        var params=new URLSearchParams(window.location.search||'');
+        var woId=params.get('wo');
+        if(woId&&typeof mShowWODetail==='function'){
+          mGoTab('order');
+          setTimeout(function(){mShowWODetail(woId);},300);
+          return;
+        }
+      }catch(e2){}
       mGoTab('home');
     }).catch(function(e){
       console.warn('DB init 실패:', e);

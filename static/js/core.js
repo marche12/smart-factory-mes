@@ -256,6 +256,152 @@ function refreshProcSelects(){
   fillProcSelect('eProc',false);
 }
 
+/* ===== Unified Search Modal ===== */
+var _packSearchState={cfg:null,items:[],filtered:[],active:0,query:''};
+function _ensurePackSearchModal(){
+  var ex=document.getElementById('packSearchMo');
+  if(ex)return ex;
+  var el=document.createElement('div');
+  el.id='packSearchMo';
+  el.className='mo-bg hidden';
+  el.innerHTML=''
+    +'<div class="pack-search-modal" onclick="event.stopPropagation()">'
+    +'<div class="pack-search-head">'
+    +'<div><div class="pack-search-title" id="packSearchTitle">검색</div><div class="pack-search-sub" id="packSearchSub">이름, 번호, 최근 사용 이력을 함께 찾습니다.</div></div>'
+    +'<button class="pack-search-close" onclick="closePackSearchModal()">×</button>'
+    +'</div>'
+    +'<div class="pack-search-toolbar">'
+    +'<input id="packSearchInput" class="pack-search-input" placeholder="검색" autocomplete="off">'
+    +'<button class="btn btn-o btn-sm" id="packSearchClearBtn" onclick="clearPackSearchHistory()" style="white-space:nowrap">최근기록 삭제</button>'
+    +'</div>'
+    +'<div id="packSearchRecent" class="pack-search-recent"></div>'
+    +'<div class="pack-search-table">'
+    +'<div class="pack-search-table-head"><span>기준 정보</span><span>보조 정보</span><span>최근 / 상태</span></div>'
+    +'<div id="packSearchList" class="pack-search-list"></div>'
+    +'</div>'
+    +'</div>';
+  el.onclick=function(e){if(e.target===el)closePackSearchModal()};
+  document.body.appendChild(el);
+  var inp=document.getElementById('packSearchInput');
+  inp.addEventListener('input',SearchUtil.debounce(function(){_renderPackSearchResults(this.value||'')},80));
+  inp.addEventListener('keydown',function(e){
+    var list=_packSearchState.filtered||[];
+    if(!list.length)return;
+    if(e.key==='ArrowDown'){e.preventDefault();_packSearchState.active=Math.min((_packSearchState.active||0)+1,list.length-1);_paintPackSearchActive()}
+    else if(e.key==='ArrowUp'){e.preventDefault();_packSearchState.active=Math.max((_packSearchState.active||0)-1,0);_paintPackSearchActive()}
+    else if(e.key==='Enter'){e.preventDefault();_pickPackSearch(_packSearchState.active||0)}
+    else if(e.key==='Escape'){closePackSearchModal()}
+  });
+  return el;
+}
+
+function openPackSearchModal(cfg){
+  var modal=_ensurePackSearchModal();
+  _packSearchState.cfg=cfg||{};
+  _packSearchState.items=(cfg&&cfg.getItems?cfg.getItems():[])||[];
+  _packSearchState.filtered=_packSearchState.items.slice();
+  _packSearchState.active=0;
+  _packSearchState.query='';
+  $('packSearchTitle').textContent=cfg.title||'검색';
+  $('packSearchSub').textContent=cfg.subTitle||'이름, 코드, 최근 이력을 함께 찾습니다.';
+  $('packSearchInput').placeholder=cfg.placeholder||'검색';
+  $('packSearchInput').value=cfg.initialQuery||'';
+  modal.classList.remove('hidden');
+  _renderPackSearchRecent();
+  _renderPackSearchResults(cfg.initialQuery||'');
+  setTimeout(function(){$('packSearchInput').focus();$('packSearchInput').select();},40);
+}
+
+function closePackSearchModal(){
+  var modal=$('packSearchMo');
+  if(modal)modal.classList.add('hidden');
+  _packSearchState={cfg:null,items:[],filtered:[],active:0,query:''};
+}
+
+function _searchFieldTexts(item,cfg){
+  var fields=(cfg&&cfg.fields)||[];
+  var vals=[];
+  fields.forEach(function(key){
+    var v=typeof key==='function'?key(item):(item&&item[key]);
+    if(v!==undefined&&v!==null&&String(v)!=='')vals.push(String(v));
+  });
+  return vals;
+}
+
+function _renderPackSearchRecent(){
+  var box=$('packSearchRecent');
+  var cfg=_packSearchState.cfg||{};
+  if(!box)return;
+  var recent=(typeof SearchUtil!=='undefined'&&cfg.historyKey)?SearchUtil.getRecent(cfg.historyKey):[];
+  if(!recent.length){box.innerHTML='';return;}
+  box.innerHTML='<div class="pack-search-recent-label">최근 검색</div>'
+    +recent.map(function(term){return '<button class="pack-search-tag" onclick="applyPackSearchRecent('+JSON.stringify(term)+')">'+term+'</button>';}).join('');
+}
+
+function applyPackSearchRecent(term){
+  $('packSearchInput').value=term||'';
+  _renderPackSearchResults(term||'');
+}
+
+function clearPackSearchHistory(){
+  var cfg=_packSearchState.cfg||{};
+  if(typeof SearchUtil!=='undefined'&&cfg.historyKey)SearchUtil.clearHistory(cfg.historyKey);
+  _renderPackSearchRecent();
+}
+
+function _renderPackSearchResults(query){
+  var cfg=_packSearchState.cfg||{};
+  var items=(cfg.getItems?cfg.getItems():_packSearchState.items)||[];
+  _packSearchState.items=items;
+  _packSearchState.query=query||'';
+  var filtered=items.filter(function(item){
+    if(cfg.filter&&!cfg.filter(item,query||''))return false;
+    if(!query)return true;
+    var texts=_searchFieldTexts(item,cfg);
+    return texts.some(function(text){return SearchUtil.match(text,query);});
+  });
+  if(cfg.sort)filtered.sort(function(a,b){return cfg.sort(a,b,query||'');});
+  _packSearchState.filtered=filtered;
+  _packSearchState.active=0;
+  var list=$('packSearchList');
+  if(!list)return;
+  if(!filtered.length){
+    list.innerHTML='<div class="pack-search-empty">검색 결과가 없습니다.</div>';
+    return;
+  }
+  list.innerHTML=filtered.map(function(item,idx){
+    var row=cfg.renderRow?cfg.renderRow(item,query||''):{
+      primary:item&&item.nm?item.nm:'-',
+      secondary:'',
+      meta:''
+    };
+    return '<button class="pack-search-row'+(idx===0?' is-active':'')+'" data-pack-search-idx="'+idx+'" onclick="_pickPackSearch('+idx+')">'
+      +'<span class="pack-search-primary">'+row.primary+'</span>'
+      +'<span class="pack-search-secondary">'+(row.secondary||'')+'</span>'
+      +'<span class="pack-search-meta">'+(row.meta||'')+'</span>'
+      +'</button>';
+  }).join('');
+  _paintPackSearchActive();
+}
+
+function _paintPackSearchActive(){
+  var nodes=document.querySelectorAll('#packSearchList .pack-search-row');
+  nodes.forEach(function(node,idx){
+    node.classList.toggle('is-active',idx===_packSearchState.active);
+  });
+  var active=nodes[_packSearchState.active];
+  if(active&&active.scrollIntoView)active.scrollIntoView({block:'nearest'});
+}
+
+function _pickPackSearch(idx){
+  var cfg=_packSearchState.cfg||{};
+  var item=(_packSearchState.filtered||[])[idx];
+  if(!item)return;
+  if(typeof SearchUtil!=='undefined'&&cfg.historyKey&&_packSearchState.query&&_packSearchState.query.trim())SearchUtil.saveHistory(cfg.historyKey,_packSearchState.query.trim());
+  if(cfg.onPick)cfg.onPick(item);
+  closePackSearchModal();
+}
+
 /* ===== Auth Token Management ===== */
 var _authTokens={access:null,refresh:null};
 var _refreshing=null;
@@ -313,6 +459,22 @@ var DB={
       updatedAt:data&&data.current_updated_at?data.current_updated_at:null,
       at:new Date().toISOString()
     };
+    /* 충돌 이력 로그 (최대 50건) */
+    try{
+      var logKey='ino_conflictLog';
+      var raw=localStorage.getItem(logKey);
+      var log=raw?JSON.parse(raw):[];
+      log.unshift({
+        at:new Date().toISOString(),
+        key:storeKey,
+        user:(typeof CU!=='undefined'&&CU&&CU.nm)||'unknown',
+        localSize:(localJson||'').length,
+        serverSize:(data&&data.current_value?String(data.current_value).length:0),
+        status:'pending'
+      });
+      if(log.length>50)log.length=50;
+      localStorage.setItem(logKey,JSON.stringify(log));
+    }catch(e){}
     if(data&&data.current_value!==undefined&&data.current_value!==null){
       _cache[storeKey]=data.current_value;
       localStorage.setItem(storeKey,data.current_value);
@@ -518,8 +680,27 @@ var DB={
       DB._syncToServer(storeKey,conflict.localValue);
     }
     delete _conflicts[storeKey];
+    /* 이력 로그 해소 마킹 */
+    try{
+      var raw=localStorage.getItem('ino_conflictLog');
+      if(raw){
+        var log=JSON.parse(raw);
+        for(var i=0;i<log.length;i++){
+          if(log[i].key===storeKey&&log[i].status==='pending'){
+            log[i].status=useLocal?'내변경-재저장':'서버값-유지';
+            log[i].resolvedAt=new Date().toISOString();
+            break;
+          }
+        }
+        localStorage.setItem('ino_conflictLog',JSON.stringify(log));
+      }
+    }catch(e){}
     return true;
-  }
+  },
+  getConflictLog:function(){
+    try{var raw=localStorage.getItem('ino_conflictLog');return raw?JSON.parse(raw):[];}catch(e){return [];}
+  },
+  clearConflictLog:function(){localStorage.removeItem('ino_conflictLog');}
 }
 var gid=()=>Date.now().toString(36)+Math.random().toString(36).substr(2,5);
 const td=()=>new Date().toISOString().slice(0,10);

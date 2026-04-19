@@ -517,8 +517,82 @@ function runIntegritySuite() {
   };
 }
 
+function runPartialShipCliChangeSuite() {
+  /* 시나리오: WO 100매 → 1차 40매 출고(원본 거래처) → 거래처 변경 후 2차 60매 출고
+     → 2차 출고 취소 → 1차 출고는 살아있고 재고/매출/세금 일관 */
+  const { ctx, setVals, getDB, seed } = createHarness();
+  seed(['wo', 'cli', 'prod', 'users', 'orders', 'shipLog', 'sales', 'taxInvoice', 'etax', 'qcRecords']);
+  ctx.DB.s('users', [{ id: 'u1', nm: '관리자' }]);
+  ctx.DB.s('cli', [
+    { id: 'c1', nm: 'A사', bizNo: '111-11-11111', addr: '서울', ceo: 'A' },
+    { id: 'c2', nm: 'B사', bizNo: '222-22-22222', addr: '부산', ceo: 'B' },
+  ]);
+  const wo = {
+    id: 'wo_psc', wn: 'WO-PSC-1', ordId: 'ord_psc',
+    dt: '2026-04-19', cnm: 'A사', pnm: '상자X', fq: 100, price: 1000, amt: 100000,
+    status: '완료', procs: [{ nm: '인쇄', tp: 'n', st: '완료', qty: 100 }],
+    paper: '', spec: '', mgr: '관리자',
+  };
+  ctx.DB.s('wo', [wo]);
+  ctx.saveOrders([{ id: 'ord_psc', no: 'SO-PSC', dt: '2026-04-19', cli: 'A사', items: [{ nm: '상자X', qty: 100, price: 1000 }], status: '수주', woIds: [wo.id] }]);
+
+  // 1차 출고 40매 (원본 거래처 A사)
+  setVals({
+    smWoId: wo.id, smQty: '40', smDefect: '0', smCliOverride: '',
+    smInspNote: '1차', smCar: '11가1111', smDriver: '기사1', smDlv: 'A본사', smMemo: '',
+  });
+  ctx.doShip();
+  let shipLog = getDB('shipLog');
+  let sales = getDB('sales');
+  assert.equal(shipLog.length, 1, 'first ship should be created');
+  assert.equal(shipLog[0].cnm, 'A사', 'first ship cnm stays A사');
+  assert.equal(shipLog[0].isCliChanged, false, 'first ship not cli-changed');
+  assert.equal(sales.length, 1, 'first sales created');
+  assert.equal(sales[0].cnm || sales[0].cli, 'A사', 'first sales attributed to A사');
+
+  // 2차 출고 60매 — 거래처를 B사로 변경
+  setVals({
+    smWoId: wo.id, smQty: '60', smDefect: '0',
+    smCliOverride: JSON.stringify({ id: 'c2', nm: 'B사', amendedKindCode: 4, reason: '기재사항 착오 정정', changedAt: '2026-04-19', changedBy: '관리자' }),
+    smInspNote: '2차', smCar: '22가2222', smDriver: '기사2', smDlv: 'B본사', smMemo: '',
+  });
+  ctx.doShip();
+  shipLog = getDB('shipLog');
+  sales = getDB('sales');
+  let wos = ctx.DB.g('wo');
+  assert.equal(shipLog.length, 2, 'second ship added');
+  const ship2 = shipLog.find(function (s) { return s.cnm === 'B사'; });
+  assert.ok(ship2, 'second ship goes to B사');
+  assert.equal(ship2.origCnm, 'A사', 'second ship origCnm preserved as A사');
+  assert.equal(ship2.isCliChanged, true, 'second ship marked cli-changed');
+  assert.equal(ship2.amendedKindCode, 4, 'second ship carries amendedKindCode');
+  assert.equal(sales.length, 2, 'two sales entries');
+  assert.equal(wos[0].status, '출고완료', 'WO complete after 40+60=100');
+
+  // 2차 출고만 취소
+  ctx.cancelShipById(ship2.id, true);
+  shipLog = getDB('shipLog');
+  sales = getDB('sales');
+  wos = ctx.DB.g('wo');
+  assert.equal(shipLog.length, 1, 'only first ship remains after 2nd cancel');
+  assert.equal(shipLog[0].cnm, 'A사', 'remaining ship is A사');
+  assert.equal(sales.length, 1, 'only first sales remains');
+  assert.equal(wos[0].status, '출고대기', 'WO reverts to waiting after partial cancel');
+
+  return {
+    suite: 'partial-ship-x-cli-change',
+    verified: [
+      'first partial ship attributes to original cli',
+      'second ship with cli override records origCnm + amendedKindCode',
+      'WO reaches 출고완료 when sum hits fq',
+      'cancelling only the cli-changed ship keeps first ship intact',
+      'WO reverts to 출고대기 after partial cancel',
+    ],
+  };
+}
+
 function main() {
-  const results = [runCoreFlowSuite(), runIntegritySuite()];
+  const results = [runCoreFlowSuite(), runIntegritySuite(), runPartialShipCliChangeSuite()];
   console.log(JSON.stringify({ ok: true, results }, null, 2));
 }
 

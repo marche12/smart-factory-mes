@@ -1,4 +1,16 @@
 let cProcs=[],cPapers=[],cFabrics=[],editId=null,lastSavedId=null,detId=null;
+/* 단가 추이 sparkline (검색 모달 meta에 사용) */
+function _priceSparkline(prices){
+  if(!prices||prices.length<2)return '';
+  var max=Math.max.apply(null,prices),min=Math.min.apply(null,prices);
+  var range=max-min||1;
+  var pts=prices.map(function(v,i){return (i*70/(prices.length-1))+','+(18-((v-min)/range)*14);}).join(' ');
+  var last=prices[prices.length-1],prev=prices[prices.length-2];
+  var diff=last-prev, color=diff>0?'#DC2626':diff<0?'#059669':'#64748B';
+  var arrow=diff>0?'▲':diff<0?'▼':'·';
+  return '<svg width="72" height="20" viewBox="0 0 70 20" style="margin-top:2px"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +'<span style="font-size:10px;color:'+color+';font-weight:700">'+arrow+(diff?' '+Math.abs(diff).toLocaleString():'')+'</span>';
+}
 function renPapers(){
   var area=$('woPapersArea');if(!area)return;
   var h='<div class="wo-subsheet">'
@@ -236,17 +248,52 @@ function filterQMold(){
 /* ===== 거래처 검색 모달 (작업지시서용) ===== */
 /* ===== 인쇄소/외주업체 검색 모달 ===== */
 function openVendorSearch(){
-  var h='<div class="mb" style="width:520px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">협력사 / 외주처 검색<button class="mo-x" onclick="cMo(\'vendorSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">×</button></div>';
-  h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
-  h+='<input id="vdSchInput" placeholder="업체명 검색..." oninput="filterVendorSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
-  h+='<button class="btn btn-p btn-sm" onclick="showQuickVendorForm()" style="white-space:nowrap;align-self:center">+ 신규 등록</button>';
-  h+='</div>';
-  h+='<div id="vdSchList" style="padding:0 20px 12px;max-height:400px;overflow-y:auto"></div></div>';
-  var el=document.createElement('div');el.id='vendorSearchMo';el.className='mo-bg';el.innerHTML=h;
-  el.onclick=function(e){if(e.target===el)cMo('vendorSearchMo')};
-  document.body.appendChild(el);
-  filterVendorSearch();
-  setTimeout(function(){$('vdSchInput').focus()},100);
+  openPackSearchModal({
+    title:'협력사 / 외주처 검색',
+    subTitle:'업체명, 전화번호, 주소와 최근 구분을 함께 찾습니다.',
+    placeholder:'협력사명, 전화번호, 주소 검색',
+    historyKey:'vendor',
+    fields:['nm','tel','addr','mgr'],
+    getItems:function(){
+      var cliMap={};
+      (DB.g('cli')||[]).forEach(function(c){
+        if(c.cType==='purchase'||c.cType==='both'||c.isVendor)cliMap[c.nm]={
+          id:c.id||c.nm,
+          nm:c.nm,
+          tel:c.tel||'',
+          addr:c.addr||'',
+          mgr:c.ps||'',
+          type:c.isVendor?'협력사':'매입처'
+        };
+      });
+      (DB.g('vendors')||[]).forEach(function(v){
+        cliMap[v.nm]={
+          id:v.id||v.nm,
+          nm:v.nm,
+          tel:v.tel||'',
+          addr:v.addr||'',
+          mgr:v.mgr||'',
+          type:v.type==='out'?'외주가공':'협력사'
+        };
+      });
+      return Object.keys(cliMap).map(function(key){return cliMap[key]}).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
+    },
+    renderRow:function(item,q){
+      return {
+        primary:SearchUtil.highlight(item.nm||'',q),
+        secondary:[item.mgr||'',item.tel||'',item.addr||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' | '),
+        meta:item.type||''
+      };
+    },
+    onPick:function(item){
+      var sel=$('woVendor');
+      if(sel&&!Array.from(sel.options).find(function(o){return o.value===item.nm;})){
+        var opt=document.createElement('option');opt.value=item.nm;opt.textContent=item.nm;sel.appendChild(opt);
+      }
+      if(sel)sel.value=item.nm;
+      toast(item.nm+' 협력사 선택','ok');
+    }
+  });
 }
 function filterVendorSearch(){
   var v=($('vdSchInput')?$('vdSchInput').value:'').toLowerCase();
@@ -336,17 +383,39 @@ function saveQuickVendor(){
 }
 
 function openCliSearch(){
-  var h='<div class="mb" style="width:520px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">거래처 검색<button class="mo-x" onclick="cMo(\'cliSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">×</button></div>';
-  h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
-  h+='<input id="cliSchInput" placeholder="거래처명 검색..." oninput="filterCliSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
-  h+='<button class="btn btn-p btn-sm" onclick="showQuickCliForm()" style="white-space:nowrap;align-self:center">+ 신규 등록</button>';
-  h+='</div>';
-  h+='<div id="cliSchList" style="padding:0 20px 12px;max-height:420px;overflow-y:auto"></div></div>';
-  var el=document.createElement('div');el.id='cliSearchMo';el.className='mo-bg';el.innerHTML=h;
-  el.onclick=function(e){if(e.target===el)cMo('cliSearchMo')};
-  document.body.appendChild(el);
-  filterCliSearch();
-  setTimeout(function(){$('cliSchInput').focus()},100);
+  openPackSearchModal({
+    title:'거래처 검색',
+    subTitle:'거래처명, 담당자, 전화번호, 사업자번호를 함께 검색합니다.',
+    placeholder:'거래처명, 담당자, 전화번호, 사업자번호 검색',
+    historyKey:'cli',
+    fields:['nm','ps','tel','biz','addr'],
+    getItems:function(){
+      return (DB.g('cli')||[]).filter(function(c){
+        return !c.cType||c.cType==='sales'||c.cType==='both';
+      }).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
+    },
+    renderRow:function(item,q){
+      var prodCount=(DB.g('prod')||[]).filter(function(p){return p.cnm===item.nm}).length;
+      var wos=(DB.g('wo')||[]).filter(function(o){return o.cnm===item.nm&&o.price;}).slice(-8);
+      var spark=_priceSparkline(wos.map(function(o){return +o.price||0;}));
+      return {
+        primary:SearchUtil.highlight(item.nm||'',q),
+        secondary:[item.ps||'',item.tel||'',item.biz||'',item.addr||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' | '),
+        meta:'<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end">'
+          +'<span>품목 '+prodCount+'건 · 작업 '+wos.length+'건</span>'
+          +(spark||'')
+          +'</div>'
+      };
+    },
+    onPick:function(item){
+      $('woCli').value=item.nm||'';
+      $('woAddr').value=item.addr||'';
+      $('woTel').value=item.tel||'';
+      $('woFax').value=item.fax||'';
+      $('woProd').value='';
+      toast(item.nm+' 선택','ok');
+    }
+  });
 }
 function filterCliSearch(){
   var v=($('cliSchInput')?$('cliSchInput').value:'').toLowerCase();
@@ -411,17 +480,39 @@ function pickCli(id){
 /* ===== 납품처(입고처) 검색 모달 ===== */
 function openDlvSearch(){
   var cn=$('woCli')?$('woCli').value.trim():'';
-  var h='<div class="mb" style="width:580px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">납품처 / 입고처 검색'+(cn?' <span style="font-size:13px;color:var(--pri);font-weight:500;margin-left:8px">'+cn+'</span>':'')+'<button class="mo-x" onclick="cMo(\'dlvSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">&times;</button></div>';
-  h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
-  h+='<input id="dlvSchInput" placeholder="납품처명, 주소, 담당자 검색..." oninput="filterDlvSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
-  if(cn)h+='<label style="white-space:nowrap;align-self:center;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--txt2)"><input type="checkbox" id="dlvSchToggle" checked onchange="filterDlvSearch()" style="margin-right:4px">'+cn+'만</label>';
-  h+='</div>';
-  h+='<div id="dlvSchList" style="padding:0 20px 12px;max-height:420px;overflow-y:auto"></div></div>';
-  var el=document.createElement('div');el.id='dlvSearchMo';el.className='mo-bg';el.innerHTML=h;
-  el.onclick=function(e){if(e.target===el)cMo('dlvSearchMo')};
-  document.body.appendChild(el);
-  filterDlvSearch();
-  setTimeout(function(){$('dlvSchInput').focus()},100);
+  openPackSearchModal({
+    title:'납품처 / 입고처 검색',
+    subTitle:(cn?cn+' 기준 납품처를 먼저 보여줍니다.':'거래처와 납품처 주소를 함께 찾습니다.'),
+    placeholder:'납품처명, 주소, 담당자 검색',
+    historyKey:'delivery',
+    fields:['nm','addr','mgr','parent','tel'],
+    getItems:function(){
+      var list=[];
+      (DB.g('cli')||[]).forEach(function(c){
+        if(cn&&c.nm!==cn)return;
+        if(Array.isArray(c.deliveries)){
+          c.deliveries.forEach(function(d){
+            list.push({nm:d.nm||'',addr:d.addr||'',mgr:d.mgr||'',tel:d.tel||'',parent:c.nm,type:'납품처'});
+          });
+        }
+        list.push({nm:c.nm||'',addr:c.addr||'',mgr:c.contactNm||c.ceo||c.ps||'',tel:c.tel||'',parent:'',type:'거래처'});
+      });
+      return list;
+    },
+    renderRow:function(item,q){
+      return {
+        primary:SearchUtil.highlight(item.nm||'',q)+(item.parent?' <span style="font-size:11px;color:#64748B">('+SearchUtil.highlight(item.parent,q)+')</span>':''),
+        secondary:[item.addr||'',item.mgr||'',item.tel||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' | '),
+        meta:item.type||''
+      };
+    },
+    onPick:function(item){
+      var txt=item.nm||'';
+      if(item.addr)txt+=' / '+item.addr;
+      $('woDlv').value=txt;
+      toast((item.nm||'납품처')+' 선택','ok');
+    }
+  });
 }
 function filterDlvSearch(){
   var v=($('dlvSchInput')?$('dlvSchInput').value:'').toLowerCase();
@@ -557,18 +648,40 @@ function openMoldSearchForProc(idx){
 /* ===== 품목 검색 모달 ===== */
 function openProdSearch(){
   var cn=$('woCli').value.trim();
-  var h='<div class="mb" style="width:620px"><div class="mo-t" style="display:flex;justify-content:space-between;align-items:center">품목 검색'+(cn?' <span style="font-size:13px;color:var(--pri);font-weight:500;margin-left:8px">'+cn+'</span>':'')+'<button class="mo-x" onclick="cMo(\'prodSearchMo\')" style="background:none;font-size:20px;cursor:pointer;border:none">×</button></div>';
-  h+='<div style="padding:16px 20px 8px;display:flex;gap:8px">';
-  h+='<input id="prodSchInput" placeholder="제품명 또는 코드번호 검색..." oninput="filterProdSearch()" style="flex:1;padding:12px 14px;font-size:15px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg2)">';
-  if(cn)h+='<button class="btn btn-sm btn-o" onclick="$(\'prodSchToggle\').checked=!$(\'prodSchToggle\').checked;filterProdSearch()" style="white-space:nowrap;align-self:center"><input type="checkbox" id="prodSchToggle" checked onchange="filterProdSearch()" style="margin-right:4px">'+cn+'만</button>';
-  h+='<button class="btn btn-p btn-sm" onclick="showQuickProdForm()" style="white-space:nowrap;align-self:center">+ 신규 등록</button>';
-  h+='</div>';
-  h+='<div id="prodSchList" style="padding:0 20px 12px;max-height:420px;overflow-y:auto"></div></div>';
-  var el=document.createElement('div');el.id='prodSearchMo';el.className='mo-bg';el.innerHTML=h;
-  el.onclick=function(e){if(e.target===el)cMo('prodSearchMo')};
-  document.body.appendChild(el);
-  filterProdSearch();
-  setTimeout(function(){$('prodSchInput').focus()},100);
+  openPackSearchModal({
+    title:'품목 검색',
+    subTitle:(cn?cn+' 기준 품목을 우선 보여주고, 품목명/코드/규격을 함께 검색합니다.':'품목명, 코드, 규격, 거래처를 함께 검색합니다.'),
+    placeholder:'품목명, 코드, 규격 검색',
+    historyKey:'prod',
+    fields:['nm','code','spec','paper','cnm'],
+    getItems:function(){
+      var all=(DB.g('prod')||[]).slice();
+      if(cn){
+        var matched=all.filter(function(p){return p.cnm===cn;});
+        if(matched.length)return matched.concat(all.filter(function(p){return p.cnm!==cn;}));
+      }
+      return all;
+    },
+    renderRow:function(item,q){
+      var recentWos=(DB.g('wo')||[]).filter(function(o){return o.pnm===item.nm&&o.price;}).sort(function(a,b){return (a.dt||'').localeCompare(b.dt||'');}).slice(-8);
+      var prices=recentWos.map(function(o){return +o.price||0;});
+      var lastPrice=prices.length?prices[prices.length-1]:0;
+      var spark=_priceSparkline(prices);
+      var woCount=(DB.g('wo')||[]).filter(function(o){return o.pnm===item.nm;}).length;
+      return {
+        primary:SearchUtil.highlight(item.nm||'',q)+(item.code?' <span style="font-size:11px;color:#1E3A5F">['+SearchUtil.highlight(item.code,q)+']</span>':''),
+        secondary:[item.cnm||'',item.spec||'',item.paper||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' | '),
+        meta:'<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end">'
+          +'<span>'+(woCount?'작업 '+woCount+'건':'이력 없음')+(lastPrice?(' · '+lastPrice.toLocaleString()+'원'):'')+'</span>'
+          +(spark||'')
+          +'</div>'
+      };
+    },
+    onPick:function(item){
+      selProd(item.id);
+      toast((item.nm||'품목')+' 선택','ok');
+    }
+  });
 }
 function filterProdSearch(){
   var v=($('prodSchInput')?$('prodSchInput').value:'').toLowerCase();
@@ -1086,8 +1199,18 @@ function exportCSV(){const os=DB.g('wo');let csv='\\uFEFF지시번호,작성일,
 function printWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;const co=DB.g1('co')||{nm:'팩플로우',addr:'파주시 월롱산로89',tel:'031-957-5921',fax:'031-957-5925'};
 function pVal(nm){const p=o.procs.find(x=>x.nm===nm);return p?{mt:p.mt||'',vd:p.vd||'',tp:p.tp}:{mt:'',vd:'',tp:'n'}}
 const pi=pVal('인쇄'),pk=pVal('코팅'),psk=pVal('실크코팅'),pg=pVal('금박'),ph=pVal('합지'),pt=pVal('톰슨'),pj=pVal('접착'),phg=pVal('후가공'),pe=pVal('기타');
+/* QR 코드: 모바일에서 해당 WO로 바로 이동 */
+var _qrPayload=(window.location.origin||'')+'/m.html?wo='+encodeURIComponent(o.id||'');
+var _qrImg='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(_qrPayload);
 const h=`
-<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:4px;padding:16px 0;border:3px solid #000;margin-bottom:12px">${co.nm||'팩플로우'} 패키지 작업지시서</div>
+<div style="position:relative;text-align:center;font-size:24px;font-weight:900;letter-spacing:4px;padding:16px 0;border:3px solid #000;margin-bottom:12px">
+  <div style="position:absolute;top:6px;right:10px;width:72px;text-align:center">
+    <img src="${_qrImg}" alt="QR" style="width:64px;height:64px;display:block;margin:0 auto" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <div style="display:none;width:64px;height:64px;border:1px solid #999;font-size:9px;color:#999;display:flex;align-items:center;justify-content:center;line-height:1.2">QR 불러오기<br>실패</div>
+    <div style="font-size:8px;color:#666;margin-top:2px">WO: ${o.wn||''}</div>
+  </div>
+  ${co.nm||'팩플로우'} 패키지 작업지시서
+</div>
 <table>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;수신: <b>${o.vendor||''}</b></td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">주소 : ${co.addr}</td></tr>
 <tr><td colspan="4" style="border:none;padding:4px 8px;font-size:11px">&nbsp;&nbsp;전화 : ${o.tel||''} &nbsp; 팩스 : ${o.fax||''}</td><td colspan="6" style="border:none;padding:4px 8px;font-size:11px;text-align:right">전화 : ${co.tel}</td></tr>

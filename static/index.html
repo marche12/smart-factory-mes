@@ -1206,11 +1206,10 @@
 <div>
 <div class="wo-section-kicker">Spec</div>
 <h3>자재 · 인쇄 사양</h3>
-<p>색상, 종이, 원단, 목형 정보를 같이 맞추면 다음 작업이 빨라집니다.</p>
+<p>종이, 원단, 목형 정보를 같이 맞추면 다음 작업이 빨라집니다.</p>
 </div>
 <span class="wo-section-tag">사양</span>
 </div>
-<div id="woColorsArea"></div>
 <div id="woPapersArea"></div>
 <div id="woFabricsArea"></div>
 <div class="wo-inline-grid wo-inline-grid-2">
@@ -2500,8 +2499,7 @@
 
 </div></div>
 <!-- 색상 마스터 모달 -->
-<div id="colorMasterMo" class="mo-ov hidden"><div class="mo" style="max-width:700px"><div class="mh"><h3>색상 마스터</h3><button class="mc" onclick="cMo('colorMasterMo')">&times;</button></div><div class="mo-b"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-p btn-sm" onclick="openNewColorM()">+ 색상 등록</button></div><div id="colorMasterBody"></div></div></div></div>
-<div id="colorEditMo" class="mo-ov hidden"><div class="mo" style="max-width:420px"><div class="mh"><h3>색상 등록/수정</h3><button class="mc" onclick="cMo('colorEditMo')">&times;</button></div><div class="mo-b"><input type="hidden" id="cmId"><div class="fg"><label>색상코드</label><input id="cmCode" placeholder="PMS 186C"></div><div class="fg"><label>색상명</label><input id="cmName" placeholder="빨강"></div><div class="fg"><label>구분</label><select id="cmType"><option value="별색">별색</option><option value="일반">일반(CMYK)</option><option value="팬톤">팬톤</option><option value="금박">금박</option><option value="은박">은박</option></select></div><div class="fg"><label>색상</label><input type="color" id="cmHex" value="#999999" style="width:60px;height:32px;padding:2px;border:1px solid var(--bdr);border-radius:6px"></div><div class="fg"><label>배합비/레시피</label><textarea id="cmRecipe" rows="2" placeholder="잉크 배합비 기록"></textarea></div><div class="fg"><label>비고</label><input id="cmNote"></div><div style="text-align:right;margin-top:12px"><button class="btn btn-p" onclick="saveColorM()">저장</button></div></div></div></div>
+<!-- 색상 마스터/편집 모달 — 사용자 요청으로 제거됨 -->
 
 <script src="/js/mes-dash.js?v=20"></script>
 <script src="/js/mes-wo.js?v=20"></script>

@@ -2159,110 +2159,18 @@ function delTpl(id){
   openTplList();toast('삭제','ok');
 }
 
-/* ===== 색상(별색/팬톤) 관리 ===== */
+/* ===== 색상(별색/팬톤) 관리 — 사용자 요청으로 제거됨 (WO 모달에서 완전 삭제) =====
+   cColors 변수와 renColors 는 stub 으로 유지 (기존 저장/로드 코드가 참조)
+   실제 UI/DB 기능은 전부 제거 */
 var cColors=[];
-
-function renColors(){
-  var area=$('woColorsArea');if(!area)return;
-  var h='<div class="wo-subsheet">'
-    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">색상 / 박 사양</div><div class="wo-subsheet-sub">별색, 팬톤, 금박 정보를 같이 관리합니다.</div></div><div class="wo-subsheet-actions"><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="openColorMaster()">마스터</button><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addColorRow()">+ 추가</button></div></div>';
-  cColors.forEach(function(c,i){
-    h+='<div class="wo-row-card"><div class="wo-row-grid wo-row-grid-color">';
-    h+='<div class="wo-color-swatch" style="background:'+(c.hex||'#ccc')+'" onclick="pickColorHex('+i+')" title="색상 선택"></div>';
-    h+='<div class="fg"><label>색상코드</label><div style="position:relative"><input value="'+(c.code||'')+'" placeholder="PMS 186C" oninput="cColors['+i+'].code=this.value;acColor(this.value,'+i+')" onfocus="acColor(this.value,'+i+')"><div id="acClr'+i+'" class="ac-l hidden" style="position:absolute;top:100%;left:0;right:0;z-index:99;background:#fff;border:1px solid var(--bdr);border-radius:6px;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div></div>';
-    h+='<div class="fg"><label>색상명</label><input value="'+(c.name||'')+'" placeholder="빨강" onchange="cColors['+i+'].name=this.value"></div>';
-    h+='<div class="fg"><label>구분</label><select onchange="cColors['+i+'].type=this.value"><option value="별색"'+(c.type==='별색'?' selected':'')+'>별색</option><option value="일반"'+(c.type==='일반'?' selected':'')+'>일반(CMYK)</option><option value="팬톤"'+(c.type==='팬톤'?' selected':'')+'>팬톤</option><option value="금박"'+(c.type==='금박'?' selected':'')+'>금박</option><option value="은박"'+(c.type==='은박'?' selected':'')+'>은박</option></select></div>';
-    h+='<button type="button" class="wo-row-remove" onclick="rmColorRow('+i+')">×</button>';
-    h+='</div></div>';
-  });
-  if(!cColors.length) h+='<div class="wo-empty-inline">색상 추가 버튼을 눌러 별색이나 금박 사양을 기록하세요.</div>';
-  h+='</div>';
-  area.innerHTML=h;
-}
-function addColorRow(){cColors.push({code:'',name:'',type:'별색',hex:'#999999',recipe:'',note:''});renColors()}
-function rmColorRow(i){cColors.splice(i,1);renColors()}
-function pickColorHex(i){
-  var inp=document.createElement('input');inp.type='color';inp.value=cColors[i].hex||'#999999';
-  inp.addEventListener('input',function(){cColors[i].hex=inp.value;renColors()});
-  inp.click();
-}
-function acColor(v,idx){
-  var l=$('acClr'+idx);if(!l)return;
-  var all=DB.g('colors');
-  var filtered=v?all.filter(function(c){return c.code.toLowerCase().includes(v.toLowerCase())||c.name.toLowerCase().includes(v.toLowerCase())}):all;
-  if(!filtered.length){l.classList.add('hidden');return}
-  l.innerHTML=filtered.slice(0,10).map(function(c){
-    var safe=c.code.replace(/'/g,"&#39;");
-    return '<div class="ac-i" style="display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer" onclick="selColor('+idx+',\''+safe+'\',\''+c.name.replace(/'/g,"&#39;")+'\',\''+c.type+'\',\''+(c.hex||'#999')+'\')"><div style="width:16px;height:16px;border-radius:3px;background:'+(c.hex||'#ccc')+';border:1px solid #ddd"></div><span style="font-weight:600;font-size:12px">'+c.code+'</span><span style="color:var(--txt3);font-size:11px">'+c.name+' ('+c.type+')</span></div>';
-  }).join('');
-  l.classList.remove('hidden');
-}
-function selColor(idx,code,name,type,hex){
-  cColors[idx]={code:code,name:name,type:type,hex:hex,recipe:'',note:''};
-  renColors();
-}
-
-// 색상 마스터 관리
-function openColorMaster(){
-  var all=DB.g('colors');
-  var h='<div style="max-height:400px;overflow-y:auto"><table class="dt"><thead><tr><th>색상</th><th>코드</th><th>이름</th><th>구분</th><th>배합비</th><th>관리</th></tr></thead><tbody>';
-  if(!all.length) h+='<tr><td colspan="6" class="empty-cell">등록된 색상 없음</td></tr>';
-  all.forEach(function(c){
-    h+='<tr><td><div style="width:20px;height:20px;border-radius:4px;background:'+(c.hex||'#ccc')+';border:1px solid #ddd;margin:0 auto"></div></td>';
-    h+='<td style="font-weight:700">'+c.code+'</td><td>'+c.name+'</td><td>'+c.type+'</td><td style="font-size:11px;color:var(--txt2)">'+(c.recipe||'-')+'</td>';
-    h+='<td><button class="btn btn-sm btn-o" onclick="editColorM(\''+c.id+'\')">수정</button> <button class="btn btn-sm btn-d" onclick="delColorM(\''+c.id+'\')">삭제</button></td></tr>';
-  });
-  h+='</tbody></table></div>';
-  $('colorMasterBody').innerHTML=h;
-  oMo('colorMasterMo');
-}
-function openNewColorM(){
-  $('cmId').value='';$('cmCode').value='';$('cmName').value='';$('cmType').value='별색';$('cmHex').value='#999999';$('cmRecipe').value='';$('cmNote').value='';
-  oMo('colorEditMo');
-}
-function editColorM(id){
-  var c=DB.g('colors').find(function(x){return x.id===id});if(!c)return;
-  $('cmId').value=c.id;$('cmCode').value=c.code;$('cmName').value=c.name;$('cmType').value=c.type;$('cmHex').value=c.hex||'#999999';$('cmRecipe').value=c.recipe||'';$('cmNote').value=c.note||'';
-  oMo('colorEditMo');
-}
-function saveColorM(){
-  var code=$('cmCode').value.trim(),name=$('cmName').value.trim();
-  if(!code){toast('색상코드 필요','err');return}
-  if(!name){toast('색상명 필요','err');return}
-  var all=DB.g('colors'),id=$('cmId').value;
-  var rec={id:id||gid(),code:code,name:name,type:$('cmType').value,hex:$('cmHex').value,recipe:$('cmRecipe').value,note:$('cmNote').value,cat:nw()};
-  if(id){var idx=all.findIndex(function(x){return x.id===id});if(idx>=0)all[idx]=rec;else all.push(rec)}
-  else all.push(rec);
-  DB.s('colors',all);cMo('colorEditMo');openColorMaster();toast('색상 저장','ok');
-}
-function delColorM(id){
-  if(!confirm('이 색상을 삭제하시겠습니까?'))return;
-  DB.s('colors',DB.g('colors').filter(function(x){return x.id!==id}));
-  openColorMaster();toast('삭제','ok');
-}
-
-// 기본 색상 시드 데이터
-function _seedColors(){
-  var existing=DB.g('colors');
-  if(existing.length)return;
-  var defaults=[
-    {code:'PMS 186C',name:'빨강',type:'팬톤',hex:'#CE1126'},
-    {code:'PMS 021C',name:'주황',type:'팬톤',hex:'#FE5000'},
-    {code:'PMS 116C',name:'노랑',type:'팬톤',hex:'#FFCD00'},
-    {code:'PMS 347C',name:'초록',type:'팬톤',hex:'#009A44'},
-    {code:'PMS 286C',name:'파랑',type:'팬톤',hex:'#0033A0'},
-    {code:'PMS 2685C',name:'보라',type:'팬톤',hex:'#56368A'},
-    {code:'PMS Black C',name:'먹',type:'팬톤',hex:'#2D2926'},
-    {code:'금박',name:'금박',type:'금박',hex:'#D4AF37'},
-    {code:'은박',name:'은박',type:'은박',hex:'#C0C0C0'},
-    {code:'CMYK-C',name:'시안',type:'일반',hex:'#00AEEF'},
-    {code:'CMYK-M',name:'마젠타',type:'일반',hex:'#EC008C'},
-    {code:'CMYK-Y',name:'옐로우',type:'일반',hex:'#FFF200'},
-    {code:'CMYK-K',name:'블랙',type:'일반',hex:'#000000'},
-    {code:'별색1',name:'별색1',type:'별색',hex:'#8B0000'},
-    {code:'별색2',name:'별색2',type:'별색',hex:'#006400'}
-  ];
-  defaults.forEach(function(d){d.id=gid();d.recipe='';d.note='';d.cat=nw()});
-  DB.s('colors',defaults);
-}
-try{_seedColors()}catch(e){}
+function renColors(){}
+function addColorRow(){}
+function rmColorRow(){}
+function pickColorHex(){}
+function acColor(){}
+function selColor(){}
+function openColorMaster(){ if(typeof toast==='function') toast('색상 관리 기능은 비활성화되어 있습니다','info'); }
+function openNewColorM(){}
+function editColorM(){}
+function saveColorM(){}
+function delColorM(){}

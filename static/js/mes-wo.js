@@ -14,13 +14,13 @@ function _priceSparkline(prices){
 function renPapers(){
   var area=$('woPapersArea');if(!area)return;
   var h='<div class="wo-subsheet">'
-    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">종이 자재</div><div class="wo-subsheet-sub">정매와 여분 수량을 함께 관리합니다.</div></div><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addPaperRow()">+ 추가</button></div>';
+    +'<div class="wo-subsheet-head"><div><div class="wo-subsheet-title">종이 자재</div><div class="wo-subsheet-sub">수량과 여분을 함께 관리합니다.</div></div><button type="button" class="btn btn-o btn-sm wo-subsheet-btn" onclick="addPaperRow()">+ 추가</button></div>';
   cPapers.forEach(function(p,i){
     var canRemove=cPapers.length>1;
     h+='<div class="wo-row-card"><div class="wo-row-grid wo-row-grid-material">';
     h+='<div class="fg"><label>종류'+(cPapers.length>1?' '+(i+1):'')+'</label><input value="'+(p.paper||'')+'" placeholder="예: 아이보리 350g" onchange="cPapers['+i+'].paper=this.value"></div>';
     h+='<div class="fg"><label>규격</label><input value="'+(p.spec||'')+'" placeholder="예: 788x1091" onchange="cPapers['+i+'].spec=this.value"></div>';
-    h+='<div class="fg"><label>'+(i===0?'<span class="req">정매</span>':'정매')+'</label><input type="number" value="'+(p.qm||'')+'" min="0" onchange="cPapers['+i+'].qm=+this.value"></div>';
+    h+='<div class="fg"><label>'+(i===0?'<span class="req">수량</span>':'수량')+'</label><input type="number" value="'+(p.qm||'')+'" min="0" onchange="cPapers['+i+'].qm=+this.value;if(i===0&&$(\'woQM\'))$(\'woQM\').value=this.value"></div>';
     h+='<div class="fg"><label>여분</label><input type="number" value="'+(p.qe||'')+'" min="0" onchange="cPapers['+i+'].qe=+this.value"></div>';
     h+='<button type="button" class="wo-row-remove'+(canRemove?'':' is-disabled')+'" onclick="rmPaperRow('+i+')"'+(canRemove?'':' disabled')+'>×</button>';
     h+='</div></div>';
@@ -62,7 +62,7 @@ function fillWOMgr(defaultVal){
   if(defNm)sel.value=defNm;
   if(!sel.value&&us.length)sel.value=us[0].nm;
 }
-function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();}
+function _initPapersFabrics(){cPapers=[{paper:'',spec:'',qm:0,qe:0}];cFabrics=[{fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0}];renPapers();renFabrics();if($('woQM'))$('woQM').value='';}
 function getWOTemplates(){return DB.g('woTemplates')||[]}
 function saveWOTemplates(list){DB.s('woTemplates',list||[])}
 function renderWOQuickBars(){
@@ -1264,7 +1264,10 @@ if(o.status!=='완료'&&o.status!=='출고완료'&&o.sd){
 }
 var _rowCls=isLate(o)?'class="row-late"':'';
 return '<tr '+_rowCls+'><td><a href="#" onclick="showDet(\''+o.id+'\');return false" style="color:var(--pri);font-weight:700">'+o.wn+'</a></td><td>'+o.dt+'</td><td>'+o.cnm+'</td><td>'+o.pnm+'</td><td>'+o.fq+'</td><td style="color:var(--pri);font-weight:700">'+_amtStr+'</td><td>'+_sdDisp+'</td><td>'+(o.vendor||'자체')+'</td><td>'+progBar(o)+'</td><td>'+(isLate(o)?badge('지연'):badge(o.status))+'</td><td>'+acts+'</td></tr>'}).join('')||'<tr><td colspan="11" class="empty-cell">작업지시 없음</td></tr>'}
-function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();}
+function _loadPapersFabrics(o){cPapers=o.papers&&o.papers.length?o.papers.map(function(p){return Object.assign({paper:'',spec:'',qm:0,qe:0},p)}):[{paper:o.paper||'',spec:o.spec||'',qm:o.qm||0,qe:o.qe||0}];cFabrics=o.fabrics&&o.fabrics.length?o.fabrics.map(function(f){return Object.assign({fabric:'',fabricSpec:'',fabricQty:0,fabricExtra:0},f)}):[{fabric:o.fabric||'',fabricSpec:o.fabricSpec||'',fabricQty:o.fabricQty||0,fabricExtra:o.fabricExtra||0}];renPapers();renFabrics();
+// 품목 옆 '정매' 박스(woQM)와 첫 종이 행 qm 동기화
+if($('woQM'))$('woQM').value = (cPapers[0]&&cPapers[0].qm)||'';
+}
 function editWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;editId=id;$('woNum').value=o.wn||'';$('woDt').value=o.dt||'';fillWOMgr(o.mgr);$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value=o.sd||'';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice')){$('woPrice').value=o.price||'';if($('woPrice').dataset)$('woPrice').dataset.priceSource='edit';}if($('woOrdId'))$('woOrdId').value=o.ordId||'';_updateWoAmt();if(o.img){$('woImgP').innerHTML=`<img src="${o.img}" style="max-width:180px;max-height:120px;border:1px solid var(--bdr);border-radius:10px">`;if($('woImgHint'))$('woImgHint').style.display='none';}else{woImgClear()}_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({...p}));renP();checkProcWarn();$('woFormTitle').textContent='패키지 작업지시 수정';renderWOOrderBridge();renderWOQuickBars();if(typeof fillWOProcButtons==='function')fillWOProcButtons();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');}
 // Copy work order
 function copyWO(id){const o=DB.g('wo').find(x=>x.id===id);if(!o)return;if(!confirm(`${o.pnm} 작업지시를 복사합니다. 수량과 납품예정일만 변경하세요.`))return;editId=null;$('woNum').value=gWN();$('woDt').value=td();fillWOMgr();$('woCli').value=o.cnm||'';$('woAddr').value=o.addr||'';$('woTel').value=o.tel||'';$('woFax').value=o.fax||'';$('woProd').value=o.pnm||'';$('woPrint').value=o.ps||'';$('woGold').value=o.gold||'';$('woMold').value=o.mold||'';if($('woMoldDisplay'))$('woMoldDisplay').value=o.mold||'';$('woHand').value=o.hand||'';$('woFQ').value=o.fq||'';$('woShip').value='';$('woDlv').value=o.dlv||'';$('woNote').value=o.nt||'';$('woCaut').value=o.caut||'';if($('woPrice')){$('woPrice').value=o.price||'';if($('woPrice').dataset)$('woPrice').dataset.priceSource='copy';}if($('woOrdId'))$('woOrdId').value='';_updateWoAmt();woImgClear();_loadPapersFabrics(o);cColors=o.colors&&o.colors.length?o.colors.map(function(c){return Object.assign({},c)}):[];renColors();cProcs=o.procs.map(p=>({nm:p.nm,tp:p.tp,mt:p.mt,vd:p.vd,price:+p.price||0,st:'대기',qty:0,t1:'',t2:''}));renP();$('woFormTitle').textContent='패키지 작업지시 복사 등록';renderWOOrderBridge(null);renderWOQuickBars();var ov=$('woFormOv');if(ov)ov.classList.remove('hidden');toast('복사했습니다. 납품예정일을 확인한 뒤 저장하세요.','ok')}

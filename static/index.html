@@ -1191,9 +1191,10 @@
 <button type="button" class="btn btn-o btn-sm" onclick="openCliSearch()">검색</button>
 </div>
 <div id="woCliQuickPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
-<div class="wo-search-row">
-<div class="fg"><label class="req">패키지 품목</label><input id="woProd" placeholder="품목 선택" readonly class="wo-select-input" onclick="openProdSearch()"></div>
-<button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()">검색</button>
+<div class="wo-search-row" style="display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:flex-end">
+<div class="fg"><label class="req">품목</label><input id="woProd" placeholder="품목 입력 (F4 검색)" class="wo-select-input" onclick="if(this.readOnly)openProdSearch()"></div>
+<div class="fg"><label>정매</label><input type="number" id="woQM" min="0" placeholder="0" oninput="if(cPapers&&cPapers[0]){cPapers[0].qm=+this.value||0;}"></div>
+<button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()" style="height:34px">검색</button>
 </div>
 <div id="woProdQuickPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
 <div id="woTemplatePicks" class="pack-chip-row" style="margin-bottom:8px"></div>

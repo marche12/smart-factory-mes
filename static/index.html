@@ -197,8 +197,8 @@
 <div class="noti-list" id="notiList"></div>
 </div>
 </div>
-<!-- 전역 이동 버튼은 상단 탭 / 좌측 사이드 / 즐겨찾기로 이동됨.
-     헤더 우측에는 "현재 화면 전용 액션" 만 유지 (각 모듈이 필요 시 자체 삽입). -->
+<!-- 상단 고정 빠른 액션: 패키지 작업지시 -->
+<button onclick="goMod('mes-wo');setTimeout(function(){if(typeof openWOForm==='function')openWOForm();else if(typeof resetWO==='function'){resetWO();var ov=document.getElementById('woFormOv');if(ov)ov.classList.remove('hidden');}},250)" style="background:var(--pri);color:#fff;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:5px" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" title="새 작업지시 등록">＋ 패키지 작업지시</button>
 </div>
 </div>
 <div class="main-content" role="main">

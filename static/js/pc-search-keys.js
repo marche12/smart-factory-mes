@@ -13,6 +13,8 @@ var FIELD_TO_SEARCH = {
   'qtCli':       'openActiveCliSearch',
   'sCli':        'openActiveCliSearch',
   'pCli':        'openActiveCliSearch',
+  'txCli':       'openActiveCliSearch',
+  'payCli':      'openActiveCliSearch',
   'clmCli':      'openActiveCliSearch',
   // 품목
   'woProd':      'openProdSearch',
@@ -54,19 +56,44 @@ function _setFieldValue(fieldId, value){
   return true;
 }
 
+function _cliKindForField(fieldId){
+  if(fieldId === 'pCli') return 'purchase';
+  if(fieldId === 'payCli'){
+    var tgt = document.getElementById('payTgt');
+    return tgt && tgt.value === 'purchase' ? 'purchase' : 'sales';
+  }
+  if(fieldId === 'txCli'){
+    var tp = document.getElementById('txTpS');
+    return tp && tp.value === '매입' ? 'purchase' : 'sales';
+  }
+  return 'sales';
+}
+
+function _cliMatchesKind(c, kind){
+  if(!c || c.isDormant) return false;
+  var t = c.cType || 'sales';
+  if(kind === 'purchase') return t === 'purchase' || t === 'both';
+  return t === 'sales' || t === 'both';
+}
+
+function _cliSearchTitle(kind){
+  return kind === 'purchase' ? '매입처 검색' : '매출처 검색';
+}
+
 function openActiveCliSearch(fieldId){
   var targetId = fieldId || (_activeField() && _activeField().id);
   if(!targetId || typeof openPackSearchModal !== 'function') return;
+  var kind = _cliKindForField(targetId);
   openPackSearchModal({
-    title:'거래처 검색',
-    subTitle:'거래처명, 담당자, 전화번호, 사업자번호를 함께 검색합니다.',
+    title:_cliSearchTitle(kind),
+    subTitle:(kind === 'purchase' ? '매입·외주 업무에 사용하는 거래처만' : '매출·수주 업무에 사용하는 거래처만')+' 표시합니다. 휴면 거래처는 제외됩니다.',
     placeholder:'거래처명, 담당자, 전화번호, 사업자번호 검색',
     historyKey:'cli',
-    pickHistoryKey:'cli',
-    modeKey:'cli-search',
+    pickHistoryKey:'cli-'+kind,
+    modeKey:'cli-search-'+kind,
     fields:['nm','ps','tel','biz','bizNo','addr'],
     getItems:function(){
-      return (DB.g('cli')||[]).filter(function(c){ return !c.isDormant; })
+      return (DB.g('cli')||[]).filter(function(c){ return _cliMatchesKind(c, kind); })
         .sort(function(a,b){ return (a.nm||'').localeCompare(b.nm||''); });
     },
     renderRow:function(item,q){
@@ -74,7 +101,7 @@ function openActiveCliSearch(fieldId){
         primary:_highlightText(item.nm||'',q),
         secondary:[item.ps||item.ceo||'', item.tel||'', item.bizNo||item.biz||'', item.addr||'']
           .filter(Boolean).map(function(v){ return _highlightText(v,q); }).join(' | '),
-        meta:item.cType==='purchase'?'매입처':item.cType==='both'?'매출·매입':'거래처'
+        meta:item.cType==='purchase'?'매입처':item.cType==='both'?'매출·매입':'매출처'
       };
     },
     onPick:function(item){

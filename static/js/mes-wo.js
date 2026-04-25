@@ -909,7 +909,42 @@ function saveQuickProd(){
   toast(p.nm+' 등록 및 선택됨','ok');
 }
 
-function acCli(v,listId,inputId){var lid=listId||'acCliL';var l=$(lid);if(!l)return;const cs=DB.g('cli').filter(c=>!v||!v.trim()||c.nm.toLowerCase().includes(v.toLowerCase()));if(!cs.length){l.classList.add('hidden');return}var iid=inputId||'woCli';l.innerHTML=cs.map(c=>`<div class="ac-i" onclick="$('${iid}').value='${c.nm.replace(/'/g,"\\'")}';$('${lid}').classList.add('hidden')"><span style="font-weight:600">${c.nm}</span><span style="float:right;font-size:11px;color:var(--txt3)">${c.ps||''} ${c.tel||''}</span></div>`).join('');l.classList.remove('hidden')}
+function _cliModeForInput(inputId){
+  if(inputId==='pCli'||inputId==='incCli')return 'purchase';
+  if(inputId==='payCli')return $('payTgt')&&$('payTgt').value==='purchase'?'purchase':'sales';
+  if(inputId==='txCli')return $('txTpS')&&$('txTpS').value==='매입'?'purchase':'sales';
+  return 'sales';
+}
+function _cliMatchesInput(c,inputId){
+  if(!c||c.isDormant)return false;
+  var t=c.cType||'sales',mode=_cliModeForInput(inputId);
+  if(mode==='purchase')return t==='purchase'||t==='both';
+  return t==='sales'||t==='both';
+}
+function _cliEscHtml(v){return String(v||'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
+function _cliEscJs(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+function _cliSearchText(c){return [c.nm,c.ps,c.ceo,c.tel,c.bizNo,c.biz,c.addr].filter(Boolean).join(' ').toLowerCase()}
+function _afterCliPick(inputId,nm){
+  var el=$(inputId);
+  if(el){
+    try{el.dispatchEvent(new Event('change',{bubbles:true}))}catch(e){}
+    try{el.dispatchEvent(new Event('blur',{bubbles:true}))}catch(e){}
+  }
+  var c=DB.g('cli').find(function(x){return (x.nm||'')===nm});
+  if(inputId==='woCli'&&c){
+    if($('woAddr'))$('woAddr').value=c.addr||'';
+    if($('woTel'))$('woTel').value=c.tel||'';
+    if($('woFax'))$('woFax').value=c.fax||'';
+    if(typeof renderWOQuickBars==='function')renderWOQuickBars();
+  }
+  if(inputId==='txCli'&&c){
+    if($('txBiz'))$('txBiz').value=c.bizNo||c.biz||'';
+    if($('txCeo'))$('txCeo').value=c.ceo||c.ps||'';
+    if($('txAddr'))$('txAddr').value=c.addr||'';
+  }
+  if((inputId==='sCli'||inputId==='pCli')&&typeof applyCliPrice==='function')applyCliPrice();
+}
+function acCli(v,listId,inputId){var lid=listId||'acCliL';var l=$(lid);if(!l)return;var iid=inputId||'woCli';var q=String(v||'').trim().toLowerCase();const cs=DB.g('cli').filter(function(c){return _cliMatchesInput(c,iid)&&(!q||_cliSearchText(c).includes(q))}).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});if(!cs.length){l.classList.add('hidden');return}l.innerHTML=cs.map(function(c){var nm=c.nm||'',nmJs=_cliEscJs(nm),iidJs=_cliEscJs(iid),lidJs=_cliEscJs(lid);return `<div class="ac-i" onclick="$('${iidJs}').value='${nmJs}';$('${lidJs}').classList.add('hidden');_afterCliPick('${iidJs}','${nmJs}')"><span style="font-weight:600">${_cliEscHtml(nm)}</span><span style="float:right;font-size:11px;color:var(--txt3)">${_cliEscHtml((c.ps||'')+' '+(c.tel||''))}</span></div>`}).join('');l.classList.remove('hidden')}
 function acProd(v){const l=$('acProdL');const cn=$('woCli').value.trim();let ps=DB.g('prod');
 // 거래처가 선택되어 있으면 해당 거래처 품목만 필터
 var cliFiltered=false;

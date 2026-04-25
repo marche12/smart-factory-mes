@@ -18,16 +18,17 @@
 <link rel="stylesheet" href="/css/pc-clean-tone.css?v=1">
 <link rel="stylesheet" href="/css/pc-douzone-polish.css?v=1">
 <link rel="stylesheet" href="/css/pc-theme-light.css?v=1">
+<link rel="stylesheet" href="/css/packflow-manufacturing-theme.css?v=2">
 <script src="js/xlsx.full.min.js"></script>
-<script src="/js/core.js?v=26"></script>
+<script src="/js/core.js?v=27"></script>
 <script src="/js/search-util.js?v=1"></script>
-<script src="/js/ui-enhance.js?v=1"></script>
+<script src="/js/ui-enhance.js?v=2"></script>
 <script src="/js/ux-advanced.js?v=1"></script>
 <script src="/js/ux-ext.js?v=1"></script>
 <script src="/js/pc-quick-entry.js?v=1" defer></script>
 <script src="/js/pc-sidebar-collapse.js?v=1" defer></script>
-<script src="/js/pc-top-modes.js?v=1" defer></script>
-<script src="/js/pc-sidebar-blocks.js?v=1" defer></script>
+<script src="/js/pc-top-modes.js?v=2" defer></script>
+<script src="/js/pc-sidebar-blocks.js?v=2" defer></script>
 <script src="/js/pc-context-bar.js?v=1" defer></script>
 <script src="/js/pc-search-keys.js?v=1" defer></script>
 <script src="/js/pc-ux-memory.js?v=1" defer></script>
@@ -84,7 +85,7 @@
 <button onclick="unifiedLogin()" class="login-btn">로그인</button>
 <div id="loginErr" class="login-err"></div>
 <div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid #E5E7EB">
-<a href="/m" style="color:#6B7280;font-size:13px;text-decoration:none">📱 모바일 버전으로 전환</a>
+<a href="/m" style="color:#6B7280;font-size:13px;text-decoration:none">모바일 버전으로 전환</a>
 </div>
 </div></div>
 <div id="workerApp" class="worker-app">
@@ -104,7 +105,7 @@
 <!-- [즐겨찾기] -->
 <div class="sb-section sb-section-fav" id="sbFavSection">
   <div class="sb-section-hd">
-    <span>★ 즐겨찾기</span>
+    <span>즐겨찾기</span>
     <button class="sb-section-act" onclick="sbFavToggle()" title="현재 화면 추가/제거">＋</button>
   </div>
   <div class="sb-tree" id="sbFavList"></div>
@@ -112,23 +113,18 @@
 
 <!-- [최근 사용] -->
 <div class="sb-section sb-section-recent" id="sbRecentSection">
-  <div class="sb-section-hd"><span>🕒 최근</span></div>
+  <div class="sb-section-hd"><span>최근 사용</span></div>
   <div class="sb-tree" id="sbRecentList"></div>
 </div>
 
 <!-- [빠른 생성] — 전역 신규 작성 진입점 -->
 <div class="sb-section sb-section-quick" id="sbQuickSection">
-  <div class="sb-section-hd"><span>⚡ 빠른 생성</span></div>
-  <div class="sb-quick">
-    <button class="sb-quick-btn" onclick="sbQuickNew('quote')">＋ 새 견적</button>
-    <button class="sb-quick-btn" onclick="sbQuickNew('order')">＋ 새 수주</button>
-    <button class="sb-quick-btn" onclick="sbQuickNew('wo')">＋ 새 작업지시서</button>
-    <button class="sb-quick-btn" onclick="sbQuickNew('ship')">＋ 출고 등록</button>
-  </div>
+  <div class="sb-section-hd"><span>빠른 생성</span></div>
+  <div class="sb-quick" id="sbQuickList"></div>
 </div>
 
 <!-- [펼침] 견적·수주 -->
-<div class="sb-group open" data-group-key="order" role="button" aria-expanded="true">🧾 견적·수주<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" data-group-key="order" role="button" aria-expanded="true">견적·수주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="qc-quote" title="패키지 견적 작성">패키지 견적</button>
 <button class="sb-item" data-mod="mes-order" title="수주 및 진행 추적">수주관리</button>
@@ -137,7 +133,7 @@
 </div>
 
 <!-- [펼침] 생산·공정 -->
-<div class="sb-group open" data-group-key="prod" role="button" aria-expanded="true">🏭 생산·공정<span class="sb-arrow">▶</span></div>
+<div class="sb-group open" data-group-key="prod" role="button" aria-expanded="true">생산·공정<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-plan" title="생산 계획 및 스케줄">생산계획</button>
 <button class="sb-item" data-mod="mes-proc-log" title="공정별 실적">공정실적</button>
@@ -146,7 +142,7 @@
 </div>
 
 <!-- [접힘] 자재·외주 -->
-<div class="sb-group" data-group-key="material" role="button" aria-expanded="false">📦 자재·외주<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="material" role="button" aria-expanded="false">자재·외주<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-stock" title="자재/제품 재고 현황">재고 현황</button>
 <button class="sb-item sb-sub" data-mod="mat-safety" title="안전재고/발주점">안전재고</button>
@@ -157,7 +153,7 @@
 </div>
 
 <!-- [접힘] 출고·정산 -->
-<div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">🚚 출고·정산<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">출고·정산<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" title="납품/출고 처리">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 <button class="sb-item sb-sub" data-mod="ship-partial" title="부분 출고">부분출고</button>
@@ -170,10 +166,11 @@
 <button class="sb-item sb-sub" data-mod="acc-etax" title="전자세금계산서">전자세금계산서</button>
 <button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">채권/자금</button>
 <button class="sb-item" data-mod="acc-cashflow" title="입출금 이력">입출금</button>
+<button class="sb-item" data-mod="mes-closing" title="월말 마감 점검">월말 마감</button>
 </div>
 
 <!-- [접힘] 기준정보 -->
-<div class="sb-group" data-group-key="master" role="button" aria-expanded="false">📇 기준정보<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="master" role="button" aria-expanded="false">기준정보<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-cli" title="거래처 관리">거래처</button>
 <button class="sb-item" data-mod="mes-prod" title="품목">품목</button>
@@ -186,13 +183,13 @@
 </div>
 
 <!-- [접힘] 시스템 -->
-<div class="sb-group" data-group-key="system" role="button" aria-expanded="false">⚙️ 시스템<span class="sb-arrow">▶</span></div>
+<div class="sb-group" data-group-key="system" role="button" aria-expanded="false">시스템<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="adm-perm" title="사용자 권한">권한 관리</button>
 <button class="sb-item" data-mod="adm-backup" title="데이터 백업">백업</button>
 <button class="sb-item sb-sub" data-mod="adm-audit" title="감사 로그">감사로그</button>
 <button class="sb-item sb-sub" data-mod="adm-code" title="공통 코드">공통코드</button>
-<button class="sb-item" data-mod="mes-queue" style="background:#FEF3C7;color:#92400E;font-weight:700" title="회사 정보/팝빌 등">⚙️ 시스템설정</button>
+<button class="sb-item" data-mod="mes-queue" title="회사 정보/팝빌 등">시스템설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -488,6 +485,7 @@
 </div></div>
 <div class="module-page" id="pg-mat-po"></div>
 <div class="module-page" id="pg-mat-bom"></div>
+<div class="module-page" id="pg-mes-closing"></div>
 <div class="module-page" id="pg-acc-sales"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">매출/회계</span>
@@ -658,10 +656,10 @@
   <!-- 발행방식 선택 -->
   <div style="display:flex;gap:8px;margin-bottom:14px">
     <label style="flex:1;display:flex;align-items:center;gap:6px;padding:10px 14px;border:2px solid var(--pri);border-radius:8px;cursor:pointer;background:var(--pri-l);font-weight:700;font-size:13px">
-      <input type="radio" name="txMethod" value="paper" checked onchange="toggleTxMethod()"> 📄 종이 (인쇄)
+      <input type="radio" name="txMethod" value="paper" checked onchange="toggleTxMethod()"> 종이 (인쇄)
     </label>
     <label id="txElecLabel" style="flex:1;display:flex;align-items:center;gap:6px;padding:10px 14px;border:2px solid var(--bdr);border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">
-      <input type="radio" name="txMethod" value="electronic" onchange="toggleTxMethod()"> ⚡ 전자 (국세청)
+      <input type="radio" name="txMethod" value="electronic" onchange="toggleTxMethod()"> 전자 (국세청)
     </label>
   </div>
   <div class="fr"><div class="fg"><label>발행일 *</label><input type="date" id="txDt"></div><div class="fg"><label>구분</label><select id="txTpS"><option value="매출">매출</option><option value="매입">매입</option></select></div></div>
@@ -674,13 +672,13 @@
   <div class="fg"><label>비고</label><textarea id="txNt" rows="2"></textarea></div>
   <!-- 전자발행 안내 (기본 숨김) -->
   <div id="txElecInfo" style="display:none;padding:10px 14px;background:#EFF6FF;border-radius:8px;margin-top:8px;font-size:12px;color:#1E40AF">
-    ⚡ 팝빌 API를 통해 국세청에 전자세금계산서가 발행됩니다.<br>
+    팝빌 API를 통해 국세청에 전자세금계산서가 발행됩니다.<br>
     <span id="txElecStatus" style="font-weight:700"></span>
   </div>
   <div class="mo-f">
     <button class="btn btn-g" onclick="cMo('txMo2')">취소</button>
     <button class="btn btn-o" id="txPrintBtn" onclick="printTx()">종이 인쇄</button>
-    <button class="btn btn-p" id="txElecBtn" onclick="issueElecTx()" style="display:none;background:#1E40AF">⚡ 전자발행</button>
+    <button class="btn btn-p" id="txElecBtn" onclick="issueElecTx()" style="display:none;background:#1E40AF">전자발행</button>
     <button class="btn btn-p" onclick="saveTx()">저장</button>
   </div>
 </div></div>
@@ -1033,66 +1031,66 @@
 </style>
 
 <!-- 빠른 실행 런처 -->
-<div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#64748B;letter-spacing:0.5px">⚡ 패키지 공장 핵심 실행</div>
+<div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#64748B;letter-spacing:0.5px">패키지 공장 핵심 실행</div>
 <div class="qlauncher">
   <div class="qlauncher-card" onclick="goMod('qc-quote')">
-    <div class="qlauncher-ico" style="background:#EDE9FE;color:#6D28D9">🧾</div>
+    <div class="qlauncher-ico" style="background:#EDE9FE;color:#6D28D9">QT</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">패키지 견적</div>
       <div class="qlauncher-sub">패키지 단가 산출</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-order')">
-    <div class="qlauncher-ico" style="background:#FDE68A;color:#92400E">📝</div>
+    <div class="qlauncher-ico" style="background:#FDE68A;color:#92400E">SO</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">수주관리</div>
       <div class="qlauncher-sub">수주·진행 추적</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-wo')">
-    <div class="qlauncher-ico" style="background:#DBEAFE;color:#1E40AF">📋</div>
+    <div class="qlauncher-ico" style="background:#DBEAFE;color:#1E40AF">WO</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">작업지시</div>
       <div class="qlauncher-sub">공정 흐름 생성</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-outsource')">
-    <div class="qlauncher-ico" style="background:#E0F2FE;color:#0369A1">🏷️</div>
+    <div class="qlauncher-ico" style="background:#E0F2FE;color:#0369A1">OS</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">외주 진행</div>
       <div class="qlauncher-sub">인쇄·타발 추적</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-ship')">
-    <div class="qlauncher-ico" style="background:#FCE7F3;color:#BE185D">🚚</div>
+    <div class="qlauncher-ico" style="background:#FCE7F3;color:#BE185D">SH</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">출고 처리</div>
       <div class="qlauncher-sub">납품·거래명세</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('acc-tax')">
-    <div class="qlauncher-ico" style="background:#EDE9FE;color:#6D28D9">📄</div>
+    <div class="qlauncher-ico" style="background:#EDE9FE;color:#6D28D9">TX</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">세금계산서</div>
       <div class="qlauncher-sub">발행/수신</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mat-stock')">
-    <div class="qlauncher-ico" style="background:#FED7AA;color:#9A3412">📦</div>
+    <div class="qlauncher-ico" style="background:#FED7AA;color:#9A3412">ST</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">자재 재고</div>
       <div class="qlauncher-sub">원단·종이 확인</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('mes-vendor')">
-    <div class="qlauncher-ico" style="background:#CCFBF1;color:#0F766E">🏭</div>
+    <div class="qlauncher-ico" style="background:#CCFBF1;color:#0F766E">VD</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">협력사</div>
       <div class="qlauncher-sub">외주처 상태</div>
     </div>
   </div>
   <div class="qlauncher-card" onclick="goMod('acc-recv')">
-    <div class="qlauncher-ico" style="background:#FEE2E2;color:#B91C1C">💳</div>
+    <div class="qlauncher-ico" style="background:#FEE2E2;color:#B91C1C">AR</div>
     <div class="qlauncher-body">
       <div class="qlauncher-ttl">미수·자금</div>
       <div class="qlauncher-sub">정산 리스크</div>
@@ -1125,7 +1123,7 @@
 
 <!-- TAB: Work Order -->
 <div id="t-wo" class="tc">
-<div class="tb"><button class="btn btn-p" onclick="openWOForm()">+ 패키지 작업지시</button><button class="btn btn-o" onclick="openTplList()" style="margin-left:8px">📋 템플릿</button></div>
+<div class="tb"><button class="btn btn-p" onclick="openWOForm()">+ 패키지 작업지시</button><button class="btn btn-o" onclick="openTplList()" style="margin-left:8px">템플릿</button></div>
 <div class="sb-r">
 <input type="text" id="woSch" placeholder="거래처 또는 제품명 검색" oninput="rWOList()">
 <div class="filter-btns">
@@ -1183,7 +1181,7 @@
 <div class="fg"><label>작성일</label><input type="date" id="woDt" class="u-input-md"></div>
 </div>
 <div class="wo-inline-grid wo-inline-grid-2">
-<div class="fg"><label>협력사/인쇄소</label><div class="wo-inline-actions"><select id="woVendor"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()">🔍 검색</button></div></div>
+<div class="fg"><label>협력사/인쇄소</label><div class="wo-inline-actions"><select id="woVendor"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()">검색</button></div></div>
 <div class="fg"><label>담당자</label><select id="woMgr"></select></div>
 </div>
 </section>
@@ -1243,13 +1241,13 @@
 <!-- 1행: 수량·단가·금액 (한 줄로 강조) -->
 <div class="wo-inline-grid wo-inline-grid-4 wo-qty-grid" style="background:#F8FAFC;padding:10px 12px;border-radius:10px;margin-bottom:10px">
 <div class="fg"><label class="req">수량</label><input type="number" id="woFQ" min="0" oninput="_updateWoAmt()"></div>
-<div class="fg"><label>단가 (매당)</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="_updateWoAmt()" onchange="if(this.dataset)this.dataset.priceSource='manual'"></div>
+<div class="fg"><label>단가 (매당)</label><input type="number" id="woPrice" min="0" placeholder="0" oninput="if(this.dataset)this.dataset.priceSource='manual';_updateWoAmt()" onchange="if(this.dataset)this.dataset.priceSource='manual'"></div>
 <div class="fg"><label>금액 (수량×단가)</label><div id="woAmtDisplay" class="wo-amount-box">-</div></div>
 <div class="fg"><label class="req">납품예정</label><input type="date" id="woShip"></div>
 </div>
 <!-- 2행: 납품처 + 참고이미지 -->
 <div class="wo-inline-grid wo-inline-grid-2">
-<div class="fg"><label>납품처</label><div class="wo-inline-actions"><input id="woDlv" class="u-input-md"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()">🔍 검색</button></div></div>
+<div class="fg"><label>납품처</label><div class="wo-inline-actions"><input id="woDlv" class="u-input-md"><button type="button" class="btn btn-o btn-sm" onclick="openDlvSearch()">검색</button></div></div>
 <div class="fg"><label>참고이미지</label>
 <div id="woImgZone" class="wo-image-drop" onclick="document.getElementById('woImg').click()" ondragover="event.preventDefault();this.style.borderColor='var(--pri)'" ondragleave="this.style.borderColor='var(--bdr)'" ondrop="woImgDrop(event)">
   <div id="woImgP" class="wo-image-preview"></div>
@@ -1387,12 +1385,12 @@
       <option value="">전체 폴더</option>
       <option value="__none__">미분류</option>
     </select>
-    <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">📒 거래 확인</button>
-    <button class="btn btn-o btn-sm" onclick="openFolderMgr()">📁 폴더 관리</button>
+    <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">거래 확인</button>
+    <button class="btn btn-o btn-sm" onclick="openFolderMgr()">폴더 관리</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
-    <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">📥 엑셀 업로드</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
-    <button class="btn btn-o btn-sm" onclick="dlCliXlsxTemplate()">📋 양식 다운로드</button>
+    <button class="btn btn-o btn-sm" onclick="dlCliXlsxTemplate()">양식 다운로드</button>
     <span class="f4-hint">F4 <b>코드도움</b></span>
   </div>
 </div>
@@ -1416,7 +1414,7 @@
       <button data-mode="detail" onclick="setProdDetailView('detail',this)">상세</button>
     </div>
     <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
-    <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">📥 엑셀 업로드</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
   </div>
 </div>
@@ -1432,7 +1430,7 @@
   <div class="fbar-row">
     <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="_dMold()" class="fbar-grow">
     <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
-    <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">📥 엑셀 업로드</button>
+    <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
   </div>
 </div>
@@ -1620,7 +1618,7 @@
 <div class="card" id="backupCard" style="display:none">
 <div class="card-t">백업 관리</div>
 <div style="margin-bottom:12px">
-  <button class="btn btn-p btn-sm" onclick="createBackupNow()">💾 지금 백업</button>
+  <button class="btn btn-p btn-sm" onclick="createBackupNow()">지금 백업</button>
   <span style="font-size:11px;color:var(--txt2);margin-left:8px">서버 시작 시 매일 자동 백업 (30일 보관)</span>
 </div>
 <div class="u-scroll-x"><table class="dt" id="backupTbl"><thead><tr>
@@ -1673,18 +1671,18 @@
 <button class="btn btn-s" onclick="genSim()">시뮬레이션 데이터 생성</button>
 </div>
 <!-- 얼마에요 Group 구조 — 다중 회사 설정 -->
-<div class="card"><div class="card-t">🏢 회사 설정 (얼마에요 Group 구조)</div>
+<div class="card"><div class="card-t">회사 설정 (얼마에요 Group 구조)</div>
 <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">매출/매입/세금계산서의 발행주체를 구분합니다. 얼마에요의 GroupId와 동일한 구조입니다. 생산/재고/거래처는 두 회사가 공유합니다.</p>
 <!-- 회사 A -->
 <div style="border:2px solid #DBEAFE;border-radius:10px;padding:14px;margin-bottom:12px;background:#EFF6FF">
-<div style="font-size:13px;font-weight:800;color:#1E40AF;margin-bottom:10px">🔵 회사 A (개인사업자)</div>
+<div style="font-size:13px;font-weight:800;color:#1E40AF;margin-bottom:10px">회사 A (개인사업자)</div>
 <div class="fr"><div class="fg"><label>상호 *</label><input type="text" id="coA_nm" placeholder="이노패키지"></div><div class="fg"><label>사업자번호</label><input type="text" id="coA_bizNo" placeholder="000-00-00000"></div></div>
 <div class="fr"><div class="fg"><label>대표자</label><input type="text" id="coA_ceo" placeholder="대표자명"></div><div class="fg"><label>업태</label><input type="text" id="coA_bizType" placeholder="제조"></div><div class="fg"><label>종목</label><input type="text" id="coA_bizClass" placeholder="포장재"></div></div>
 <div class="fr"><div class="fg"><label>주소</label><input type="text" id="coA_addr" placeholder="사업장 주소"></div><div class="fg"><label>전화</label><input type="text" id="coA_tel" placeholder="02-0000-0000"></div></div>
 </div>
 <!-- 회사 B -->
 <div style="border:2px solid #EDE9FE;border-radius:10px;padding:14px;margin-bottom:12px;background:#F5F3FF">
-<div style="font-size:13px;font-weight:800;color:#7C3AED;margin-bottom:10px">🟣 회사 B (법인)</div>
+<div style="font-size:13px;font-weight:800;color:#7C3AED;margin-bottom:10px">회사 B (법인)</div>
 <div class="fr"><div class="fg"><label>상호 *</label><input type="text" id="coB_nm" placeholder="주식회사 이노패키지"></div><div class="fg"><label>사업자번호</label><input type="text" id="coB_bizNo" placeholder="000-00-00000"></div></div>
 <div class="fr"><div class="fg"><label>대표자</label><input type="text" id="coB_ceo" placeholder="대표자명"></div><div class="fg"><label>업태</label><input type="text" id="coB_bizType" placeholder="제조"></div><div class="fg"><label>종목</label><input type="text" id="coB_bizClass" placeholder="포장재"></div></div>
 <div class="fr"><div class="fg"><label>주소</label><input type="text" id="coB_addr" placeholder="사업장 주소"></div><div class="fg"><label>전화</label><input type="text" id="coB_tel" placeholder="02-0000-0000"></div></div>
@@ -1694,13 +1692,13 @@
 공정(WO/출고/재고)은 두 회사가 공유합니다. 매출·매입·세금계산서만 GroupId로 분리됩니다.
 </div>
 </div>
-<div class="card"><div class="card-t">⚡ 팝빌 전자세금계산서 API 설정</div>
+<div class="card"><div class="card-t">팝빌 전자세금계산서 API 설정</div>
 <p style="font-size:12px;color:var(--txt2);margin-bottom:12px">전자세금계산서 국세청 발행을 위한 팝빌 API 설정입니다. <a href="https://www.popbill.com" target="_blank" style="color:var(--pri)">popbill.com</a>에서 연동신청 후 발급받은 키를 입력하세요.</p>
 <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px">공통 설정 (LinkID/SecretKey는 두 회사 동일)</div>
 <div class="fr"><div class="fg"><label>LinkID</label><input type="text" id="pbLinkId" placeholder="연동신청 시 발급받은 LinkID"></div><div class="fg"><label>SecretKey</label><input type="password" id="pbSecretKey" placeholder="SecretKey (외부 노출 금지)"></div></div>
-<div style="font-size:12px;font-weight:700;color:#1E40AF;margin:10px 0 6px">🔵 회사 A 사업자번호</div>
+<div style="font-size:12px;font-weight:700;color:#1E40AF;margin:10px 0 6px">회사 A 사업자번호</div>
 <div class="fr"><div class="fg"><label>사업자번호 A</label><input type="text" id="pbCorpNum" placeholder="0000000000 (10자리, - 제외)"></div><div class="fg" style="display:flex;align-items:center;gap:8px;padding-top:20px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pbIsTest" checked> 테스트 모드</label></div></div>
-<div style="font-size:12px;font-weight:700;color:#7C3AED;margin:10px 0 6px">🟣 회사 B 사업자번호</div>
+<div style="font-size:12px;font-weight:700;color:#7C3AED;margin:10px 0 6px">회사 B 사업자번호</div>
 <div class="fr"><div class="fg"><label>사업자번호 B</label><input type="text" id="pbCorpNumB" placeholder="0000000000 (10자리, - 제외)"></div></div>
 <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p btn-sm" onclick="savePopbillConfig()">설정 저장</button><button class="btn btn-o btn-sm" onclick="loadPopbillConfig()">설정 불러오기</button></div>
 <div style="margin-top:10px;padding:8px 12px;background:#FEF3C7;border-radius:8px;font-size:11px;color:#92400E">
@@ -1710,7 +1708,7 @@
 </div>
 <div class="card"><div class="card-t">데이터 초기화</div>
 <p style="font-size:13px;color:var(--txt2);margin-bottom:10px">모든 업무 데이터(거래처, 품목, 작업지시서, 출고, 매출, 재고 등)를 삭제합니다.<br>사용자 계정과 회사 정보는 유지됩니다. 초기화 전 자동으로 백업이 생성됩니다.</p>
-<button class="btn" style="background:#DC2626;color:#fff" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
+<button class="btn" style="background:#DC2626;color:#fff" onclick="resetAllData()">전체 데이터 초기화</button>
 </div>
 </div>
 </div>
@@ -1735,7 +1733,7 @@
 <!-- MODALS -->
 <!-- 거래처 폴더 관리 모달 -->
 <div id="cliFolderMo" class="mo-bg hidden" onclick="event.target===this&&cMo('cliFolderMo')"><div class="mo" style="max-width:500px">
-  <div class="mo-t">📁 거래처 폴더 관리</div>
+  <div class="mo-t">거래처 폴더 관리</div>
   <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">거래처를 카테고리별로 묶어 관리합니다 (예: VIP, 일반, 협력사, 외주, 관공서 등)</p>
   <div class="fr">
     <div class="fg" style="flex:1"><label>새 폴더명</label><input type="text" id="newFolderNm" placeholder="예: VIP 고객"></div>
@@ -2067,7 +2065,7 @@
 
 
 <!-- 템플릿 목록 모달 -->
-<div id="tplListMo" class="mo-ov hidden"><div class="mo" style="max-width:800px"><div class="mh"><h3>📋 반복 주문 템플릿</h3><button class="mc" onclick="cMo('tplListMo')">&times;</button></div><div class="mo-b"><div id="tplListBody"></div></div></div></div>
+<div id="tplListMo" class="mo-ov hidden"><div class="mo" style="max-width:800px"><div class="mh"><h3>반복 주문 템플릿</h3><button class="mc" onclick="cMo('tplListMo')">&times;</button></div><div class="mo-b"><div id="tplListBody"></div></div></div></div>
 <!-- 템플릿 수정 모달 -->
 <div id="tplEditMo" class="mo-ov hidden"><div class="mo" style="max-width:420px"><div class="mh"><h3>템플릿 수정</h3><button class="mc" onclick="cMo('tplEditMo')">&times;</button></div><div class="mo-b"><input type="hidden" id="tplEditId"><div class="fg"><label>거래처/제품</label><div id="tplEditInfo" style="font-weight:700;padding:6px 0"></div></div><div class="fg"><label>템플릿명</label><input id="tplEditName"></div><div class="fg"><label>반복주기</label><select id="tplEditCycle"><option value="weekly">주간</option><option value="biweekly">격주</option><option value="monthly">월간</option><option value="quarterly">분기</option></select></div><div class="fg"><label>기본수량</label><input type="number" id="tplEditFQ"></div><div class="fg"><label>기본단가</label><input type="number" id="tplEditPrice"></div><div class="fg"><label>비고</label><textarea id="tplEditNote" rows="2"></textarea></div><div style="text-align:right;margin-top:12px"><button class="btn btn-p" onclick="saveTplEdit()">저장</button></div></div></div></div>
 <!-- 입출고이력 -->
@@ -2519,7 +2517,7 @@
 <!-- 색상 마스터/편집 모달 — 사용자 요청으로 제거됨 -->
 
 <script src="/js/packflow-price-history.js?v=1"></script>
-<script src="/js/mes-dash.js?v=20"></script>
+<script src="/js/mes-dash.js?v=21"></script>
 <script src="/js/mes-wo.js?v=20"></script>
 <script src="/js/mes-cli.js?v=20"></script>
 <script src="/js/mes-worker.js?v=20"></script>
@@ -2532,6 +2530,7 @@
 <script src="/js/erp-biz.js?v=20"></script>
 <script src="/js/erp-quality.js?v=20"></script>
 <script src="/js/features-ext.js?v=20"></script>
+<script src="/js/mes-closing.js?v=1"></script>
 <!-- [테스트 모드] 자동 로그인 — 테스트 종료 후 이 스크립트 블록 삭제 -->
 <script>
 (function autoLoginForTesting(){

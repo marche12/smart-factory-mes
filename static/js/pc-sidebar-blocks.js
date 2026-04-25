@@ -14,50 +14,57 @@ var MAX_RECENT = 5;
 
 /* 실무 기본 즐겨찾기 5개 — 최초 1회만 시드. 이후 사용자 편집 유지 */
 var DEFAULT_FAVS = ['mes-order','mes-wo','mes-ship','acc-sales','mes-cli'];
+var QUICK_ACTIONS = [
+  {kind:'quote', mod:'qc-quote', label:'＋ 새 견적'},
+  {kind:'order', mod:'mes-order', label:'＋ 새 수주'},
+  {kind:'wo',    mod:'mes-wo',    label:'＋ 새 작업지시서'},
+  {kind:'ship',  mod:'mes-ship',  label:'＋ 출고 등록'}
+];
 
 /* 메뉴 메타: 모듈 id → 라벨·아이콘 */
 function getModuleMeta(mod){
   var map = {
-    'mes-dash':      {l:'생산현황',       i:'🏠'},
-    'qc-quote':      {l:'패키지 견적',    i:'🧾'},
-    'mes-order':     {l:'수주관리',       i:'📋'},
-    'mes-wo':        {l:'작업지시서',     i:'📝'},
-    'mes-plan':      {l:'생산계획',       i:'📅'},
-    'mes-proc-log':  {l:'공정실적',       i:'🔧'},
-    'mes-outsource': {l:'외주진행',       i:'🤝'},
-    'mes-worker':    {l:'현장작업',       i:'👷'},
-    'mat-stock':     {l:'재고 현황',      i:'📦'},
-    'mat-po':        {l:'발주',           i:'📤'},
-    'mat-income':    {l:'입고',           i:'📥'},
-    'mat-bom':       {l:'BOM',            i:'🔗'},
-    'mes-vendor':    {l:'협력사',         i:'🏢'},
-    'mes-ship':      {l:'출고',           i:'🚚'},
-    'acc-sales':     {l:'매출',           i:'💰'},
-    'acc-purchase':  {l:'매입',           i:'💳'},
-    'acc-tax':       {l:'세금계산서',     i:'📋'},
-    'acc-recv':      {l:'채권/자금',      i:'💵'},
-    'acc-cashflow':  {l:'입출금',         i:'🏦'},
-    'mes-cli':       {l:'거래처',         i:'👥'},
-    'mes-prod':      {l:'품목',           i:'📦'},
-    'mes-mold':      {l:'목형',           i:'🔲'},
-    'qc-inspect':    {l:'품질',           i:'✓'},
-    'qc-equip':      {l:'설비',           i:'⚙️'},
-    'adm-perm':      {l:'권한 관리',      i:'🔐'},
-    'adm-backup':    {l:'백업',           i:'💾'},
-    'mes-queue':     {l:'시스템설정',     i:'⚙️'},
+    'mes-dash':      {l:'생산현황',       i:''},
+    'qc-quote':      {l:'패키지 견적',    i:''},
+    'mes-order':     {l:'수주관리',       i:''},
+    'mes-wo':        {l:'작업지시서',     i:''},
+    'mes-plan':      {l:'생산계획',       i:''},
+    'mes-proc-log':  {l:'공정실적',       i:''},
+    'mes-outsource': {l:'외주진행',       i:''},
+    'mes-worker':    {l:'현장작업',       i:''},
+    'mat-stock':     {l:'재고 현황',      i:''},
+    'mat-po':        {l:'발주',           i:''},
+    'mat-income':    {l:'입고',           i:''},
+    'mat-bom':       {l:'BOM',            i:''},
+    'mes-vendor':    {l:'협력사',         i:''},
+    'mes-ship':      {l:'출고',           i:''},
+    'acc-sales':     {l:'매출',           i:''},
+    'acc-purchase':  {l:'매입',           i:''},
+    'acc-tax':       {l:'세금계산서',     i:''},
+    'acc-recv':      {l:'채권/자금',      i:''},
+    'acc-cashflow':  {l:'입출금',         i:''},
+    'mes-cli':       {l:'거래처',         i:''},
+    'mes-prod':      {l:'품목',           i:''},
+    'mes-mold':      {l:'목형',           i:''},
+    'qc-inspect':    {l:'품질',           i:''},
+    'qc-equip':      {l:'설비',           i:''},
+    'adm-perm':      {l:'권한 관리',      i:''},
+    'adm-backup':    {l:'백업',           i:''},
+    'mes-queue':     {l:'시스템설정',     i:''},
     /* 신규 서브 항목 */
-    'mes-order-track':{l:'납기추적',       i:'📅'},
-    'mat-safety':    {l:'안전재고',       i:'📦'},
-    'ship-partial':  {l:'부분출고',       i:'📤'},
-    'ship-return':   {l:'반품',           i:'↩'},
-    'qc-claim':      {l:'클레임',         i:'⚠'},
-    'acc-costing':   {l:'원가분석',       i:'📊'},
-    'acc-etax':      {l:'전자세금계산서', i:'📋'},
-    'ship-inspect':  {l:'출하검사',       i:'✓'},
-    'qc-cert':       {l:'검사성적서',     i:'📃'},
-    'mes-defect':    {l:'불량등록',       i:'⚠'},
-    'adm-audit':     {l:'감사로그',       i:'🔍'},
-    'adm-code':      {l:'공통코드',       i:'🔖'}
+    'mes-order-track':{l:'납기추적',       i:''},
+    'mat-safety':    {l:'안전재고',       i:''},
+    'ship-partial':  {l:'부분출고',       i:''},
+    'ship-return':   {l:'반품',           i:''},
+    'qc-claim':      {l:'클레임',         i:''},
+    'acc-costing':   {l:'원가분석',       i:''},
+    'acc-etax':      {l:'전자세금계산서', i:''},
+    'ship-inspect':  {l:'출하검사',       i:''},
+    'qc-cert':       {l:'검사성적서',     i:''},
+    'mes-defect':    {l:'불량등록',       i:''},
+    'adm-audit':     {l:'감사로그',       i:''},
+    'adm-code':      {l:'공통코드',       i:''},
+    'mes-closing':   {l:'월말 마감',      i:''}
   };
   return map[mod] || {l:mod, i:'•'};
 }
@@ -67,6 +74,42 @@ function load(key){
 }
 function save(key, arr){
   try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(e){}
+}
+
+function getCurrentUser(){
+  try{ return window.CU || (typeof CU !== 'undefined' ? CU : null); }catch(e){ return null; }
+}
+
+function isAllowedMod(mod){
+  var cu = getCurrentUser();
+  if(!mod) return false;
+  if(!cu) return false;
+  if(cu.role === 'admin') return true;
+  if(cu.role === 'worker') return false;
+  if(Array.isArray(cu.perms)) return cu.perms.indexOf(mod) >= 0;
+  return true;
+}
+
+function getQuickAction(kind){
+  return QUICK_ACTIONS.find(function(a){ return a.kind === kind; }) || null;
+}
+
+function renderQuickActions(){
+  var section = document.getElementById('sbQuickSection');
+  var box = document.getElementById('sbQuickList');
+  if(!section || !box) return;
+  var actions = QUICK_ACTIONS.filter(function(a){ return isAllowedMod(a.mod); });
+  if(!actions.length){
+    section.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  box.innerHTML = actions.map(function(a){
+    return '<button class="sb-quick-btn" data-quick-new="'+a.kind+'" title="'+a.label.replace(/^＋\s*/,'')+'">'
+      + a.label
+      + '</button>';
+  }).join('');
 }
 
 function renderFavs(){
@@ -82,7 +125,6 @@ function renderFavs(){
   box.innerHTML = favs.map(function(mod){
     var m = getModuleMeta(mod);
     return '<button class="sb-item sb-fav-item" data-mod="'+mod+'" title="'+m.l+'">'
-      + '<span class="sb-item-ico">'+m.i+'</span>'
       + '<span>'+m.l+'</span>'
       + '<span class="sb-fav-x" data-fav-x="'+mod+'" title="제거">×</span>'
       + '</button>';
@@ -101,7 +143,6 @@ function renderRecent(){
   box.innerHTML = recent.map(function(mod){
     var m = getModuleMeta(mod);
     return '<button class="sb-item" data-mod="'+mod+'" title="'+m.l+'">'
-      + '<span class="sb-item-ico">'+m.i+'</span>'
       + '<span>'+m.l+'</span>'
       + '</button>';
   }).join('');
@@ -114,6 +155,14 @@ document.addEventListener('click', function(e){
   e.stopPropagation();
   e.preventDefault();
   sbFavRemove(x.getAttribute('data-fav-x'));
+}, true);
+
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('[data-quick-new]');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  sbQuickNew(btn.getAttribute('data-quick-new'));
 }, true);
 
 function pushRecent(mod){
@@ -172,6 +221,13 @@ function hookGoMod(){
 
 /* 빠른 생성 — 해당 모듈로 이동 후 등록 모달/폼 오픈 */
 function sbQuickNew(kind){
+  var action = getQuickAction(kind);
+  if(!action) return;
+  if(!isAllowedMod(action.mod)){
+    if(typeof toast === 'function') toast('해당 등록 권한이 없습니다','err');
+    renderQuickActions();
+    return;
+  }
   var handlers = {
     quote: function(){
       if(typeof goMod==='function') goMod('qc-quote');
@@ -202,6 +258,32 @@ function sbQuickNew(kind){
 }
 window.sbQuickNew = sbQuickNew;
 
+function hookAuth(){
+  if(typeof window.unifiedLogin === 'function' && !window.unifiedLogin.__sbQuickWrapped){
+    var origLogin = window.unifiedLogin;
+    var wrappedLogin = function(){
+      var r = origLogin.apply(this, arguments);
+      if(r && typeof r.then === 'function'){
+        return r.then(function(v){ setTimeout(renderQuickActions, 0); return v; });
+      }
+      setTimeout(renderQuickActions, 0);
+      return r;
+    };
+    wrappedLogin.__sbQuickWrapped = true;
+    window.unifiedLogin = wrappedLogin;
+  }
+  if(typeof window.unifiedLogout === 'function' && !window.unifiedLogout.__sbQuickWrapped){
+    var origLogout = window.unifiedLogout;
+    var wrappedLogout = function(){
+      var r = origLogout.apply(this, arguments);
+      setTimeout(renderQuickActions, 0);
+      return r;
+    };
+    wrappedLogout.__sbQuickWrapped = true;
+    window.unifiedLogout = wrappedLogout;
+  }
+}
+
 function seedDefaultFavs(){
   try{
     if(localStorage.getItem(SEED_KEY)) return; // 한 번만
@@ -216,8 +298,10 @@ function seedDefaultFavs(){
 function init(){
   seedDefaultFavs();
   hookGoMod();
+  hookAuth();
   renderFavs();
   renderRecent();
+  renderQuickActions();
 }
 
 if(document.readyState === 'loading'){
@@ -226,5 +310,5 @@ if(document.readyState === 'loading'){
   init();
 }
 
-console.log('[pc-sidebar-blocks] loaded. ★ 즐겨찾기 + 🕒 최근 활성화');
+console.log('[pc-sidebar-blocks] loaded. favorites + recent + permission-aware quick actions active');
 })();

@@ -7,7 +7,8 @@ var mState = {
   currentTab: 'home',
   orderFilter: 'all',
   searchType: 'cli',  // 검색 모달 상태
-  selectedCompany: 'A'
+  selectedCompany: 'A',
+  expandedWO: ''       // accordion: 카드별 펼침 ID
 };
 
 /* ===== 유틸 ===== */
@@ -26,6 +27,152 @@ function mToast(msg, type){
 }
 
 /* ===== 페이지 전환 ===== */
+/* 현재 활성 모바일 탭 재렌더 (storage 이벤트 핸들러용) */
+function mRefreshCurrentView(){
+  if(!mState || !mState.currentTab) return;
+  if(mState.currentTab === 'home')       mRenderHome();
+  else if(mState.currentTab === 'order') mRenderOrders();
+  else if(mState.currentTab === 'cli')   mRenderCli();
+  else if(mState.currentTab === 'prod')  mRenderProd();
+}
+
+/* ============================================
+   거래처 탭 (대표/영업 외부 조회)
+   - 검색: 거래처명/담당자/전화/주소/사업자번호
+   - 표시: 이름/담당자/전화 tel:/주소/최근 작업
+   - 마스터 수정·삭제 금지
+   ============================================ */
+function mRenderCli(){
+  var clis = DB.g('cli') || [];
+  var wos  = DB.g('wo')  || [];
+  var input = mq('mCliSearchInput');
+  var q = ((input && input.value) || '').trim().toLowerCase();
+  var hasUtil = typeof SearchUtil !== 'undefined';
+
+  var list = clis.filter(function(c){
+    if(!q) return true;
+    var hay = [c.nm, c.ceo, c.mgr, c.tel, c.phone, c.mobile, c.addr, c.bizNo].filter(Boolean).join(' ').toLowerCase();
+    if(hasUtil) return SearchUtil.match(hay, q);
+    return hay.indexOf(q) >= 0;
+  }).slice(0, 100);
+
+  var cnt = mq('mCliCount'); if(cnt) cnt.textContent = list.length;
+
+  var box = mq('mCliList');
+  if(!box) return;
+  if(!list.length){
+    box.innerHTML = '<div class="m-empty" style="padding:30px"><div class="m-empty-msg">검색 결과 없음</div></div>';
+    return;
+  }
+  box.innerHTML = list.map(function(c){
+    var tel = c.tel || c.phone || c.mobile || '';
+    var telBtn = tel
+      ? '<a class="m-wo-link-btn" onclick="event.stopPropagation()" href="tel:'+tel.replace(/[^0-9+]/g,'')+'">'+tel+'</a>'
+      : '';
+    /* 최근 작업지시 (이 거래처의 최근 3건) */
+    var recent = wos.filter(function(w){return w.cnm === c.nm || w.cid === c.id;})
+      .sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'');}).slice(0, 3);
+    var recentHtml = recent.length
+      ? '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--m-bdr);font-size:11px;color:var(--m-text3)">최근 '+recent.length+'건: '
+        + recent.map(function(w){return '<span style="margin-right:6px">'+(w.pnm||'-')+(w.dueDt?'('+w.dueDt.slice(5)+')':'')+'</span>';}).join('')
+        + '</div>'
+      : '';
+    var meta = [];
+    if(c.ceo) meta.push('대표 '+c.ceo);
+    if(c.mgr) meta.push('담당 '+c.mgr);
+    if(c.bizNo) meta.push(c.bizNo);
+    if(c.addr) meta.push(c.addr);
+    return '<div class="m-item" style="padding:12px 14px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div class="m-item-title" style="font-size:15px">'+(c.nm||'-')+'</div>'
+      +     (meta.length ? '<div class="m-item-sub" style="font-size:12px;margin-top:2px">'+meta.join(' · ')+'</div>' : '')
+      +   '</div>'
+      +   telBtn
+      + '</div>'
+      + recentHtml
+      + '</div>';
+  }).join('');
+}
+
+/* ============================================
+   품목 탭 (단가 확인)
+   - 검색: 품목명/코드/거래처/규격
+   - 표시: 품목명/코드/규격/기준단가/최근 적용단가
+   - 마스터/단가 수정·삭제 금지
+   ============================================ */
+function mRenderProd(){
+  var prods = DB.g('prod') || [];
+  var wos   = DB.g('wo')   || [];
+  var sales = DB.g('sales')|| [];
+  var input = mq('mProdSearchInput');
+  var q = ((input && input.value) || '').trim().toLowerCase();
+  var hasUtil = typeof SearchUtil !== 'undefined';
+
+  /* 최근 단가 인덱스: 품목명 → 가장 최근 단가/일자 */
+  function findRecentPrice(pnm){
+    if(!pnm) return null;
+    /* 1순위: sales 의 amt/qty (가장 정확한 실거래가) */
+    var s = sales.filter(function(x){return x.pnm === pnm && x.qty && x.amt;})
+      .sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'');})[0];
+    if(s){
+      var unit = Math.round(Math.abs(s.amt) / Math.abs(s.qty));
+      return {price: unit, dt: s.dt, src: '매출'};
+    }
+    /* 2순위: wo 의 price 또는 amt/fq */
+    var w = wos.filter(function(x){return x.pnm === pnm && (x.price || (x.amt && x.fq));})
+      .sort(function(a,b){return (b.dt||'').localeCompare(a.dt||'');})[0];
+    if(w){
+      var p = w.price || Math.round((w.amt||0)/(w.fq||1));
+      return {price: p, dt: w.dt || w.dueDt || '', src: '작업지시'};
+    }
+    return null;
+  }
+
+  var list = prods.filter(function(p){
+    if(!q) return true;
+    var hay = [p.nm, p.code, p.cnm, p.spec, p.paper].filter(Boolean).join(' ').toLowerCase();
+    if(hasUtil) return SearchUtil.match(hay, q);
+    return hay.indexOf(q) >= 0;
+  }).slice(0, 100);
+
+  var cnt = mq('mProdCount'); if(cnt) cnt.textContent = list.length;
+
+  var box = mq('mProdList');
+  if(!box) return;
+  if(!list.length){
+    box.innerHTML = '<div class="m-empty" style="padding:30px"><div class="m-empty-msg">검색 결과 없음</div></div>';
+    return;
+  }
+  box.innerHTML = list.map(function(p){
+    var basePrice = p.price || p.basePrice || 0;
+    var rec = findRecentPrice(p.nm);
+    var meta = [];
+    if(p.code) meta.push('코드 '+p.code);
+    if(p.cnm) meta.push(p.cnm);
+    if(p.spec) meta.push(p.spec);
+    if(p.paper) meta.push(p.paper);
+    var priceRow =
+        '<div style="display:flex;gap:14px;margin-top:8px;font-size:12px">'
+      +   '<div><span style="color:var(--m-text3)">기준단가</span> '
+      +     '<b style="color:var(--m-text);font-size:14px">'+(basePrice ? mFmt(basePrice)+'원' : '-')+'</b></div>'
+      +   (rec
+            ? '<div><span style="color:var(--m-text3)">최근('+rec.src+')</span> '
+              + '<b style="color:#E8913A;font-size:14px">'+mFmt(rec.price)+'원</b>'
+              + (rec.dt?'<span style="color:var(--m-text3);margin-left:4px">'+rec.dt.slice(5)+'</span>':'')
+              + '</div>'
+            : '')
+      + '</div>';
+    return '<div class="m-item" style="padding:12px 14px">'
+      + '<div class="m-item-title" style="font-size:15px">'+(p.nm||'-')+'</div>'
+      + (meta.length ? '<div class="m-item-sub" style="font-size:12px;margin-top:2px">'+meta.join(' · ')+'</div>' : '')
+      + priceRow
+      + '</div>';
+  }).join('');
+}
+window.mRenderCli = mRenderCli;
+window.mRenderProd = mRenderProd;
+
 function mGoTab(tab){
   mState.currentTab = tab;
   document.querySelectorAll('.m-page').forEach(function(p){p.classList.remove('on')});
@@ -36,17 +183,25 @@ function mGoTab(tab){
     t.classList.toggle('on', t.dataset.tab === tab);
   });
 
-  var titles = {home:'홈', order:'패키지 작업', dash:'생산현황', more:'더보기'};
+  var titles = {home:'생산현황', order:'작업지시', cli:'거래처', prod:'품목단가'};
   mq('mHdrTitle').textContent = titles[tab] || '팩플로우';
 
-  // 탭별 렌더링
-  if(tab === 'home') mRenderHome();
+  // 탭별 렌더링 (대표/영업 외부 조회 + 작업지시 보조 작성)
+  if(tab === 'home')      mRenderHome();
   else if(tab === 'order') mRenderOrders();
-  else if(tab === 'dash') mRenderDash();
-  else if(tab === 'more') mRenderMore();
+  else if(tab === 'cli')   mRenderCli();
+  else if(tab === 'prod')  mRenderProd();
 
   window.scrollTo({top:0, behavior:'smooth'});
 }
+
+/* 헤더 우측 ⋮ 메뉴 토글 (PC전환 / 새로고침 / 로그아웃) */
+function mToggleHdrMenu(){
+  var el = mq('mHdrMenu');
+  if(!el) return;
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+window.mToggleHdrMenu = mToggleHdrMenu;
 
 /* ===== 로그인 ===== */
 function mLoadLoginUsers(){
@@ -170,56 +325,80 @@ function mRenderHome(){
   var td = mTd();
   var wo = DB.g('wo') || [];
 
-  // 상태별 집계
-  var progressWO = wo.filter(function(r){
-    return r.status && ['진행','진행중','인쇄','코팅','합지','톰슨','접착'].includes(r.status);
-  });
-  var waitWO = wo.filter(function(r){
-    return !r.status || r.status === '대기' || r.status === '수주' || r.status === '수주확정';
-  });
-  var dueWO = wo.filter(function(r){
-    if(r.status === '출고완료' || r.status === '완료' || r.status === '취소') return false;
-    if(!r.dueDt && !r.sd) return false;
-    var due = r.dueDt || r.sd;
+  /* 대표/영업용 KPI: 진행중 / 완료대기 / 납기임박(3일) / 지연 */
+  var progressWO = wo.filter(mIsWOInProgress);
+  var waitDoneWO = wo.filter(mIsWOCompleteWait);
+  var dueWO      = wo.filter(function(r){
+    if(!mIsWOActive(r)) return false;
+    var due = mGetDue(r);
+    if(!due) return false;
     var diff = (new Date(due) - new Date(td)) / 86400000;
     return diff >= 0 && diff <= 3;
   });
-  var doneWO = wo.filter(function(r){
-    return r.status === '출고완료' || r.status === '완료';
-  }).filter(function(r){
-    // 오늘 완료된 것만
-    return (r.cat && r.cat.indexOf(td) === 0) || (r.doneDt === td);
+  var overdueWO  = wo.filter(function(r){
+    if(!mIsWOActive(r)) return false;
+    var due = mGetDue(r);
+    return due && due < td;
   });
 
-  mq('mHomeWOCnt').textContent = progressWO.length;
-  mq('mHomeWaitCnt').textContent = waitWO.length;
-  mq('mHomeDueCnt').textContent = dueWO.length;
-  mq('mHomeDoneCnt').textContent = doneWO.length;
+  var elProgress  = mq('mHomeWOCnt');       if(elProgress)  elProgress.textContent  = progressWO.length;
+  var elWaitDone  = mq('mHomeWaitDoneCnt'); if(elWaitDone)  elWaitDone.textContent  = waitDoneWO.length;
+  var elDue       = mq('mHomeDueCnt');      if(elDue)       elDue.textContent       = dueWO.length;
+  var elOverdue   = mq('mHomeOverdueCnt');  if(elOverdue)   elOverdue.textContent   = overdueWO.length;
 
-  // 오늘/이번주 납기
+  /* 진행 카드 (현장이 아니라 외부 응대용 — 큼직하게 진행률·D-Day) */
+  var progressList = mq('mHomeProgressList');
+  if(progressList){
+    if(!progressWO.length){
+      progressList.innerHTML = '<div class="m-empty" style="padding:20px"><div class="m-empty-msg">진행 중인 작업 없음</div></div>';
+    } else {
+      progressList.innerHTML = progressWO.slice(0, 10).map(function(r){
+        var pg = mCalcWOProgress(r);
+        var due = mGetDue(r);
+        var dInfo = mDDayInfo(due);
+        var currentProc = (r.procs||[]).find(mIsProcDoing);
+        var procLabel = currentProc ? currentProc.nm : (r.status||'-');
+        return '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')" style="padding:12px 14px">'
+          + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'-')+'</div>'
+          +   '<span class="m-badge '+dInfo.cls+'">'+dInfo.label+'</span></div>'
+          + '<div class="m-item-sub">'+(r.pnm||'')+' · '+mFmt(r.fq||0)+'개</div>'
+          + '<div class="m-progress" style="margin-top:6px"><div class="m-progress-bar '+pg.color+'" style="width:'+pg.pct+'%"></div></div>'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:11px">'
+          +   '<span style="color:var(--m-blue);font-weight:700">▸ '+procLabel+'</span>'
+          +   '<span style="color:var(--m-text3);font-weight:700">'+pg.pct+'%</span>'
+          + '</div></div>';
+      }).join('');
+    }
+  }
+
+  // 오늘/이번주 납기 (7일 이내, 활성만)
   var due = wo.filter(function(r){
-    if(r.status === '출고완료' || r.status === '취소') return false;
-    if(!r.dueDt) return false;
-    var diff = (new Date(r.dueDt) - new Date(td)) / 86400000;
+    if(!mIsWOActive(r)) return false;
+    var d = mGetDue(r);
+    if(!d) return false;
+    var diff = (new Date(d) - new Date(td)) / 86400000;
     return diff >= 0 && diff <= 7;
-  }).sort(function(a,b){return a.dueDt > b.dueDt ? 1 : -1}).slice(0, 5);
+  }).sort(function(a,b){
+    var da = mGetDue(a), db = mGetDue(b);
+    return da > db ? 1 : -1;
+  }).slice(0, 5);
 
   var dueHtml = '';
   if(due.length === 0){
     dueHtml = '<div class="m-empty" style="padding:24px"><div class="m-empty-ico"></div><div class="m-empty-msg">예정된 납기가 없습니다</div></div>';
   } else {
     due.forEach(function(r){
-      var daysLeft = Math.ceil((new Date(r.dueDt) - new Date(td)) / 86400000);
-      var badgeClass = daysLeft <= 1 ? 'red' : daysLeft <= 3 ? 'orange' : 'blue';
+      var d = mGetDue(r);
+      var info = mDDayInfo(d);
       dueHtml += '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
         + '<div class="m-item-hdr">'
         + '<div class="m-item-title">'+(r.cnm||'-')+'</div>'
-        + '<span class="m-badge '+badgeClass+'">D-'+daysLeft+'</span>'
+        + '<span class="m-badge '+info.cls+'">'+info.label+'</span>'
         + '</div>'
         + '<div class="m-item-sub">'+(r.pnm||'')+'</div>'
         + '<div class="m-item-meta">'
         + '<span>'+mFmt(r.fq||0)+'개</span>'
-        + '<span>'+r.dueDt+'</span>'
+        + '<span>'+d+'</span>'
         + '</div>'
         + '</div>';
     });
@@ -227,26 +406,22 @@ function mRenderHome(){
   mq('mHomeDueList').innerHTML = dueHtml;
 }
 
-/* ===== 🏭 생산현황 렌더 ===== */
+/* ===== 생산현황 렌더 ===== */
 function mRenderDash(){
   var wo = DB.g('wo') || [];
   var td = mTd();
 
-  // KPI
-  var progress = wo.filter(function(r){
-    return r.status && ['진행','진행중','인쇄','코팅','합지','톰슨','접착'].includes(r.status);
-  });
-  var wait = wo.filter(function(r){
-    return !r.status || r.status === '대기' || r.status === '수주' || r.status === '수주확정';
-  });
-  var overdue = wo.filter(function(r){
-    if(r.status === '출고완료' || r.status === '완료' || r.status === '취소') return false;
-    var due = r.dueDt || r.sd;
+  // KPI (헬퍼 통일)
+  var progress = wo.filter(mIsWOInProgress);
+  var wait     = wo.filter(mIsWOWaiting);
+  var overdue  = wo.filter(function(r){
+    if(!mIsWOActive(r)) return false;
+    var due = mGetDue(r);
     return due && due < td;
   });
   var done = wo.filter(function(r){
-    return (r.status === '출고완료' || r.status === '완료') &&
-      ((r.cat && r.cat.indexOf(td) === 0) || r.doneDt === td);
+    if(!mIsWODoneLike(r)) return false;
+    return (r.cat && r.cat.indexOf(td) === 0) || r.doneDt === td;
   });
 
   mq('mDashProgress').textContent = progress.length;
@@ -260,11 +435,11 @@ function mRenderDash(){
   allProcs.forEach(function(p){procCounts[p] = {working:0, wait:0}});
 
   wo.forEach(function(w){
-    if(w.status === '출고완료' || w.status === '완료' || w.status === '취소') return;
-    if(!w.procs || !w.procs.length) return;
-    // 현재 진행 중인 공정 찾기
-    var doing = w.procs.find(function(p){return p.st === '진행'});
-    var waiting = w.procs.find(function(p){return p.st === '대기'});
+    if(!mIsWOActive(w) || mIsWOCompleteWait(w)) return;
+    if(!Array.isArray(w.procs) || !w.procs.length) return;
+    // 현재 진행 중인 공정 / 다음 대기 공정
+    var doing   = w.procs.find(mIsProcDoing);
+    var waiting = w.procs.find(function(p){return mNormProcState(p.st) === '대기';});
     if(doing && procCounts[doing.nm]) procCounts[doing.nm].working++;
     else if(waiting && procCounts[waiting.nm]) procCounts[waiting.nm].wait++;
   });
@@ -285,13 +460,13 @@ function mRenderDash(){
 
   // 납기 임박 리스트
   var dueList = wo.filter(function(r){
-    if(r.status === '출고완료' || r.status === '완료' || r.status === '취소') return false;
-    var due = r.dueDt || r.sd;
+    if(!mIsWOActive(r)) return false;
+    var due = mGetDue(r);
     if(!due) return false;
     var diff = (new Date(due) - new Date(td)) / 86400000;
     return diff >= -30 && diff <= 7;
   }).sort(function(a,b){
-    var da = a.dueDt || a.sd, db = b.dueDt || b.sd;
+    var da = mGetDue(a), db = mGetDue(b);
     return da > db ? 1 : -1;
   }).slice(0, 10);
 
@@ -299,12 +474,9 @@ function mRenderDash(){
     mq('mDashDueList').innerHTML = '<div class="m-empty" style="padding:20px"><div class="m-empty-msg">납기 임박한 작업 없음</div></div>';
   } else {
     mq('mDashDueList').innerHTML = dueList.map(function(r){
-      var due = r.dueDt || r.sd;
-      var days = Math.ceil((new Date(due) - new Date(td)) / 86400000);
-      var badge = days < 0 ? '<span class="m-badge red">지연 '+(-days)+'일</span>' :
-                   days === 0 ? '<span class="m-badge red">D-Day</span>' :
-                   days <= 3 ? '<span class="m-badge orange">D-'+days+'</span>' :
-                   '<span class="m-badge blue">D-'+days+'</span>';
+      var due = mGetDue(r);
+      var d = mDDayInfo(due);
+      var badge = '<span class="m-badge '+d.cls+'">'+d.label+'</span>';
       return '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
         + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'-')+'</div>'+badge+'</div>'
         + '<div class="m-item-sub">'+(r.pnm||'')+' · '+mFmt(r.fq||0)+'개</div>'
@@ -318,7 +490,7 @@ function mRenderDash(){
   } else {
     mq('mDashWOList').innerHTML = progress.slice(0, 15).map(function(r){
       var pg = mCalcWOProgress(r);
-      var currentProc = (r.procs||[]).find(function(p){return p.st === '진행'});
+      var currentProc = (r.procs||[]).find(mIsProcDoing);
       var procLabel = currentProc ? currentProc.nm : r.status;
       return '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
         + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'-')+'</div>'
@@ -331,7 +503,7 @@ function mRenderDash(){
   }
 }
 
-/* ===== ⚙️ 더보기 탭 ===== */
+/* ===== 더보기 탭 (deprecated — 헤더 메뉴로 이전) ===== */
 function mRenderMore(){
   var clis = DB.g('cli') || [];
   var prods = DB.g('prod') || [];
@@ -345,7 +517,7 @@ function mRenderMore(){
   mq('mMoreUser').textContent = cu.name || '-';
 }
 
-/* ===== 🔍 검색 모달 ===== */
+/* ===== 검색 모달 ===== */
 function mOpenSearch(type){
   mState.searchType = type;
   var titles = {cli:'거래처 검색', prod:'품목 검색', mold:'목형 검색'};
@@ -498,53 +670,301 @@ function mRenderOrders(){
       else if(r.pri === 'low') priBadge = '<span class="m-badge gray">일반</span>';
 
       // 이미지 썸네일
-      var imgHtml = '';
-      if(r.img){
-        imgHtml = '<img src="'+r.img+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0">';
-      }
+      var imgHtml = r.img
+        ? '<img class="m-wo-thumb" src="'+r.img+'" alt="">'
+        : '';
 
-      // 좌우 배치 (이미지 있을 때만 flex, 없으면 기본)
-      var mainContent =
-          '<div style="flex:1;min-width:0">'
-        + '<div class="m-item-hdr">'
-        + '<div class="m-item-title" style="font-size:15px">'+(r.cnm||'-')+'</div>'
-        + '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+priBadge+dueBadge+'</div>'
-        + '</div>'
-        + '<div class="m-item-sub" style="font-size:13px">'+(r.pnm||'')+'</div>'
-        + '<div class="m-item-meta" style="font-size:11px">'
-        + '<span>'+mFmt(r.fq||0)+'개</span>'
-        + (r.amt ? '<span>'+mFmt(r.amt)+'원</span>' : '')
-        + (r.mgr ? '<span>담당 '+r.mgr+'</span>' : '')
-        + (r.wn ? '<span>'+r.wn+'</span>' : '')
-        + '</div>'
+      /* 공정 타임라인 (CSS 클래스 사용) */
+      var timelineHtml = mBuildProcTimeline(r);
+
+      /* D-Day */
+      var dInfo = mDDayInfo(due);
+      var dueBadge = mIsWOActive(r) && due
+        ? '<span class="m-badge '+dInfo.cls+'">'+dInfo.label+'</span>'
+        : '';
+
+      /* accordion 펼침 여부 */
+      var isOpen = mState.expandedWO === r.id;
+
+      var card =
+          '<div class="m-wo-card'+(isOpen?' open':'')+'" data-wo-id="'+r.id+'" onclick="mToggleWOCard(\''+r.id+'\')">'
+        +   '<div class="m-wo-card-head">'
+        +     '<span class="m-wo-no">'+(r.wn||'WO')+'</span>'
+        +     '<span class="m-wo-badges">'+priBadge+statusBadge+'</span>'
+        +   '</div>'
+        +   (imgHtml
+              ? '<div class="m-wo-row-thumb">'+imgHtml+'<div class="m-wo-text">'
+                + '<div class="m-wo-client">'+(r.cnm||'-')+'</div>'
+                + '<div class="m-wo-product">'+(r.pnm||'-')+'</div>'
+                + '<div class="m-wo-meta"><span><b>'+mFmt(r.fq||0)+'</b>개</span>'
+                + (due ? '<span>· 납기 <b>'+due+'</b></span>' : '')
+                + ' '+dueBadge+'</div>'
+                + '</div></div>'
+              : '<div class="m-wo-client">'+(r.cnm||'-')+'</div>'
+                + '<div class="m-wo-product">'+(r.pnm||'-')+'</div>'
+                + '<div class="m-wo-meta"><span><b>'+mFmt(r.fq||0)+'</b>개</span>'
+                + (due ? '<span>· 납기 <b>'+due+'</b></span>' : '')
+                + ' '+dueBadge+'</div>')
+        +   '<div class="m-wo-progress-row">'
+        +     '<div class="m-progress"><div class="m-progress-bar '+progress.color+'" style="width:'+progress.pct+'%"></div></div>'
+        +     '<div class="m-wo-progress-foot">'
+        +       timelineHtml
+        +       '<span class="m-wo-pct">'+progress.pct+'%</span>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="m-wo-expand-label">'+(isOpen?'접기':'상세 보기')+'</div>'
+        +   (isOpen ? mBuildAccordionBody(r) : '')
         + '</div>';
 
-      html += '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
-        + (imgHtml ? '<div style="display:flex;gap:10px;align-items:flex-start">' + imgHtml + mainContent + '</div>' : mainContent)
-        + '<div class="m-progress" style="margin-top:8px"><div class="m-progress-bar '+progress.color+'" style="width:'+progress.pct+'%"></div></div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
-        + statusBadge
-        + '<span style="font-size:11px;color:var(--m-text3);font-weight:600">'+progress.pct+'%</span>'
-        + '</div>'
-        + '</div>';
+      html += card;
     });
   }
   mq('mOrderList').innerHTML = html;
 }
 
+/* 카드 토글 (accordion) — 카드 자체 클릭 핸들러 */
+function mToggleWOCard(id){
+  /* 펼침 영역 내부의 인터랙티브 요소 클릭은 토글되지 않도록 호출자에서 stopPropagation 처리 */
+  mState.expandedWO = mState.expandedWO === id ? '' : id;
+  mRenderOrders();
+}
+
+/* accordion 본문: 거래처/담당자/연락처/납품처/목형/이미지/메모/공정/이력 */
+function mBuildAccordionBody(wo){
+  var stop = ' onclick="event.stopPropagation()"';
+
+  /* 거래처 마스터 매칭 (연락처) */
+  var cli = (DB.g('cli') || []).find(function(c){
+    return c.id === wo.cid || c.nm === wo.cnm;
+  });
+  var tel = wo.tel || wo.phone || wo.mobile || (cli && (cli.tel || cli.phone || cli.mobile)) || '';
+  var telLink = tel
+    ? '<a class="m-wo-link-btn"'+stop+' href="tel:'+tel.replace(/[^0-9+]/g,'')+'">전화 '+tel+'</a>'
+    : '';
+
+  /* 정보 grid 항목 — 값이 있을 때만 추가 */
+  var items = [];
+  function add(label, value){
+    if(value === undefined || value === null || value === '') return;
+    items.push('<div class="m-wo-detail-item"><div class="m-wo-detail-lbl">'+label+'</div><div class="m-wo-detail-val">'+value+'</div></div>');
+  }
+  add('거래처', wo.cnm);
+  add('담당자', wo.mgr);
+  if(tel) items.push('<div class="m-wo-detail-item"><div class="m-wo-detail-lbl">연락처</div><div class="m-wo-detail-val">'+telLink+'</div></div>');
+  add('납품처', wo.dlv);
+  add('목형', wo.mold);
+
+  var imgHtml = wo.img
+    ? '<div class="m-wo-detail-img"><img src="'+wo.img+'" alt=""'+stop+' onload="this.style.opacity=1"></div>'
+    : '';
+  var noteHtml = wo.nt
+    ? '<div class="m-wo-detail-note">'+wo.nt+'</div>'
+    : '';
+
+  /* 공정 진행 (세로 타임라인) */
+  var procRows = '';
+  if(Array.isArray(wo.procs) && wo.procs.length){
+    procRows = wo.procs.map(function(p,i){
+      var st = mNormProcState(p.st);
+      var dotCls = mIsProcDone(p) ? 'done' : mIsProcDoing(p) ? 'doing' : mIsProcHold(p) ? 'hold' : 'wait';
+      var stCls  = dotCls;
+      var meta = [];
+      if(p.vd) meta.push(p.vd);
+      if(p.qty) meta.push(mFmt(p.qty)+'개');
+      if(p.t1) meta.push('시작 '+p.t1.slice(5,16));
+      if(p.t2) meta.push('완료 '+p.t2.slice(5,16));
+      return '<div class="m-wo-proc-row">'
+        +   '<span class="m-wo-dot '+dotCls+'"></span>'
+        +   '<div class="m-wo-proc-body">'
+        +     '<div class="m-wo-proc-name">'+(i+1)+'. '+(p.nm||'-')+'</div>'
+        +     (meta.length ? '<div class="m-wo-proc-meta">'+meta.join(' · ')+'</div>' : '')
+        +   '</div>'
+        +   '<span class="m-wo-proc-st '+stCls+'">'+st+'</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  /* 변경이력 (최근 3건) */
+  var logs = (DB.g('changeLog') || DB.g('ino_changeLog') || []).filter(function(l){
+    if(!l) return false;
+    if(l.woId === wo.id) return true;
+    if(l.wid === wo.id)  return true;
+    if(l.id === wo.id)   return true;
+    if(wo.wn && l.target && String(l.target).indexOf(wo.wn) >= 0) return true;
+    if(l.target && String(l.target).indexOf(wo.id) >= 0) return true;
+    if(wo.wn && l.wn === wo.wn) return true;
+    return false;
+  }).sort(function(a,b){
+    return (b.dt||b.tm||'').localeCompare(a.dt||a.tm||'');
+  }).slice(0, 3);
+
+  var logsHtml = '';
+  if(logs.length){
+    logsHtml = '<div class="m-wo-section-t">최근 변경이력</div>'
+      + logs.map(function(l){
+          var when = l.dt || l.tm || '';
+          var who  = l.user || l.by || '';
+          var what = l.detail || l.msg || l.action || '';
+          return '<div class="m-wo-log">'
+            + '<div class="m-wo-log-when">'+when+(who?' · '+who:'')+'</div>'
+            + (what ? '<div class="m-wo-log-what">'+what+'</div>' : '')
+            + '</div>';
+        }).join('');
+  }
+
+  return '<div class="m-wo-accordion"'+stop+'>'
+    + (imgHtml ? imgHtml : '')
+    + (items.length ? '<div class="m-wo-detail-grid">'+items.join('')+'</div>' : '')
+    + (noteHtml ? '<div class="m-wo-section-t">메모</div>'+noteHtml : '')
+    + (procRows ? '<div class="m-wo-section-t">공정 진행</div>'+procRows : '')
+    + logsHtml
+    + '<button class="m-btn"'+stop+' onclick="event.stopPropagation();mShowWODetail(\''+wo.id+'\')">전체 상세 열기</button>'
+    + '</div>';
+}
+
+/* ============================================
+   상태값/공정 흐름 헬퍼 (PC 동기화 기준)
+   ============================================ */
+var M_DONE_STATES = ['완료','외주완료','스킵'];
+
+function mNormProcState(st){
+  if(st === '진행') return '진행중';
+  if(st === 'doing') return '진행중';
+  if(st === 'done')  return '완료';
+  return st || '대기';
+}
+function mIsProcDone(p){ return !!p && M_DONE_STATES.indexOf(mNormProcState(p.st)) >= 0; }
+function mIsProcDoing(p){ return !!p && mNormProcState(p.st) === '진행중'; }
+function mIsProcHold(p){
+  if(!p) return false;
+  var st = mNormProcState(p.st);
+  return st === '보류' || st === '외주대기';
+}
+
+function mGetDue(wo){ return (wo && (wo.dueDt || wo.sd || wo.due || wo.dlvDt)) || ''; }
+
+function mIsWOClosed(wo){ return !!wo && ['출고완료','취소'].indexOf(wo.status) >= 0; }
+function mIsWOCompleteWait(wo){ return !!wo && wo.status === '완료대기'; }
+function mIsWOActive(wo){ return !mIsWOClosed(wo); }
+function mIsWODoneLike(wo){
+  if(!wo) return false;
+  return wo.status === '완료대기' || wo.status === '출고완료' || wo.status === '완료';
+}
+function mHasDoingProc(wo){ return !!wo && Array.isArray(wo.procs) && wo.procs.some(mIsProcDoing); }
+function mAllProcsDone(wo){
+  return !!wo && Array.isArray(wo.procs) && wo.procs.length > 0 && wo.procs.every(mIsProcDone);
+}
+
+/* WO가 "진행중"으로 보일 조건 (UI 집계용) */
+function mIsWOInProgress(wo){
+  if(!wo || mIsWOClosed(wo) || mIsWOCompleteWait(wo)) return false;
+  if(mHasDoingProc(wo)) return true;
+  if(wo.status === '진행중') return true;
+  /* 레거시: 공정명을 그대로 status에 저장한 경우 */
+  return ['인쇄','코팅','합지','톰슨','접착'].indexOf(wo.status) >= 0;
+}
+
+/* WO가 "대기"로 보일 조건 */
+function mIsWOWaiting(wo){
+  if(!wo || mIsWOClosed(wo) || mIsWOCompleteWait(wo) || mIsWOInProgress(wo)) return false;
+  if(!wo.status) return true;
+  return ['대기','수주','수주확정','생산대기'].indexOf(wo.status) >= 0;
+}
+
+/* ============================================
+   공정 이력(hist) 기록 — PC 보고서(genRpt)와 호환
+   PC 구조: {id, woId, pnm, cnm, proc, worker, qty, t1, t2, setupMin, doneAt}
+   ============================================ */
+function mRecordProcHist(wo, proc, status){
+  if(!wo || !proc) return;
+  /* 완료 성격(완료/외주완료/스킵) 만 기록 — PC와 동일 */
+  if(M_DONE_STATES.indexOf(status) < 0) return;
+
+  var hs = DB.g('hist') || [];
+  var nowStr = mNw();
+  var today = mTd();
+
+  /* 중복 방지: 같은 woId+proc+status가 최근 1분 내 있으면 스킵 */
+  var dupe = hs.find(function(h){
+    if(h.woId !== wo.id) return false;
+    if(h.proc !== proc.nm) return false;
+    var when = h.doneAt || h.t2 || h.tm || '';
+    if(!when) return false;
+    var diffMs = (new Date(nowStr.replace(' ','T')+':00') - new Date(when.replace(' ','T')+ (when.length===16?':00':''))) ;
+    return diffMs >= 0 && diffMs < 60000;
+  });
+  if(dupe) return;
+
+  var workerNm = (typeof CU !== 'undefined' && CU && (CU.nm || CU.name)) ||
+                 (typeof window !== 'undefined' && window.CU && (window.CU.nm || window.CU.name)) ||
+                 '모바일';
+
+  hs.push({
+    id: mGid(),
+    woId: wo.id,
+    pnm:  wo.pnm  || '',
+    cnm:  wo.cnm  || '',
+    proc: proc.nm || '',
+    worker: workerNm,
+    qty:  Number(proc.qty || wo.fq || 0),
+    t1:   proc.t1 || '',
+    t2:   proc.t2 || nowStr,
+    setupMin: 0,
+    doneAt: nowStr,
+    src: 'mobile'
+  });
+  DB.s('hist', hs);
+}
+
+/* D-Day 정보 (label + cls) */
+function mDDayInfo(due){
+  if(!due) return {label:'-', cls:'gray'};
+  var now = new Date(); now.setHours(0,0,0,0);
+  var d = new Date(due + 'T00:00:00');
+  var diff = Math.round((d - now) / 86400000);
+  if(diff < 0)   return {label:'지연 '+(-diff)+'일', cls:'red'};
+  if(diff === 0) return {label:'D-Day', cls:'red'};
+  if(diff <= 2)  return {label:'D-'+diff, cls:'orange'};
+  return {label:'D-'+diff, cls:'green'};
+}
+
+/* 공정 타임라인 — ● 완료(녹) / ◐ 진행중(파) / ◌ 보류(주) / ○ 대기(회) */
+function mBuildProcTimeline(r){
+  var procs = (r && r.procs) || [];
+  if(!procs.length) return '<span class="m-wo-empty-proc">공정 없음</span>';
+  var show = procs.slice(0, 6);
+  var dotsHtml = show.map(function(p){
+    var cls = mIsProcDone(p) ? 'done' : mIsProcDoing(p) ? 'doing' : mIsProcHold(p) ? 'hold' : 'wait';
+    return '<span class="m-wo-dot '+cls+'"></span>';
+  }).join('');
+  var more = procs.length > show.length
+    ? '<span class="m-wo-timeline-more">+'+(procs.length-show.length)+'</span>'
+    : '';
+  /* 현재 진행중 우선, 없으면 첫 대기, 둘다 없으면 마지막 */
+  var current = procs.find(mIsProcDoing) ||
+                procs.find(function(p){return mNormProcState(p.st)==='대기';}) ||
+                procs[procs.length-1];
+  var label = current ? '<span class="m-wo-timeline-label">'+current.nm+'</span>' : '';
+  return '<div class="m-wo-timeline">'+dotsHtml+more+label+'</div>';
+}
+
 function mCalcWOProgress(r){
-  var status = r.status || '';
+  var status = (r && r.status) || '';
   if(status === '출고완료') return {pct:100, color:'green'};
   if(status === '취소') return {pct:0, color:'red'};
-  var pct = 0, color = 'blue';
-  if(r.procs && r.procs.length){
-    var done = r.procs.filter(function(p){return p.status === '완료' || p.status === 'done'}).length;
+
+  var pct = 0;
+  if(r && Array.isArray(r.procs) && r.procs.length){
+    var done = r.procs.filter(mIsProcDone).length;
     pct = Math.round(done / r.procs.length * 100);
   } else {
-    var map = {'수주확정':10, '생산대기':20, '인쇄':30, '코팅':45, '합지':55, '톰슨':70, '접착':85, '완료':95};
+    var map = {'수주확정':10,'생산대기':20,'대기':20,'진행중':50,'인쇄':30,'코팅':45,'합지':55,'톰슨':70,'접착':85,'완료대기':100,'완료':100};
     pct = map[status] || 20;
   }
-  if(pct >= 80) color = 'orange';
+
+  var color = 'blue';
+  if(status === '완료대기' || pct >= 100) color = 'green';
+  else if(pct >= 80) color = 'orange';
   return {pct:pct, color:color};
 }
 
@@ -596,8 +1016,8 @@ function mShowWODetail(id){
     + (r.nt ? '<div style="padding:10px;background:var(--m-bg);border-radius:8px;font-size:13px;color:var(--m-text2);margin-bottom:10px">'+r.nt+'</div>' : '')
     + '<div class="m-progress" style="height:8px"><div class="m-progress-bar '+progress.color+'" style="width:'+progress.pct+'%"></div></div>'
     + '<div style="text-align:right;font-size:12px;color:var(--m-text3);margin-top:4px">진행률 '+progress.pct+'%</div>'
+    /* 대표/영업 외부용 — 출고 이력은 조회 허용, 거래처 변경 등 확정성 액션은 PC로 안내 */
     + '<div style="display:flex;gap:6px;margin-top:12px">'
-    +   '<button class="m-btn-sm m-btn" onclick="mChangeShipCli(\''+id+'\')" style="flex:1;padding:10px;background:#F59E0B;color:#fff">거래처 변경</button>'
     +   '<button class="m-btn-sm m-btn" onclick="mShowShipHistory(\''+id+'\')" style="flex:1;padding:10px">출고 이력</button>'
     + '</div>';
 
@@ -606,26 +1026,34 @@ function mShowWODetail(id){
   if(procs.length === 0){
     mq('mWOProcs').innerHTML = '<div class="m-empty" style="padding:24px"><div class="m-empty-msg">등록된 공정이 없습니다</div><div class="m-empty-sub">PC에서 공정을 추가하세요</div></div>';
   } else {
+    /* 대표/영업 외부용 — 공정 조회 전용 (시작/완료 버튼 숨김)
+       작업자/관리자 권한 + window.M_ENABLE_PROC_BTN === true 일 때만 노출 */
+    var showProcBtn = (typeof window !== 'undefined' && window.M_ENABLE_PROC_BTN === true) &&
+                      (typeof CU !== 'undefined' && CU && (CU.role === 'worker' || CU.role === 'admin'));
     mq('mWOProcs').innerHTML = procs.map(function(p,i){
       var st = p.st || '대기';
-      var stClass = st === '완료' || st === 'done' ? 'green' : st === '진행' || st === 'doing' ? 'blue' : 'gray';
-      var stIco = '';
+      if(st === '진행') st = '진행중'; /* 레거시 보정 */
+      var stClass = mIsProcDone({st:st}) ? 'green' : st === '진행중' || st === 'doing' ? 'blue' : 'gray';
+      var meta = [];
+      if(p.vd) meta.push(p.vd);
+      if(p.t1) meta.push('시작 '+p.t1.slice(5,16));
+      if(p.t2) meta.push('완료 '+p.t2.slice(5,16));
+      var btnRow = showProcBtn
+        ? ('<div style="display:flex;gap:6px;margin-top:10px">'
+          + '<button class="m-btn-sm '+(st==='대기'?'m-btn':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'대기\')" style="flex:1;padding:8px">대기</button>'
+          + '<button class="m-btn-sm '+(st==='진행중'?'m-btn':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'진행중\')" style="flex:1;padding:8px">진행중</button>'
+          + '<button class="m-btn-sm '+(mIsProcDone({st:st})?'m-btn green':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'완료\')" style="flex:1;padding:8px">완료</button>'
+          + '</div>')
+        : '';
       return '<div class="m-item" style="padding:12px 14px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<div style="display:flex;align-items:center;gap:10px">'
-        + ''
-        + '<div>'
-        + '<div style="font-weight:700">'+(i+1)+'. '+p.nm+'</div>'
-        + (p.vd?'<div style="font-size:11px;color:var(--m-text3)">'+p.vd+'</div>':'')
+        +   '<div style="flex:1;min-width:0">'
+        +     '<div style="font-weight:700">'+(i+1)+'. '+p.nm+'</div>'
+        +     (meta.length ? '<div style="font-size:11px;color:var(--m-text3);margin-top:2px">'+meta.join(' · ')+'</div>' : '')
+        +   '</div>'
+        +   '<span class="m-badge '+stClass+'">'+st+'</span>'
         + '</div>'
-        + '</div>'
-        + '<span class="m-badge '+stClass+'">'+st+'</span>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;margin-top:10px">'
-        + '<button class="m-btn-sm '+(st==='대기'?'m-btn':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'대기\')" style="flex:1;padding:8px">대기</button>'
-        + '<button class="m-btn-sm '+(st==='진행'?'m-btn':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'진행\')" style="flex:1;padding:8px">진행</button>'
-        + '<button class="m-btn-sm '+(st==='완료'?'m-btn green':'m-btn gray')+'" onclick="mSetProcStatus('+i+',\'완료\')" style="flex:1;padding:8px">완료</button>'
-        + '</div>'
+        + btnRow
         + '</div>';
     }).join('');
   }
@@ -634,28 +1062,45 @@ function mShowWODetail(id){
 }
 
 function mSetProcStatus(idx, status){
+  /* 상태값 정규화 — 레거시 입력 보정 */
+  status = mNormProcState(status);
+
   var id = mq('mWOId').value;
   var all = DB.g('wo') || [];
   var i = all.findIndex(function(x){return x.id === id});
   if(i < 0) return;
 
   if(!all[i].procs || !all[i].procs[idx]) return;
+  if(mIsWOClosed(all[i])){ mToast('이미 종료된 작업입니다','err'); return; }
+
+  /* 기존 procs 의 레거시 값(진행/doing/done) 일괄 정규화 */
+  all[i].procs.forEach(function(p){ p.st = mNormProcState(p.st); });
+
   all[i].procs[idx].st = status;
 
   // 시작/완료 시간 기록
   var nowStr = mNw();
-  if(status === '진행' && !all[i].procs[idx].t1) all[i].procs[idx].t1 = nowStr;
-  if(status === '완료' && !all[i].procs[idx].t2) all[i].procs[idx].t2 = nowStr;
+  if(status === '진행중' && !all[i].procs[idx].t1) all[i].procs[idx].t1 = nowStr;
+  if(M_DONE_STATES.indexOf(status) >= 0 && !all[i].procs[idx].t2) all[i].procs[idx].t2 = nowStr;
 
-  // 전체 공정 완료 시 상태 자동 업데이트
-  var allDone = all[i].procs.every(function(p){return p.st === '완료'});
-  if(allDone && all[i].status !== '출고완료'){
-    all[i].status = '완료';
-  } else if(all[i].procs.some(function(p){return p.st === '진행'})){
-    all[i].status = '진행중';
+  // 전체 공정 완료 시 PC 기준 '완료대기'로 전환 (출고완료/취소 보존)
+  if(mAllProcsDone(all[i])){
+    if(all[i].status !== '출고완료' && all[i].status !== '취소'){
+      all[i].status = '완료대기';
+    }
+  } else if(all[i].procs.some(mIsProcDoing)){
+    if(all[i].status !== '출고완료' && all[i].status !== '완료대기' && all[i].status !== '취소'){
+      all[i].status = '진행중';
+    }
   }
 
   DB.s('wo', all);
+
+  /* 공정 완료(완료/외주완료/스킵) 시 PC 호환 hist 기록 */
+  if(M_DONE_STATES.indexOf(status) >= 0){
+    mRecordProcHist(all[i], all[i].procs[idx], status);
+  }
+
   mToast(status+' 처리됨', 'ok');
   mShowWODetail(id); // 새로고침
 }
@@ -786,18 +1231,47 @@ window.mPickCliChange = mPickCliChange;
 
 function mWOComplete(){
   var id = mq('mWOId').value;
-  if(!confirm('이 패키지 작업지시를 완료 처리하시겠습니까?')) return;
+  if(!confirm('모든 공정을 완료 처리하고 완료대기로 전환할까요?\n(최종 완료/출고 확정은 PC에서 진행됩니다)')) return;
+
   var all = DB.g('wo') || [];
   var i = all.findIndex(function(x){return x.id === id});
   if(i < 0) return;
-  all[i].status = '완료';
-  if(all[i].procs){
-    all[i].procs.forEach(function(p){p.st = '완료'});
+
+  if(mIsWOClosed(all[i])){
+    mToast('이미 종료된 작업입니다','err');
+    return;
   }
+
+  var nowStr = mNw();
+  var procsToRecord = []; /* hist 기록 대상 (이미 완료된 공정 제외) */
+  if(Array.isArray(all[i].procs) && all[i].procs.length){
+    all[i].procs.forEach(function(p){
+      var prevSt = mNormProcState(p.st);
+      var alreadyDone = M_DONE_STATES.indexOf(prevSt) >= 0;
+      p.st = mNormProcState(p.st);
+      p.st = '완료';
+      if(!p.t2) p.t2 = nowStr;
+      if(!alreadyDone) procsToRecord.push(p);
+    });
+  }
+
+  /* 모바일에서는 절대 '완료'로 직접 저장하지 않는다 → '완료대기'만 */
+  all[i].status = '완료대기';
+
   DB.s('wo', all);
-  mToast('완료 처리됨', 'ok');
+
+  /* 새로 완료된 공정만 hist 기록 (이미 완료/외주완료/스킵이던 건 중복 방지) */
+  procsToRecord.forEach(function(p){
+    mRecordProcHist(all[i], p, '완료');
+  });
+
+  mToast('전체 공정 완료, 완료대기 전환됨', 'ok');
   mCloseModal('mModalWO');
-  mRenderOrders();
+
+  if(mState.currentTab === 'order') mRenderOrders();
+  else if(mState.currentTab === 'home') mRenderHome();
+  else if(mState.currentTab === 'dash') mRenderDash();
+  else mRenderOrders();
 }
 
 function mWOCancel(){
@@ -819,32 +1293,55 @@ function mEditWO(){
   mOpenNewOrder(id); // 수정 모드로 열기
 }
 
-/* ===== 공정 선택 (모바일 등록 시) ===== */
-var M_DEFAULT_PROCS = ['인쇄','코팅','합지','톰슨','접착','검수'];
+/* ===== 공정 선택 (모바일 등록 시) — PC 호환: 중복 허용 + 외주 옵션 ===== */
+var M_DEFAULT_PROCS = ['인쇄','코팅','합지','톰슨','접착','검수','외주가공'];
 
 function mRenderProcPick(selectedProcs){
-  var available = M_DEFAULT_PROCS.filter(function(p){
-    return !selectedProcs.some(function(s){return s.nm === p});
-  });
-  mq('mOrderProcPick').innerHTML = available.map(function(p){
+  /* PC와 동일하게 같은 공정 중복 추가 허용 — 필터 제거 */
+  mq('mOrderProcPick').innerHTML = M_DEFAULT_PROCS.map(function(p){
     return '<button class="m-filter-btn" style="background:var(--m-pri-light);color:var(--m-blue)" onclick="mAddProc(\''+p+'\')">+ '+p+'</button>';
   }).join('');
 }
 
+/* 선택된 공정: 카드형 — 외주 토글 + 외주처(vd) 입력 인라인 */
 function mRenderSelectedProcs(){
-  var html = mOrderProcs.length === 0 ?
-    '<span style="font-size:12px;color:var(--m-text3)">공정을 추가하세요 ↓</span>' :
-    mOrderProcs.map(function(p,i){
-      return '<span class="m-badge blue" style="padding:6px 10px;font-size:13px">'+(i+1)+'. '+p.nm+
-        ' <span style="cursor:pointer;margin-left:4px;font-size:14px" onclick="mRemoveProc('+i+')">×</span></span>';
-    }).join('');
-  mq('mOrderProcs').innerHTML = html;
+  var box = mq('mOrderProcs');
+  if(!box) return;
+  if(mOrderProcs.length === 0){
+    box.innerHTML = '<span style="font-size:12px;color:var(--m-text3)">공정을 추가하세요 ↓</span>';
+    return;
+  }
+  box.innerHTML = mOrderProcs.map(function(p, i){
+    var isOut = p.tp && p.tp !== 'n';
+    /* 외주가공 공정은 무조건 외주 (PC와 동일) */
+    var forcedOut = p.nm === '외주가공';
+    var checked = (isOut || forcedOut) ? 'checked' : '';
+    var vdHtml = (isOut || forcedOut)
+      ? '<input type="text" class="m-input" placeholder="외주업체명" value="'+(p.vd||'').replace(/"/g,'&quot;')+
+        '" oninput="mUpdateProcVd('+i+',this.value)" style="margin-top:6px;padding:6px 10px;font-size:12px;height:34px">'
+      : '';
+    return '<div class="m-proc-card" style="display:block;padding:8px 10px;background:var(--m-bg);border:1px solid var(--m-bdr);border-radius:8px;margin-bottom:6px;width:100%">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
+      +   '<span style="font-size:13px;font-weight:700">'+(i+1)+'. '+p.nm+'</span>'
+      +   '<div style="display:flex;align-items:center;gap:10px">'
+      +     '<label style="font-size:11px;color:var(--m-text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer">'
+      +       '<input type="checkbox" '+checked+' '+(forcedOut?'disabled':'')+' onchange="mToggleProcOut('+i+',this.checked)" style="margin:0">'
+      +       '외주'
+      +     '</label>'
+      +     '<button type="button" onclick="mRemoveProc('+i+')" style="background:transparent;border:0;color:var(--m-red);font-size:18px;line-height:1;cursor:pointer;padding:0 4px">×</button>'
+      +   '</div>'
+      + '</div>'
+      + vdHtml
+      + '</div>';
+  }).join('');
 }
 
 var mOrderProcs = [];
 
 function mAddProc(nm){
-  mOrderProcs.push({nm: nm, tp: 'n', mt: '', vd: '', st: '대기', qty: 0, t1: '', t2: ''});
+  /* 외주가공은 기본 tp='out' */
+  var defaultTp = (nm === '외주가공') ? 'out' : 'n';
+  mOrderProcs.push({nm: nm, tp: defaultTp, mt: '', vd: '', st: '대기', qty: 0, t1: '', t2: ''});
   mRenderSelectedProcs();
   mRenderProcPick(mOrderProcs);
 }
@@ -854,6 +1351,25 @@ function mRemoveProc(idx){
   mRenderSelectedProcs();
   mRenderProcPick(mOrderProcs);
 }
+
+/* 외주 토글 — tp 전환 ('n' ↔ 'out') */
+function mToggleProcOut(idx, checked){
+  if(!mOrderProcs[idx]) return;
+  mOrderProcs[idx].tp = checked ? 'out' : 'n';
+  if(!checked) mOrderProcs[idx].vd = ''; /* 내부 전환 시 vd 비움 */
+  mRenderSelectedProcs();
+}
+
+/* 외주업체명 업데이트 (re-render 안 함 — 입력 포커스 유지) */
+function mUpdateProcVd(idx, val){
+  if(!mOrderProcs[idx]) return;
+  mOrderProcs[idx].vd = val;
+}
+
+window.mAddProc = mAddProc;
+window.mRemoveProc = mRemoveProc;
+window.mToggleProcOut = mToggleProcOut;
+window.mUpdateProcVd = mUpdateProcVd;
 
 /* ===== 품목 자동완성 (공정 자동 적용) ===== */
 function mAcProd(val, listId, inputId){
@@ -989,6 +1505,10 @@ function mRenderShip(){
 }
 
 function mOpenShip(woId){
+  /* 모바일은 현장 공정 중심 — 출고 확정은 PC 흐름 보호를 위해 차단 */
+  mToast('출고 확정은 PC에서 진행하세요','err');
+  return;
+  /* eslint-disable no-unreachable */
   var wo = (DB.g('wo')||[]).find(function(x){return x.id===woId});
   if(!wo){mToast('패키지 작업지시 없음','err');return}
 
@@ -1014,6 +1534,10 @@ function mCalcGood(){
 }
 
 function mDoShip(){
+  /* 모바일에서 출고/매출/세금계산서 확정 흐름 우회 차단 — PC 전용 */
+  mToast('출고 확정은 PC에서 진행하세요','err');
+  return;
+  /* eslint-disable no-unreachable */
   var woId = mq('mShipWoId').value;
   var qty = +mq('mShipQty').value;
   var defect = +mq('mShipDefect').value || 0;
@@ -1292,8 +1816,9 @@ function mSaveOrder(){
       dueDt: due,
       dlv: dlv,
       mold: mold,
-      status: '대기',
+      status: '대기',  /* 모바일 작성은 항상 대기 — PC에서 사무실 담당자가 보완 */
       cat: mNw(),
+      src: 'mobile',   /* 등록 출처 표시 */
       nt: mq('mOrderNote').value,
       companyId: mState.selectedCompany,
       pri: mCurrentPri,
@@ -1396,7 +1921,7 @@ function mUpdatePriRadio(pri){
   });
 }
 
-/* ===== 📷 이미지 처리 ===== */
+/* ===== 이미지 처리 ===== */
 function mHandleImgPick(input){
   var file = input.files && input.files[0];
   if(!file) return;

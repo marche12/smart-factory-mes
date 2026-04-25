@@ -1145,7 +1145,7 @@ function periodFilterHTML(prefix){
     +'<input type="date" id="'+prefix+'To" onchange="if(window._prdCb_'+prefix+')window._prdCb_'+prefix+'()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:13px">'
     +'</div>'
     +'<span id="'+prefix+'PrdLabel" style="font-size:13px;font-weight:600;color:var(--txt2)"></span>'
-    +'<button class="btn btn-o btn-sm" onclick="prdExport(\''+prefix+'\')">📥 엑셀 저장</button>'
+    +'<button class="btn btn-o btn-sm" onclick="prdExport(\''+prefix+'\')">엑셀 저장</button>'
     +'</div>';
 }
 var _prdState={};
@@ -1367,10 +1367,10 @@ var GROUPS={
 };
 var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.forEach(function(t){if(t.id!==gid)PARENT_MAP[t.id]=gid})});
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
-function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('🔒 준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
+function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}
-var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드'};
-if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기준정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-recv':'출고·정산','acc-cashflow':'출고·정산','mes-cli':'기준정보','mes-vendor':'자재·외주','mes-prod':'기준정보','mes-mold':'기준정보','qc-equip':'기준정보','qc-pm':'기준정보','qc-breakdown':'기준정보','mes-downtime':'기준정보','mes-oee':'기준정보','mes-mold-hist':'기준정보','adm-code':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}var sub=$('mainSubBc');if(sub)sub.textContent=titleMap[id]||''}
+var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-closing':'월말 마감 점검'};
+if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기준정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-recv':'출고·정산','acc-cashflow':'출고·정산','mes-cli':'기준정보','mes-vendor':'자재·외주','mes-prod':'기준정보','mes-mold':'기준정보','qc-equip':'기준정보','qc-pm':'기준정보','qc-breakdown':'기준정보','mes-downtime':'기준정보','mes-oee':'기준정보','mes-mold-hist':'기준정보','adm-code':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템','mes-closing':'출고·정산'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}var sub=$('mainSubBc');if(sub)sub.textContent=titleMap[id]||''}
 /* groupTabBar 는 사이드바 3단 구조(메인·서브)로 이동되어 항상 숨김 */
 var _gtb=$('groupTabBar');if(_gtb){_gtb.style.display='none';_gtb.innerHTML='';}
 if(MR[id])MR[id]();if(ER[id])ER[id]();}
@@ -1567,4 +1567,118 @@ var ContrastCheck=(function(){
     return fails;
   }
   return{check:check,audit:audit,ratio:function(c1,c2){var a=parseColor(c1),b=parseColor(c2);return a&&b?ratio(a,b):null}};
+})();
+
+/* ============================================
+   PC ↔ Mobile 자동 재렌더 동기화
+   - localStorage storage 이벤트 = 같은 origin 의 다른 탭에서 발생
+   - DB.s 가 localStorage.setItem('ino_xxx', ...) 호출하므로 자동 트리거
+   - 추가 ping 키로 같은 값 덮어쓰기 케이스도 보강
+   ============================================ */
+(function(){
+  if(typeof window === 'undefined') return;
+
+  /* DB.s 래핑: 저장 직후 sync ping 발사 (같은 탭 무한 루프 방지 위해 source 표기) */
+  if(typeof DB !== 'undefined' && DB.s && !DB.s.__syncWrapped){
+    var origS = DB.s;
+    DB.s = function(k, d){
+      var r = origS.apply(this, arguments);
+      try{
+        localStorage.setItem('packflow_sync_ping', JSON.stringify({
+          key: k, at: Date.now(), src: window.__sync_src || ''
+        }));
+      }catch(e){}
+      return r;
+    };
+    DB.s.__syncWrapped = true;
+  }
+  if(typeof DB !== 'undefined' && DB.s1 && !DB.s1.__syncWrapped){
+    var origS1 = DB.s1;
+    DB.s1 = function(k, d){
+      var r = origS1.apply(this, arguments);
+      try{
+        localStorage.setItem('packflow_sync_ping', JSON.stringify({
+          key: k, at: Date.now(), src: window.__sync_src || ''
+        }));
+      }catch(e){}
+      return r;
+    };
+    DB.s1.__syncWrapped = true;
+  }
+
+  /* 현재 활성 PC 모듈 재렌더 — 변경된 key가 모듈 데이터에 영향 있을 때만 */
+  var KEY_TO_MODULES = {
+    'wo':         ['mes-wo','mes-plan','mes-dash','mes-ship','mes-closing','mes-proc-log','mes-rpt','mes-worker'],
+    'hist':       ['mes-rpt','mes-proc-log','mes-perf','mes-dash'],
+    'shipLog':    ['mes-ship','mes-shiplog','mes-closing','mes-dash'],
+    'sales':      ['acc-sales','mes-closing','mes-dash'],
+    'purchase':   ['acc-purchase','mes-closing'],
+    'taxInvoice': ['acc-tax','mes-closing'],
+    'cli':        ['mes-cli'],
+    'prod':       ['mes-prod'],
+    'mold':       ['mes-mold']
+  };
+
+  function refreshActivePCModule(changedKey){
+    if(typeof MR !== 'object') return;
+    var active = document.querySelector('.module-page.active');
+    if(!active) return;
+    var modId = active.id.replace('pg-','');
+    var affected = KEY_TO_MODULES[changedKey];
+    if(!affected || affected.indexOf(modId) < 0) return;
+    /* 모달 열려있으면 toast만, 재렌더는 보류 */
+    var openModal = document.querySelector('.mo:not(.hidden), .mo-ov:not(.hidden), .mo-bg:not(.hidden), .cm:not(.hidden), .popOv:not(.hidden), .modal.show, .pop-modal.on');
+    if(openModal){
+      if(typeof toast === 'function') toast('새 데이터가 있습니다 (저장 후 갱신)','ok');
+      return;
+    }
+    try{ if(MR[modId]) MR[modId](); }catch(e){ console.warn('[sync] re-render fail', e); }
+  }
+
+  /* 모바일 활성 탭 재렌더 */
+  function refreshActiveMobileTab(changedKey){
+    if(typeof mState === 'undefined' || typeof mState.currentTab === 'undefined') return;
+    /* 작업지시/공정 데이터에 영향있는 키만 처리 */
+    var rerenderKeys = ['wo','hist','shipLog','cli','prod'];
+    if(rerenderKeys.indexOf(changedKey) < 0) return;
+    /* 열린 모바일 모달 보호 */
+    var openMM = document.querySelector('.m-modal.on');
+    if(openMM){
+      if(typeof mToast === 'function') mToast('새 데이터 있음 (모달 닫고 갱신)','ok');
+      return;
+    }
+    if(typeof mRefreshCurrentView === 'function'){
+      try{ mRefreshCurrentView(); }catch(e){}
+    }
+  }
+
+  /* storage 이벤트 — 같은 origin 다른 탭에서 발생 */
+  window.addEventListener('storage', function(e){
+    if(!e || !e.key) return;
+    var changedKey = null;
+    if(e.key === 'packflow_sync_ping'){
+      try{ changedKey = JSON.parse(e.newValue||'{}').key; }catch(_){}
+    } else if(e.key.indexOf('ino_') === 0){
+      changedKey = e.key.slice(4);
+      /* _cache 무효화 — 다음 DB.g 호출 시 localStorage 에서 다시 읽도록 */
+      try{
+        if(typeof _cache !== 'undefined') delete _cache[e.key];
+      }catch(_){}
+    }
+    if(!changedKey) return;
+    /* 짧은 디바운스 — 연속 변경 묶음 처리 */
+    window.__pfSyncKeys = window.__pfSyncKeys || new Set();
+    window.__pfSyncKeys.add(changedKey);
+    clearTimeout(window.__pfSyncTm);
+    window.__pfSyncTm = setTimeout(function(){
+      var keys = Array.from(window.__pfSyncKeys || []);
+      window.__pfSyncKeys.clear();
+      keys.forEach(function(k){
+        refreshActivePCModule(k);
+        refreshActiveMobileTab(k);
+      });
+    }, 150);
+  });
+
+  console.log('[packflow-sync] storage event listener active');
 })();

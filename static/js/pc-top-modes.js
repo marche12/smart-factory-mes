@@ -23,42 +23,36 @@ var MODES = [
   {
     id:'order',
     label:'견적·수주',
-    ico:'🧾',
     groupKeys:['order'],
     modules:['qc-quote','mes-order','mes-wo']
   },
   {
     id:'prod',
     label:'생산·공정',
-    ico:'🏭',
     groupKeys:['prod'],
     modules:['mes-plan','mes-proc-log','mes-outsource','mes-worker']
   },
   {
     id:'material',
     label:'자재·외주',
-    ico:'📦',
     groupKeys:['material'],
     modules:['mat-stock','mat-po','mat-income','mat-bom','mes-vendor']
   },
   {
     id:'ship',
     label:'출고·정산',
-    ico:'🚚',
     groupKeys:['ship'],
-    modules:['mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow']
+    modules:['mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','mes-closing']
   },
   {
     id:'master',
     label:'기초정보',
-    ico:'📚',
     groupKeys:['master'],
     modules:['mes-cli','mes-prod','mes-mold','qc-inspect','qc-equip']
   },
   {
     id:'system',
     label:'환경설정',
-    ico:'⚙️',
     groupKeys:['system'],
     modules:['adm-perm','adm-backup','mes-queue']
   }
@@ -125,7 +119,6 @@ function renderTabs(){
       + ' data-mode="'+mode.id+'"'
       + ' onclick="setTopMode(\''+mode.id+'\')"'
       + ' title="'+mode.label+'">'
-      + '<span class="tm-tab-ico">'+mode.ico+'</span>'
       + '<span>'+mode.label+'</span>'
       + '</button>';
   }).join('');
@@ -138,10 +131,10 @@ function renderTabs(){
 
   // 우측 = 바로가기(작업지시서/생산현황) + 알림 + 사용자 드롭다운
   var right = '<div class="tm-right">'
-    + '<button class="tm-quick-btn" title="생산현황 바로가기" onclick="goMod(\'mes-dash\')"><span class="tm-quick-ico">🏠</span><span>생산현황</span></button>'
-    + '<button class="tm-quick-btn" title="작업지시서 바로가기" onclick="goMod(\'mes-wo\')"><span class="tm-quick-ico">📝</span><span>작업지시서</span></button>'
+    + '<button class="tm-quick-btn" title="생산현황 바로가기" onclick="goMod(\'mes-dash\')"><span>생산현황</span></button>'
+    + '<button class="tm-quick-btn" title="작업지시서 바로가기" onclick="goMod(\'mes-wo\')"><span>작업지시서</span></button>'
     + '<span class="tm-quick-sep"></span>'
-    + '<button class="tm-right-btn has-noti" title="알림" onclick="if(typeof UX!==\'undefined\'&&UX.toggleNotifPanel)UX.toggleNotifPanel();else if(typeof toggleNotiPanel===\'function\')toggleNotiPanel()">🔔<span class="tm-noti-dot"></span></button>'
+    + '<button class="tm-right-btn has-noti" title="알림" onclick="if(typeof UX!==\'undefined\'&&UX.toggleNotifPanel)UX.toggleNotifPanel();else if(typeof toggleNotiPanel===\'function\')toggleNotiPanel()">알림<span class="tm-noti-dot"></span></button>'
     + '<div class="tm-user-wrap" id="tmUserWrap">'
     +   '<button class="tm-user" onclick="_tmToggleUserMenu(event)" title="'+userName+' ('+(roleMap[userRole]||userRole)+')">'
     +     '<div class="tm-avatar">'+initial+'</div>'
@@ -150,11 +143,11 @@ function renderTabs(){
     +   '</button>'
     +   '<div class="tm-user-menu hidden" id="tmUserMenu">'
     +     '<div class="tm-user-menu-hd"><div class="tm-user-menu-nm">'+userName+'</div><div class="tm-user-menu-role">'+(roleMap[userRole]||userRole)+'</div></div>'
-    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-dash\');_tmCloseUserMenu()">🏠 홈 (생산현황)</button>'
-    +     '<button class="tm-user-menu-item" onclick="openShortcuts&&openShortcuts();_tmCloseUserMenu()">⌨ 키보드 단축키</button>'
-    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-queue\');_tmCloseUserMenu()">⚙️ 시스템 설정</button>'
+    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-dash\');_tmCloseUserMenu()">홈 (생산현황)</button>'
+    +     '<button class="tm-user-menu-item" onclick="openShortcuts&&openShortcuts();_tmCloseUserMenu()">키보드 단축키</button>'
+    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-queue\');_tmCloseUserMenu()">시스템 설정</button>'
     +     '<div class="tm-user-menu-sep"></div>'
-    +     '<button class="tm-user-menu-item danger" onclick="unifiedLogout&&unifiedLogout()">↩ 로그아웃</button>'
+    +     '<button class="tm-user-menu-item danger" onclick="unifiedLogout&&unifiedLogout()">로그아웃</button>'
     +   '</div>'
     + '</div>'
     + '</div>';

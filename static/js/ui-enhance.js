@@ -31,19 +31,19 @@ var UX = (function(){
 
     // 메뉴
     var menus = [
-      {t:'작업지시서', mod:'mes-wo', ico:'📋'},
-      {t:'출고', mod:'mes-ship', ico:'🚚'},
-      {t:'매출', mod:'acc-sales', ico:'💰'},
-      {t:'매입', mod:'acc-purchase', ico:'📤'},
-      {t:'세금계산서', mod:'acc-tax', ico:'📄'},
-      {t:'재고', mod:'mat-stock', ico:'📦'},
-      {t:'거래처', mod:'mes-cli', ico:'📇'},
-      {t:'품목', mod:'mes-prod', ico:'🏷️'},
-      {t:'목형', mod:'mes-mold', ico:'🔲'},
-      {t:'채권/자금', mod:'acc-recv', ico:'💳'},
-      {t:'입출금', mod:'acc-cashflow', ico:'💵'},
-      {t:'생산현황', mod:'mes-dash', ico:'🏭'},
-      {t:'시스템설정', mod:'mes-queue', ico:'⚙️'}
+      {t:'작업지시서', mod:'mes-wo', ico:'WO'},
+      {t:'출고', mod:'mes-ship', ico:'SH'},
+      {t:'매출', mod:'acc-sales', ico:'SA'},
+      {t:'매입', mod:'acc-purchase', ico:'PU'},
+      {t:'세금계산서', mod:'acc-tax', ico:'TX'},
+      {t:'재고', mod:'mat-stock', ico:'ST'},
+      {t:'거래처', mod:'mes-cli', ico:'CL'},
+      {t:'품목', mod:'mes-prod', ico:'IT'},
+      {t:'목형', mod:'mes-mold', ico:'MD'},
+      {t:'채권/자금', mod:'acc-recv', ico:'AR'},
+      {t:'입출금', mod:'acc-cashflow', ico:'CF'},
+      {t:'생산현황', mod:'mes-dash', ico:'DB'},
+      {t:'시스템설정', mod:'mes-queue', ico:'ST'}
     ];
     menus.forEach(function(m){
       if(!q || (hasUtil ? SearchUtil.match(m.t, q) : m.t.indexOf(q) >= 0)){
@@ -56,7 +56,7 @@ var UX = (function(){
       (DB.g('cli')||[]).forEach(function(c){
         if(results.length > 30) return;
         if(hasUtil ? SearchUtil.match(c.nm, q) || SearchUtil.match(c.biz||'', q) : (c.nm||'').toLowerCase().indexOf(q.toLowerCase())>=0){
-          results.push({type:'cli', ico:'📇', title:c.nm, sub:'거래처 · '+(c.biz||'-'), action:"goMod('mes-cli');setTimeout(function(){if(typeof showCliHist==='function')showCliHist('"+c.id+"')},300)"});
+          results.push({type:'cli', ico:'CL', title:c.nm, sub:'거래처 · '+(c.biz||'-'), action:"goMod('mes-cli');setTimeout(function(){if(typeof showCliHist==='function')showCliHist('"+c.id+"')},300)"});
         }
       });
 
@@ -65,7 +65,7 @@ var UX = (function(){
       (DB.g('prod')||[]).forEach(function(p){
         if(prodCnt >= 8) return;
         if(hasUtil ? SearchUtil.match(p.nm, q) : (p.nm||'').toLowerCase().indexOf(q.toLowerCase())>=0){
-          results.push({type:'prod', ico:'🏷️', title:p.nm, sub:'품목 · '+(p.cnm||'-'), action:"goMod('mes-prod')"});
+          results.push({type:'prod', ico:'IT', title:p.nm, sub:'품목 · '+(p.cnm||'-'), action:"goMod('mes-prod')"});
           prodCnt++;
         }
       });
@@ -76,7 +76,7 @@ var UX = (function(){
         if(woCnt >= 5) return;
         var txt = (w.wn||'')+' '+(w.cnm||'')+' '+(w.pnm||'');
         if(hasUtil ? SearchUtil.match(txt, q) : txt.toLowerCase().indexOf(q.toLowerCase())>=0){
-          results.push({type:'wo', ico:'📋', title:w.wn+' '+(w.cnm||''), sub:'WO · '+(w.pnm||'')+' '+(w.status||''), action:"goMod('mes-wo')"});
+          results.push({type:'wo', ico:'WO', title:w.wn+' '+(w.cnm||''), sub:'WO · '+(w.pnm||'')+' '+(w.status||''), action:"goMod('mes-wo')"});
           woCnt++;
         }
       });
@@ -139,7 +139,7 @@ var UX = (function(){
 
     var group = groupMap[mod] || '';
     var title = titleMap[mod] || mod;
-    el.innerHTML = '<span class="uxbc-home" onclick="goMod(\'mes-dash\')">🏠</span>'
+    el.innerHTML = '<span class="uxbc-home" onclick="goMod(\'mes-dash\')">Home</span>'
       + (group ? '<span class="uxbc-sep">›</span><span class="uxbc-group">'+group+'</span>' : '')
       + '<span class="uxbc-sep">›</span><span class="uxbc-current">'+title+'</span>';
 
@@ -160,9 +160,9 @@ var UX = (function(){
       if(!due) return;
       var diff = (new Date(due) - new Date(td)) / 86400000;
       if(diff < 0){
-        noti.push({icon:'🔴', title:(w.cnm||'')+' 납기 지연 '+(-Math.ceil(diff))+'일', sub:w.pnm+' · '+(w.wn||''), level:'danger', action:"goMod('mes-wo')"});
+        noti.push({icon:'지연', title:(w.cnm||'')+' 납기 지연 '+(-Math.ceil(diff))+'일', sub:w.pnm+' · '+(w.wn||''), level:'danger', action:"goMod('mes-wo')"});
       } else if(diff <= 3){
-        noti.push({icon:'🟠', title:(w.cnm||'')+' 납기 '+Math.ceil(diff)+'일 남음', sub:w.pnm+' · '+(w.wn||''), level:'warn', action:"goMod('mes-wo')"});
+        noti.push({icon:'임박', title:(w.cnm||'')+' 납기 '+Math.ceil(diff)+'일 남음', sub:w.pnm+' · '+(w.wn||''), level:'warn', action:"goMod('mes-wo')"});
       }
     });
 
@@ -179,7 +179,7 @@ var UX = (function(){
       var c = byCli[cli];
       var days = Math.floor((new Date(td) - new Date(c.oldest))/86400000);
       if(days >= 30){
-        noti.push({icon:'⚠️', title:cli+' 미수 '+days+'일 경과', sub:fmt(c.amt)+'원', level:'warn', action:"goMod('acc-recv')"});
+        noti.push({icon:'주의', title:cli+' 미수 '+days+'일 경과', sub:fmt(c.amt)+'원', level:'warn', action:"goMod('acc-recv')"});
       }
     });
 
@@ -188,16 +188,16 @@ var UX = (function(){
       var cur = +(s.qty||0), safe = +(s.safeQty||s.safe||s.minQty||0);
       if(safe <= 0) return;
       if(cur <= 0){
-        noti.push({icon:'🛑', title:(s.nm||'자재')+' 재고 소진', sub:'즉시 발주 필요 · 안전재고 '+safe, level:'danger', action:"goMod('mat-safety')"});
+        noti.push({icon:'부족', title:(s.nm||'자재')+' 재고 소진', sub:'즉시 발주 필요 · 안전재고 '+safe, level:'danger', action:"goMod('mat-safety')"});
       } else if(cur < safe){
-        noti.push({icon:'📦', title:(s.nm||'자재')+' 안전재고 미만', sub:'현재 '+cur+' / 안전 '+safe, level:'warn', action:"goMod('mat-safety')"});
+        noti.push({icon:'재고', title:(s.nm||'자재')+' 안전재고 미만', sub:'현재 '+cur+' / 안전 '+safe, level:'warn', action:"goMod('mat-safety')"});
       }
     });
 
     // 5. 반품 미처리 (접수/처리중)
     var pendingClaims = (DB.g('claims')||[]).filter(function(c){return c.type==='반품' && c.st!=='완료';});
     if(pendingClaims.length > 0){
-      noti.push({icon:'↩️', title:'처리 대기 반품 '+pendingClaims.length+'건', sub:'완료 처리 시 재고·매출 자동 역동기화', level:'info', action:"goMod('mes-claim')"});
+      noti.push({icon:'반품', title:'처리 대기 반품 '+pendingClaims.length+'건', sub:'완료 처리 시 재고·매출 자동 역동기화', level:'info', action:"goMod('mes-claim')"});
     }
 
     return noti.slice(0, 20);
@@ -319,7 +319,7 @@ var UX = (function(){
       notifPanel.id = 'uxNotifPanel';
       notifPanel.className = 'ux-notif-panel hidden';
       notifPanel.innerHTML =
-          '<div class="ux-notif-hdr"><span style="font-weight:700">🔔 알림</span><button onclick="UX.toggleNotifPanel()" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:#94A3B8">×</button></div>'
+          '<div class="ux-notif-hdr"><span style="font-weight:700">알림</span><button onclick="UX.toggleNotifPanel()" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:#94A3B8">×</button></div>'
         + '<div id="uxNotifList" class="ux-notif-list"></div>';
       document.body.appendChild(notifPanel);
     }
@@ -333,11 +333,11 @@ var UX = (function(){
       userMenu.innerHTML =
           '<div class="ux-um-hdr"><div class="ux-um-avatar" id="uxUmAvatar">관</div>'
         + '<div><div style="font-weight:700;font-size:14px" id="uxUmName">관리자</div><div style="font-size:12px;color:#94A3B8" id="uxUmRole">관리자</div></div></div>'
-        + '<div class="ux-um-item" onclick="goMod(\'mes-queue\')">⚙️ 시스템 설정</div>'
-        + '<div class="ux-um-item" onclick="goMod(\'adm-perm\')">🔒 권한 관리</div>'
-        + '<div class="ux-um-item" onclick="goMod(\'adm-backup\')">💾 백업</div>'
+        + '<div class="ux-um-item" onclick="goMod(\'mes-queue\')">시스템 설정</div>'
+        + '<div class="ux-um-item" onclick="goMod(\'adm-perm\')">권한 관리</div>'
+        + '<div class="ux-um-item" onclick="goMod(\'adm-backup\')">백업</div>'
         + '<div class="ux-um-divider"></div>'
-        + '<div class="ux-um-item" style="color:#DC2626" onclick="unifiedLogout()">🚪 로그아웃</div>';
+        + '<div class="ux-um-item" style="color:#DC2626" onclick="unifiedLogout()">로그아웃</div>';
       document.body.appendChild(userMenu);
     }
 
@@ -350,7 +350,7 @@ var UX = (function(){
       gsModal.onclick = function(e){ if(e.target === gsModal) closeGlobalSearch() };
       gsModal.innerHTML =
           '<div class="ux-gs-box">'
-        + '<div class="ux-gs-input-wrap"><span style="font-size:18px">🔍</span><input type="text" id="uxgsInput" placeholder="메뉴 / 거래처 / 품목 / 작업지시서 검색..." oninput="UX.renderSearch(this.value)"><span class="ux-kbd" onclick="UX.closeGlobalSearch()">ESC</span></div>'
+        + '<div class="ux-gs-input-wrap"><span class="ux-gs-prefix">Search</span><input type="text" id="uxgsInput" placeholder="메뉴 / 거래처 / 품목 / 작업지시서 검색..." oninput="UX.renderSearch(this.value)"><span class="ux-kbd" onclick="UX.closeGlobalSearch()">ESC</span></div>'
         + '<div id="uxgsResults" class="ux-gs-results"></div>'
         + '<div class="ux-gs-footer">↑↓ 이동 · ↵ 선택 · ESC 닫기</div>'
         + '</div>';

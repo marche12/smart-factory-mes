@@ -17,22 +17,45 @@
 function _cliRow(c){
   return {label:c.nm||'', sub:[c.ps||c.ceo||'', c.tel||'', c.bizNo||c.biz||''].filter(Boolean).join(' · ')};
 }
+function _cliMatchesKind(c, kind){
+  if(!c || c.isDormant) return false;
+  var t=c.cType||'sales';
+  if(kind==='purchase') return t==='purchase'||t==='both';
+  return t==='sales'||t==='both';
+}
+function _dynamicCliKind(fieldId){
+  if(fieldId==='txCli'){
+    var tp=document.getElementById('txTpS');
+    return tp&&tp.value==='매입'?'purchase':'sales';
+  }
+  if(fieldId==='payCli'){
+    var tgt=document.getElementById('payTgt');
+    return tgt&&tgt.value==='purchase'?'purchase':'sales';
+  }
+  return 'sales';
+}
 var FIELD_DATASOURCE = {
   // 매출처 (수주/견적/작업지시/출고/매출/클레임)
   cliSales: {ids:['woCli','ordCli','qtCli','sCli','clmCli','smCli'], get:function(){
     return (DB.g('cli')||[]).filter(function(c){
-      if(c.isDormant) return false;
-      var t=c.cType||'sales';
-      return t==='sales'||t==='both';
+      return _cliMatchesKind(c, 'sales');
     }).map(_cliRow);
   }},
   // 매입처 (매입/입고/발주)
   cliPurchase: {ids:['pCli','incCli'], get:function(){
     return (DB.g('cli')||[]).filter(function(c){
-      if(c.isDormant) return false;
-      var t=c.cType||'sales';
-      return t==='purchase'||t==='both';
+      return _cliMatchesKind(c, 'purchase');
     }).map(_cliRow);
+  }},
+  // 세금계산서: 매출/매입 구분 선택값에 맞춰 동적 전환
+  cliTax: {ids:['txCli'], get:function(){
+    var kind=_dynamicCliKind('txCli');
+    return (DB.g('cli')||[]).filter(function(c){ return _cliMatchesKind(c, kind); }).map(_cliRow);
+  }},
+  // 입출금: 입금/지급 처리 구분에 맞춰 동적 전환
+  cliPay: {ids:['payCli'], get:function(){
+    var kind=_dynamicCliKind('payCli');
+    return (DB.g('cli')||[]).filter(function(c){ return _cliMatchesKind(c, kind); }).map(_cliRow);
   }},
   // 품목
   prod: {ids:['woProd','qtProd','sProd','pProd','clmProd','incNm','incMat'], get:function(scope){
@@ -102,8 +125,8 @@ function findProdByName(name){
 function bindSyncHandlers(el, kind){
   if(!el || el._uxAcSyncBound) return;
   var sync = null;
-  // cliSales / cliPurchase 는 동기 핸들러상 'cli' 로 통일
-  if(kind==='cliSales'||kind==='cliPurchase') kind='cli';
+  // 거래처 계열은 동기 핸들러상 'cli' 로 통일
+  if(kind==='cliSales'||kind==='cliPurchase'||kind==='cliTax'||kind==='cliPay') kind='cli';
   if(kind==='cli'){
     if(el.id==='woCli'){
       sync=function(){
@@ -126,6 +149,14 @@ function bindSyncHandlers(el, kind){
     } else if(el.id==='qtCli'){
       sync=function(){
         if(typeof updateQtAssist==='function') updateQtAssist();
+      };
+    } else if(el.id==='txCli'){
+      sync=function(){
+        var c=findCliByName(el.value);
+        if(!c) return;
+        if($('txBiz')) $('txBiz').value = c.bizNo || c.biz || '';
+        if($('txCeo')) $('txCeo').value = c.ceo || c.ps || '';
+        if($('txAddr')) $('txAddr').value = c.addr || '';
       };
     }
   } else if(kind==='prod'){
@@ -174,7 +205,7 @@ function upgradeField(el, kind){
   });
   // placeholder 개선 — 기존 읽기만 안내 문구 대체
   if(!el.placeholder || /선택\s*$/.test(el.placeholder)){
-    var placeMap={cliSales:'매출처 입력 (F4 검색)',cliPurchase:'매입처 입력 (F4 검색)',prod:'품목 입력 (F4 검색)',vendor:'협력사 입력 (F4 검색)',dlv:'납품처/주소 입력 (F4 검색)'};
+    var placeMap={cliSales:'매출처 입력 (F4 검색)',cliPurchase:'매입처 입력 (F4 검색)',cliTax:'거래처 입력 (F4 검색)',cliPay:'거래처 입력 (F4 검색)',prod:'품목 입력 (F4 검색)',vendor:'협력사 입력 (F4 검색)',dlv:'납품처/주소 입력 (F4 검색)'};
     el.placeholder = placeMap[kind] || el.placeholder;
   }
   bindSyncHandlers(el, kind);
@@ -212,7 +243,7 @@ setInterval(scanAll, 2500);
       var r = orig.apply(this, arguments);
       // cli/prod/vendors 변경 시 해당 datalist 강제 비움 (다음 focus 에 재빌드)
       if(['cli','prod','vendors'].indexOf(key) >= 0){
-        ['ux-dl-cliSales','ux-dl-cliPurchase','ux-dl-prod','ux-dl-vendor','ux-dl-dlv'].forEach(function(id){
+        ['ux-dl-cliSales','ux-dl-cliPurchase','ux-dl-cliTax','ux-dl-cliPay','ux-dl-prod','ux-dl-vendor','ux-dl-dlv'].forEach(function(id){
           var dl = document.getElementById(id);
           if(dl) dl.innerHTML = '';
         });

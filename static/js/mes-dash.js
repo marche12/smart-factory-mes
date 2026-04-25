@@ -713,9 +713,9 @@ function renderDashTodayCards(os, quotes){
       +'<span class="ti-badge ti-normal">'+(q.status||q.st||'견적대기')+'</span></div>';
   }
   return '<div class="today-wrap">'
-    +'<div class="today-card"><h4>🚚 오늘 출고 예정</h4>'+(shipList.length?shipList.map(_shipItem).join(''):_empty('오늘 출고 예정 작업이 없습니다'))+'</div>'
-    +'<div class="today-card"><h4>🚨 긴급 생산 / 납기</h4>'+(urgentList.length?urgentList.map(_urgentItem).join(''):_empty('긴급 작업이 없습니다'))+'</div>'
-    +'<div class="today-card"><h4>🧾 견적 / 수주 대기</h4>'+(quoteList.length?quoteList.map(_quoteItem).join(''):_empty('처리 대기 견적이 없습니다'))+'</div>'
+    +'<div class="today-card"><h4>오늘 출고 예정</h4>'+(shipList.length?shipList.map(_shipItem).join(''):_empty('오늘 출고 예정 작업이 없습니다'))+'</div>'
+    +'<div class="today-card"><h4>긴급 생산 / 납기</h4>'+(urgentList.length?urgentList.map(_urgentItem).join(''):_empty('긴급 작업이 없습니다'))+'</div>'
+    +'<div class="today-card"><h4>견적 / 수주 대기</h4>'+(quoteList.length?quoteList.map(_quoteItem).join(''):_empty('처리 대기 견적이 없습니다'))+'</div>'
     +'</div>';
 }
 
@@ -737,7 +737,7 @@ function renderDailyTxMini(){
   var paidOut=purchase.reduce(function(s,r){return s+(+r.paid||0);},0);
   var tb=function(r,lbl){return '<button class="btn btn-sm btn-o'+(_dailyTxRng===r?' on':'')+'" onclick="setDailyTxRange(\''+r+'\',this)" style="padding:4px 10px;font-size:11px'+(_dailyTxRng===r?';background:var(--pri);color:#fff;border-color:var(--pri)':'')+'">'+lbl+'</button>';};
   box.innerHTML=''
-    +'<div class="dtm-hd">📒 거래 현황<small>'+label+'</small></div>'
+    +'<div class="dtm-hd">거래 현황<small>'+label+'</small></div>'
     +'<div class="dtm-kpi">'
     +'<div class="dtm-item sales"><span class="k">매출</span><span class="v">'+fmt(saleAmt)+'원</span><span style="font-size:10px;color:#94A3B8">('+sales.length+'건)</span></div>'
     +'<div class="dtm-item in"><span class="k">입금</span><span class="v">'+fmt(paidIn)+'원</span></div>'
@@ -854,15 +854,15 @@ allOs.forEach(function(o){if(o.status==='취소')return;var cd=o.cd||'';if(!cd.s
 function _delta(cur,prev){if(prev===0&&cur===0)return{cls:'flat',txt:'— 동일'};if(prev===0)return{cls:'up',txt:'▲ '+cur+'건 증가'};var d=cur-prev;if(d>0)return{cls:'up',txt:'▲ '+d+'건 증가'};if(d<0)return{cls:'down',txt:'▼ '+Math.abs(d)+'건 증가'};return{cls:'flat',txt:'— 동일'}}
 var prodDelta=prevQ>0?{cls:curQ>=prevQ?'up':'down',txt:(curQ>=prevQ?'▲':'▼')+' '+Math.abs(Math.round((curQ-prevQ)/prevQ*100))+'% '+(curQ>=prevQ?'개선':'감소')}:{cls:'flat',txt:'— 비교없음'};
 var kpis=[
-  {val:tot,label:'전체 작업',cls:'nd-navy',icon:'📦',delta:_delta(tot,prevTot),filter:'all',spark:false},
-  {val:pg,label:'진행중',cls:'nd-navy',icon:'⚡',delta:{cls:'flat',txt:'— 동일'},filter:'ing',spark:false},
-  {val:dn,label:'완료 '+rate+'%',cls:'nd-green',icon:'✅',delta:prodDelta,filter:'done',spark:true},
-  {val:dl,label:'출고 지연',cls:'nd-red',icon:'🚨',delta:_delta(dl,0),filter:'late',spark:false},
-  {val:hold+rework,label:'보류/재작업',cls:'nd-red',icon:'⏸️',delta:_delta(hold+rework,prevHold),filter:'hold',spark:false}
+  {val:tot,label:'전체 작업',cls:'nd-navy',icon:'',delta:_delta(tot,prevTot),filter:'all',spark:false},
+  {val:pg,label:'진행중',cls:'nd-navy',icon:'',delta:{cls:'flat',txt:'— 동일'},filter:'ing',spark:false},
+  {val:dn,label:'완료 '+rate+'%',cls:'nd-green',icon:'',delta:prodDelta,filter:'done',spark:true},
+  {val:dl,label:'출고 지연',cls:'nd-red',icon:'',delta:_delta(dl,0),filter:'late',spark:false},
+  {val:hold+rework,label:'보류/재작업',cls:'nd-red',icon:'',delta:_delta(hold+rework,prevHold),filter:'hold',spark:false}
 ];
 if($('ndKpi'))$('ndKpi').innerHTML=kpis.map(function(k){
   var h='<div class="nd-kpi-card '+k.cls+'" onclick="openPlanFilter(\''+k.filter+'\')">';
-  h+='<div class="nd-kpi-icon">'+k.icon+'</div>';
+  if(k.icon) h+='<div class="nd-kpi-icon">'+k.icon+'</div>';
   h+='<div class="nd-kpi-num">'+k.val+'</div>';
   h+='<div class="nd-kpi-label">'+k.label+'</div>';
   h+='<div class="nd-kpi-delta '+k.delta.cls+'">'+k.delta.txt+'</div>';
@@ -904,7 +904,7 @@ pns2.forEach(function(pn,idx){
   var tt=w+k+d,pct=tt>0?Math.round(d/tt*100):0;
   var isDone=pn==='생산완료'||pct===100;
   pipH+='<div class="nd-pipe-step" onclick="showProcDet(\''+pn+'\')">';
-  pipH+='<div class="nd-pipe-circle"'+(isDone?' style="background:#ECFDF5;color:#059669"':'')+'>'+_ndPipeRing(pct)+'<span class="nd-pipe-num">'+(isDone?'✓':String(w+k))+'</span></div>';
+  pipH+='<div class="nd-pipe-circle"'+(isDone?' style="background:#ECFDF5;color:#059669"':'')+'>'+_ndPipeRing(pct)+'<span class="nd-pipe-num">'+(isDone?'OK':String(w+k))+'</span></div>';
   pipH+='<div class="nd-pipe-name"'+(isDone?' style="color:#059669;font-weight:800"':'')+'>'+pn+'</div>';
   pipH+='<div class="nd-pipe-tags">';
   if(w>0)pipH+='<span style="background:#FEF3C7;color:#92400E">'+w+'</span>';
@@ -920,18 +920,18 @@ if($('dashOps'))$('dashOps').innerHTML=renderDashOpsGrid(os,stock);
 if($('dailyTxCard'))renderDailyTxMini();
 // === 5. 실시간 알림 ===
 var feeds=[];
-if(dl>0)os.filter(function(o){return isLate(o)}).slice(0,2).forEach(function(o){feeds.push({cls:'nd-f-red',icon:'🚨',msg:o.pnm+' — 출고일 초과 (D+'+(Math.abs(dLeft(o)))+')',time:''})});
+if(dl>0)os.filter(function(o){return isLate(o)}).slice(0,2).forEach(function(o){feeds.push({cls:'nd-f-red',icon:'지연',msg:o.pnm+' — 출고일 초과 (D+'+(Math.abs(dLeft(o)))+')',time:''})});
 var maxWait2='',maxWC2=0;
 pns2.forEach(function(pn){if(pn==='생산완료')return;var pq=getProcQueue(pn);if(pq.wait.length>maxWC2){maxWC2=pq.wait.length;maxWait2=pn}});
-if(maxWC2>=3)feeds.push({cls:'nd-f-red',icon:'⚠️',msg:maxWait2+' 공정 대기 '+maxWC2+'건 — 병목 주의',time:''});
+if(maxWC2>=3)feeds.push({cls:'nd-f-red',icon:'병목',msg:maxWait2+' 공정 대기 '+maxWC2+'건 — 병목 주의',time:''});
 var recentDone=allHs.filter(function(h){return h.doneAt&&h.doneAt.startsWith(td())}).slice(0,3);
-recentDone.forEach(function(h){feeds.push({cls:'nd-f-green',icon:'✅',msg:(h.pnm||'')+ ' — '+(h.proc||'')+' 완료'+(h.qty?' ('+h.qty+'매)':''),time:h.doneAt?h.doneAt.slice(11,16):''})});
+recentDone.forEach(function(h){feeds.push({cls:'nd-f-green',icon:'완료',msg:(h.pnm||'')+ ' — '+(h.proc||'')+' 완료'+(h.qty?' ('+h.qty+'매)':''),time:h.doneAt?h.doneAt.slice(11,16):''})});
 var recentLogs=DB.g('logs').slice(0,3);
-recentLogs.forEach(function(l){if(feeds.length<6)feeds.push({cls:'nd-f-navy',icon:'📋',msg:l.m,time:l.t?l.t.slice(11,16):''})});
-if(feeds.length===0)feeds.push({cls:'nd-f-green',icon:'✅',msg:'현재 특이사항 없음',time:''});
+recentLogs.forEach(function(l){if(feeds.length<6)feeds.push({cls:'nd-f-navy',icon:'기록',msg:l.m,time:l.t?l.t.slice(11,16):''})});
+if(feeds.length===0)feeds.push({cls:'nd-f-green',icon:'정상',msg:'현재 특이사항 없음',time:''});
 var fdH='<div class="nd-feed"><div class="nd-feed-title">실시간 알림 <span style="font-size:11px;color:var(--txt2);font-weight:400">(최근 5건)</span></div>';
 fdH+='<div style="max-height:220px;overflow-y:auto">';
-feeds.slice(0,5).forEach(function(f){fdH+='<div class="nd-feed-item '+f.cls+'">'+f.icon+' '+f.msg+(f.time?'<div class="nd-feed-time">'+f.time+'</div>':'')+'</div>'});
+feeds.slice(0,5).forEach(function(f){fdH+='<div class="nd-feed-item '+f.cls+'">'+(f.icon?'<span class="nd-feed-mark">'+f.icon+'</span>':'')+f.msg+(f.time?'<div class="nd-feed-time">'+f.time+'</div>':'')+'</div>'});
 fdH+='</div></div>';
 if($('ndFeed'))$('ndFeed').innerHTML=fdH;
 // === 완료 확인 대기 (기존 유지) ===
@@ -1116,7 +1116,7 @@ function rMonitor(){
         +'<td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#E5E7EB;border-radius:4px;height:8px;overflow:hidden">'
         +'<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:4px"></div></div>'
         +'<span style="font-size:12px;font-weight:700;color:'+barColor+'">'+pct+'%</span></div></td>'
-        +'<td'+(isLate?' style="color:#EF4444;font-weight:700"':'')+'>'+o.sd+(isLate?' ⚠':'')+'</td>'
+        +'<td'+(isLate?' style="color:#EF4444;font-weight:700"':'')+'>'+o.sd+(isLate?' 지연':'')+'</td>'
         +'<td>'+(isLate?'<span class="bd bd-d">지연</span>':'<span class="bd bd-s">정상</span>')+'</td></tr>';
     }).join('')||'<tr><td colspan="8" class="empty-cell">진행중인 작업이 없습니다</td></tr>';
   }

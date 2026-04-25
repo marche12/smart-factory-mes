@@ -15,6 +15,9 @@
 <link rel="stylesheet" href="/css/pc-sidebar-blocks.css?v=1">
 <link rel="stylesheet" href="/css/pc-context-bar.css?v=1">
 <link rel="stylesheet" href="/css/pc-polish.css?v=1">
+<link rel="stylesheet" href="/css/pc-clean-tone.css?v=1">
+<link rel="stylesheet" href="/css/pc-douzone-polish.css?v=1">
+<link rel="stylesheet" href="/css/pc-theme-light.css?v=1">
 <script src="js/xlsx.full.min.js"></script>
 <script src="/js/core.js?v=26"></script>
 <script src="/js/search-util.js?v=1"></script>
@@ -96,8 +99,7 @@
 </div></div>
 <div class="unified-app" id="adminApp" style="display:none">
 <div class="sidebar" id="sidebar" role="navigation" aria-label="주메뉴"><div class="sb-logo"><span id="sbNotiBadge" class="sb-noti-badge"></span>팩플로우</div><div id="sbDate" style="padding:0 22px 14px;font-size:12px;color:#64748B;font-weight:600;letter-spacing:.3px;border-bottom:1px solid rgba(255,255,255,.08)"></div><div style="flex:1;overflow-y:auto">
-<!-- 홈 (즐겨찾기 성격으로 축소) -->
-<button class="sb-item sb-home" data-mod="mes-dash">🏠 홈 (운영판)</button>
+<!-- 홈 버튼은 사용자 드롭다운으로 이동, 사이드바에서 제거 -->
 
 <!-- [즐겨찾기] -->
 <div class="sb-section sb-section-fav" id="sbFavSection">
@@ -112,6 +114,17 @@
 <div class="sb-section sb-section-recent" id="sbRecentSection">
   <div class="sb-section-hd"><span>🕒 최근</span></div>
   <div class="sb-tree" id="sbRecentList"></div>
+</div>
+
+<!-- [빠른 생성] — 전역 신규 작성 진입점 -->
+<div class="sb-section sb-section-quick" id="sbQuickSection">
+  <div class="sb-section-hd"><span>⚡ 빠른 생성</span></div>
+  <div class="sb-quick">
+    <button class="sb-quick-btn" onclick="sbQuickNew('quote')">＋ 새 견적</button>
+    <button class="sb-quick-btn" onclick="sbQuickNew('order')">＋ 새 수주</button>
+    <button class="sb-quick-btn" onclick="sbQuickNew('wo')">＋ 새 작업지시서</button>
+    <button class="sb-quick-btn" onclick="sbQuickNew('ship')">＋ 출고 등록</button>
+  </div>
 </div>
 
 <!-- [펼침] 견적·수주 -->
@@ -183,22 +196,20 @@
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
-<div class="main-area"><div class="main-header">
+<div class="main-area"><div class="main-header pk-hdr">
 <button onclick="var s=document.getElementById('sidebar');s.classList.toggle('open');this.setAttribute('aria-expanded',s.classList.contains('open'))" class="mob-toggle" aria-label="메뉴 열기" aria-expanded="false">≡</button>
-<span id="mainBreadcrumb" style="font-size:13px;color:var(--txt3);font-weight:400">패키지 제조</span><span style="font-size:13px;color:var(--txt3);margin:0 6px">›</span><h2 id="mainTitle" style="font-size:18px;font-weight:700;color:var(--txt);margin-right:8px">패키지 운영판</h2><div id="groupTabBar" style="display:none;gap:4px;align-items:center;flex-wrap:nowrap"></div>
-<div style="display:flex;align-items:center;margin-left:auto;gap:4px">
-<div style="position:relative" id="notiWrap">
-<button class="noti-bell" onclick="toggleNotiPanel()" aria-label="알림">
-<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-<span class="noti-badge" id="notiBadge"></span>
-</button>
-<div class="noti-panel" id="notiPanel">
-<div class="noti-hd"><span class="noti-hd-title">알림</span><button class="noti-hd-clear" onclick="clearNoti()">모두 읽음</button></div>
-<div class="noti-list" id="notiList"></div>
+<div class="pk-hdr-title">
+  <div class="pk-hdr-bc"><span id="mainBreadcrumb">패키지 제조</span><span class="pk-hdr-sep">›</span><span id="mainSubBc" class="pk-hdr-subbc"></span></div>
+  <h2 id="mainTitle" class="pk-hdr-h">생산현황</h2>
 </div>
-</div>
-<!-- 상단 고정 빠른 액션: 패키지 작업지시 -->
-<button onclick="goMod('mes-wo');setTimeout(function(){if(typeof openWOForm==='function')openWOForm();else if(typeof resetWO==='function'){resetWO();var ov=document.getElementById('woFormOv');if(ov)ov.classList.remove('hidden');}},250)" style="background:var(--pri);color:#fff;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:all .15s;display:flex;align-items:center;gap:5px" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" title="새 작업지시 등록">＋ 패키지 작업지시</button>
+<div id="groupTabBar" style="display:none"></div>
+<!-- 알림 패널 DOM 유지 (보이지 않지만 toggleNotiPanel 로직이 참조함) -->
+<div id="notiWrap" style="display:none">
+  <div class="noti-panel" id="notiPanel">
+    <div class="noti-hd"><span class="noti-hd-title">알림</span><button class="noti-hd-clear" onclick="clearNoti()">모두 읽음</button></div>
+    <div class="noti-list" id="notiList"></div>
+  </div>
+  <span class="noti-badge" id="notiBadge"></span>
 </div>
 </div>
 <div class="main-content" role="main">
@@ -1357,7 +1368,11 @@
   <div class="fbar-row">
     <input type="text" id="cliSch" placeholder="거래처명 또는 사업자번호로 검색" oninput="_dCli()" class="fbar-grow">
     <select id="cliTypeFilter" onchange="_cliPage=0;rCli()">
-      <option value="">전체</option><option value="sales">매출처</option><option value="purchase">매입처</option><option value="vendor">협력사/인쇄소</option>
+      <option value="">전체</option>
+      <option value="sales">매출처</option>
+      <option value="purchase">매입처</option>
+      <option value="both">매출+매입</option>
+      <option value="vendor">협력사/인쇄소</option>
     </select>
     <div class="fbar-pills" id="cliViewPills">
       <button class="on" onclick="setCliView('table',this)">목록</button>
@@ -1378,9 +1393,10 @@
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">📥 엑셀 업로드</button>
     <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
     <button class="btn btn-o btn-sm" onclick="dlCliXlsxTemplate()">📋 양식 다운로드</button>
+    <span class="f4-hint">F4 <b>코드도움</b></span>
   </div>
 </div>
-<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>유형</th><th>사업자번호</th><th>주소</th><th>전화</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
 <div id="cliPager"></div>
 </div>
@@ -1843,7 +1859,7 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px" id="umPermGrid">
 <div>
 <div style="font-weight:700;color:var(--pri);margin-bottom:4px">MES 생산</div>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-dash">패키지 운영판</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-order">수주관리</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-wo">작업지시서</label>
@@ -2502,6 +2518,7 @@
 <!-- 색상 마스터 모달 -->
 <!-- 색상 마스터/편집 모달 — 사용자 요청으로 제거됨 -->
 
+<script src="/js/packflow-price-history.js?v=1"></script>
 <script src="/js/mes-dash.js?v=20"></script>
 <script src="/js/mes-wo.js?v=20"></script>
 <script src="/js/mes-cli.js?v=20"></script>
@@ -2515,4 +2532,35 @@
 <script src="/js/erp-biz.js?v=20"></script>
 <script src="/js/erp-quality.js?v=20"></script>
 <script src="/js/features-ext.js?v=20"></script>
+<!-- [테스트 모드] 자동 로그인 — 테스트 종료 후 이 스크립트 블록 삭제 -->
+<script>
+(function autoLoginForTesting(){
+  window.PACKFLOW_AUTO_LOGIN = true;
+  function tryAuto(){
+    var sel = document.getElementById('loginUser');
+    var pw  = document.getElementById('loginPw');
+    var ov  = document.getElementById('loginOverlay');
+    if(!sel || !pw || !ov) return setTimeout(tryAuto, 100);
+    if(ov.style.display === 'none') return; // 이미 로그인됨
+    // admin 옵션이 로드됐는지 확인
+    var hasAdmin = Array.from(sel.options).some(function(o){
+      return o.value === 'admin' || o.value === '관리자';
+    });
+    if(!hasAdmin) return setTimeout(tryAuto, 150);
+    sel.value = Array.from(sel.options).find(function(o){
+      return o.value === 'admin';
+    }) ? 'admin' : '관리자';
+    pw.value = '1234';
+    if(typeof unifiedLogin === 'function'){
+      unifiedLogin();
+      console.log('[AutoLogin] 테스트 모드: admin 자동 로그인');
+    }
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(tryAuto, 200); });
+  } else {
+    setTimeout(tryAuto, 200);
+  }
+})();
+</script>
 </body></html>

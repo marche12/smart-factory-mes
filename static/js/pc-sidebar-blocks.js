@@ -9,12 +9,16 @@
 
 var FAV_KEY = 'packflow_sbFav';
 var RECENT_KEY = 'packflow_sbRecent';
+var SEED_KEY = 'packflow_sbFav_seeded_v1';
 var MAX_RECENT = 5;
+
+/* 실무 기본 즐겨찾기 5개 — 최초 1회만 시드. 이후 사용자 편집 유지 */
+var DEFAULT_FAVS = ['mes-order','mes-wo','mes-ship','acc-sales','mes-cli'];
 
 /* 메뉴 메타: 모듈 id → 라벨·아이콘 */
 function getModuleMeta(mod){
   var map = {
-    'mes-dash':      {l:'패키지 운영판',  i:'🏠'},
+    'mes-dash':      {l:'생산현황',       i:'🏠'},
     'qc-quote':      {l:'패키지 견적',    i:'🧾'},
     'mes-order':     {l:'수주관리',       i:'📋'},
     'mes-wo':        {l:'작업지시서',     i:'📝'},
@@ -73,12 +77,14 @@ function renderFavs(){
     box.innerHTML = '<div class="sb-empty">별 모양(＋) 클릭으로 현재 메뉴 추가</div>';
     return;
   }
+  // inline onclick 제거 — 상위 #sidebar delegation 이 data-mod 로 goMod 호출
+  // (기존에 inline + delegation 이 겹쳐 goMod 이 2회 실행되던 이슈 수정)
   box.innerHTML = favs.map(function(mod){
     var m = getModuleMeta(mod);
-    return '<button class="sb-item sb-fav-item" data-mod="'+mod+'" onclick="goMod(\''+mod+'\')" title="'+m.l+'">'
+    return '<button class="sb-item sb-fav-item" data-mod="'+mod+'" title="'+m.l+'">'
       + '<span class="sb-item-ico">'+m.i+'</span>'
       + '<span>'+m.l+'</span>'
-      + '<span class="sb-fav-x" onclick="event.stopPropagation();sbFavRemove(\''+mod+'\')" title="제거">×</span>'
+      + '<span class="sb-fav-x" data-fav-x="'+mod+'" title="제거">×</span>'
       + '</button>';
   }).join('');
 }
@@ -91,14 +97,24 @@ function renderRecent(){
     box.innerHTML = '<div class="sb-empty">최근 방문 메뉴가 여기에 표시됩니다</div>';
     return;
   }
+  // inline onclick 제거 — #sidebar delegation 만 사용
   box.innerHTML = recent.map(function(mod){
     var m = getModuleMeta(mod);
-    return '<button class="sb-item" data-mod="'+mod+'" onclick="goMod(\''+mod+'\')" title="'+m.l+'">'
+    return '<button class="sb-item" data-mod="'+mod+'" title="'+m.l+'">'
       + '<span class="sb-item-ico">'+m.i+'</span>'
       + '<span>'+m.l+'</span>'
       + '</button>';
   }).join('');
 }
+/* sb-fav-x 전용 delegation — sbFavRemove 호출 (버블링 차단 포함)
+   inline onclick 을 없앴으므로 별도 핸들러로 처리 */
+document.addEventListener('click', function(e){
+  var x = e.target.closest('[data-fav-x]');
+  if(!x) return;
+  e.stopPropagation();
+  e.preventDefault();
+  sbFavRemove(x.getAttribute('data-fav-x'));
+}, true);
 
 function pushRecent(mod){
   if(!mod || mod === 'mes-dash') return;
@@ -154,7 +170,51 @@ function hookGoMod(){
   window.goMod = wrapped;
 }
 
+/* 빠른 생성 — 해당 모듈로 이동 후 등록 모달/폼 오픈 */
+function sbQuickNew(kind){
+  var handlers = {
+    quote: function(){
+      if(typeof goMod==='function') goMod('qc-quote');
+      setTimeout(function(){ if(typeof openQtM==='function') openQtM(); }, 260);
+    },
+    order: function(){
+      if(typeof goMod==='function') goMod('mes-order');
+      setTimeout(function(){ if(typeof orderSub==='function') orderSub('new'); }, 260);
+    },
+    wo: function(){
+      if(typeof goMod==='function') goMod('mes-wo');
+      setTimeout(function(){
+        if(typeof openWOForm==='function') openWOForm();
+        else if(typeof resetWO==='function'){
+          resetWO();
+          var ov=document.getElementById('woFormOv');
+          if(ov) ov.classList.remove('hidden');
+        }
+      }, 260);
+    },
+    ship: function(){
+      if(typeof goMod==='function') goMod('mes-ship');
+      // 출고는 WO 선택 플로우이므로 모듈만 이동
+    }
+  };
+  var h = handlers[kind];
+  if(h) h();
+}
+window.sbQuickNew = sbQuickNew;
+
+function seedDefaultFavs(){
+  try{
+    if(localStorage.getItem(SEED_KEY)) return; // 한 번만
+    var cur = load(FAV_KEY);
+    if(cur.length === 0){
+      save(FAV_KEY, DEFAULT_FAVS.slice());
+    }
+    localStorage.setItem(SEED_KEY,'1');
+  }catch(e){}
+}
+
 function init(){
+  seedDefaultFavs();
   hookGoMod();
   renderFavs();
   renderRecent();

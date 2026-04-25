@@ -1684,6 +1684,15 @@ function saveOrder(){
     orders.push(obj);
   }
   saveOrders(orders);
+  /* 단가 적용 이력 — 수주의 각 품목 */
+  try{
+    if(window.PriceHistory){
+      var _cliObj=(DB.g('cli')||[]).find(function(x){return (x.nm||'')===obj.cli;});
+      window.PriceHistory.recordItems('order', obj.id,
+        {cliNm:obj.cli, cliId:_cliObj?_cliObj.id:'', dt:obj.dt},
+        items);
+    }
+  }catch(_phErr){}
   updateOrderAssist();
   renderOrderQuickBars();
   toast(isEdit?'패키지 수주 수정 완료':'패키지 수주 등록 완료','ok');

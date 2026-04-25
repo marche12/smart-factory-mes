@@ -533,9 +533,12 @@ function openCliSearch(){
       var prodCount=(DB.g('prod')||[]).filter(function(p){return p.cnm===item.nm}).length;
       var wos=(DB.g('wo')||[]).filter(function(o){return o.cnm===item.nm&&o.price;}).slice(-8);
       var spark=_priceSparkline(wos.map(function(o){return +o.price||0;}));
+      var ct=item.cType||'sales';
+      var cBadge=ct==='both'?'<span class="bd bd-p">매출</span> <span class="bd bd-d">매입</span>':ct==='purchase'?'<span class="bd bd-d">매입</span>':'<span class="bd bd-p">매출</span>';
+      var sBadge=item.isDormant?'<span class="bd bd-w">휴면</span>':'<span class="bd bd-s">사용중</span>';
       return {
-        primary:SearchUtil.highlight(item.nm||'',q),
-        secondary:[item.ps||'',item.tel||'',item.biz||'',item.addr||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' | '),
+        primary:SearchUtil.highlight(item.nm||'',q)+' <span style="margin-left:6px">'+cBadge+' '+sBadge+'</span>',
+        secondary:[item.ps||'',item.tel||'',item.biz||'',item.addr||''].filter(Boolean).map(function(v){return SearchUtil.highlight(v,q)}).join(' · '),
         meta:'<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end">'
           +'<span>품목 '+prodCount+'건 · 작업 '+wos.length+'건</span>'
           +(spark||'')
@@ -1145,6 +1148,20 @@ if(!editId){
   if(wo.procs.some(function(p){return p.st==='진행중'}))wo.status='진행중';
 }
 DB.s('wo',os);lastSavedId=wo.id;
+/* 단가 적용 이력 — WO 단가 + priceSource 힌트 */
+try{
+  if(window.PriceHistory && wo.price){
+    var _woPsrc = ($('woPrice')&&$('woPrice').dataset)?($('woPrice').dataset.priceSource||''):'';
+    window.PriceHistory.record({
+      refType:'wo', refId:wo.id,
+      cliNm:wo.cnm, cliId:wo.cid,
+      prodNm:wo.pnm, prodId:wo.pid,
+      unitPrice:wo.price, qty:wo.fq,
+      source:_woPsrc, dt:wo.dt,
+      note:wo.wn||''
+    });
+  }
+}catch(_phErr){}
 // 수주 연동: WO 저장 시 order 레코드 자동 생성/연결
 if(!editId){
   var _ordId=$('woOrdId')?$('woOrdId').value:'';

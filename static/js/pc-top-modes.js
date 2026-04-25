@@ -49,11 +49,18 @@ var MODES = [
     modules:['mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow']
   },
   {
-    id:'setup',
-    label:'기준·설정',
+    id:'master',
+    label:'기초정보',
+    ico:'📚',
+    groupKeys:['master'],
+    modules:['mes-cli','mes-prod','mes-mold','qc-inspect','qc-equip']
+  },
+  {
+    id:'system',
+    label:'환경설정',
     ico:'⚙️',
-    groupKeys:['master','system'],
-    modules:['mes-cli','mes-prod','mes-mold','qc-inspect','qc-equip','adm-perm','adm-backup','mes-queue']
+    groupKeys:['system'],
+    modules:['adm-perm','adm-backup','mes-queue']
   }
 ];
 
@@ -129,8 +136,11 @@ function renderTabs(){
   var roleMap = {admin:'관리자',office:'사무실',sales:'영업',material:'자재',accounting:'회계',quality:'품질'};
   var initial = (userName||'관').charAt(0);
 
-  // 우측 = 알림 + 사용자 드롭다운 만 (로그아웃/단축키/홈은 드롭다운 안으로 흡수)
+  // 우측 = 바로가기(작업지시서/생산현황) + 알림 + 사용자 드롭다운
   var right = '<div class="tm-right">'
+    + '<button class="tm-quick-btn" title="생산현황 바로가기" onclick="goMod(\'mes-dash\')"><span class="tm-quick-ico">🏠</span><span>생산현황</span></button>'
+    + '<button class="tm-quick-btn" title="작업지시서 바로가기" onclick="goMod(\'mes-wo\')"><span class="tm-quick-ico">📝</span><span>작업지시서</span></button>'
+    + '<span class="tm-quick-sep"></span>'
     + '<button class="tm-right-btn has-noti" title="알림" onclick="if(typeof UX!==\'undefined\'&&UX.toggleNotifPanel)UX.toggleNotifPanel();else if(typeof toggleNotiPanel===\'function\')toggleNotiPanel()">🔔<span class="tm-noti-dot"></span></button>'
     + '<div class="tm-user-wrap" id="tmUserWrap">'
     +   '<button class="tm-user" onclick="_tmToggleUserMenu(event)" title="'+userName+' ('+(roleMap[userRole]||userRole)+')">'
@@ -140,7 +150,7 @@ function renderTabs(){
     +   '</button>'
     +   '<div class="tm-user-menu hidden" id="tmUserMenu">'
     +     '<div class="tm-user-menu-hd"><div class="tm-user-menu-nm">'+userName+'</div><div class="tm-user-menu-role">'+(roleMap[userRole]||userRole)+'</div></div>'
-    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-dash\');_tmCloseUserMenu()">🏠 홈 (패키지 운영판)</button>'
+    +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-dash\');_tmCloseUserMenu()">🏠 홈 (생산현황)</button>'
     +     '<button class="tm-user-menu-item" onclick="openShortcuts&&openShortcuts();_tmCloseUserMenu()">⌨ 키보드 단축키</button>'
     +     '<button class="tm-user-menu-item" onclick="goMod(\'mes-queue\');_tmCloseUserMenu()">⚙️ 시스템 설정</button>'
     +     '<div class="tm-user-menu-sep"></div>'
@@ -152,6 +162,10 @@ function renderTabs(){
   bar.innerHTML = tabs + right;
 }
 
+/* 사용 화면에 상관없이 항상 사이드바 하단에 노출시킬 보조 그룹
+   (기준정보·시스템은 어디서든 가끔 찾는 메뉴라 접힘 상태로 유지) */
+var ALWAYS_VISIBLE_GROUPS = ['master','system'];
+
 function applyMode(modeId){
   var mode = getModeById(modeId);
   var keys = mode ? mode.groupKeys : null;
@@ -159,10 +173,22 @@ function applyMode(modeId){
   document.querySelectorAll('.sb-group').forEach(function(group){
     var key = group.getAttribute('data-group-key');
     var tree = group.nextElementSibling;
-    var show = !keys || (key && keys.indexOf(key) >= 0);
+    var isAlways = key && ALWAYS_VISIBLE_GROUPS.indexOf(key) >= 0;
+    // 현재 모드에 포함되거나, 보조 그룹이면 항상 표시
+    var show = !keys || (key && keys.indexOf(key) >= 0) || isAlways;
     group.style.display = show ? '' : 'none';
     if(tree && tree.classList.contains('sb-tree')) tree.style.display = show ? '' : 'none';
-    if(show) group.classList.add('open');
+    // 현재 모드에 속한 그룹만 펼치고, 보조 그룹(기준/시스템)은 반드시 접어둠
+    if(show){
+      var inCurrentMode = keys && key && keys.indexOf(key) >= 0;
+      if(inCurrentMode){
+        group.classList.add('open');
+      } else if(isAlways){
+        // aux 그룹은 접힘 상태 강제. aria-expanded 도 동기화 — CSS 에서 이 속성으로 열림/접힘 제어
+        group.classList.remove('open');
+        group.setAttribute('aria-expanded','false');
+      }
+    }
   });
 }
 

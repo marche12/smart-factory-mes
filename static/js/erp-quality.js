@@ -200,6 +200,22 @@ function _saveQuoteRecord(closeModal){
   var idx=ls.findIndex(function(x){return x.id===rec.id});
   if(idx>=0)ls[idx]=Object.assign({},ls[idx],rec);else ls.push(rec);
   DB.s('quotes',ls);
+  /* 단가 적용 이력 — 견적 단가 (unitPrice 기준) */
+  try{
+    if(window.PriceHistory && rec.unitPrice){
+      var _cliObj=(DB.g('cli')||[]).find(function(x){return (x.nm||'')===rec.cli;});
+      var _prodObj=(DB.g('prod')||[]).find(function(x){return (x.nm||'')===rec.prod;});
+      window.PriceHistory.record({
+        refType:'quote', refId:rec.id,
+        cliNm:rec.cli||rec.cnm||'',
+        cliId:_cliObj?_cliObj.id:'',
+        prodNm:rec.prod||rec.pnm||'',
+        prodId:_prodObj?_prodObj.id:'',
+        unitPrice:rec.unitPrice, qty:rec.qty||0,
+        dt:rec.dt, note:rec.num||''
+      });
+    }
+  }catch(_phErr){}
   if(closeModal){cMo('qtMo2');rQt();toast('패키지 견적 저장','ok')}
   return rec;
 }

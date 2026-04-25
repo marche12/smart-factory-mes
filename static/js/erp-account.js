@@ -309,7 +309,22 @@ function saveSl(){
   const rec={id,dt:$('sDt').value,cli:c,prod:p,qty:q,price:pr,amt:amt,paid:paid,payType:$('sPay').value,note:$('sNote').value,groupId:gId,cat:nw()};
   const ls=DB.g('sales');const idx=ls.findIndex(x=>x.id===id);
   if(idx>=0)ls[idx]=rec;else ls.push(rec);
-  DB.s('sales',ls);cMo('sMo');rSl();toast('저장','ok');
+  DB.s('sales',ls);
+  /* 단가 적용 이력 — 매출 한 건 */
+  try{
+    if(window.PriceHistory && rec.price){
+      var _cliObj=(DB.g('cli')||[]).find(function(x){return (x.nm||'')===rec.cli;});
+      var _prodObj=(DB.g('prod')||[]).find(function(x){return (x.nm||'')===rec.prod;});
+      window.PriceHistory.record({
+        refType:'sale', refId:rec.id,
+        cliNm:rec.cli, cliId:_cliObj?_cliObj.id:'',
+        prodNm:rec.prod, prodId:_prodObj?_prodObj.id:'',
+        unitPrice:rec.price, qty:rec.qty,
+        dt:rec.dt, note:rec.note||''
+      });
+    }
+  }catch(_phErr){}
+  cMo('sMo');rSl();toast('저장','ok');
 }
 
 /* 거래처 단가표에서 자동 단가 채우기 */

@@ -9,13 +9,30 @@
 (function(){
 'use strict';
 
-/* 필드 → 데이터 소스 매핑 */
+/* 필드 → 데이터 소스 매핑
+   거래처는 화면별로 성격이 다르므로 소스 분리:
+   - cliSales   : 수주/견적/작업지시/출고/매출/클레임  → cType in ('sales','both')  & !isDormant
+   - cliPurchase: 매입/입고                              → cType in ('purchase','both') & !isDormant
+*/
+function _cliRow(c){
+  return {label:c.nm||'', sub:[c.ps||c.ceo||'', c.tel||'', c.bizNo||c.biz||''].filter(Boolean).join(' · ')};
+}
 var FIELD_DATASOURCE = {
-  // 거래처 (매출처·매입처 공통)
-  cli:  {ids:['woCli','ordCli','qtCli','sCli','pCli','clmCli','incCli','smCli'], get:function(){
-    return (DB.g('cli')||[]).filter(function(c){return !c.isDormant;}).map(function(c){
-      return {label:c.nm||'', sub:[c.ps||c.ceo||'', c.tel||'', c.bizNo||c.biz||''].filter(Boolean).join(' · ')};
-    });
+  // 매출처 (수주/견적/작업지시/출고/매출/클레임)
+  cliSales: {ids:['woCli','ordCli','qtCli','sCli','clmCli','smCli'], get:function(){
+    return (DB.g('cli')||[]).filter(function(c){
+      if(c.isDormant) return false;
+      var t=c.cType||'sales';
+      return t==='sales'||t==='both';
+    }).map(_cliRow);
+  }},
+  // 매입처 (매입/입고/발주)
+  cliPurchase: {ids:['pCli','incCli'], get:function(){
+    return (DB.g('cli')||[]).filter(function(c){
+      if(c.isDormant) return false;
+      var t=c.cType||'sales';
+      return t==='purchase'||t==='both';
+    }).map(_cliRow);
   }},
   // 품목
   prod: {ids:['woProd','qtProd','sProd','pProd','clmProd','incNm','incMat'], get:function(scope){
@@ -70,27 +87,97 @@ function populateDatalist(dl, items, max){
   dl.innerHTML = html;
 }
 
+function findCliByName(name){
+  var v=(name||'').trim();
+  if(!v) return null;
+  return (DB.g('cli')||[]).find(function(c){ return (c.nm||'').trim()===v; }) || null;
+}
+
+function findProdByName(name){
+  var v=(name||'').trim();
+  if(!v) return null;
+  return (DB.g('prod')||[]).find(function(p){ return (p.nm||'').trim()===v; }) || null;
+}
+
+function bindSyncHandlers(el, kind){
+  if(!el || el._uxAcSyncBound) return;
+  var sync = null;
+  // cliSales / cliPurchase 는 동기 핸들러상 'cli' 로 통일
+  if(kind==='cliSales'||kind==='cliPurchase') kind='cli';
+  if(kind==='cli'){
+    if(el.id==='woCli'){
+      sync=function(){
+        var c=findCliByName(el.value);
+        if(!c) return;
+        if($('woAddr')) $('woAddr').value = c.addr || '';
+        if($('woTel')) $('woTel').value = c.tel || '';
+        if($('woFax')) $('woFax').value = c.fax || '';
+        if($('woProd')) $('woProd').value = '';
+        if(typeof renderWOQuickBars==='function') renderWOQuickBars();
+      };
+    } else if(el.id==='ordCli'){
+      sync=function(){
+        if(typeof updateOrderAssist==='function') updateOrderAssist();
+      };
+    } else if(el.id==='sCli' || el.id==='pCli'){
+      sync=function(){
+        if(typeof applyCliPrice==='function') applyCliPrice();
+      };
+    } else if(el.id==='qtCli'){
+      sync=function(){
+        if(typeof updateQtAssist==='function') updateQtAssist();
+      };
+    }
+  } else if(kind==='prod'){
+    if(el.id==='woProd'){
+      sync=function(){
+        var p=findProdByName(el.value);
+        if(!p || typeof selProd!=='function') return;
+        selProd(p.id);
+      };
+    } else if(el.id==='qtProd'){
+      sync=function(){
+        if(typeof updateQtAssist==='function') updateQtAssist();
+      };
+    }
+  }
+  if(!sync) return;
+  el.addEventListener('change', sync);
+  el.addEventListener('blur', sync);
+  el._uxAcSyncBound = true;
+}
+
 /* 필드 업그레이드: readonly 해제 + list 속성 연결 + 포커스 시 datalist 갱신 */
 function upgradeField(el, kind){
   if(!el || el._uxAcReady) return;
   el._uxAcReady = true;
-  // readonly 해제 (버튼으로만 열던 필드도 타이핑 가능하게)
-  if(el.readOnly){ el.readOnly = false; el.removeAttribute('readonly'); }
-  // datalist 연결
-  var listId = 'ux-dl-'+kind;
+  // select 는 datalist 대상이 아니고, 종속 필드가 많은 핵심 입력만 해제 허용
+  var tag=(el.tagName||'').toUpperCase();
+  if(tag==='SELECT') return;
+  if(el.readOnly){
+    var canUnlock = {'woCli':true,'woProd':true,'ordCli':true};
+    if(canUnlock[el.id]){
+      el.readOnly = false;
+      el.removeAttribute('readonly');
+    }
+  }
+  // datalist 연결 (kind 별 분리 — 매출처/매입처 서로 다른 소스)
+  var kindKey = kind;
+  var listId = 'ux-dl-'+kindKey;
   el.setAttribute('list', listId);
   var dl = ensureDatalist(listId);
   el.addEventListener('focus', function(){
     try{
-      var ds = FIELD_DATASOURCE[kind];
+      var ds = FIELD_DATASOURCE[kindKey];
       if(ds && ds.get) populateDatalist(dl, ds.get());
     }catch(e){}
   });
   // placeholder 개선 — 기존 읽기만 안내 문구 대체
   if(!el.placeholder || /선택\s*$/.test(el.placeholder)){
-    var placeMap={cli:'거래처 입력 (F4 검색)',prod:'품목 입력 (F4 검색)',vendor:'협력사 입력 (F4 검색)',dlv:'납품처/주소 입력 (F4 검색)'};
+    var placeMap={cliSales:'매출처 입력 (F4 검색)',cliPurchase:'매입처 입력 (F4 검색)',prod:'품목 입력 (F4 검색)',vendor:'협력사 입력 (F4 검색)',dlv:'납품처/주소 입력 (F4 검색)'};
     el.placeholder = placeMap[kind] || el.placeholder;
   }
+  bindSyncHandlers(el, kind);
 }
 
 function scanAll(){
@@ -125,7 +212,7 @@ setInterval(scanAll, 2500);
       var r = orig.apply(this, arguments);
       // cli/prod/vendors 변경 시 해당 datalist 강제 비움 (다음 focus 에 재빌드)
       if(['cli','prod','vendors'].indexOf(key) >= 0){
-        ['ux-dl-cli','ux-dl-prod','ux-dl-vendor','ux-dl-dlv'].forEach(function(id){
+        ['ux-dl-cliSales','ux-dl-cliPurchase','ux-dl-prod','ux-dl-vendor','ux-dl-dlv'].forEach(function(id){
           var dl = document.getElementById(id);
           if(dl) dl.innerHTML = '';
         });

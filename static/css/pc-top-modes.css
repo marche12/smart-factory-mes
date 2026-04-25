@@ -81,6 +81,25 @@ body.tm-enabled.sb-collapsed .tm-bar{padding:0 12px}
 }
 .tm-right-btn.has-noti .tm-noti-dot{display:block}
 
+/* 상단 바로가기 버튼 (작업지시서 · 생산현황) */
+.tm-quick-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:8px;
+  background:#E8913A;border:1px solid #C2710C;
+  color:#fff;font-size:14px;font-weight:800;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+  letter-spacing:-0.2px;
+}
+.tm-quick-btn:hover{background:#F0A04B;border-color:#E8913A;color:#fff;transform:translateY(-1px);box-shadow:0 3px 10px rgba(232,145,58,.5)}
+.tm-quick-btn .tm-quick-ico{font-size:16px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.tm-quick-sep{width:1px;height:26px;background:rgba(255,255,255,.2);margin:0 8px}
+@media (max-width:900px){
+  .tm-quick-btn span:not(.tm-quick-ico){display:none}
+  .tm-quick-btn{padding:8px 10px}
+}
+
 /* 얼마에요/더존 스타일: 사이드바는 텍스트 트리 그대로 */
 @media (min-width:768px){
   body.tm-enabled .sb-logo{display:none !important}

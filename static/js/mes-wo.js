@@ -386,18 +386,26 @@ function openVendorSearch(){
     historyKey:'vendor',
     fields:['nm','tel','addr','mgr'],
     getItems:function(){
+      /* 전체 거래처 검색 — cType 필터 없이 모든 cli + vendors 합집합 */
       var cliMap={};
       (DB.g('cli')||[]).forEach(function(c){
-        if(c.cType==='purchase'||c.cType==='both'||c.isVendor)cliMap[c.nm]={
+        if(!c||!c.nm) return;
+        var t = c.isVendor ? '협력사'
+              : c.cType==='purchase' ? '매입처'
+              : c.cType==='both' ? '거래처'
+              : c.cType==='sales' ? '판매처'
+              : '거래처';
+        cliMap[c.nm]={
           id:c.id||c.nm,
           nm:c.nm,
           tel:c.tel||'',
           addr:c.addr||'',
-          mgr:c.ps||'',
-          type:c.isVendor?'협력사':'매입처'
+          mgr:c.ps||c.mgr||'',
+          type:t
         };
       });
       (DB.g('vendors')||[]).forEach(function(v){
+        if(!v||!v.nm) return;
         cliMap[v.nm]={
           id:v.id||v.nm,
           nm:v.nm,

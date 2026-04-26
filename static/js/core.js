@@ -543,15 +543,30 @@ var DB={
     try{
       var res=await authFetch('/api/data');
       var keys=await res.json();
-      for(var i=0;i<keys.length;i++){
-        var r=await authFetch('/api/data/'+encodeURIComponent(keys[i]));
-        var d=await r.json();
-        if(d.value!==null)_cache[keys[i]]=d.value;
-        _meta[keys[i]]=d.updated_at||null;
+      /* 동시 5개 제한 병렬 로딩 — 순차 26번 → 약 5배 빠름, NAS/SQLite 부하 안전 */
+      var CONCURRENCY = 5;
+      var idx = 0;
+      var t0 = Date.now();
+      async function worker(){
+        while(idx < keys.length){
+          var i = idx++;
+          var key = keys[i];
+          try{
+            var r = await authFetch('/api/data/'+encodeURIComponent(key));
+            var d = await r.json();
+            if(d.value!==null) _cache[key] = d.value;
+            _meta[key] = d.updated_at || null;
+          }catch(e){
+            console.warn('[DB.init] key fail:', key, e.message||e);
+          }
+        }
       }
+      var workers = [];
+      for(var w=0; w<Math.min(CONCURRENCY, keys.length); w++) workers.push(worker());
+      await Promise.all(workers);
       DB._loaded=true;
       DB._serverOk=true;
-      console.log('DB loaded from server:',keys.length,'keys');
+      console.log('DB loaded from server:', keys.length, 'keys ('+(Date.now()-t0)+'ms, concurrency='+CONCURRENCY+')');
     }catch(e){
       console.warn('Server unavailable, using localStorage fallback');
       DB._serverOk=false;

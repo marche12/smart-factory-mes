@@ -1,60 +1,49 @@
 #!/bin/bash
-# 팩플로우 NAS 자동 업데이트 스크립트
+# 팩플로우 NAS 직접 배포 스크립트 (Tailscale)
 # 사용법: ./update-nas.sh
+#
+# 동작:
+#  1. Tailscale로 NAS에 SSH 접속
+#  2. NAS에서 nas-auto-deploy.sh 실행 → git fetch + 서버 재시작
+#  3. 배포 로그 확인
+#
+# 전제 조건: Mac에 Tailscale 연결됨, ssh 키 인증 설정됨
 
 set -e
 
-NAS_IP="192.168.0.2"
+NAS_TS_IP="100.74.217.19"
 NAS_USER="inno"
 NAS_PATH="/volume1/homes/apps/packflow"
-NAS_MOUNT="/Volumes/homes/apps/packflow"
-LOCAL_PATH="/Users/shoon/Documents/팩플로우"
+DEPLOY_SH="$NAS_PATH/scripts/nas-auto-deploy.sh"
 
-echo "🔄 팩플로우 NAS 업데이트 시작..."
-echo ""
+echo "팩플로우 Tailscale 배포 시작..."
 
-# 1. NAS 마운트 확인
-if [ ! -d "$NAS_MOUNT" ]; then
-    echo "❌ NAS가 마운트되어 있지 않습니다."
-    echo "   Finder → 이동 → 서버에 연결 (Cmd+K) → smb://192.168.0.2"
+# 1. Tailscale 연결 확인
+if ! ping -c 1 -W 2000 "$NAS_TS_IP" >/dev/null 2>&1; then
+    echo "❌ NAS Tailscale($NAS_TS_IP) 응답 없음"
+    echo "   Tailscale 앱 실행 상태 확인 + NAS 측 Tailscale 연결 확인"
     exit 1
 fi
+echo "✓ Tailscale 연결됨"
 
-# 2. 파일 동기화 (데이터/DB 제외)
-echo "📦 파일 동기화 중..."
-rsync -av --delete \
-    --exclude='data/' \
-    --exclude='venv/' \
-    --exclude='.git/' \
-    --exclude='__pycache__/' \
-    --exclude='*.pyc' \
-    --exclude='.env' \
-    --exclude='.DS_Store' \
-    --exclude='얼마에요2E/' \
-    --exclude='migrate/exported/' \
-    --exclude='cloudflared' \
-    --exclude='ngrok' \
-    --exclude='*.zip' \
-    --exclude='*.bak' \
-    --exclude='*.log' \
-    --exclude='server.log' \
-    --exclude='startup.log' \
-    --exclude='update-nas.sh' \
-    --exclude='.claude' \
-    "$LOCAL_PATH/" "$NAS_MOUNT/" | tail -20
+# 2. NAS에서 git fetch + 서버 재시작
+echo "NAS 자동 배포 스크립트 실행..."
+ssh -o BatchMode=yes -o ConnectTimeout=8 "${NAS_USER}@${NAS_TS_IP}" "bash ${DEPLOY_SH}"
+
+# 3. 결과 로그 마지막 8줄
+echo ""
+echo "=== 최근 배포 로그 ==="
+ssh -o BatchMode=yes -o ConnectTimeout=5 "${NAS_USER}@${NAS_TS_IP}" "tail -8 ${NAS_PATH}/auto-deploy.log"
+
+# 4. 외부 응답 검증
+echo ""
+echo "=== 응답 확인 ==="
+echo -n "Tailscale 직접: "
+curl -sS -o /dev/null -w "code:%{http_code} time:%{time_total}s\n" --max-time 5 "http://${NAS_TS_IP}:8080/m" || true
+echo -n "외부 HTTPS    : "
+curl -sS -k -o /dev/null -w "code:%{http_code} time:%{time_total}s\n" --max-time 8 "https://packflow.mckim.i234.me/m" || true
 
 echo ""
-echo "🔄 NAS 서버 재시작 중..."
-
-# 3. NAS 서버 재시작 (expect로 비밀번호 자동 입력)
-expect <<EXPEOF
-set timeout 30
-spawn ssh -o StrictHostKeyChecking=no $NAS_USER@$NAS_IP "pkill -f 'python3 server.py' 2>/dev/null; sleep 2; cd $NAS_PATH && setsid nohup python3 server.py </dev/null >server.log 2>&1 & sleep 3 && ps aux | grep 'python3 server.py' | grep -v grep | head -1"
-expect "assword:"
-send "Wjdtmdgns12#\r"
-expect eof
-EXPEOF
-
-echo ""
-echo "✅ 업데이트 완료!"
-echo "🌐 접속: http://inno.local:8080"
+echo "✅ 배포 완료!"
+echo "   Tailscale: http://${NAS_TS_IP}:8080"
+echo "   외부     : https://packflow.mckim.i234.me"

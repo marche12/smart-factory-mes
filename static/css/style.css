@@ -2068,3 +2068,31 @@ mark{background:#FEF3C7;color:#92400E;padding:0 2px;border-radius:2px}
   box-sizing: border-box;
 }
 .module-page > .app, .module-page > .card { max-width: 100%; }
+
+/* ============================================
+   기초정보 테이블 가로 스크롤 제거
+   - .u-scroll-x table{min-width:900px}이 가로 스크롤 강제 → 화면 폭에 맞게 자동조정
+   - 컬럼 일부 ellipsis로 잘리지 않게
+   ============================================ */
+#cliTbl, #prodTbl, #moldTbl {
+  min-width: 0 !important;
+  width: 100%;
+  table-layout: auto;
+}
+.u-scroll-x:has(#cliTbl),
+.u-scroll-x:has(#prodTbl),
+.u-scroll-x:has(#moldTbl) {
+  overflow-x: auto;  /* 그래도 모바일 등 좁은 화면에서 스크롤 허용 */
+}
+#cliTbl td:not(:first-child):not(:last-child),
+#prodTbl td:not(:first-child):not(:last-child),
+#moldTbl td:not(:first-child):not(:last-child) {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 관리 컬럼은 버튼이 있으니 줄바꿈 방지 + 폭 자동 */
+#cliTbl td:last-child, #prodTbl td:last-child, #moldTbl td:last-child {
+  white-space: nowrap;
+}

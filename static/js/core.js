@@ -873,7 +873,7 @@ window.addEventListener('packflow-db-conflict',function(e){
   if(e&&e.detail&&e.detail.key)openConflictMo(e.detail.key);
 });
 
-/* ===== SysCode: 공통코드 체계 ===== */
+/* ===== SysCode: 공통 코드 체계 ===== */
 var SysCode={
   _CATS_KEY:'codeCats',
   _ITEMS_KEY:'codeItems',
@@ -1367,25 +1367,25 @@ var TAB_MAP={'mat-income':'income','mat-stock':'stock','mat-po':'po','mat-bom':'
 var GROUPS={
 'mes-order':{tabs:[{id:'mes-order',l:'수주목록'},{id:'mes-order-track',l:'납기추적'}]},
 'mes-ship':{tabs:[{id:'mes-ship',l:'출고'},{id:'ship-partial',l:'부분출고'},{id:'ship-return',l:'반품'},{id:'qc-claim',l:'클레임'}]},
-'mes-dash':{tabs:[{id:'mes-dash',l:'운영판'},{id:'mes-worker',l:'작업자현황'}]},
+'mes-dash':{tabs:[{id:'mes-dash',l:'생산 현황'},{id:'mes-worker',l:'작업 대기열'}]},
 'mes-proc-log':{tabs:[{id:'mes-proc-log',l:'실적입력'}]},
 'qc-inspect':{tabs:[{id:'qc-inspect',l:'수입검사'},{id:'ship-inspect',l:'출하검사'},{id:'qc-cert',l:'검사성적서'},{id:'mes-defect',l:'불량등록'}]},
 'qc-equip':{tabs:[{id:'qc-equip',l:'설비대장'}]},
 'mat-stock':{tabs:[{id:'mat-stock',l:'재고현황'},{id:'mat-income',l:'입고'},{id:'mat-safety',l:'안전재고'}]},
 'mat-po':{tabs:[{id:'mat-po',l:'발주서'}]},
-'mat-bom':{tabs:[{id:'mat-bom',l:'BOM'}]},
+'mat-bom':{tabs:[{id:'mat-bom',l:'BOM/소요자재'}]},
 'acc-sales':{tabs:[{id:'acc-sales',l:'매출'},{id:'acc-purchase',l:'매입'},{id:'acc-costing',l:'원가분석'}]},
 'acc-tax':{tabs:[{id:'acc-tax',l:'세금계산서'},{id:'acc-etax',l:'전자세금계산서'}]},
-'acc-recv':{tabs:[{id:'acc-recv',l:'미수미지급'},{id:'acc-cashflow',l:'입출금'}]},
-'mes-cli':{tabs:[{id:'mes-cli',l:'거래처'},{id:'mes-vendor',l:'협력사'},{id:'mes-prod',l:'패키지 품목'},{id:'mes-mold',l:'목형'},{id:'adm-code',l:'공통코드'}]},
-'adm-backup':{tabs:[{id:'adm-backup',l:'백업/복원'},{id:'adm-audit',l:'감사로그'},{id:'mes-queue',l:'설정'}]}
+'acc-recv':{tabs:[{id:'acc-recv',l:'미수·미지급'},{id:'acc-cashflow',l:'입출금'}]},
+'mes-cli':{tabs:[{id:'mes-cli',l:'거래처'},{id:'mes-vendor',l:'외주처'},{id:'mes-prod',l:'품목'},{id:'mes-mold',l:'목형'},{id:'adm-code',l:'공통 코드'}]},
+'adm-backup':{tabs:[{id:'adm-backup',l:'백업/복원'},{id:'adm-audit',l:'감사 로그'},{id:'mes-queue',l:'시스템 설정'}]}
 };
 var PARENT_MAP={};Object.keys(GROUPS).forEach(function(gid){GROUPS[gid].tabs.forEach(function(t){if(t.id!==gid)PARENT_MAP[t.id]=gid})});
 function updateShipBadge(){try{var _shipReady=DB.g('wo').filter(function(o){return o.status==='완료'||o.status==='완료대기'}).length;var _sb=$('sbShipBadge');if(_sb){if(_shipReady>0){_sb.textContent=_shipReady;_sb.style.display='flex'}else{_sb.style.display='none'}}}catch(e){}}
 function goMod(id){if(CU&&CU.perms&&CU.perms.indexOf(id)<0&&CU.role!=='admin'){toast('접근 권한이 없습니다','err');return}var sbEl=document.querySelector('.sb-item[data-mod="'+id+'"]');if(sbEl&&sbEl.getAttribute('data-ready')==='false'){toast('준비중인 기능입니다','err');return}updateShipBadge();document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');e.removeAttribute('aria-current')});var _sbId=PARENT_MAP[id]||id;var el=document.querySelector('.sb-item[data-mod="'+_sbId+'"]');if(el){el.classList.add('active');el.setAttribute('aria-current','page');var tree=el.closest('.sb-tree');if(tree){var grp=tree.previousElementSibling;if(grp&&grp.classList.contains('sb-group'))grp.classList.add('open')}}document.querySelectorAll('.module-page').forEach(function(p){p.classList.remove('active')});var pgId=PG[id]||id;var pg=$('pg-'+pgId);if(pg)pg.classList.add('active');$('sidebar').classList.remove('open');
 var tabId=TAB_MAP[id];if(tabId){var parentPg=$('pg-'+pgId);if(parentPg){parentPg.querySelectorAll('.tc').forEach(function(c){c.classList.remove('on')});var tab=$('t-'+tabId);if(tab)tab.classList.add('on');parentPg.querySelectorAll('.hd-tab').forEach(function(b){b.classList.remove('on');if(b.getAttribute('data-tab')===tabId)b.classList.add('on');b.setAttribute('aria-selected',b.classList.contains('on'))})}}
-var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산현황','mes-wo':'패키지 작업지시','mes-ship':'출고','mes-cli':'거래처','mes-prod':'패키지 품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'협력사','mes-queue':'시스템설정','mes-worker':'작업자 현황','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수/미지급','acc-cashflow':'입출금','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주진행','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권Aging','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한관리','adm-backup':'백업/복원','adm-audit':'감사로그','adm-code':'공통코드','mes-closing':'월말 마감 점검'};
-if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·정산','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mat-stock':'자재·외주','mat-income':'자재·외주','mat-safety':'자재·외주','mat-audit':'자재·외주','mat-po':'자재·외주','mat-price':'자재·외주','mat-bom':'자재·외주','mat-mrp':'자재·외주','mes-ship':'출고·정산','ship-partial':'출고·정산','ship-return':'출고·정산','ship-inspect':'출고·정산','qc-inspect':'기초정보','qc-cert':'출고·정산','mes-defect':'출고·정산','acc-sales':'출고·정산','acc-purchase':'출고·정산','acc-tax':'출고·정산','acc-costing':'출고·정산','acc-etax':'출고·정산','acc-recv':'출고·정산','acc-cashflow':'출고·정산','mes-cli':'기초정보','mes-vendor':'자재·외주','mes-prod':'기초정보','mes-mold':'기초정보','qc-equip':'기초정보','qc-pm':'기초정보','qc-breakdown':'기초정보','mes-downtime':'기초정보','mes-oee':'기초정보','mes-mold-hist':'기초정보','adm-code':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템','mes-closing':'출고·정산'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}var sub=$('mainSubBc');if(sub)sub.textContent=titleMap[id]||''}
+var titleMap={'mes-order':'수주관리','mes-shiplog':'출고내역','mes-dash':'생산 현황','mes-wo':'작업지시서','mes-ship':'출고','mes-cli':'거래처','mes-prod':'품목','mes-mold':'목형','mes-rpt':'생산보고','mes-cal':'캘린더','mes-sched':'스케줄 보드','mes-perf':'성과분석','mes-plan':'생산계획','mes-vendor':'외주처','mes-queue':'시스템 설정','mes-worker':'작업 대기열','mat-income':'입고','mat-stock':'자재 재고','mat-po':'발주서','mat-bom':'BOM/소요자재','acc-sales':'매출','acc-purchase':'매입','acc-tax':'세금계산서','acc-recv':'미수·미지급','acc-cashflow':'입출금','qc-inspect':'품질검사','qc-equip':'설비','qc-quote':'패키지 견적','mes-order-track':'납기추적','mes-due':'납기관리','mes-proc-log':'공정실적','mes-lot':'로트추적','mes-downtime':'비가동관리','mes-defect':'불량관리','mes-outsource':'외주 현황','mes-mold-hist':'금형이력','mes-oee':'OEE','ship-partial':'부분출고','ship-return':'반품관리','ship-inspect':'출하검사','mat-safety':'안전재고','mat-mrp':'MRP','mat-audit':'재고실사','mat-price':'단가이력','acc-etax':'전자세금계산서','acc-costing':'원가분석','acc-aging':'채권 Aging','qc-claim':'클레임','qc-pm':'예방보전','qc-breakdown':'고장이력','qc-cert':'검사성적서','adm-perm':'권한 관리','adm-backup':'백업/복원','adm-audit':'감사 로그','adm-code':'공통 코드','mes-closing':'월말 마감 점검'};
+if(titleMap[id]){var mt=$('mainTitle');if(mt)mt.textContent=titleMap[id];var bc=$('mainBreadcrumb');if(bc){var bcMap={'mes-order':'견적·수주','mes-order-track':'견적·수주','qc-quote':'견적·수주','qc-claim':'출고·매출','mes-wo':'생산·공정','mes-dash':'패키지 제조','mes-plan':'생산·공정','mes-worker':'생산·공정','mes-proc-log':'생산·공정','mes-lot':'생산·공정','mes-outsource':'생산·공정','mat-stock':'자재·구매','mat-income':'자재·구매','mat-safety':'자재·구매','mat-audit':'자재·구매','mat-po':'자재·구매','mat-price':'자재·구매','mat-bom':'자재·구매','mat-mrp':'자재·구매','mes-ship':'출고·매출','ship-partial':'출고·매출','ship-return':'출고·매출','ship-inspect':'출고·매출','qc-inspect':'기초정보','qc-cert':'출고·매출','mes-defect':'출고·매출','acc-sales':'출고·매출','acc-purchase':'출고·매출','acc-tax':'출고·매출','acc-costing':'출고·매출','acc-etax':'출고·매출','acc-recv':'출고·매출','acc-cashflow':'출고·매출','mes-cli':'기초정보','mes-vendor':'자재·구매','mes-prod':'기초정보','mes-mold':'기초정보','qc-equip':'기초정보','qc-pm':'기초정보','qc-breakdown':'기초정보','mes-downtime':'기초정보','mes-oee':'기초정보','mes-mold-hist':'기초정보','adm-code':'시스템','adm-perm':'시스템','adm-backup':'시스템','adm-audit':'시스템','mes-queue':'시스템','mes-closing':'출고·매출'};if(bcMap[id])bc.textContent=bcMap[id];else bc.textContent='패키지 제조'}var sub=$('mainSubBc');if(sub)sub.textContent=titleMap[id]||''}
 /* groupTabBar 는 사이드바 3단 구조(메인·서브)로 이동되어 항상 숨김 */
 var _gtb=$('groupTabBar');if(_gtb){_gtb.style.display='none';_gtb.innerHTML='';}
 if(MR[id])MR[id]();if(ER[id])ER[id]();}
@@ -1593,10 +1593,22 @@ var ContrastCheck=(function(){
 (function(){
   if(typeof window === 'undefined') return;
 
-  /* DB.s 래핑: 저장 직후 sync ping 발사 (같은 탭 무한 루프 방지 위해 source 표기) */
+  /* DB.s 래핑: 저장 직후 sync ping 발사 + 마스터 데이터 빈 배열 덮어쓰기 가드 */
   if(typeof DB !== 'undefined' && DB.s && !DB.s.__syncWrapped){
     var origS = DB.s;
+    /* 빈 배열로 덮어쓰면 큰 손실 일어나는 마스터 데이터 키 */
+    var GUARDED_KEYS = ['cli','prod','mold','vendors','users','co','wo','sales','purchase','taxInvoice','shipLog','hist','income','stock'];
     DB.s = function(k, d){
+      /* 가드: 마스터 데이터를 빈 배열/null로 덮어쓰려는 시도 차단 */
+      if(GUARDED_KEYS.indexOf(k) >= 0 && Array.isArray(d) && d.length === 0){
+        var current = [];
+        try{ current = DB.g(k) || []; }catch(_){}
+        if(Array.isArray(current) && current.length > 10){
+          console.error('[GUARD] DB.s("'+k+'", []) 빈 배열 저장 차단 — 기존 ' + current.length + '건 보존');
+          if(typeof toast === 'function') toast('데이터 보호: ' + k + ' 빈 배열 저장 차단됨','err');
+          return;
+        }
+      }
       var r = origS.apply(this, arguments);
       try{
         localStorage.setItem('packflow_sync_ping', JSON.stringify({

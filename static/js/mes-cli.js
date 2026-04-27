@@ -330,12 +330,15 @@ function rCli(page){
     cs=DB.g('cli').filter(function(c){return c.isVendor && matchFn(c)});
   }else{
     cs=DB.g('cli').filter(matchFn);
-    // "매출처" = sales + both (매출 성격 있는 전체)
-    // "매입처" = purchase + both
-    // "매출+매입" = both 만 (교차 거래처)
-    if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
-    else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
-    else if(tf==='both')cs=cs.filter(c=>c.cType==='both');
+    /* 검색어가 있으면 cType 필터 무시 — 매입처/매출처/협력사 전부 검색 */
+    if(!s){
+      // "매출처" = sales + both (매출 성격 있는 전체)
+      // "매입처" = purchase + both
+      // "매출+매입" = both 만 (교차 거래처)
+      if(tf==='sales')cs=cs.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType);
+      else if(tf==='purchase')cs=cs.filter(c=>c.cType==='purchase'||c.cType==='both');
+      else if(tf==='both')cs=cs.filter(c=>c.cType==='both');
+    }
   }
   if(df==='active')cs=cs.filter(function(c){return !_cliDormant(c)});
   else if(df==='dormant')cs=cs.filter(function(c){return _cliDormant(c)});

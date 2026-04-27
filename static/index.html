@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <title>팩플로우 | 패키지 제조 운영 시스템</title>
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css?v=2">
 <link rel="stylesheet" href="/css/pc-quick-entry.css?v=1">
 <link rel="stylesheet" href="/css/pc-sidebar-collapse.css?v=1">
 <link rel="stylesheet" href="/css/pc-top-modes.css?v=1">
@@ -20,15 +20,15 @@
 <link rel="stylesheet" href="/css/pc-theme-light.css?v=1">
 <link rel="stylesheet" href="/css/packflow-manufacturing-theme.css?v=2">
 <script src="js/xlsx.full.min.js"></script>
-<script src="/js/core.js?v=29"></script>
+<script src="/js/core.js?v=30"></script>
 <script src="/js/search-util.js?v=1"></script>
-<script src="/js/ui-enhance.js?v=2"></script>
+<script src="/js/ui-enhance.js?v=3"></script>
 <script src="/js/ux-advanced.js?v=1"></script>
 <script src="/js/ux-ext.js?v=1"></script>
 <script src="/js/pc-quick-entry.js?v=1" defer></script>
 <script src="/js/pc-sidebar-collapse.js?v=1" defer></script>
-<script src="/js/pc-top-modes.js?v=2" defer></script>
-<script src="/js/pc-sidebar-blocks.js?v=2" defer></script>
+<script src="/js/pc-top-modes.js?v=3" defer></script>
+<script src="/js/pc-sidebar-blocks.js?v=3" defer></script>
 <script src="/js/pc-context-bar.js?v=1" defer></script>
 <script src="/js/pc-search-keys.js?v=1" defer></script>
 <script src="/js/pc-ux-memory.js?v=1" defer></script>
@@ -38,7 +38,7 @@
 <script src="/js/pc-ux-excel-paste.js?v=1" defer></script>
 <script src="/js/pc-ux-ticker.js?v=1" defer></script>
 <script src="/js/pc-ux-nav-guard.js?v=1" defer></script>
-<script src="/js/pc-ux-autocomplete.js?v=2" defer></script>
+<script src="/js/pc-ux-autocomplete.js?v=3" defer></script>
 </head>
 <body>
 <div id="toast" class="toast"></div>
@@ -137,23 +137,23 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-plan" title="생산 계획 및 스케줄">생산계획</button>
 <button class="sb-item" data-mod="mes-proc-log" title="공정별 실적">공정실적</button>
-<button class="sb-item" data-mod="mes-outsource" title="외주 업체 관리">외주진행</button>
-<button class="sb-item" data-mod="mes-worker" title="현장 작업 대기열">현장작업</button>
+<button class="sb-item" data-mod="mes-outsource" title="외주 진행 현황">외주 현황</button>
+<button class="sb-item" data-mod="mes-worker" title="현장 작업 대기열">작업 대기열</button>
 </div>
 
-<!-- [접힘] 자재·외주 -->
-<div class="sb-group" data-group-key="material" role="button" aria-expanded="false">자재·외주<span class="sb-arrow">▶</span></div>
+<!-- [접힘] 자재·구매 -->
+<div class="sb-group" data-group-key="material" role="button" aria-expanded="false">자재·구매<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mat-stock" title="자재/제품 재고 현황">재고 현황</button>
 <button class="sb-item sb-sub" data-mod="mat-safety" title="안전재고/발주점">안전재고</button>
 <button class="sb-item" data-mod="mat-po" title="자재 발주">발주</button>
 <button class="sb-item" data-mod="mat-income" title="자재 입고 처리">입고</button>
-<button class="sb-item" data-mod="mat-bom" title="원자재 소요량">BOM</button>
-<button class="sb-item" data-mod="mes-vendor" title="협력사 및 외주처">협력사</button>
+<button class="sb-item" data-mod="mat-bom" title="BOM/소요자재">BOM/소요자재</button>
+<button class="sb-item" data-mod="mes-vendor" title="외주처 관리">외주처</button>
 </div>
 
-<!-- [접힘] 출고·정산 -->
-<div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">출고·정산<span class="sb-arrow">▶</span></div>
+<!-- [접힘] 출고·매출 -->
+<div class="sb-group" data-group-key="ship" role="button" aria-expanded="false">출고·매출<span class="sb-arrow">▶</span></div>
 <div class="sb-tree">
 <button class="sb-item" data-mod="mes-ship" title="납품/출고 처리">출고<span id="sbShipBadge" style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center"></span></button>
 <button class="sb-item sb-sub" data-mod="ship-partial" title="부분 출고">부분출고</button>
@@ -164,7 +164,7 @@
 <button class="sb-item" data-mod="acc-purchase" title="매입 등록 및 조회">매입</button>
 <button class="sb-item" data-mod="acc-tax" title="세금계산서 발행/수신">세금계산서</button>
 <button class="sb-item sb-sub" data-mod="acc-etax" title="전자세금계산서">전자세금계산서</button>
-<button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">채권/자금</button>
+<button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">미수·미지급</button>
 <button class="sb-item" data-mod="acc-cashflow" title="입출금 이력">입출금</button>
 <button class="sb-item" data-mod="mes-closing" title="월말 마감 점검">월말 마감</button>
 </div>
@@ -175,7 +175,7 @@
 <button class="sb-item" data-mod="mes-cli" title="거래처 관리">거래처</button>
 <button class="sb-item" data-mod="mes-prod" title="품목">품목</button>
 <button class="sb-item" data-mod="mes-mold" title="목형 관리">목형</button>
-<button class="sb-item" data-mod="qc-inspect" title="품질 검사">품질</button>
+<button class="sb-item" data-mod="qc-inspect" title="품질 검사">품질검사</button>
 <button class="sb-item sb-sub" data-mod="ship-inspect" title="출하 검사">출하검사</button>
 <button class="sb-item sb-sub" data-mod="qc-cert" title="검사성적서">검사성적서</button>
 <button class="sb-item sb-sub" data-mod="mes-defect" title="불량 등록">불량등록</button>
@@ -187,9 +187,9 @@
 <div class="sb-tree">
 <button class="sb-item" data-mod="adm-perm" title="사용자 권한">권한 관리</button>
 <button class="sb-item" data-mod="adm-backup" title="데이터 백업">백업</button>
-<button class="sb-item sb-sub" data-mod="adm-audit" title="감사 로그">감사로그</button>
-<button class="sb-item sb-sub" data-mod="adm-code" title="공통 코드">공통코드</button>
-<button class="sb-item" data-mod="mes-queue" title="회사 정보/팝빌 등">시스템설정</button>
+<button class="sb-item sb-sub" data-mod="adm-audit" title="감사 로그">감사 로그</button>
+<button class="sb-item sb-sub" data-mod="adm-code" title="공통 코드">공통 코드</button>
+<button class="sb-item" data-mod="mes-queue" title="회사 정보/팝빌 등">시스템 설정</button>
 </div>
 </div><div class="sb-user"><div class="sb-avatar" id="sbAvatar">관</div><div><div class="sb-user-name" id="sbUserName">관리자</div><div class="sb-user-role" id="sbUserRole">관리자</div></div></div>
 <button onclick="unifiedLogout()" class="sb-logout">로그아웃</button></div>
@@ -197,7 +197,7 @@
 <button onclick="var s=document.getElementById('sidebar');s.classList.toggle('open');this.setAttribute('aria-expanded',s.classList.contains('open'))" class="mob-toggle" aria-label="메뉴 열기" aria-expanded="false">≡</button>
 <div class="pk-hdr-title">
   <div class="pk-hdr-bc"><span id="mainBreadcrumb">패키지 제조</span><span class="pk-hdr-sep">›</span><span id="mainSubBc" class="pk-hdr-subbc"></span></div>
-  <h2 id="mainTitle" class="pk-hdr-h">생산현황</h2>
+  <h2 id="mainTitle" class="pk-hdr-h">생산 현황</h2>
 </div>
 <div id="groupTabBar" style="display:none"></div>
 <!-- 알림 패널 DOM 유지 (보이지 않지만 toggleNotiPanel 로직이 참조함) -->
@@ -300,14 +300,14 @@
 <!-- ======== TAB 4: BOM 관리 ======== -->
 <div class="tc" id="t-bom">
   <div class="sg">
-    <div class="sb blue"><div class="l">등록 BOM</div><div class="v" id="bomCnt">0</div></div>
+    <div class="sb blue"><div class="l">등록 소요자재</div><div class="v" id="bomCnt">0</div></div>
     <div class="sb green"><div class="l">평균 자재단가</div><div class="v" id="bomAvg">0원</div></div>
     <div class="sb orange"><div class="l">원가 산출 제품</div><div class="v" id="bomCalc">0</div></div>
   </div>
   <div class="fbar">
     <div class="fbar-row">
       <input type="text" id="bomSch" placeholder="제품명으로 검색" oninput="rBOM()" class="fbar-grow">
-      <button class="btn btn-p btn-sm" onclick="openBomM()">+ BOM 등록</button>
+      <button class="btn btn-p btn-sm" onclick="openBomM()">+ 소요자재 등록</button>
     </div>
   </div>
   <table class="dt" id="bomTbl">
@@ -433,7 +433,7 @@
 <!-- BOM 등록 모달 -->
 <div class="mo-bg hidden" id="bomMo" onclick="event.target===this&&cMo('bomMo')">
 <div class="mo" style="width:720px">
-  <div class="mo-t" id="bomMoT">BOM 등록</div>
+  <div class="mo-t" id="bomMoT">소요자재 등록</div>
   <input type="hidden" id="bomId">
   <div class="fr">
     <div class="fg ac-w"><label>제품명 *</label><input type="text" id="bomProd" oninput="acBomProd(this.value)" autocomplete="off"><div class="ac-l hidden" id="acBomProdL"></div></div>
@@ -464,7 +464,7 @@
 
 <!-- BOM 상세 모달 -->
 <div class="mo-bg hidden" id="bomDetMo" onclick="event.target===this&&cMo('bomDetMo')">
-<div class="mo" style="width:680px"><div class="mo-t" id="bomDetT">BOM 상세</div><div id="bomDetC"></div><div class="mo-f"><button class="btn btn-g" onclick="cMo('bomDetMo')">닫기</button></div></div>
+<div class="mo" style="width:680px"><div class="mo-t" id="bomDetT">소요자재 상세</div><div id="bomDetC"></div><div class="mo-f"><button class="btn btn-g" onclick="cMo('bomDetMo')">닫기</button></div></div>
 </div>
 
 <!-- Toast -->
@@ -724,7 +724,7 @@
 <div class="module-page" id="pg-acc-tax"></div>
 <div class="module-page" id="pg-qc-inspect"><div class="app">
 <div class="hd">
-  <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질/기타</span>
+  <span class="hd-logo">팩플로우</span><span style="font-size:13px;color:var(--dan);font-weight:700;margin-right:24px;padding:3px 10px;background:var(--dan-l);border-radius:4px">품질·기타</span>
   <div class="hd-tabs" role="tablist">
     <button class="hd-tab on" data-tab="qc" role="tab" aria-selected="true">품질검사</button>
     <button class="hd-tab" data-tab="equip" role="tab" aria-selected="false">설비관리</button>
@@ -786,7 +786,7 @@
     <div class="sb"><div class="l">수주 전환</div><div class="v" style="color:var(--suc)" id="qtWon">0</div></div>
   </div>
   <div class="tb"><button class="btn btn-p" onclick="openQtM()">+ 패키지 견적</button><input type="month" id="qtMo" onchange="rQt()"></div>
-  <table class="dt" id="qtTbl"><thead><tr><th>견적번호</th><th>견적일</th><th>거래처</th><th>패키지 품목</th><th>금액</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
+  <table class="dt" id="qtTbl"><thead><tr><th>견적번호</th><th>견적일</th><th>거래처</th><th>품목</th><th>금액</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
 
 <!-- 전자결재 -->
@@ -839,7 +839,7 @@
   </div>
   <div class="fr">
     <div class="fg"><label>거래처 *</label><input type="text" id="qtCli" placeholder="거래처명"></div>
-    <div class="fg"><label>패키지 품목 *</label><input type="text" id="qtProd" placeholder="품목명"></div>
+    <div class="fg"><label>품목 *</label><input type="text" id="qtProd" placeholder="품목명"></div>
   </div>
   <div class="fr">
     <div class="fg"><label>규격 / 사양</label><input type="text" id="qtSpec" placeholder="예: 350x250x120 / 백판지 350g"></div>
@@ -886,7 +886,7 @@
   <div class="mo-f">
     <button class="btn btn-g" onclick="cMo('qtMo2')">취소</button>
     <button class="btn btn-o" id="qtToOrderBtn" onclick="qtToOrder()">→ 패키지 수주 전환</button>
-    <button class="btn btn-o" id="qtToWOBtn" onclick="qtToWO()" style="display:none">→ 패키지 작업지시 전환</button>
+    <button class="btn btn-o" id="qtToWOBtn" onclick="qtToWO()" style="display:none">→ 작업지시서 전환</button>
     <button class="btn btn-p" onclick="saveQt()">저장</button>
   </div>
 </div></div>
@@ -951,7 +951,7 @@
 <span id="orderPeriodLabel" style="font-size:12px;font-weight:600;color:var(--txt2)"></span>
 </div>
 <div class="sb-r">
-<input type="text" id="orderSch" placeholder="거래처 또는 패키지 품목 검색" oninput="rOrderList()">
+<input type="text" id="orderSch" placeholder="거래처 또는 품목 검색" oninput="rOrderList()">
 <div class="filter-btns">
 <button class="filter-btn on" data-f="all" data-filter-fn="setOrderFilter">전체</button>
 <button class="filter-btn" data-f="수주" data-filter-fn="setOrderFilter">수주</button>
@@ -964,7 +964,7 @@
 <button class="btn btn-o btn-sm" onclick="exportOrderCSV()">엑셀</button>
 </div>
 <div id="orderPeriodSum" style="margin-bottom:8px"></div>
-<div class="card"><div class="u-scroll-x"><table class="dt" id="orderTbl"><thead><tr><th>수주번호</th><th>거래처</th><th>패키지 품목</th><th>금액</th><th>진행흐름</th><th>납기일</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="orderTbl"><thead><tr><th>수주번호</th><th>거래처</th><th>품목</th><th>금액</th><th>진행흐름</th><th>납기일</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 <div id="order-new" class="hidden">
 <div class="card u-pad12">
@@ -989,7 +989,7 @@
 </div>
 <div id="ordItemArea">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-<label style="font-size:12px;font-weight:700">패키지 품목</label>
+<label style="font-size:12px;font-weight:700">품목</label>
 <button class="btn btn-o btn-sm" onclick="addOrdItem()">+ 품목추가</button>
 </div>
 <table class="dt" id="ordItemTbl"><thead><tr><th>제품명</th><th>규격</th><th>수량</th><th>단가</th><th>금액</th><th>비고</th><th>삭제</th></tr></thead><tbody id="ordItemBody"></tbody></table>
@@ -1009,7 +1009,7 @@
 <div id="t-dash" class="tc on" style="background:#F5F7FA;padding:20px">
 <!-- 헤더 -->
 <div class="u-flex-between" style="margin-bottom:16px">
-<div style="font-size:20px;font-weight:900;color:#1E293B">패키지 제조 운영판</div>
+<div style="font-size:20px;font-weight:900;color:#1E293B">패키지 제조 생산 현황</div>
 <div style="display:flex;align-items:center;gap:12px">
   <span id="dashDateDisp" style="font-size:13px;color:#94A3B8"></span>
   <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#DCFCE7;color:#166534;border-radius:12px;font-size:11px;font-weight:700">
@@ -1085,7 +1085,7 @@
   <div class="qlauncher-card" onclick="goMod('mes-vendor')">
     <div class="qlauncher-ico" style="background:#CCFBF1;color:#0F766E">VD</div>
     <div class="qlauncher-body">
-      <div class="qlauncher-ttl">협력사</div>
+      <div class="qlauncher-ttl">외주처</div>
       <div class="qlauncher-sub">외주처 상태</div>
     </div>
   </div>
@@ -1123,7 +1123,7 @@
 
 <!-- TAB: Work Order -->
 <div id="t-wo" class="tc">
-<div class="tb"><button class="btn btn-p" onclick="openWOForm()">+ 패키지 작업지시</button><button class="btn btn-o" onclick="openTplList()" style="margin-left:8px">템플릿</button></div>
+<div class="tb"><button class="btn btn-p" onclick="openWOForm()">+ 작업지시서</button><button class="btn btn-o" onclick="openTplList()" style="margin-left:8px">템플릿</button></div>
 <div class="sb-r">
 <input type="text" id="woSch" placeholder="거래처 또는 제품명 검색" oninput="rWOList()">
 <div class="filter-btns">
@@ -1135,11 +1135,11 @@
 <button class="filter-btn" data-f="보류" data-filter-fn="setWOFilter" style="color:#F59E0B">보류</button>
 <button class="filter-btn" data-f="취소" data-filter-fn="setWOFilter" style="color:#94A3B8">취소</button>
 </div>
-<select id="woVendorFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 협력사</option><option value="__self__">자체생산</option></select>
+<select id="woVendorFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 외주처</option><option value="__self__">자체생산</option></select>
 <select id="woCliFilter" onchange="rWOList()" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">전체 거래처</option></select>
 <button class="btn btn-o btn-sm" onclick="exportCSV()">엑셀</button>
 </div>
-<div class="card"><div class="u-scroll-x"><table class="dt" id="woTbl"><thead><tr><th>번호</th><th>작성일</th><th>거래처</th><th>패키지 품목</th><th>수량</th><th>금액</th><th>납품예정</th><th>협력사</th><th>진행</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="woTbl"><thead><tr><th>번호</th><th>작성일</th><th>거래처</th><th>품목</th><th>수량</th><th>금액</th><th>납품예정</th><th>외주처</th><th>진행</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- 작업지시서 등록/수정 팝업 -->
@@ -1148,7 +1148,7 @@
 <div class="wo-modal-head">
 <div class="wo-modal-head-copy">
 <div class="wo-modal-kicker">Package Workflow</div>
-<span id="woFormTitle" class="wo-modal-title">패키지 작업지시 등록</span>
+<span id="woFormTitle" class="wo-modal-title">작업지시서 등록</span>
 <div class="wo-modal-sub">거래처, 자재, 공정, 납품 흐름을 한 화면에서 정리합니다.</div>
 </div>
 <div class="wo-modal-actions">
@@ -1181,7 +1181,7 @@
 <div class="fg"><label>작성일</label><input type="date" id="woDt" class="u-input-md"></div>
 </div>
 <div class="wo-inline-grid wo-inline-grid-2">
-<div class="fg"><label>협력사/인쇄소</label><div class="wo-inline-actions"><select id="woVendor"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()">검색</button></div></div>
+<div class="fg"><label>외주처</label><div class="wo-inline-actions"><select id="woVendor"><option value="">자체생산</option></select><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearch()">검색</button></div></div>
 <div class="fg"><label>담당자</label><select id="woMgr"></select></div>
 </div>
 </section>
@@ -1191,7 +1191,7 @@
 <div>
 <div class="wo-section-kicker">Client</div>
 <h3>거래처 · 품목</h3>
-<p>고객사와 패키지 품목을 선택하면 이전 작업 이력까지 이어집니다.</p>
+<p>고객사와 품목을 선택하면 이전 작업 이력까지 이어집니다.</p>
 </div>
 <span class="wo-section-tag">필수</span>
 </div>
@@ -1346,7 +1346,7 @@
 </div>
 <div class="card">
 <div class="card-t">패키지 생산 이력</div>
-<div id="lotResult"><div class="empty-state"><div class="msg">제품명을 검색하세요</div><div class="sub">협력사 · 작업수량 · 출고량 · 불량 이력을 한눈에 확인</div></div></div>
+<div id="lotResult"><div class="empty-state"><div class="msg">제품명을 검색하세요</div><div class="sub">외주처 · 작업수량 · 출고량 · 불량 이력을 한눈에 확인</div></div></div>
 </div>
 </div>
 </div>
@@ -1370,7 +1370,7 @@
       <option value="sales">매출처</option>
       <option value="purchase">매입처</option>
       <option value="both">매출+매입</option>
-      <option value="vendor">협력사/인쇄소</option>
+      <option value="vendor">외주처</option>
     </select>
     <div class="fbar-pills" id="cliViewPills">
       <button class="on" onclick="setCliView('table',this)">목록</button>
@@ -1577,16 +1577,16 @@
 <div class="sg" id="vendorKpi"></div>
 <div class="fbar">
   <div class="fbar-row">
-    <span class="fbar-label">협력사 관리</span>
+    <span class="fbar-label">외주처 관리</span>
     <div class="fbar-spacer"></div>
     <button class="btn btn-p btn-sm" onclick="oMo('vendorMo');$('vdNm').value='';$('vdTel').value='';$('vdAddr').value='';$('vdNote').value='';_editVdId=null">+ 등록</button>
   </div>
 </div>
-<div class="card" style="margin-bottom:14px"><div class="card-t">전체 협력사</div>
-<table class="dt" id="vendorTbl"><thead><tr><th>협력사명</th><th>연락처</th><th>주소</th><th>작업건수</th><th>관리</th></tr></thead><tbody></tbody></table>
+<div class="card" style="margin-bottom:14px"><div class="card-t">전체 외주처</div>
+<table class="dt" id="vendorTbl"><thead><tr><th>외주처명</th><th>연락처</th><th>주소</th><th>작업건수</th><th>관리</th></tr></thead><tbody></tbody></table>
 </div>
-<div class="card"><div class="card-t">협력사별 작업 현황</div><div id="vendorDash" class="vd-grid"></div></div>
-<div class="card" style="margin-top:14px"><div class="card-t">선택 협력사 작업 목록</div><div id="vendorWOList"></div></div>
+<div class="card"><div class="card-t">외주처별 작업 현황</div><div id="vendorDash" class="vd-grid"></div></div>
+<div class="card" style="margin-top:14px"><div class="card-t">선택 외주처 작업 목록</div><div id="vendorWOList"></div></div>
 </div>
 
 <div id="t-worker" class="tc">
@@ -1674,7 +1674,7 @@
 </div>
 </div>
 <div class="card"><div class="card-t">시뮬레이션</div>
-<p style="font-size:13px;color:var(--txt2);margin-bottom:10px">테스트용 거래처 4개, 품목 4개, 목형 4개, 협력사 2개, 작업지시 4건을 자동으로 생성합니다.</p>
+  <p style="font-size:13px;color:var(--txt2);margin-bottom:10px">테스트용 거래처 4개, 품목 4개, 목형 4개, 외주처 2개, 작업지시 4건을 자동으로 생성합니다.</p>
 <button class="btn btn-s" onclick="genSim()">시뮬레이션 데이터 생성</button>
 </div>
 <!-- 얼마에요 Group 구조 — 다중 회사 설정 -->
@@ -1741,7 +1741,7 @@
 <!-- 거래처 폴더 관리 모달 -->
 <div id="cliFolderMo" class="mo-bg hidden" onclick="event.target===this&&cMo('cliFolderMo')"><div class="mo" style="max-width:500px">
   <div class="mo-t">거래처 폴더 관리</div>
-  <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">거래처를 카테고리별로 묶어 관리합니다 (예: VIP, 일반, 협력사, 외주, 관공서 등)</p>
+  <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">거래처를 카테고리별로 묶어 관리합니다 (예: VIP, 일반, 외주처, 관공서 등)</p>
   <div class="fr">
     <div class="fg" style="flex:1"><label>새 폴더명</label><input type="text" id="newFolderNm" placeholder="예: VIP 고객"></div>
     <div class="fg"><label>색상</label><input type="color" id="newFolderColor" value="#1E3A5F" style="height:38px;padding:2px"></div>
@@ -1864,37 +1864,37 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px" id="umPermGrid">
 <div>
 <div style="font-weight:700;color:var(--pri);margin-bottom:4px">MES 생산</div>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-dash">생산현황</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-dash">생산 현황</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-order">수주관리</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-plan">생산계획</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-wo">작업지시서</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-cli">거래처</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-vendor">협력사</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-vendor">외주처</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-prod">품목</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-mold">목형</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-ship">출고</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-worker">현장작업</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-worker">작업 대기열</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-proc-log">공정실적</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-outsource">외주진행</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-outsource">외주 현황</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mes-queue">설정</label>
 <div style="font-weight:700;color:#0369A1;margin:8px 0 4px">구매/자재</div>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-income">입고</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-stock">재고</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-po">발주서</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-bom">BOM</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="mat-bom">BOM/소요자재</label>
 </div>
 <div>
 <div style="font-weight:700;color:#059669;margin-bottom:4px">매출/회계</div>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-sales">매출</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-purchase">매입</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-tax">세금계산서</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-recv">미수/미지급</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-recv">미수·미지급</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="acc-cashflow">입출금</label>
-<div style="font-weight:700;color:#DC2626;margin:8px 0 4px">품질/기준</div>
+<div style="font-weight:700;color:#DC2626;margin:8px 0 4px">품질·기준</div>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-inspect">검사</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-equip">설비</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="qc-quote">견적</label>
-<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="adm-perm">권한관리</label>
+<label class="u-sb-item"><input type="checkbox" class="perm-cb" value="adm-perm">권한 관리</label>
 <label class="u-sb-item"><input type="checkbox" class="perm-cb" value="adm-backup">백업</label>
 </div>
 </div>
@@ -1922,7 +1922,7 @@
 <div style="padding:16px">
 <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:10px;padding:12px;margin-bottom:12px">
 <div style="font-size:15px;font-weight:700;color:#0369A1" id="incPnm">제품명</div>
-<div style="font-size:13px;color:#64748B;margin-top:4px" id="incInfo">거래처 | 협력사</div>
+<div style="font-size:13px;color:#64748B;margin-top:4px" id="incInfo">거래처 | 외주처</div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
 <div class="fg"><label class="u-fw700-13">입고 수량 *</label><input type="number" id="dashIncQty" min="0" placeholder="수량 입력" style="padding:10px;font-size:14px"></div>
@@ -1960,7 +1960,7 @@
 </div></div>
 
 <div id="woDetMo" class="mo hidden"><div class="mb" style="width:780px">
-<div class="mh"><h3>패키지 작업지시 상세</h3><button class="mc" onclick="cMo('woDetMo')">&times;</button></div>
+<div class="mh"><h3>작업지시서 상세</h3><button class="mc" onclick="cMo('woDetMo')">&times;</button></div>
 <div class="my" id="woDetC"></div>
 <div class="mf" style="display:flex;justify-content:space-between">
 <div class="u-flex-gap6"><button class="btn btn-sm" id="woDetCancel" style="background:#FEF3C7;color:#B45309;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">작업취소</button><button class="btn btn-sm" id="woDetDel" style="background:#FEE2E2;color:#DC2626;border:none;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer">삭제</button></div>
@@ -2042,10 +2042,10 @@
 </div></div>
 <div id="mrpMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('mrpMo')"><div class="mo" style="max-width:600px"></div></div>
 <div id="vendorMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('vendorMo')"><div class="mo" style="max-width:500px">
-<div class="mo-t">협력사 등록<button class="mo-x" onclick="cMo('vendorMo')" aria-label="닫기">×</button></div>
+<div class="mo-t">외주처 등록<button class="mo-x" onclick="cMo('vendorMo')" aria-label="닫기">×</button></div>
 <div class="mo-b">
 <div class="fr" style="grid-template-columns:1fr 1fr">
-<div class="fg"><label>협력사명 *</label><input id="vdNm" placeholder="예: 프리미엄패키지"></div>
+<div class="fg"><label>외주처명 *</label><input id="vdNm" placeholder="예: 프리미엄패키지"></div>
 <div class="fg"><label>연락처</label><input id="vdTel" placeholder="02-1234-5678"></div>
 <div class="fg"><label>주소</label><input id="vdAddr" placeholder="서울시 강남구"></div>
 <div class="fg"><label>비고</label><input id="vdNote" placeholder="메모"></div>
@@ -2219,9 +2219,9 @@
 <div class="mo-f"><button class="btn btn-g" onclick="cMo('dfMo')">취소</button><button class="btn btn-p" onclick="saveDefect()">저장</button></div>
 </div></div>
 
-<!-- ===== 외주관리 ===== -->
+<!-- ===== 외주 현황 ===== -->
 <div id="pg-mes-outsource" class="module-page"><div class="card" style="padding:16px">
-<div class="card-t" style="margin-bottom:12px">외주 공정 관리</div>
+<div class="card-t" style="margin-bottom:12px">외주 공정 현황</div>
 <div class="sg">
 <div class="sb blue"><div class="l">외주 진행중</div><div class="v" id="osActive">0</div></div>
 <div class="sb green"><div class="l">금월 완료</div><div class="v" id="osDone">0</div></div>
@@ -2476,7 +2476,7 @@
 <div class="mo-f"><button class="btn btn-g" onclick="cMo('certMo')">취소</button><button class="btn btn-p" onclick="saveCert()">저장</button></div>
 </div></div>
 
-<!-- ===== 권한관리 ===== -->
+<!-- ===== 권한 관리 ===== -->
 <div id="pg-adm-perm" class="module-page"><div class="card" style="padding:16px">
 <div class="card-t" style="margin-bottom:12px">사용자 권한 관리</div>
 <div id="permArea"></div>
@@ -2492,7 +2492,7 @@
 <div id="backupArea"></div>
 </div></div>
 
-<!-- ===== 감사로그 ===== -->
+<!-- ===== 감사 로그 ===== -->
 <div id="pg-adm-audit" class="module-page"><div class="card" style="padding:16px">
 <div class="card-t" style="margin-bottom:12px">감사 로그 (Audit Trail)</div>
 <div class="fbar"><div class="fbar-row">
@@ -2503,7 +2503,7 @@
 <div id="auditLogArea"></div>
 </div></div>
 
-<!-- ===== 공통코드 ===== -->
+<!-- ===== 공통 코드 ===== -->
 <div id="pg-adm-code" class="module-page"><div class="card" style="padding:16px">
 <div class="card-t" style="margin-bottom:12px">공통 코드 관리</div>
 <div class="fbar"><div class="fbar-row">
@@ -2514,7 +2514,7 @@
 <div id="codeArea"></div>
 </div></div>
 <div id="codeMo" class="mo-ov hidden" onclick="if(event.target===this)cMo('codeMo')"><div class="mo" style="max-width:400px">
-<div class="mo-t">공통코드 추가</div>
+<div class="mo-t">공통 코드 추가</div>
 <div class="mo-b"><label>코드명</label><input id="codeName"><label>설명</label><input id="codeDesc"><label>정렬순서</label><input type="number" id="codeOrd" value="0"></div>
 <div class="mo-f"><button class="btn btn-g" onclick="cMo('codeMo')">취소</button><button class="btn btn-p" onclick="saveCode()">저장</button></div>
 </div></div>
@@ -2524,19 +2524,19 @@
 <!-- 색상 마스터/편집 모달 — 사용자 요청으로 제거됨 -->
 
 <script src="/js/packflow-price-history.js?v=1"></script>
-<script src="/js/mes-dash.js?v=21"></script>
-<script src="/js/mes-wo.js?v=24"></script>
-<script src="/js/mes-cli.js?v=25"></script>
+<script src="/js/mes-dash.js?v=22"></script>
+<script src="/js/mes-wo.js?v=25"></script>
+<script src="/js/mes-cli.js?v=26"></script>
 <script src="/js/mes-worker.js?v=20"></script>
-<script src="/js/mes-ship.js?v=20"></script>
-<script src="/js/mes-settings.js?v=20"></script>
-<script src="/js/mes-plan.js?v=20"></script>
-<script src="/js/erp-purchase.js?v=20"></script>
+<script src="/js/mes-ship.js?v=21"></script>
+<script src="/js/mes-settings.js?v=21"></script>
+<script src="/js/mes-plan.js?v=21"></script>
+<script src="/js/erp-purchase.js?v=21"></script>
 <script src="/js/erp-account.js?v=20"></script>
 <script src="/js/erp-hr.js?v=20"></script>
 <script src="/js/erp-biz.js?v=20"></script>
-<script src="/js/erp-quality.js?v=20"></script>
-<script src="/js/features-ext.js?v=20"></script>
+<script src="/js/erp-quality.js?v=21"></script>
+<script src="/js/features-ext.js?v=21"></script>
 <script src="/js/mes-closing.js?v=1"></script>
 <!-- [테스트 모드] 자동 로그인 — 테스트 종료 후 이 스크립트 블록 삭제 -->
 <script>

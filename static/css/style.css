@@ -2042,3 +2042,29 @@ mark{background:#FEF3C7;color:#92400E;padding:0 2px;border-radius:2px}
   .ux-tb-btn span:not(.ux-kbd):not(.ux-tb-badge):not(.ux-user-avatar){display:none}
   .uxbc-group{display:none}
 }
+
+/* ============================================
+   기초정보 화면 헤더 버튼 줄바꿈 보강
+   - 거래처/품목/목형 등 버튼이 많은 페이지에서 너비 초과 방지
+   - .fbar-row의 min-width:max-content + nowrap을 override
+   ============================================ */
+#t-cli .fbar-row,
+#t-prod .fbar-row,
+#t-mold .fbar-row,
+#pg-mes-cli .fbar-row,
+#pg-mes-prod .fbar-row,
+#pg-mes-mold .fbar-row,
+.module-page .fbar-row {
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+  row-gap: 8px;
+}
+.fbar { overflow: visible !important; }
+.module-page .fbar-grow { min-width: 200px; }
+
+/* 화면 우측 잘림 방지 — 모듈 페이지 컨테이너 가로 패딩 미세 보정 */
+.module-page {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.module-page > .app, .module-page > .card { max-width: 100%; }

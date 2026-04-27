@@ -38,7 +38,7 @@
 <script src="/js/pc-ux-excel-paste.js?v=1" defer></script>
 <script src="/js/pc-ux-ticker.js?v=1" defer></script>
 <script src="/js/pc-ux-nav-guard.js?v=1" defer></script>
-<script src="/js/pc-ux-autocomplete.js?v=1" defer></script>
+<script src="/js/pc-ux-autocomplete.js?v=2" defer></script>
 </head>
 <body>
 <div id="toast" class="toast"></div>
@@ -1388,6 +1388,7 @@
     <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">거래 확인</button>
     <button class="btn btn-o btn-sm" onclick="reclassifyCliTypes()">매입/매출 자동분류</button>
     <button class="btn btn-o btn-sm" onclick="openFolderMgr()">폴더 관리</button>
+    <button class="btn btn-d btn-sm" id="cliBulkDelBtn" onclick="bulkDelete('cli')" disabled>선택 삭제 (<span id="cliBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
@@ -1415,6 +1416,7 @@
       <button data-mode="summary" class="on" onclick="setProdDetailView('summary',this)">간략</button>
       <button data-mode="detail" onclick="setProdDetailView('detail',this)">상세</button>
     </div>
+    <button class="btn btn-d btn-sm" id="prodBulkDelBtn" onclick="bulkDelete('prod')" disabled>선택 삭제 (<span id="prodBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
@@ -1432,6 +1434,7 @@
 <div class="fbar">
   <div class="fbar-row">
     <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="_dMold()" class="fbar-grow">
+    <button class="btn btn-d btn-sm" id="moldBulkDelBtn" onclick="bulkDelete('mold')" disabled>선택 삭제 (<span id="moldBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
@@ -2522,8 +2525,8 @@
 
 <script src="/js/packflow-price-history.js?v=1"></script>
 <script src="/js/mes-dash.js?v=21"></script>
-<script src="/js/mes-wo.js?v=23"></script>
-<script src="/js/mes-cli.js?v=23"></script>
+<script src="/js/mes-wo.js?v=24"></script>
+<script src="/js/mes-cli.js?v=24"></script>
 <script src="/js/mes-worker.js?v=20"></script>
 <script src="/js/mes-ship.js?v=20"></script>
 <script src="/js/mes-settings.js?v=20"></script>

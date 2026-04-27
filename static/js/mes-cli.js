@@ -42,22 +42,27 @@ function _syncBulkBoxes(kind){
   });
 }
 function renderBulkBar(kind){
-  var el=$(kind+'BulkBar');
-  if(!el)return;
   var ids=_bulkIds(kind);
-  if(!ids.length){
-    el.classList.add('hidden');
-    el.innerHTML='';
-    _syncBulkBoxes(kind);
-    return;
+  /* 헤더 액션 영역의 "선택 삭제 (N)" 버튼 카운트·활성 동기화 */
+  var btn=$(kind+'BulkDelBtn'), cnt=$(kind+'BulkCount');
+  if(cnt) cnt.textContent = ids.length;
+  if(btn) btn.disabled = !ids.length;
+  /* 인라인 BulkBar (테이블 위) */
+  var el=$(kind+'BulkBar');
+  if(el){
+    if(!ids.length){
+      el.classList.add('hidden');
+      el.innerHTML='';
+    } else {
+      el.classList.remove('hidden');
+      el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 12px;border:1px solid var(--bdr);border-radius:12px;background:var(--card);box-shadow:var(--shadow-sm)">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--txt)">'+_bulkLabel(kind)+' '+ids.length+'개 선택됨</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+        '<button class="btn btn-sm btn-d" onclick="bulkDelete(\''+kind+'\')">선택 삭제</button>'+
+        '<button class="btn btn-sm btn-o" onclick="clearBulk(\''+kind+'\')">선택 해제</button>'+
+        '</div></div>';
+    }
   }
-  el.classList.remove('hidden');
-  el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 12px;border:1px solid var(--bdr);border-radius:12px;background:var(--card);box-shadow:var(--shadow-sm)">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--txt)">'+_bulkLabel(kind)+' '+ids.length+'개 선택됨</div>'+
-    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-    '<button class="btn btn-sm btn-d" onclick="bulkDelete(\''+kind+'\')">선택 삭제</button>'+
-    '<button class="btn btn-sm btn-o" onclick="clearBulk(\''+kind+'\')">선택 해제</button>'+
-    '</div></div>';
   _syncBulkBoxes(kind);
 }
 function toggleBulkFromBox(box){

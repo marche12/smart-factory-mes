@@ -207,7 +207,7 @@ def merge_customer_type(current, evidence):
 
 
 def convert_customers(rows):
-    """얼마에요 거래처 → 팩플로우 cli 형식"""
+    """얼마에요 거래처 → 팩플로우 cli 형식 (Slip 스키마 기준 컬럼 호환)"""
     clients = []
     seen = set()
     for r in rows:
@@ -218,7 +218,15 @@ def convert_customers(rows):
 
         ct = (r.get("customerType") or "").strip()
         note = (r.get("note") or "").strip()
-        ctype = infer_customer_type(ct, note)
+        memo = (r.get("memo") or "").strip()
+        full_note = (note + (("\n" + memo) if memo else "")).strip()
+        ctype = infer_customer_type(ct, full_note)
+
+        # 전화: CompanyTelephone > Handphone > HomeTelephone 순으로 우선 적용
+        tel = (r.get("tel") or "").strip()
+        handphone = (r.get("handphone") or "").strip()
+        hometel = (r.get("hometel") or "").strip()
+        primary_tel = tel or handphone or hometel
 
         clients.append({
             "id": gid(),
@@ -228,15 +236,21 @@ def convert_customers(rows):
             "bizType": (r.get("bizType") or "").strip(),
             "bizClass": (r.get("bizClass") or "").strip(),
             "addr": (r.get("addr") or "").strip(),
-            "tel": (r.get("tel") or "").strip(),
+            "tel": primary_tel,
+            "telCompany": tel,
+            "telHandphone": handphone,
+            "telHome": hometel,
             "fax": (r.get("fax") or "").strip(),
             "email": (r.get("email") or "").strip(),
+            "zipcode": (r.get("zipcode") or "").strip(),
             "cType": ctype,
             "cTypeRaw": ct,
             "customerType": ct,
             "contactNm": (r.get("contactNm") or "").strip(),
             "contactTel": (r.get("contactTel") or "").strip(),
-            "note": note,
+            "note": full_note,
+            "almayoBookId": (r.get("bookId") or "").strip(),
+            "almayoBookNo": (r.get("bookNo") or "").strip(),
             "ps": "",
             "cat": now_str(),
             "_src": "almayo"
@@ -325,6 +339,94 @@ def convert_balances(rows, clients):
                 cli_map[cnm]["cType"] = merge_customer_type(cli_map[cnm].get("cType"), "purchase")
 
 
+def convert_price_history(rows, clients, products):
+    """price_history.csv → priceHistory KV 형식 (packflow-price-history.js 호환)"""
+    if not rows:
+        return []
+    cli_by_nm = {c["nm"]: c for c in clients}
+    prod_by_nm = {p["nm"]: p for p in products}
+    history = []
+    for r in rows:
+        item_nm = (r.get("itemNm") or "").strip()
+        cust_nm = (r.get("customerNm") or "").strip()
+        if not item_nm:
+            continue
+        try:
+            unit = float(r.get("price") or 0)
+        except (ValueError, TypeError):
+            unit = 0
+        if not unit:
+            continue
+        try:
+            qty = float(r.get("qty") or 0)
+        except (ValueError, TypeError):
+            qty = 0
+        try:
+            amt = float(r.get("amount") or (unit * qty))
+        except (ValueError, TypeError):
+            amt = unit * qty
+        dt = (r.get("dt") or "").strip()
+        # IoCode → refType 매핑 (1=매출, 2=매입)
+        io = str(r.get("ioCode") or "").strip()
+        if io == "1":
+            ref_type = "sale"
+        elif io == "2":
+            ref_type = "purchase"
+        else:
+            ref_type = "almayo"
+        history.append({
+            "id": gid(),
+            "dt": dt[:10] if dt else "",
+            "tm": dt[:16] if dt else "",
+            "refType": ref_type,
+            "refId": "",
+            "refNo": "",
+            "cliNm": cust_nm,
+            "prodNm": item_nm,
+            "qty": qty,
+            "unitPrice": int(unit),
+            "amount": int(amt),
+            "source": "almayo",
+            "memo": (r.get("memo") or "").strip(),
+            "by": "_migrate",
+            "_src": "almayo"
+        })
+    # 최대 2000건 (packflow-price-history.js MAX 정책)
+    if len(history) > 2000:
+        history.sort(key=lambda h: h.get("dt", ""))
+        history = history[-2000:]
+    return history
+
+
+def apply_recent_prices(rows, products):
+    """recent_prices.csv → 각 품목의 lastPrice/lastPriceDt/lastCustomer 보강"""
+    if not rows:
+        return 0
+    # 품목명 또는 코드로 매칭
+    by_nm = {p["nm"]: p for p in products}
+    by_code = {p.get("code"): p for p in products if p.get("code")}
+    matched = 0
+    for r in rows:
+        item_nm = (r.get("itemNm") or "").strip()
+        item_code = (r.get("itemCode") or "").strip()
+        prod = by_nm.get(item_nm) or by_code.get(item_code)
+        if not prod:
+            continue
+        try:
+            recent_price = float(r.get("recentPrice") or 0)
+        except (ValueError, TypeError):
+            recent_price = 0
+        if not recent_price:
+            continue
+        recent_dt = (r.get("recentDt") or "").strip()
+        recent_cust = (r.get("recentCustomer") or "").strip()
+        prod["lastPrice"] = int(recent_price)
+        prod["lastPriceDt"] = recent_dt[:10] if recent_dt else ""
+        prod["lastPriceCustomer"] = recent_cust
+        matched += 1
+    return matched
+
+
 def main():
     manual_mode = "--manual" in sys.argv
 
@@ -382,6 +484,8 @@ def main():
             item_rows = read_csv("items.csv")
             comp_rows = read_csv("company.csv")
             bal_rows = read_csv("balances.csv")
+            price_history_rows = read_csv("price_history.csv")
+            recent_price_rows = read_csv("recent_prices.csv")
 
             if not cust_rows and not item_rows:
                 print("\n파일이 없습니다!")
@@ -408,6 +512,17 @@ def main():
                 has_balance = sum(1 for c in new_cli if c.get("receivable") or c.get("payable"))
                 print(f"  잔액 반영: {has_balance}건")
 
+            # 최근 적용 단가 (recent_prices.csv) → prod에 lastPrice 보강
+            if recent_price_rows:
+                matched = apply_recent_prices(recent_price_rows, new_prod)
+                print(f"  최근 단가 보강: {matched}건 / 입력 {len(recent_price_rows)}건")
+
+            # 단가 거래 이력 (price_history.csv) → priceHistory KV 저장
+            new_price_history = []
+            if price_history_rows:
+                new_price_history = convert_price_history(price_history_rows, new_cli, new_prod)
+                print(f"  단가 이력 변환: {len(new_price_history)}건 / 원본 {len(price_history_rows)}건")
+
     # 기존 + 신규 합치기 (중복 이름 제거)
     existing_names = {c["nm"] for c in existing_cli}
     for c in new_cli:
@@ -424,19 +539,38 @@ def main():
     # 저장
     set_db_data(db, "cli", existing_cli)
     set_db_data(db, "prod", existing_prod)
+
+    # priceHistory 합쳐서 저장 (이미 있으면 _src='almayo' 만 갱신)
+    added_history = 0
+    if not manual_mode and 'new_price_history' in dir() and new_price_history:
+        existing_ph = get_db_data(db, "priceHistory")
+        # _src='almayo' 인 기존 이관 이력은 제거 (재이관 시 중복 방지)
+        existing_ph = [h for h in existing_ph if h.get("_src") != "almayo"]
+        merged_ph = existing_ph + new_price_history
+        # 최대 2000건 (오래된 순 drop)
+        if len(merged_ph) > 2000:
+            merged_ph.sort(key=lambda h: h.get("dt", ""))
+            merged_ph = merged_ph[-2000:]
+        set_db_data(db, "priceHistory", merged_ph)
+        added_history = len(new_price_history)
+
     db.commit()
     db.close()
 
     added_cli = len([c for c in existing_cli if c.get("_src") == "almayo"])
     added_prod = len([p for p in existing_prod if p.get("_src") == "almayo"])
+    last_priced = len([p for p in existing_prod if p.get("lastPrice")])
 
     print(f"\n{'='*50}")
     print(f"  이관 완료!")
     print(f"  거래처: {added_cli}건")
-    print(f"  품목: {added_prod}건")
+    print(f"  품목  : {added_prod}건 (최근 단가: {last_priced}건)")
+    if added_history:
+        print(f"  단가이력: {added_history}건")
     print(f"{'='*50}")
     print(f"\n팩플로우(http://localhost:8080)에서 확인하세요.")
     print("거래처 → 거래처 목록, 품목 → 품목 목록")
+    print("모바일 → 품목·단가 탭에서 '최근 적용 단가' 확인")
 
 
 def manual_input():

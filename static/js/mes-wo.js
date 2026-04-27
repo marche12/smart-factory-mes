@@ -80,11 +80,11 @@ function renderWOQuickBars(){
   var vendors=(DB.g('cli')||[]).filter(function(c){return c.isFavorite&&(c.isVendor||c.cType==='purchase'||c.cType==='both');}).slice(0,4);
   var templates=getWOTemplates().slice().sort(function(a,b){return (b.savedAt||'').localeCompare(a.savedAt||'');}).slice(0,4);
   cliBox.innerHTML=(favCli.length||recentCli.length)?'<span class="pack-chip ok">빠른 거래처</span>'
-    +favCli.map(function(c){return '<button class="pack-search-tag" onclick="applyWOQuickClient(\''+c.id+'\')">★ '+c.nm+'</button>';}).join('')
+    +favCli.map(function(c){return '<button class="pack-search-tag" onclick="applyWOQuickClient(\''+c.id+'\')">즐겨찾기 '+c.nm+'</button>';}).join('')
     +recentCli.filter(function(c){return !favCli.some(function(x){return x.id===c.id;});}).map(function(c){return '<button class="pack-search-tag" onclick="applyWOQuickClient(\''+c.id+'\')">'+c.nm+'</button>';}).join('')
     :'';
   prodBox.innerHTML=(favProd.length||recentProd.length||vendors.length)?'<span class="pack-chip">빠른 품목/협력사</span>'
-    +favProd.map(function(p){return '<button class="pack-search-tag" onclick="applyWOQuickProduct(\''+p.id+'\')">★ '+p.nm+'</button>';}).join('')
+    +favProd.map(function(p){return '<button class="pack-search-tag" onclick="applyWOQuickProduct(\''+p.id+'\')">즐겨찾기 '+p.nm+'</button>';}).join('')
     +recentProd.filter(function(p){return !favProd.some(function(x){return x.id===p.id;});}).map(function(p){return '<button class="pack-search-tag" onclick="applyWOQuickProduct(\''+p.id+'\')">'+p.nm+'</button>';}).join('')
     +vendors.map(function(v){return '<button class="pack-search-tag" onclick="applyWOQuickVendor(\''+v.id+'\')">협력 '+v.nm+'</button>';}).join('')
     :'';
@@ -99,7 +99,7 @@ function applyWOQuickProduct(id){
   renderWOQuickBars();
 }
 function applyWOQuickVendor(id){
-  pickVendor(id);
+  pickVendor(id,{kind:'wo'});
   renderWOQuickBars();
 }
 function saveCurrentWOTemplate(){
@@ -230,7 +230,7 @@ var cardClass=p.tp==='out'?' is-out':p.tp==='exc'?' is-exc':'';
 var procSub=p.tp!=='n'?'외주 공정':'내부 공정';
 var h='<div class="wo-proc-card'+cardClass+'"><div class="wo-proc-card-head"><div class="wo-proc-card-index">'+(i+1)+'</div><div class="wo-proc-card-copy"><div class="wo-proc-card-title">'+p.nm+'</div><div class="wo-proc-card-sub">'+procSub+'</div></div></div><div class="fr">';
 h+='<div class="fg"><label>방식</label><input value="'+(p.mt||'')+'" onchange="cProcs['+i+'].mt=this.value" placeholder="방식 또는 장비명"></div>';
-h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div>';
+h+='<div class="fg"><label>'+(p.tp!=='n'?'외주업체':'업체명')+'</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input data-proc-vendor-idx="'+i+'" value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearchForProc('+i+')">검색</button></div></div>';
 h+='<div class="fg"><label>단가 (매당)</label><input type="number" value="'+(p.price||'')+'" onchange="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" oninput="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" placeholder="0" style="text-align:right"></div>';
 h+='</div>';
 // 단가 × 수량(WO 총 수량) = 예상 금액 표시
@@ -245,10 +245,10 @@ if(p.nm==='인쇄'){
   h+='<div class="wo-inline-check"><label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="mechCoat'+i+'" '+(p.mechCoat?'checked':'')+' onchange="toggleMechCoat('+i+',this.checked)" style="width:16px;height:16px;accent-color:var(--pri)"> 기계코팅 포함 <span style="font-size:11px;color:var(--txt2);font-weight:400">(협력사에서 일괄 처리)</span></label></div>';
 }
 if(p.nm==='톰슨'){
-  h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">🔍 검색</button></div></div>';
+  h+='<div class="fg" style="margin-top:6px"><label>목형번호</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input id="moldProcInp'+i+'" value="'+(p.moldNo||'')+'" onchange="cProcs['+i+'].moldNo=this.value;$(\'woMold\').value=this.value" oninput="acMoldInProc(this.value,'+i+')" placeholder="목형번호 입력" autocomplete="off"><div id="acMoldP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openMoldSearchForProc('+i+')">검색</button></div></div>';
 }
 if(p.nm==='외주가공'){
-h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="ac-w"><input value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div></div><div class="fg"><label>단가 (매당)</label><input type="number" value="'+(p.price||'')+'" onchange="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" oninput="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" placeholder="0" style="text-align:right"></div></div>';
+h+='<div class="fr" style="margin-top:6px"><div class="fg"><label>가공 종류</label><select onchange="cProcs['+i+'].mt=this.value" style="padding:6px 8px;border:1px solid var(--bdr);border-radius:8px;font-size:12px"><option value="">선택</option><option'+(p.mt==='금박'?' selected':'')+'>금박</option><option'+(p.mt==='형압'?' selected':'')+'>형압</option><option'+(p.mt==='실크'?' selected':'')+'>실크</option><option'+(p.mt==='박'?' selected':'')+'>박</option><option'+(p.mt==='에폭시'?' selected':'')+'>에폭시</option><option'+(p.mt==='후가공'?' selected':'')+'>후가공</option><option'+(p.mt==='기타'?' selected':'')+'>기타</option></select></div><div class="fg"><label>외주 업체</label><div class="wo-inline-actions"><div class="ac-w" style="flex:1"><input data-proc-vendor-idx="'+i+'" value="'+(p.vd||'')+'" onchange="cProcs['+i+'].vd=this.value" oninput="cProcs['+i+'].vd=this.value;acVendorInProc(this.value,'+i+')" onfocus="acVendorInProc(this.value,'+i+')" onkeydown="acVdKeydown(event,'+i+')" onblur="setTimeout(function(){var l=$(\'acVdP'+i+'\');if(l)l.classList.add(\'hidden\')},200)" placeholder="업체명 입력 또는 검색" autocomplete="off"><div id="acVdP'+i+'" class="ac-l hidden" style="max-height:160px"></div></div><button type="button" class="btn btn-o btn-sm" onclick="openVendorSearchForProc('+i+')">검색</button></div></div><div class="fg"><label>단가 (매당)</label><input type="number" value="'+(p.price||'')+'" onchange="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" oninput="cProcs['+i+'].price=+this.value||0;_updateProcCost('+i+')" placeholder="0" style="text-align:right"></div></div>';
 }
 h+='</div>';
 return h;
@@ -299,7 +299,7 @@ function checkProcWarn(){
       var total=logs.reduce(function(s,d){return s+d.defect},0);
       return'<b>'+proc+'</b>: 총 '+total+'매 불량'+(reasons.length?' ('+reasons.slice(0,2).join(', ')+')':'');
     }).join(' · ');
-    warns.push('<div class="al wrn" style="border-left-color:#EF4444;background:#FEF2F2">⚠ 이전 불량 이력 있음 — '+dfHtml+'</div>');
+    warns.push('<div class="al wrn" style="border-left-color:#EF4444;background:#FEF2F2">주의: 이전 불량 이력 있음 — '+dfHtml+'</div>');
   }
   $('woWarnBox').innerHTML=warns.join('');
 }
@@ -378,10 +378,56 @@ function filterQMold(){
 
 /* ===== 거래처 검색 모달 (작업지시서용) ===== */
 /* ===== 인쇄소/외주업체 검색 모달 ===== */
-function openVendorSearch(){
+var _vendorSearchTarget={kind:'wo'};
+function _vendorTargetFromArg(target){
+  if(typeof target==='number')return{kind:'proc',idx:target};
+  if(target&&target.kind==='proc')return{kind:'proc',idx:+target.idx};
+  return{kind:'wo'};
+}
+function _resolveVendorItem(idOrName){
+  var v=String(idOrName||'');
+  var c=(DB.g('cli')||[]).find(function(x){return x.id===v||x.nm===v});
+  if(c)return{id:c.id||c.nm,nm:c.nm,tel:c.tel||'',addr:c.addr||'',mgr:c.ps||c.mgr||'',source:'cli',raw:c};
+  var vd=(DB.g('vendors')||[]).find(function(x){return x.id===v||x.nm===v});
+  if(vd)return{id:vd.id||vd.nm,nm:vd.nm,tel:vd.tel||'',addr:vd.addr||'',mgr:vd.mgr||'',source:'vendor',raw:vd};
+  return null;
+}
+function _ensureWoVendorOption(nm){
+  var sel=$('woVendor');
+  if(!sel||!nm)return;
+  if(!Array.from(sel.options).find(function(o){return o.value===nm;})){
+    var opt=document.createElement('option');opt.value=nm;opt.textContent=nm;sel.appendChild(opt);
+  }
+  sel.value=nm;
+}
+function _applyVendorPick(item,target){
+  if(!item||!item.nm)return;
+  target=_vendorTargetFromArg(target||_vendorSearchTarget);
+  if(item.source==='cli'&&item.raw&&!item.raw.isVendor){
+    var cs=DB.g('cli');
+    var c=cs.find(function(x){return x.id===item.id||x.nm===item.nm});
+    if(c&&!c.isVendor){c.isVendor=true;DB.s('cli',cs)}
+  }
+  if(target.kind==='proc'&&cProcs[target.idx]){
+    cProcs[target.idx].vd=item.nm;
+    document.querySelectorAll('[data-proc-vendor-idx="'+target.idx+'"]').forEach(function(input){
+      input.value=item.nm;
+    });
+    toast((cProcs[target.idx].nm||'공정')+' 업체 선택: '+item.nm,'ok');
+  }else{
+    _ensureWoVendorOption(item.nm);
+    toast(item.nm+' 협력사 선택','ok');
+  }
+  if(typeof SearchUtil!=='undefined'&&SearchUtil.saveRecentPick)SearchUtil.saveRecentPick('vendor',{id:item.id||item.nm,label:item.nm,meta:item.tel||''});
+  renderWOQuickBars();
+  _vendorSearchTarget={kind:'wo'};
+}
+function openVendorSearch(target){
+  _vendorSearchTarget=_vendorTargetFromArg(target);
+  var isProc=_vendorSearchTarget.kind==='proc'&&cProcs[_vendorSearchTarget.idx];
   openPackSearchModal({
-    title:'협력사 / 외주처 검색',
-    subTitle:'업체명, 전화번호, 주소와 최근 구분을 함께 찾습니다.',
+    title:isProc?'공정 업체 검색':'협력사 / 외주처 검색',
+    subTitle:isProc?((cProcs[_vendorSearchTarget.idx].nm||'공정')+'에 배정할 업체를 선택합니다.'):'업체명, 전화번호, 주소와 최근 구분을 함께 찾습니다.',
     placeholder:'협력사명, 전화번호, 주소 검색',
     historyKey:'vendor',
     fields:['nm','tel','addr','mgr'],
@@ -401,7 +447,9 @@ function openVendorSearch(){
           tel:c.tel||'',
           addr:c.addr||'',
           mgr:c.ps||c.mgr||'',
-          type:t
+          type:t,
+          source:'cli',
+          raw:c
         };
       });
       (DB.g('vendors')||[]).forEach(function(v){
@@ -412,7 +460,9 @@ function openVendorSearch(){
           tel:v.tel||'',
           addr:v.addr||'',
           mgr:v.mgr||'',
-          type:v.type==='out'?'외주가공':'협력사'
+          type:v.type==='out'?'외주가공':'협력사',
+          source:'vendor',
+          raw:v
         };
       });
       return Object.keys(cliMap).map(function(key){return cliMap[key]}).sort(function(a,b){return (a.nm||'').localeCompare(b.nm||'')});
@@ -425,14 +475,12 @@ function openVendorSearch(){
       };
     },
     onPick:function(item){
-      var sel=$('woVendor');
-      if(sel&&!Array.from(sel.options).find(function(o){return o.value===item.nm;})){
-        var opt=document.createElement('option');opt.value=item.nm;opt.textContent=item.nm;sel.appendChild(opt);
-      }
-      if(sel)sel.value=item.nm;
-      toast(item.nm+' 협력사 선택','ok');
+      _applyVendorPick(item,_vendorSearchTarget);
     }
   });
+}
+function openVendorSearchForProc(idx){
+  openVendorSearch({kind:'proc',idx:idx});
 }
 function filterVendorSearch(){
   var v=($('vdSchInput')?$('vdSchInput').value:'').toLowerCase();
@@ -470,22 +518,10 @@ function filterVendorSearch(){
   }
   $('vdSchList').innerHTML=h;
 }
-function pickVendor(id){
-  var cs=DB.g('cli');
-  var c=cs.find(function(x){return x.id===id});if(!c)return;
-  // 인쇄소로 자동 태깅
-  if(!c.isVendor){c.isVendor=true;DB.s('cli',cs)}
-  var sel=$('woVendor');
-  if(sel){
-    if(!Array.from(sel.options).find(function(o){return o.value===c.nm})){
-      var opt=document.createElement('option');opt.value=c.nm;opt.textContent=c.nm;sel.appendChild(opt);
-    }
-    sel.value=c.nm;
-  }
-  if(typeof SearchUtil!=='undefined'&&SearchUtil.saveRecentPick)SearchUtil.saveRecentPick('vendor',{id:c.id,label:c.nm,meta:c.tel||''});
-  cMo('vendorSearchMo');
-  renderWOQuickBars();
-  toast(c.nm+' 협력사로 선택됨','ok');
+function pickVendor(id,target){
+  var item=_resolveVendorItem(id);if(!item)return;
+  _applyVendorPick(item,target);
+  if($('vendorSearchMo'))cMo('vendorSearchMo');
 }
 function showQuickVendorForm(){
   var nm=($('vdSchInput')?$('vdSchInput').value.trim():'');
@@ -723,9 +759,9 @@ function filterDlvSearch(){
       h+='<div onclick="pickDlv(\''+payload+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">';
       h+='<div style="min-width:0;flex:1"><div style="font-weight:700;font-size:14px">'+d.nm+(d.parent?' <span style="font-weight:400;color:var(--txt3);font-size:12px">('+d.parent+')</span>':'')+'</div>';
       var sub=[];
-      if(d.addr)sub.push('📍 '+d.addr.slice(0,35));
-      if(d.mgr)sub.push('👤 '+d.mgr);
-      if(d.tel)sub.push('📞 '+d.tel);
+      if(d.addr)sub.push('주소 '+d.addr.slice(0,35));
+      if(d.mgr)sub.push('담당 '+d.mgr);
+      if(d.tel)sub.push('전화 '+d.tel);
       h+='<div style="font-size:12px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+sub.join(' | ')+'</div></div>';
       h+=badge;
       h+='</div>';
@@ -1102,6 +1138,7 @@ function pickAcVd(el,idx){
   _acVdIdx=-1;
 }
 function acVdKeydown(e,idx){
+  if(e.key==='F3'||e.key==='F4'){e.preventDefault();openVendorSearchForProc(idx);return}
   var l=$('acVdP'+idx);if(!l||l.classList.contains('hidden'))return;
   var items=l.querySelectorAll('.ac-i');if(!items.length)return;
   if(e.key==='ArrowDown'){e.preventDefault();_acVdIdx=Math.min(_acVdIdx+1,items.length-1);_hlAcVd(items)}
@@ -1671,7 +1708,7 @@ var hw=$('compHistWarn');if(hw){
   if(prevDf.length){
     var recent=prevDf.slice().sort(function(a,b){return b.dt>a.dt?1:-1}).slice(0,3);
     hw.innerHTML='<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:12px">'
-      +'<div style="font-weight:700;color:#92400E;margin-bottom:4px">⚠ 이 공정 이전 불량 이력</div>'
+      +'<div style="font-weight:700;color:#92400E;margin-bottom:4px">주의: 이 공정 이전 불량 이력</div>'
       +recent.map(function(d){return'<div style="color:#78350F;margin-bottom:2px">'+d.dt+' · '+d.defect+'매 · <b>'+( d.reason||'사유없음')+'</b></div>'}).join('')
       +'</div>';
   }else{hw.innerHTML=''}

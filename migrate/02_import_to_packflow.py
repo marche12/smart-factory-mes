@@ -179,6 +179,33 @@ def set_db_data(db, key, data):
     )
 
 
+def infer_customer_type(*texts, receivable=0, payable=0):
+    """얼마에요 거래처 유형/잔액 문구를 팩플로우 cType으로 변환."""
+    s = "".join(str(t or "") for t in texts).lower().replace(" ", "")
+    has_sales = any(k in s for k in ["매출", "판매", "수금", "받을", "customer", "sales"])
+    has_purchase = any(k in s for k in ["매입", "구매", "외주", "협력", "공급", "지급", "줄돈", "vendor", "purchase"])
+    if any(k in s for k in ["both", "양쪽", "겸", "공통", "매출매입", "매입매출"]) or (has_sales and has_purchase):
+        return "both"
+    if receivable and payable:
+        return "both"
+    if has_purchase or payable:
+        return "purchase"
+    if has_sales or receivable:
+        return "sales"
+    return "sales"
+
+
+def merge_customer_type(current, evidence):
+    current = current or "sales"
+    if not evidence or current == evidence:
+        return current
+    if "both" in (current, evidence):
+        return "both"
+    if {current, evidence} == {"sales", "purchase"}:
+        return "both"
+    return evidence or current
+
+
 def convert_customers(rows):
     """얼마에요 거래처 → 팩플로우 cli 형식"""
     clients = []
@@ -189,14 +216,9 @@ def convert_customers(rows):
             continue
         seen.add(nm)
 
-        # 유형 판별: customerType에 '매입'이 포함되면 매입처
         ct = (r.get("customerType") or "").strip()
-        if "매입" in ct or "구매" in ct:
-            ctype = "purchase"
-        elif "겸" in ct or "겸용" in ct:
-            ctype = "both"
-        else:
-            ctype = "sales"
+        note = (r.get("note") or "").strip()
+        ctype = infer_customer_type(ct, note)
 
         clients.append({
             "id": gid(),
@@ -210,9 +232,11 @@ def convert_customers(rows):
             "fax": (r.get("fax") or "").strip(),
             "email": (r.get("email") or "").strip(),
             "cType": ctype,
+            "cTypeRaw": ct,
+            "customerType": ct,
             "contactNm": (r.get("contactNm") or "").strip(),
             "contactTel": (r.get("contactTel") or "").strip(),
-            "note": (r.get("note") or "").strip(),
+            "note": note,
             "ps": "",
             "cat": now_str(),
             "_src": "almayo"
@@ -295,8 +319,10 @@ def convert_balances(rows, clients):
         if cnm in cli_map:
             if balance > 0:
                 cli_map[cnm]["receivable"] = int(balance)
+                cli_map[cnm]["cType"] = merge_customer_type(cli_map[cnm].get("cType"), "sales")
             elif balance < 0:
                 cli_map[cnm]["payable"] = int(abs(balance))
+                cli_map[cnm]["cType"] = merge_customer_type(cli_map[cnm].get("cType"), "purchase")
 
 
 def main():

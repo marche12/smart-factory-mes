@@ -4,11 +4,266 @@ var _dCli=debounce(function(){_cliPage=0;rCli()},200);
 var _dProd=debounce(function(){_prodPage=0;rProd()},200);
 var _dMold=debounce(function(){_moldPage=0;rMold()},200);
 
+// 일괄 선택/삭제 공통 도구
+var _bulkSel={cli:{},prod:{},mold:{}};
+var _bulkVisible={cli:[],prod:[],mold:[]};
+function _bulkAttr(v){
+  return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function _bulkLabel(kind){
+  return kind==='cli'?'거래처':kind==='prod'?'품목':'목형';
+}
+function _bulkIds(kind){
+  var m=_bulkSel[kind]||{};
+  return Object.keys(m).filter(function(id){return !!m[id];});
+}
+function _bulkIsChecked(kind,id){
+  return !!((_bulkSel[kind]||{})[id]);
+}
+function _bulkHead(kind){
+  var ids=_bulkVisible[kind]||[];
+  var checked=ids.length&&ids.every(function(id){return _bulkIsChecked(kind,id);});
+  return '<input type="checkbox" data-bulk-head="'+kind+'" '+(checked?'checked':'')+' onchange="toggleBulkVisible(\''+kind+'\',this.checked)" onclick="event.stopPropagation()" title="현재 페이지 전체 선택">';
+}
+function _bulkCell(kind,id){
+  return '<td class="bulk-cell" onclick="event.stopPropagation()" style="text-align:center">'+
+    '<input type="checkbox" data-bulk-kind="'+kind+'" data-bulk-id="'+_bulkAttr(id)+'" '+(_bulkIsChecked(kind,id)?'checked':'')+' onchange="toggleBulkFromBox(this)" onclick="event.stopPropagation()">'+
+    '</td>';
+}
+function _syncBulkBoxes(kind){
+  var ids=_bulkVisible[kind]||[];
+  var selected=ids.filter(function(id){return _bulkIsChecked(kind,id);}).length;
+  document.querySelectorAll('input[data-bulk-kind="'+kind+'"]').forEach(function(box){
+    box.checked=_bulkIsChecked(kind,box.dataset.bulkId);
+  });
+  document.querySelectorAll('input[data-bulk-head="'+kind+'"]').forEach(function(box){
+    box.checked=!!(ids.length&&selected===ids.length);
+    box.indeterminate=!!(selected&&selected<ids.length);
+  });
+}
+function renderBulkBar(kind){
+  var el=$(kind+'BulkBar');
+  if(!el)return;
+  var ids=_bulkIds(kind);
+  if(!ids.length){
+    el.classList.add('hidden');
+    el.innerHTML='';
+    _syncBulkBoxes(kind);
+    return;
+  }
+  el.classList.remove('hidden');
+  el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 12px;border:1px solid var(--bdr);border-radius:12px;background:var(--card);box-shadow:var(--shadow-sm)">'+
+    '<div style="font-size:13px;font-weight:700;color:var(--txt)">'+_bulkLabel(kind)+' '+ids.length+'개 선택됨</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    '<button class="btn btn-sm btn-d" onclick="bulkDelete(\''+kind+'\')">선택 삭제</button>'+
+    '<button class="btn btn-sm btn-o" onclick="clearBulk(\''+kind+'\')">선택 해제</button>'+
+    '</div></div>';
+  _syncBulkBoxes(kind);
+}
+function toggleBulkFromBox(box){
+  if(!box)return;
+  toggleBulk(box.dataset.bulkKind,box.dataset.bulkId,box.checked);
+}
+function toggleBulk(kind,id,checked){
+  if(!_bulkSel[kind])_bulkSel[kind]={};
+  if(checked)_bulkSel[kind][id]=true;
+  else delete _bulkSel[kind][id];
+  renderBulkBar(kind);
+}
+function toggleBulkVisible(kind,checked){
+  if(!_bulkSel[kind])_bulkSel[kind]={};
+  (_bulkVisible[kind]||[]).forEach(function(id){
+    if(checked)_bulkSel[kind][id]=true;
+    else delete _bulkSel[kind][id];
+  });
+  renderBulkBar(kind);
+}
+function _renderBulkTarget(kind){
+  if(kind==='cli')rCli();
+  else if(kind==='prod')rProd();
+  else if(kind==='mold')rMold();
+}
+function clearBulk(kind,skipRender){
+  _bulkSel[kind]={};
+  renderBulkBar(kind);
+  if(!skipRender)_renderBulkTarget(kind);
+}
+function _bulkIdMap(ids){
+  return ids.reduce(function(m,id){m[id]=true;return m;},{});
+}
+function _bulkDeleteCli(ids){
+  var cs=DB.g('cli')||[];
+  var linked=[], deletable=[];
+  ids.forEach(function(id){
+    if(!cs.some(function(c){return c.id===id;}))return;
+    var usage=_getCliDeleteUsage(id);
+    if(usage.total)linked.push(id);
+    else deletable.push(id);
+  });
+  if(!deletable.length&&!linked.length){toast('선택 항목을 찾을 수 없습니다','err');return}
+  if(deletable.length){
+    var msg='선택한 거래처 '+ids.length+'개 중 삭제 가능 '+deletable.length+'개, 연결되어 삭제 불가 '+linked.length+'개입니다.\n\n삭제 가능한 거래처를 삭제할까요?';
+    if(!confirm(msg))return;
+    var delMap=_bulkIdMap(deletable);
+    DB.s('cli',cs.filter(function(c){return !delMap[c.id];}));
+  }
+  var dormant=0;
+  if(linked.length){
+    var ask='연결된 거래처 '+linked.length+'개는 삭제할 수 없습니다.\n대신 휴면 거래처로 전환할까요?';
+    if(confirm(ask)){
+      var linkMap=_bulkIdMap(linked);
+      var latest=DB.g('cli')||[];
+      latest.forEach(function(c){
+        if(linkMap[c.id]&&!c.isDormant){
+          c.isDormant=true;
+          c.dormantAt=td();
+          dormant++;
+        }
+      });
+      DB.s('cli',latest);
+    }
+  }
+  clearBulk('cli',true);
+  rCli();
+  toast('거래처 정리 완료: 삭제 '+deletable.length+'건'+(linked.length?' / 연결 '+linked.length+'건':'')+(dormant?' / 휴면 '+dormant+'건':''),'ok');
+}
+function _bulkDeleteLinked(kind,ids,usageFn,key,renderFn){
+  var rows=DB.g(key)||[];
+  var linked=[], deletable=[];
+  ids.forEach(function(id){
+    if(!rows.some(function(r){return r.id===id;}))return;
+    var usage=usageFn(id);
+    if(usage.total)linked.push({id:id,text:usage.text});
+    else deletable.push(id);
+  });
+  if(!deletable.length&&!linked.length){toast('선택 항목을 찾을 수 없습니다','err');return}
+  var msg='선택한 '+_bulkLabel(kind)+' '+ids.length+'개 중 삭제 가능 '+deletable.length+'개, 연결되어 삭제 불가 '+linked.length+'개입니다.';
+  if(linked.length)msg+='\n\n연결된 항목은 삭제하지 않고 유지합니다.';
+  if(deletable.length&&!confirm(msg+'\n\n삭제 가능한 항목을 삭제할까요?'))return;
+  if(deletable.length){
+    var delMap=_bulkIdMap(deletable);
+    DB.s(key,rows.filter(function(r){return !delMap[r.id];}));
+  }else if(linked.length){
+    alert(msg);
+  }
+  clearBulk(kind,true);
+  renderFn();
+  toast(_bulkLabel(kind)+' 정리 완료: 삭제 '+deletable.length+'건'+(linked.length?' / 차단 '+linked.length+'건':''),'ok');
+}
+function bulkDelete(kind){
+  var ids=_bulkIds(kind);
+  if(!ids.length){toast('선택된 항목이 없습니다','err');return}
+  if(kind==='cli')return _bulkDeleteCli(ids);
+  if(kind==='prod')return _bulkDeleteLinked('prod',ids,_getProdDeleteUsage,'prod',rProd);
+  if(kind==='mold')return _bulkDeleteLinked('mold',ids,_getMoldDeleteUsage,'mold',rMold);
+}
+
 // CLIENT
 var _cliView='table';
 function setCliView(v,btn){_cliView=v;_cliPage=0;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('cliTableView'),g=$('cliGalleryView');if(t)t.style.display=v==='table'?'':'none';if(g)g.style.display=v==='gallery'?'':'none';rCli()}
 function _cliDormant(c){return !!(c&&c.isDormant)}
 function _cliFavorite(c){return !!(c&&c.isFavorite)}
+function _cliNormName(v){return String(v||'').trim();}
+function _cliSameName(a,b){return _cliNormName(a)===_cliNormName(b)}
+function _cliParseTypeText(raw){
+  var s=String(raw||'').toLowerCase().replace(/\s+/g,'');
+  if(!s)return '';
+  var hasSales=s.indexOf('매출')>=0||s.indexOf('판매')>=0||s.indexOf('수금')>=0||s.indexOf('받을')>=0||s.indexOf('customer')>=0||s.indexOf('sales')>=0;
+  var hasPurchase=s.indexOf('매입')>=0||s.indexOf('구매')>=0||s.indexOf('외주')>=0||s.indexOf('협력')>=0||s.indexOf('공급')>=0||s.indexOf('지급')>=0||s.indexOf('줄돈')>=0||s.indexOf('vendor')>=0||s.indexOf('purchase')>=0;
+  if(s.indexOf('both')>=0||s.indexOf('양쪽')>=0||s.indexOf('겸')>=0||s.indexOf('공통')>=0||s.indexOf('매출매입')>=0||s.indexOf('매입매출')>=0||(hasSales&&hasPurchase))return 'both';
+  if(hasPurchase)return 'purchase';
+  if(hasSales)return 'sales';
+  return '';
+}
+function _cliNameSet(rows){
+  var m={};
+  (rows||[]).forEach(function(r){
+    var nm=_cliNormName(r&&((r.cli||r.cnm||r.nm||r.client||r.vendor||r.vd||r.cusNm||r.customerNm)));
+    if(nm)m[nm]=true;
+  });
+  return m;
+}
+function _inferCliType(c,sets){
+  if(!c)return {type:'sales',reason:'기본값'};
+  var textType=_cliParseTypeText([c.cTypeRaw,c.customerType,c.type,c.kind,c.gubun,c.folderNm,c.nt,c.note,c.memo].filter(Boolean).join(' '));
+  var nm=_cliNormName(c.nm);
+  var salesHit=!!(sets.sales[nm]||sets.ship[nm]||sets.order[nm]||sets.quote[nm]||sets.wo[nm]||sets.prod[nm]||(+c.receivable>0));
+  var purchaseHit=!!(sets.purchase[nm]||sets.income[nm]||sets.po[nm]||sets.vendor[nm]||(+c.payable>0));
+  if(textType==='both')return {type:'both',reason:'유형문구'};
+  if(textType==='purchase')purchaseHit=true;
+  if(textType==='sales')salesHit=true;
+  if(c.isVendor)purchaseHit=true;
+  if(purchaseHit&&salesHit)return {type:'both',reason:'매입+매출 이력'};
+  if(purchaseHit)return {type:'purchase',reason:textType==='purchase'?'유형문구':'매입/외주 이력'};
+  if(salesHit)return {type:'sales',reason:textType==='sales'?'유형문구':'매출/작업 이력'};
+  var current=c.cType||'sales';
+  if(current==='purchase'||current==='both')return {type:current,reason:'기존구분'};
+  return {type:'sales',reason:'기본값'};
+}
+function buildCliTypeSets(){
+  return {
+    sales:_cliNameSet(DB.g('sales')),
+    purchase:_cliNameSet(DB.g('purchase')),
+    ship:_cliNameSet(DB.g('shipLog')),
+    income:_cliNameSet(DB.g('income')),
+    po:_cliNameSet(DB.g('po')),
+    vendor:_cliNameSet(DB.g('vendors')),
+    prod:_cliNameSet(DB.g('prod')),
+    order:_cliNameSet(typeof getOrders==='function'?getOrders():DB.g('orders')),
+    quote:_cliNameSet(DB.g('quotes')),
+    wo:_cliNameSet(DB.g('wo'))
+  };
+}
+function reclassifyCliTypes(){
+  var cs=DB.g('cli')||[];
+  if(!cs.length){toast('거래처 데이터가 없습니다','err');return}
+  if(!confirm('거래처를 매출처/매입처/겸용으로 자동 분류합니다.\n기준: 얼마에요 유형 문구, 매출/매입 장부, 작업/출고/입고/발주/외주 이력, 미수/미지급 잔액\n\n계속할까요?'))return;
+  var sets=buildCliTypeSets();
+  var changed=0, sales=0, purchase=0, both=0;
+  cs.forEach(function(c){
+    var old=c.cType||'sales';
+    var inf=_inferCliType(c,sets);
+    c.cType=inf.type;
+    c.cTypeAutoReason=inf.reason;
+    c.cTypeAutoAt=nw();
+    if(c.cType==='purchase'||c.cType==='both'){
+      var t=_cliParseTypeText([c.cTypeRaw,c.customerType,c.type,c.kind,c.gubun,c.nt,c.note].filter(Boolean).join(' '));
+      if(t==='purchase'||t==='both'||c.cTypeAutoReason.indexOf('외주')>=0)c.isVendor=!!c.isVendor;
+    }
+    if(old!==c.cType)changed++;
+    if(c.cType==='both')both++;
+    else if(c.cType==='purchase')purchase++;
+    else sales++;
+  });
+  DB.s('cli',cs);
+  _cliPage=0;
+  rCli();
+  toast('자동분류 완료: 변경 '+changed+'건 / 매출 '+sales+' · 매입 '+purchase+' · 겸용 '+both,'ok');
+}
+var _cliTypeAutoChecked=false;
+function autoReclassifyCliTypesIfNeeded(){
+  if(_cliTypeAutoChecked)return;
+  _cliTypeAutoChecked=true;
+  var cs=DB.g('cli')||[];
+  if(!cs.length)return;
+  var sets=buildCliTypeSets();
+  var changed=0;
+  cs.forEach(function(c){
+    var old=c.cType||'sales';
+    var inf=_inferCliType(c,sets);
+    if(inf.reason==='기본값'||inf.reason==='기존구분')return;
+    if(old!==inf.type){
+      c.cType=inf.type;
+      c.cTypeAutoReason=inf.reason;
+      c.cTypeAutoAt=nw();
+      changed++;
+    }
+  });
+  if(changed){
+    DB.s('cli',cs);
+    if(typeof toast==='function')toast('거래처 매입/매출 자동 보정 '+changed+'건','ok');
+  }
+}
 function _cliSort(a,b){
   if(_cliFavorite(a)!==_cliFavorite(b))return _cliFavorite(a)?-1:1;
   if(_cliDormant(a)!==_cliDormant(b))return _cliDormant(a)?1:-1;
@@ -51,6 +306,7 @@ function _cliLastTrade(c){
 }
 function rCli(page){
   if(typeof page==='number')_cliPage=page;
+  autoReclassifyCliTypesIfNeeded();
   refreshFolderSelects();
   const s=($('cliSch')?.value||'').toLowerCase();
   var tf=$('cliTypeFilter')?$('cliTypeFilter').value:'';
@@ -95,22 +351,24 @@ function rCli(page){
     `<div class="sb orange"><div class="l">매입처</div><div class="v">${purchCnt}</div></div>`+
     `<div class="sb purple"><div class="l">활성 거래처</div><div class="v">${activeCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">휴면 ${dormantCnt}개</div></div>`;
   var pg=paginate(cs,_cliPage);var vis=pg.items;
+  _bulkVisible.cli=vis.map(function(c){return c.id;});
   if(_cliView==='table'){
+    $('cliTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('cli')+'</th><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr>';
     if(tf==='vendor'){
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
         var favBadge=_cliFavorite(c)?'<span class="bd bd-p">★</span> ':'';
         var last=_cliLastTrade(c);
         var recentCell=last.dt==='-'?'<span style="color:var(--txt3)">거래 없음</span>':('<b>'+last.dt+'</b>');
-        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')"><td style="font-weight:700">${favBadge}${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.ps||c.ceo||'-'}</td><td>${c.tel||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
-      }).join(''):'<tr><td colspan="7" class="empty-cell">인쇄소 없음</td></tr>';
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.ps||c.ceo||'-'}</td><td>${c.tel||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+      }).join(''):'<tr><td colspan="8" class="empty-cell">인쇄소 없음</td></tr>';
     }else{
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
         var favBadge=_cliFavorite(c)?'<span class="bd bd-p">★</span> ':'';
         var last=_cliLastTrade(c);
         var recentCell=last.dt==='-'?'<span style="color:var(--txt3)">거래 없음</span>':('<b>'+last.dt+'</b>'+(last.prod?'<div style="font-size:11px;color:var(--txt2);margin-top:2px">'+last.prod+'</div>':''));
         var contact=(c.tel||'')+(c.ps?'<div style="font-size:11px;color:var(--txt2);margin-top:2px">'+c.ps+'</div>':'');
-        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')"><td style="font-weight:700">${favBadge}${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.ps||c.ceo||'-'}</td><td>${contact||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="event.stopPropagation();openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
-      }).join(''):'<tr><td colspan="7" class="empty-cell">거래처 없음</td></tr>';
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.ps||c.ceo||'-'}</td><td>${contact||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="event.stopPropagation();openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+      }).join(''):'<tr><td colspan="8" class="empty-cell">거래처 없음</td></tr>';
     }
   }else{
     var html=vis.length?'<div class="gal">'+vis.map(c=>{var st=_cliStats(c);var ini=c.nm.charAt(0);var av=st.grade==='A'?'':st.grade==='B'?'gold':'';
@@ -125,6 +383,7 @@ function rCli(page){
     }).join('')+'</div>':'<div class="empty-state"><div class="msg">거래처 없음</div></div>';
     $('cliGalleryArea').innerHTML=html;
   }
+  renderBulkBar('cli');
   renderPager('cliPager',pg,function(p){_cliPage=p;rCli()});
 }
 async function checkBizStatusInline(){
@@ -581,18 +840,19 @@ function rProd(page){
     `<div class="sb orange"><div class="l">평균 단가</div><div class="v">${avgPrice.toLocaleString()}<span style="font-size:14px">원</span></div></div>`+
     `<div class="sb purple"><div class="l">거래처 수</div><div class="v">${clientCnt}</div><div style="font-size:11px;color:var(--txt2);margin-top:6px;font-weight:600">즐겨찾기 ${favCnt}개</div></div>`;
   var pg=paginate(ps,_prodPage);var vis=pg.items;
+  _bulkVisible.prod=vis.map(function(p){return p.id;});
   if(_prodView==='table'){
     $('prodTbl').querySelector('thead').innerHTML=_prodDetailView==='detail'
-      ?'<tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>최근</th><th>관리</th></tr>'
-      :'<tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>최근 작업</th><th>관리</th></tr>';
+      ?'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>최근</th><th>관리</th></tr>'
+      :'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>최근 작업</th><th>관리</th></tr>';
     $('prodTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(p){
       var st=_prodUsageStats(p);
       var nm='<span style="font-weight:700">'+p.nm+'</span>'+(_prodFavorite(p)?' <span class="bd bd-p">★</span>':'');
       if(_prodDetailView==='detail'){
-        return `<tr oncontextmenu="return openProdContextMenu(event,'${p.id}')" onclick="openProdLedgerPanel('${p.id}')"><td style="font-weight:700;color:var(--pri)">${p.code||'-'}</td><td>${nm}</td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${p.paper||'-'}</td><td>${p.spec||'-'}</td><td>${(p.procs||[]).map(x=>x.nm).join(' > ')}</td><td>${st.lastDt}${st.woCount?(' · '+st.woCount+'건'):''}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dProd('${p.id}')">삭제</button></td></tr>`;
+        return `<tr oncontextmenu="return openProdContextMenu(event,'${p.id}')" onclick="openProdLedgerPanel('${p.id}')">${_bulkCell('prod',p.id)}<td style="font-weight:700;color:var(--pri)">${p.code||'-'}</td><td>${nm}</td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${p.paper||'-'}</td><td>${p.spec||'-'}</td><td>${(p.procs||[]).map(x=>x.nm).join(' > ')}</td><td>${st.lastDt}${st.woCount?(' · '+st.woCount+'건'):''}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dProd('${p.id}')">삭제</button></td></tr>`;
       }
-      return `<tr oncontextmenu="return openProdContextMenu(event,'${p.id}')" onclick="openProdLedgerPanel('${p.id}')"><td style="font-weight:700;color:var(--pri)">${p.code||'-'}</td><td>${nm}<div style="font-size:11px;color:var(--txt2);margin-top:3px">${p.spec||p.paper||'-'}</div></td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${st.woCount?st.woCount+'건':'이력 없음'}<div style="font-size:11px;color:var(--txt2);margin-top:3px">${st.lastDt}</div></td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dProd('${p.id}')">삭제</button></td></tr>`;
-    }).join(''):'<tr><td colspan="'+(_prodDetailView==='detail'?9:6)+'" class="empty-cell">품목 없음</td></tr>';
+      return `<tr oncontextmenu="return openProdContextMenu(event,'${p.id}')" onclick="openProdLedgerPanel('${p.id}')">${_bulkCell('prod',p.id)}<td style="font-weight:700;color:var(--pri)">${p.code||'-'}</td><td>${nm}<div style="font-size:11px;color:var(--txt2);margin-top:3px">${p.spec||p.paper||'-'}</div></td><td>${p.cnm}</td><td style="text-align:right">${p.price?p.price.toLocaleString()+'원':'-'}</td><td>${st.woCount?st.woCount+'건':'이력 없음'}<div style="font-size:11px;color:var(--txt2);margin-top:3px">${st.lastDt}</div></td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eProd('${p.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dProd('${p.id}')">삭제</button></td></tr>`;
+    }).join(''):'<tr><td colspan="'+(_prodDetailView==='detail'?10:7)+'" class="empty-cell">품목 없음</td></tr>';
   }else{
     var html=vis.length?'<div class="gal">'+vis.map(function(p){var ini=(p.code||p.nm).charAt(0);
       var st=_prodUsageStats(p);
@@ -609,6 +869,7 @@ function rProd(page){
     }).join('')+'</div>':'<div class="empty-state"><div class="msg">품목 없음</div></div>';
     $('prodGalleryArea').innerHTML=html;
   }
+  renderBulkBar('prod');
   renderPager('prodPager',pg,function(p){_prodPage=p;rProd()});
 }
 function acPmCli(v){const l=$('acPmCliL');const cs=DB.g('cli').filter(c=>!v||!v.trim()||v.trim()===' '||c.nm.toLowerCase().includes(v.toLowerCase()));if(!cs.length){l.classList.add('hidden');return}l.innerHTML=cs.map(c=>{var sn=c.nm.replace(/'/g,"&#39;");return`<div class="ac-i" onclick="$('pmCli').value='${sn}';$('acPmCliL').classList.add('hidden');if(!$('pmCode').value||$('pmCode').value.indexOf('-')>0)$('pmCode').value=genProdCode('${sn}')">${c.nm}<span style="float:right;font-size:11px;color:var(--txt2)">${c.ps||''}</span></div>`}).join('');l.classList.remove('hidden')}
@@ -762,13 +1023,50 @@ function rMold(page){
     `<div class="sb orange"><div class="l">보관중</div><div class="v">${idle}</div></div>`+
     `<div class="sb red"><div class="l">폐기</div><div class="v">${disposed}</div></div>`;
   var pg=paginate(ms,_moldPage);var vis=pg.items;
-  $('moldTbl').querySelector('tbody').innerHTML=vis.length?vis.map(m=>`<tr><td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty-cell">목형 없음</td></tr>';
+  _bulkVisible.mold=vis.map(function(m){return m.id;});
+  $('moldTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('mold')+'</th><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr>';
+  $('moldTbl').querySelector('tbody').innerHTML=vis.length?vis.map(m=>`<tr>${_bulkCell('mold',m.id)}<td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-cell">목형 없음</td></tr>';
+  renderBulkBar('mold');
   renderPager('moldPager',pg,function(p){_moldPage=p;rMold()});
 }
 function openMoldM(){['mmId','mmNo','mmProd','mmCli','mmLoc','mmNt'].forEach(x=>$(x).value='');$('mmSt').value='사용중';$('moldMoT').textContent='목형 등록';oMo('moldMo')}
 function eMold(id){const m=DB.g('mold').find(x=>x.id===id);if(!m)return;$('mmId').value=m.id;$('mmNo').value=m.no;$('mmProd').value=m.pnm||'';$('mmCli').value=m.cnm||'';$('mmLoc').value=m.loc||'';$('mmSt').value=m.st;$('mmNt').value=m.nt||'';$('moldMoT').textContent='목형 수정';oMo('moldMo')}
 function saveMold(){const no=$('mmNo').value.trim();if(!no){toast('목형번호 필요','err');return}const id=$('mmId').value||gid();const ms=DB.g('mold');const ei=ms.findIndex(x=>x.id===id);const m={id,no,pnm:$('mmProd').value,cnm:$('mmCli').value,loc:$('mmLoc').value,st:$('mmSt').value,nt:$('mmNt').value,cat:ei>=0?ms[ei].cat:nw()};if(ei>=0)ms[ei]=m;else ms.push(m);DB.s('mold',ms);cMo('moldMo');rMold();toast('저장','ok')}
-function dMold(id){if(!confirm('삭제?'))return;DB.s('mold',DB.g('mold').filter(x=>x.id!==id));rMold();toast('삭제','ok')}
+function _getMoldDeleteUsage(id){
+  var m=(DB.g('mold')||[]).find(function(x){return x.id===id;});
+  if(!m)return {total:0, counts:{}, text:''};
+  var mid=m.id||id;
+  var no=m.no||'';
+  var pnm=m.pnm||'';
+  var matches=function(v){return !!v&&(v===mid||v===no);};
+  var counts={
+    품목:(DB.g('prod')||[]).filter(function(p){
+      return p&&(p.moldId===mid||p.moldNo===no||matches(p.mold)||matches(p.moldNm));
+    }).length,
+    작업지시:(DB.g('wo')||[]).filter(function(w){
+      if(!w)return false;
+      if(w.moldId===mid||w.moldNo===no||matches(w.mold)||matches(w.moldNm))return true;
+      if(pnm&&w.pnm===pnm&&no&&(w.mold===no||w.moldNo===no))return true;
+      return (w.procs||[]).some(function(p){return p&&(p.moldId===mid||p.moldNo===no||matches(p.mold)||matches(p.moldNm));});
+    }).length,
+    이력:(DB.g('moldHist')||[]).filter(function(h){
+      return h&&(h.moldId===mid||h.moldNo===no||matches(h.mold)||matches(h.no));
+    }).length
+  };
+  var total=Object.keys(counts).reduce(function(sum,key){return sum+(counts[key]||0);},0);
+  return {total:total, counts:counts, text:_summarizeLinkedRecords(counts)};
+}
+function dMold(id){
+  var usage=_getMoldDeleteUsage(id);
+  if(usage.total){
+    alert('이 목형은 연결된 데이터가 있어 삭제할 수 없습니다.\n\n'+usage.text+'\n\n품목/작업지시 이력을 유지하려면 목형 상태를 보관중 또는 폐기로 변경하세요.');
+    return;
+  }
+  if(!confirm('연결된 데이터가 없습니다.\n정말 삭제할까요?'))return;
+  DB.s('mold',DB.g('mold').filter(x=>x.id!==id));
+  rMold();
+  toast('삭제','ok');
+}
 
 // ===== 엑셀 업로드 (품목/목형) =====
 var XLSX_FIELD_MAP={
@@ -780,7 +1078,10 @@ var XLSX_FIELD_MAP={
     fax:['팩스','fax'],
     addr:['주소','address','사업장주소'],
     email:['이메일','email','e-mail'],
-    cType:['유형','구분','type','거래유형'],
+    cType:['유형','구분','type','거래유형','거래처구분','분류','customerType'],
+    receivable:['미수','미수금','받을돈','매출잔액','외상매출금','receivable'],
+    payable:['미지급','미지급금','줄돈','매입잔액','외상매입금','payable'],
+    balance:['잔액','현재잔액','balance'],
     note:['비고','메모','note','memo','설명']
   },
   prod:{
@@ -907,10 +1208,14 @@ function impCliXlsx(inp){
       var nm=String(r[hdr.map.nm]||'').trim();
       if(!nm)continue;
       var get=function(k){return hdr.map[k]!=null?r[hdr.map[k]]:''};
-      var typeRaw=String(get('cType')||'').trim().toLowerCase();
-      var cType='sales';
-      if(typeRaw.indexOf('매입')>=0||typeRaw==='purchase')cType='purchase';
-      else if(typeRaw.indexOf('양쪽')>=0||typeRaw==='both'||typeRaw.indexOf('매출매입')>=0)cType='both';
+      var typeRaw=String(get('cType')||'').trim();
+      var receivable=Number(String(get('receivable')||'').replace(/[^\d.-]/g,''))||0;
+      var payable=Number(String(get('payable')||'').replace(/[^\d.-]/g,''))||0;
+      var balance=Number(String(get('balance')||'').replace(/[^\d.-]/g,''))||0;
+      if(balance>0)receivable=receivable||balance;
+      if(balance<0)payable=payable||Math.abs(balance);
+      var tmp={nm:nm,cTypeRaw:typeRaw,customerType:typeRaw,receivable:receivable,payable:payable,note:String(get('note')||'').trim()};
+      var cType=_inferCliType(tmp,{sales:{},purchase:{},ship:{},income:{},po:{},vendor:{},prod:{},order:{},quote:{},wo:{}}).type;
       items.push({
         id:gid(),nm:nm,
         biz:String(get('biz')||'').trim(),
@@ -920,6 +1225,10 @@ function impCliXlsx(inp){
         addr:String(get('addr')||'').trim(),
         email:String(get('email')||'').trim(),
         cType:cType,
+        cTypeRaw:typeRaw,
+        customerType:typeRaw,
+        receivable:receivable,
+        payable:payable,
         note:String(get('note')||'').trim()
       });
     }
@@ -933,7 +1242,14 @@ function impCliXlsx(inp){
     if(dupes.length)msg+='\n(중복 '+dupes.length+'개 제외: '+dupes.slice(0,3).map(function(d){return d.nm}).join(', ')+(dupes.length>3?' 외':'')+ ')';
     if(!newItems.length){toast('모두 중복 — 등록할 거래처 없음','err');return}
     if(!confirm(msg))return;
-    DB.s('cli',existing.concat(newItems));rCli();
+    var merged=existing.concat(newItems);
+    var sets=buildCliTypeSets();
+    merged.forEach(function(c){
+      var inf=_inferCliType(c,sets);
+      c.cType=inf.type;
+      c.cTypeAutoReason=inf.reason;
+    });
+    DB.s('cli',merged);rCli();
     toast(newItems.length+'개 거래처 등록 완료','ok');
   });
 }

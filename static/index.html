@@ -1386,6 +1386,7 @@
       <option value="__none__">미분류</option>
     </select>
     <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">거래 확인</button>
+    <button class="btn btn-o btn-sm" onclick="reclassifyCliTypes()">매입/매출 자동분류</button>
     <button class="btn btn-o btn-sm" onclick="openFolderMgr()">폴더 관리</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">엑셀 업로드</button>
@@ -1394,7 +1395,8 @@
     <span class="f4-hint">F4 <b>코드도움</b></span>
   </div>
 </div>
-<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="cliBulkBar" class="hidden"></div>
+<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th style="width:36px"></th><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
 <div id="cliPager"></div>
 </div>
@@ -1418,7 +1420,8 @@
     <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
   </div>
 </div>
-<div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="prodBulkBar" class="hidden"></div>
+<div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th style="width:36px"></th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="prodGalleryView" style="display:none"><div id="prodGalleryArea"></div></div>
 <div id="prodPager"></div>
 </div>
@@ -1434,7 +1437,8 @@
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
   </div>
 </div>
-<div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div id="moldBulkBar" class="hidden"></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th style="width:36px"></th><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
 <div id="moldPager"></div>
 </div>
 
@@ -2518,8 +2522,8 @@
 
 <script src="/js/packflow-price-history.js?v=1"></script>
 <script src="/js/mes-dash.js?v=21"></script>
-<script src="/js/mes-wo.js?v=21"></script>
-<script src="/js/mes-cli.js?v=20"></script>
+<script src="/js/mes-wo.js?v=23"></script>
+<script src="/js/mes-cli.js?v=23"></script>
 <script src="/js/mes-worker.js?v=20"></script>
 <script src="/js/mes-ship.js?v=20"></script>
 <script src="/js/mes-settings.js?v=20"></script>

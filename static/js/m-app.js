@@ -2044,3 +2044,23 @@ window.addEventListener('DOMContentLoaded', function(){
   }
   mLoadLoginUsers();
 });
+
+/* ============================================
+   포그라운드 복귀 시 강제 동기화
+   - storage 이벤트는 다른 탭에서만 발생. 모바일을 백그라운드로 두고 PC에서
+     데이터 변경 후 모바일 복귀 시, 탭이 비활성이라 storage 이벤트가 누락될 수
+     있음. visibilitychange 로 보강.
+   - 모달 열려있으면 사용자 입력 보호를 위해 갱신 보류 (toast로만 안내)
+   ============================================ */
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState !== 'visible') return;
+  if(typeof mState === 'undefined' || !mState.currentTab) return;
+  var openMM = document.querySelector('.m-modal.on');
+  if(openMM){
+    if(typeof mToast === 'function') mToast('포그라운드 복귀 — 모달 닫고 갱신','');
+    return;
+  }
+  if(typeof mRefreshCurrentView === 'function'){
+    try{ mRefreshCurrentView(); }catch(e){ console.warn('[m-sync] visibilitychange re-render fail', e); }
+  }
+});

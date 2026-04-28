@@ -318,16 +318,32 @@ function rCli(page){
   var ff=$('cliFolderFilter')?$('cliFolderFilter').value:'';
   var df=$('cliDormantFilter')?$('cliDormantFilter').value:'active';
   var cs;
-  // 초성 검색 지원
+  // 초성 검색 + 다중 필드 (bizNo/biz/handphone 모두 지원)
   var matchFn = function(c){
     if(!s) return true;
+    var biz = (c.bizNo||c.biz||'');
+    var hp  = (c.telHandphone||c.handphone||'');
     if(typeof SearchUtil !== 'undefined'){
-      return SearchUtil.match(c.nm, s) || SearchUtil.match(c.biz||'', s) || SearchUtil.match(c.tel||'', s);
+      return SearchUtil.match(c.nm, s)
+        || SearchUtil.match(biz, s)
+        || SearchUtil.match(c.tel||'', s)
+        || SearchUtil.match(hp, s)
+        || SearchUtil.match(c.ceo||'', s);
     }
-    return c.nm.toLowerCase().includes(s) || ((c.biz||'').includes(s));
+    var lo = s;
+    return (c.nm||'').toLowerCase().includes(lo)
+      || biz.includes(lo)
+      || (c.tel||'').includes(lo)
+      || hp.includes(lo)
+      || (c.ceo||'').toLowerCase().includes(lo);
   };
   if(tf==='vendor'){
-    cs=DB.g('cli').filter(function(c){return c.isVendor && matchFn(c)});
+    /* 협력사(인쇄소): isVendor 표식 또는 cType=purchase/both — 검색어 있을 땐 cType 무시 */
+    cs=DB.g('cli').filter(function(c){
+      if(!matchFn(c)) return false;
+      if(s) return true;
+      return c.isVendor || c.cType==='purchase' || c.cType==='both';
+    });
   }else{
     cs=DB.g('cli').filter(matchFn);
     /* 검색어가 있으면 cType 필터 무시 — 매입처/매출처/협력사 전부 검색 */
@@ -447,7 +463,7 @@ function openCliM(){
 }
 function eCli(id){
   const c=DB.g('cli').find(x=>x.id===id);if(!c)return;
-  $('cmId').value=c.id;$('cmNm').value=c.nm;$('cmBiz').value=c.biz||'';$('cmCeo').value=c.ceo||'';
+  $('cmId').value=c.id;$('cmNm').value=c.nm;$('cmBiz').value=c.bizNo||c.biz||'';$('cmCeo').value=c.ceo||'';
   $('cmBizType').value=c.bizType||'';$('cmEmail').value=c.email||'';$('cmPs').value=c.ps||'';
   $('cmAd').value=c.addr||'';$('cmTl').value=c.tel||'';$('cmFx').value=c.fax||'';$('cmNt').value=c.nt||'';
   $('cmSales').checked=(c.cType==='sales'||c.cType==='both'||!c.cType);
@@ -651,7 +667,7 @@ function openCliLedgerPanel(cid,mode){
     +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">담당자</div><div class="ux-sp-field-v">'+(c.ps||c.ceo||'-')+'</div></div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">전화</div><div class="ux-sp-field-v">'+(c.tel||'-')+'</div></div>'
-    +'<div class="ux-sp-field"><div class="ux-sp-field-l">사업자번호</div><div class="ux-sp-field-v">'+(c.biz||'-')+'</div></div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">사업자번호</div><div class="ux-sp-field-v">'+(c.bizNo||c.biz||'-')+'</div></div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">휴면 전환</div><div class="ux-sp-field-v">'+(c.dormantAt||'-')+'</div></div>'
     +'</div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">주소</div><div class="ux-sp-field-v">'+(c.addr||'-')+'</div></div>'

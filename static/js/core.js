@@ -1596,8 +1596,17 @@ var ContrastCheck=(function(){
   /* DB.s 래핑: 저장 직후 sync ping 발사 + 마스터 데이터 빈 배열 덮어쓰기 가드 */
   if(typeof DB !== 'undefined' && DB.s && !DB.s.__syncWrapped){
     var origS = DB.s;
-    /* 빈 배열로 덮어쓰면 큰 손실 일어나는 마스터 데이터 키 */
-    var GUARDED_KEYS = ['cli','prod','mold','vendors','users','co','wo','sales','purchase','taxInvoice','shipLog','hist','income','stock'];
+    /* 빈 배열로 덮어쓰면 큰 손실 일어나는 마스터 데이터 키 (server.py GUARDED_KEYS 와 동기) */
+    var GUARDED_KEYS = [
+      'cli','prod','mold',
+      'vendors','bom','equip','emp',
+      'users','co',
+      'wo','sales','purchase','taxInvoice','shipLog',
+      'hist','income','stock',
+      'qcRecords','incLog','monthlyRpt','logs',
+      'priceHistory','cliFolders',
+      'quotes','po','orderTemplates','woTemplates'
+    ];
     DB.s = function(k, d){
       /* 가드: 마스터 데이터를 빈 배열/null로 덮어쓰려는 시도 차단 */
       if(GUARDED_KEYS.indexOf(k) >= 0 && Array.isArray(d) && d.length === 0){

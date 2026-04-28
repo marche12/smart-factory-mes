@@ -1602,19 +1602,20 @@ var ContrastCheck=(function(){
       'vendors','bom','equip','emp',
       'users','co',
       'wo','sales','purchase','taxInvoice','shipLog',
-      'hist','income','stock',
+      'hist','income','stock','orders','claims',
       'qcRecords','incLog','monthlyRpt','logs',
       'priceHistory','cliFolders',
       'quotes','po','orderTemplates','woTemplates'
     ];
     DB.s = function(k, d){
-      /* 가드: 마스터 데이터를 빈 배열/null로 덮어쓰려는 시도 차단 */
-      if(GUARDED_KEYS.indexOf(k) >= 0 && Array.isArray(d) && d.length === 0){
+      /* 가드: 마스터 데이터를 빈 배열/null/undefined 로 덮어쓰려는 시도 차단 */
+      if(GUARDED_KEYS.indexOf(k) >= 0 && (d == null || (Array.isArray(d) && d.length === 0))){
         var current = [];
         try{ current = DB.g(k) || []; }catch(_){}
         if(Array.isArray(current) && current.length > 10){
-          console.error('[GUARD] DB.s("'+k+'", []) 빈 배열 저장 차단 — 기존 ' + current.length + '건 보존');
-          if(typeof toast === 'function') toast('데이터 보호: ' + k + ' 빈 배열 저장 차단됨','err');
+          var label = d == null ? String(d) : '[]';
+          console.error('[GUARD] DB.s("'+k+'", '+label+') 빈 값 저장 차단 — 기존 ' + current.length + '건 보존');
+          if(typeof toast === 'function') toast('데이터 보호: ' + k + ' 빈 값 저장 차단됨','err');
           return;
         }
       }
@@ -1652,7 +1653,9 @@ var ContrastCheck=(function(){
     'taxInvoice': ['acc-tax','mes-closing'],
     'cli':        ['mes-cli'],
     'prod':       ['mes-prod'],
-    'mold':       ['mes-mold']
+    'mold':       ['mes-mold'],
+    'orders':     ['mes-order','mes-order-track','mes-dash'],
+    'claims':     ['mes-ship','mes-shiplog','ship-return']
   };
 
   function refreshActivePCModule(changedKey){
@@ -1673,18 +1676,20 @@ var ContrastCheck=(function(){
 
   /* 모바일 활성 탭 재렌더 */
   function refreshActiveMobileTab(changedKey){
-    if(typeof mState === 'undefined' || typeof mState.currentTab === 'undefined') return;
-    /* 작업지시/공정 데이터에 영향있는 키만 처리 */
-    var rerenderKeys = ['wo','hist','shipLog','cli','prod'];
+    /* 모바일 앱이 로드되지 않은 PC 페이지에서는 무시 */
+    if(typeof window.mState !== 'object' || !window.mState || !window.mState.currentTab) return;
+    /* 작업지시/공정/거래처/품목 데이터에 영향있는 키만 처리.
+       orders 변경은 현황(home) 통계에 영향. */
+    var rerenderKeys = ['wo','hist','shipLog','cli','prod','orders'];
     if(rerenderKeys.indexOf(changedKey) < 0) return;
-    /* 열린 모바일 모달 보호 */
+    /* 열린 모바일 모달 보호 — 현재 입력 중인 사용자 흐름 차단 방지 */
     var openMM = document.querySelector('.m-modal.on');
     if(openMM){
       if(typeof mToast === 'function') mToast('새 데이터 있음 (모달 닫고 갱신)','ok');
       return;
     }
     if(typeof mRefreshCurrentView === 'function'){
-      try{ mRefreshCurrentView(); }catch(e){}
+      try{ mRefreshCurrentView(); }catch(e){ console.warn('[sync] mobile re-render fail', e); }
     }
   }
 

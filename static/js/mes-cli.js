@@ -43,10 +43,14 @@ function _syncBulkBoxes(kind){
 }
 function renderBulkBar(kind){
   var ids=_bulkIds(kind);
-  /* 헤더 액션 영역의 "선택 삭제 (N)" 버튼 카운트·활성 동기화 */
+  /* 헤더 액션 영역의 "선택 삭제 (N)" 버튼 카운트·활성·표시 동기화
+     0건이면 버튼 자체를 숨겨 위험 액션 시각 노이즈 제거. 선택 시에만 노출. */
   var btn=$(kind+'BulkDelBtn'), cnt=$(kind+'BulkCount');
   if(cnt) cnt.textContent = ids.length;
-  if(btn) btn.disabled = !ids.length;
+  if(btn){
+    btn.disabled = !ids.length;
+    btn.style.display = ids.length ? '' : 'none';
+  }
   /* 인라인 BulkBar (테이블 위) */
   var el=$(kind+'BulkBar');
   if(el){
@@ -377,7 +381,7 @@ function rCli(page){
   var pg=paginate(cs,_cliPage);var vis=pg.items;
   _bulkVisible.cli=vis.map(function(c){return c.id;});
   if(_cliView==='table'){
-    $('cliTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('cli')+'</th><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr>';
+    $('cliTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('cli')+'</th><th style="min-width:160px">거래처명</th><th style="width:90px">거래구분</th><th style="width:110px">담당자</th><th style="width:130px">연락처</th><th style="width:100px">최근거래</th><th style="width:80px">상태</th><th style="width:90px">관리</th></tr>';
     if(tf==='vendor'){
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
         var favBadge=_cliFavorite(c)?'<span class="bd bd-p">★</span> ':'';
@@ -867,8 +871,8 @@ function rProd(page){
   _bulkVisible.prod=vis.map(function(p){return p.id;});
   if(_prodView==='table'){
     $('prodTbl').querySelector('thead').innerHTML=_prodDetailView==='detail'
-      ?'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>최근</th><th>관리</th></tr>'
-      :'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>최근 작업</th><th>관리</th></tr>';
+      ?'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th style="width:90px">코드</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:90px;text-align:right">단가</th><th style="width:90px">종이</th><th style="width:110px">규격</th><th style="min-width:120px">공정</th><th style="width:110px">최근</th><th style="width:90px">관리</th></tr>'
+      :'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th style="width:90px">코드</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:90px;text-align:right">단가</th><th style="width:130px">최근 작업</th><th style="width:90px">관리</th></tr>';
     $('prodTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(p){
       var st=_prodUsageStats(p);
       var nm='<span style="font-weight:700">'+p.nm+'</span>'+(_prodFavorite(p)?' <span class="bd bd-p">★</span>':'');
@@ -1048,7 +1052,7 @@ function rMold(page){
     `<div class="sb red"><div class="l">폐기</div><div class="v">${disposed}</div></div>`;
   var pg=paginate(ms,_moldPage);var vis=pg.items;
   _bulkVisible.mold=vis.map(function(m){return m.id;});
-  $('moldTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('mold')+'</th><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr>';
+  $('moldTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('mold')+'</th><th style="width:120px">목형번호</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:130px">보관위치</th><th style="width:80px">상태</th><th style="width:100px">관리</th></tr>';
   $('moldTbl').querySelector('tbody').innerHTML=vis.length?vis.map(m=>`<tr>${_bulkCell('mold',m.id)}<td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-cell">목형 없음</td></tr>';
   renderBulkBar('mold');
   renderPager('moldPager',pg,function(p){_moldPage=p;rMold()});

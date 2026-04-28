@@ -42,7 +42,7 @@ var MODES = [
     id:'ship',
     label:'출고·정산',
     groupKeys:['ship'],
-    modules:['mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow','mes-closing']
+    modules:['mes-ship','acc-sales','acc-purchase','acc-tax','acc-recv','acc-cashflow']
   },
   {
     id:'master',

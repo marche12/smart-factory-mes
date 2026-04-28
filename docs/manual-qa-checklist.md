@@ -45,28 +45,28 @@
 - [x] 작업지시 수정 후 외주 수량/납기 변경이 반영된다. (2026-04-28 코드검증)
 - [x] 공정별 외주처 검색 — `openVendorSearch(target)` / `openVendorSearchForProc(idx)` 동작 (전체 거래처 대상, cType 무시) (2026-04-28 코드검증)
 
-## 5. 입고 → 재고 / 매입 ⏳ NAS 실측 대기
+## 5. 입고 → 재고 / 매입 🔍 2026-04-28 코드검증 완료, NAS 실측 대기
 
-> 현재 NAS `purchase` 카운트 0 — 운영 투입 전 1건 이상 입력 후 클릭 검증 필수.
+> 현재 NAS `purchase` 카운트 0 — 코드 자동화 로직은 검증 완료, 운영 투입 전 1건 이상 입력 후 클릭 검증 필수.
 
-- [ ] 입고 저장 후 재고가 생성 또는 증가한다. (NAS 실측 대기)
-- [ ] 입고 저장 후 매입 레코드가 자동 생성된다. (NAS 실측 대기)
-- [ ] 입고 수정 후 재고/매입 수량과 단가가 같이 갱신된다. (NAS 실측 대기)
-- [ ] 입고 삭제 후 재고/매입 반영이 같이 제거된다. (NAS 실측 대기)
+- [ ] 입고 저장 후 재고가 생성 또는 증가한다. (코드검증 — `static/js/erp-purchase.js` `applyIncomeToStock(rec,1)` / NAS 실측 대기)
+- [ ] 입고 저장 후 매입 레코드가 자동 생성된다. (코드검증 — `erp-purchase.js` `syncPurchaseFromIncome(rec)` / NAS 실측 대기)
+- [ ] 입고 수정 후 재고/매입 수량과 단가가 같이 갱신된다. (코드검증 — `erp-purchase.js` 이전값 역반영 + 신규값 반영 / NAS 실측 대기)
+- [ ] 입고 삭제 후 재고/매입 반영이 같이 제거된다. (코드검증 — `erp-purchase.js` `applyIncomeToStock(rec,-1)` + `removePurchaseFromIncome(id)` / NAS 실측 대기)
 
-## 6. 출고 → 매출 / 세금계산서 ⏳ NAS 실측 대기
+## 6. 출고 → 매출 / 세금계산서 🔍 2026-04-28 코드검증 완료, NAS 실측 대기
 
-> NAS `sales`/`taxInvoice`/`etax` 카운트 0 — 운영 투입 전 출고 1건 + 취소 1회 클릭 검증 필수.
+> NAS `sales`/`taxInvoice`/`etax` 카운트 0 — 코드 자동화 로직은 검증 완료, 운영 투입 전 출고 1건 + 취소 1회 클릭 검증 필수.
 
-- [ ] 출고 저장 후 `shipLog`가 생성된다. (NAS 실측 대기)
-- [ ] 출고 저장 후 `sales`가 자동 생성된다. (NAS 실측 대기)
-- [ ] 출고 저장 후 `taxInvoice`, `etax`가 자동 생성된다. (NAS 실측 대기)
-- [ ] 거래처 사업자번호가 있으면 세금계산서 method가 `전자대기`가 된다. (NAS 실측 대기)
-- [ ] 불량 수량이 있으면 `qcRecords`가 생성된다. (NAS 실측 대기)
+- [ ] 출고 저장 후 `shipLog`가 생성된다. (코드검증 — `static/js/mes-settings.js` `logs.push(rec); DB.s('shipLog',logs)` / NAS 실측 대기)
+- [ ] 출고 저장 후 `sales`가 자동 생성된다. (코드검증 — `mes-settings.js` `sb.push({...shipId:rec.id,...})` / NAS 실측 대기)
+- [ ] 출고 저장 후 `taxInvoice`, `etax`가 자동 생성된다. (코드검증 — `mes-settings.js` `_taxList.push` + `_etaxList.push` / NAS 실측 대기)
+- [ ] 거래처 사업자번호가 있으면 세금계산서 method가 `전자대기`가 된다. (코드검증 — `mes-settings.js` `(_cliInfo.bizNo||'').trim() ? '전자대기' : '종이'` / NAS 실측 대기)
+- [ ] 불량 수량이 있으면 `qcRecords`가 생성된다. (코드검증 — `mes-settings.js` `if(defect>0){qcRecs.push(...)}` / NAS 실측 대기)
 - [x] 부분 출고 시 WO 상태가 `출고대기`로 유지된다. (2026-04-28 코드검증)
 - [x] 전량 출고 시 WO와 수주 상태가 `출고완료`가 된다. (2026-04-28 코드검증)
-- [ ] 출고 상세에서 `출고 취소`를 누르면 `shipLog`, `sales`, `taxInvoice`, `etax`, `qcRecords`가 함께 정리된다. (NAS 실측 대기)
-- [ ] 출고 취소 후 WO와 수주 상태가 출고 전 단계로 되돌아간다. (NAS 실측 대기)
+- [ ] 출고 상세에서 `출고 취소`를 누르면 `shipLog`, `sales`, `taxInvoice`, `etax`, `qcRecords`가 함께 정리된다. (코드검증 — `mes-settings.js:174-216` `cancelShipById()` / NAS 실측 대기)
+- [ ] 출고 취소 후 WO와 수주 상태가 출고 전 단계로 되돌아간다. (코드검증 — `mes-settings.js:201,204` `recalcWOShipState()` + `syncOrderFlowState()` / NAS 실측 대기)
 
 ## 7. 백업 / 복원 ✅ 2026-04-28 회귀 검증 (E-2)
 
@@ -90,12 +90,12 @@
 - [x] PC 상단바 바로가기 — 생산현황 / 작업지시서 (2026-04-28 운영검증)
 - [x] 테이블 가로 스크롤 제거 — 기초정보 화면 헤더 버튼 잘림 없음 (2026-04-28 운영검증)
 
-## 9. 패키지 제조 실무 체크 ⏳ 운영 사용 1주 후 재평가
+## 9. 패키지 제조 실무 체크 🔍 2026-04-28 코드검증 완료, 운영 사용 1주 후 재평가
 
-- [ ] 같은 거래처/같은 품목 반복 주문 시 최근 사양과 최근 단가를 참고해 입력할 수 있다. (NAS 실측 대기 — priceHistory 마이그레이션 후)
-- [ ] 작업지시 복사 후 납품예정일과 수량만 바꿔서 재사용할 수 있다. (NAS 실측 대기)
+- [ ] 같은 거래처/같은 품목 반복 주문 시 최근 사양과 최근 단가를 참고해 입력할 수 있다. (코드검증 — `static/js/mes-wo.js:1063` `priceHistory` 최근 8건 표시 / NAS 실측 대기 — 데이터 누적 후 재확인)
+- [x] 작업지시 복사 후 납품예정일과 수량만 바꿔서 재사용할 수 있다. (2026-04-28 코드검증 — `static/js/mes-wo.js:1370` `copyWO()` 함수, `woNum` 재할당 + `woShip` 초기화)
 - [x] 외주 작업이 있는 WO는 협력사 정보가 눈에 띄게 보인다. (2026-04-28 코드검증)
-- [ ] 납기 임박 또는 지연 WO가 수주/출고 화면에서 구분된다. (NAS 실측 대기)
+- [x] 납기 임박 또는 지연 WO가 수주/출고 화면에서 구분된다. (2026-04-28 코드검증 — `static/js/pc-ux-ticker.js:9-23` 상단 티커 "지연 N · 오늘 N · 3일내 N")
 - [x] 부분 출고 후 잔량이 다음 출고 준비 목록에 이어진다. (2026-04-28 코드검증)
 
 ## 10. 운영 점검 ✅ 2026-04-28 코드 + 실측 검증

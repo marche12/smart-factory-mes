@@ -547,6 +547,23 @@ function runCoreFlowSuite() {
   assert.equal(etax[0].saleId, sales[0].id, 'etax should link sale');
   assert.equal(qcRecords[0].shipId, shipLog[0].id, 'qc record should link ship');
 
+  // 원장 연결 검증: 취소 전 sales 행이 거래처(cli) 미수금 합계로 누적되는가
+  const salesBeforeCancel = getDB('sales');
+  const cliNmBeforeCancel = orders[0].cli;
+  const ledgerUnpaid = salesBeforeCancel
+    .filter(function (r) { return r.cli === cliNmBeforeCancel; })
+    .reduce(function (s, r) { return s + Math.max(0, (r.amt || 0) - (r.paid || 0)); }, 0);
+  assert.equal(salesBeforeCancel[0].cli, cliNmBeforeCancel, 'sales row should attribute to order cli');
+  assert.equal(salesBeforeCancel[0].amt, sales[0].amt, 'sales amt should match unit price x qty');
+  assert.ok(ledgerUnpaid > 0, 'cli receivable ledger should accumulate unpaid sales');
+  assert.equal(ledgerUnpaid, salesBeforeCancel[0].amt, 'unpaid receivable equals sales amt when paid=0');
+
+  // 매입 원장 연결 검증: 거래처별 미지급금 합계
+  const purchaseLedger = getDB('purchase')
+    .filter(function (r) { return r.cli === income[0].vd; })
+    .reduce(function (s, r) { return s + Math.max(0, (r.amt || 0) - (r.paid || 0)); }, 0);
+  assert.equal(purchaseLedger, purchase[0].amt, 'purchase payable ledger should equal income-linked purchase amt');
+
   ctx.cancelShipById(shipLog[0].id, true);
   const shipLogAfterCancel = getDB('shipLog');
   const salesAfterCancel = getDB('sales');
@@ -563,6 +580,12 @@ function runCoreFlowSuite() {
   assert.equal(wos[0].status, '진행중', 'WO should revert to production state after cancel');
   assert.equal(orders[0].status, '생산중', 'order should revert to production state after cancel');
 
+  // 취소 후 원장도 0으로 복귀
+  const ledgerUnpaidAfterCancel = salesAfterCancel
+    .filter(function (r) { return r.cli === cliNmBeforeCancel; })
+    .reduce(function (s, r) { return s + Math.max(0, (r.amt || 0) - (r.paid || 0)); }, 0);
+  assert.equal(ledgerUnpaidAfterCancel, 0, 'cli receivable ledger should drop to 0 after ship cancel');
+
   return {
     suite: 'core-flows',
     verified: [
@@ -572,6 +595,9 @@ function runCoreFlowSuite() {
       'income edit sync',
       'ship->sales/tax/etax/qc',
       'ship cancel reverse-sync',
+      'sales->cli receivable ledger sum',
+      'purchase->vendor payable ledger sum',
+      'ledger drops to 0 after ship cancel',
     ],
     counts: {
       quotes: getDB('quotes').length,
@@ -792,12 +818,323 @@ function runPartialShipCliChangeSuite() {
   };
 }
 
+function runIncomeDeleteSuite() {
+  /* 시나리오: 같은 자재 A의 입고 2건 누적 → 1건 삭제 → 재고/매입 양쪽 정확 정리
+     별도 자재 B 입고 1건 → 삭제 → stock/purchase 행 모두 사라지는지 */
+  const { ctx, setVals, getDB, seed } = createHarness();
+  seed(['income', 'stock', 'purchase', 'cli']);
+
+  function saveIncomeRow(opts) {
+    setVals({
+      incId: opts.id || '',
+      incDt: opts.dt || '2026-04-19',
+      incCatSel: opts.cat || '원지',
+      incVd: opts.vd || '원지상사',
+      incNm: opts.nm,
+      incSpec: opts.spec || '788x1091',
+      incUnit: opts.unit || '매',
+      incQty: String(opts.qty),
+      incPrice: String(opts.price),
+      incNote: opts.note || '',
+    });
+    ctx.saveIncome();
+  }
+
+  // 자재 A: 입고1 100매 + 입고2 60매 = 재고 160매 누적
+  saveIncomeRow({ nm: '아트지 250g', qty: 100, price: 500, note: '1차' });
+  let income = getDB('income');
+  let stock = getDB('stock');
+  let purchase = getDB('purchase');
+  assert.equal(income.length, 1, 'first income created');
+  assert.equal(stock.length, 1, 'stock row created for material A');
+  assert.equal(stock[0].qty, 100, 'stock qty matches first income');
+  assert.equal(purchase.length, 1, 'purchase auto-created for first income');
+  const incA1Id = income[0].id;
+
+  saveIncomeRow({ nm: '아트지 250g', qty: 60, price: 520, note: '2차 추가' });
+  income = getDB('income');
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  assert.equal(income.length, 2, 'second income created (different id)');
+  assert.equal(stock.length, 1, 'same material should keep single stock row');
+  assert.equal(stock[0].qty, 160, 'stock qty should accumulate (100+60)');
+  assert.equal(purchase.length, 2, 'each income creates its own purchase row');
+  const incA2 = income.find(r => r.id !== incA1Id);
+
+  // 자재 B: 별도 자재 입고 1건 → 별도 stock/purchase 행
+  saveIncomeRow({ nm: 'SC마닐라 300g', qty: 200, price: 450, vd: '제지상사2', note: '자재B' });
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  assert.equal(stock.length, 2, 'different material should create new stock row');
+  assert.equal(purchase.length, 3, 'three purchase rows after three incomes');
+  const incBId = getDB('income').find(r => r.nm === 'SC마닐라 300g').id;
+
+  // 자재 A의 1차 입고만 삭제 → 재고는 60매 잔존, 매입은 1건만 사라져야 함
+  ctx.dIncome(incA1Id);
+  income = getDB('income');
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  assert.equal(income.length, 2, 'only first A income removed');
+  assert.equal(income.find(r => r.id === incA1Id), undefined, 'A1 income removed');
+  const stockA = stock.find(s => s.nm === '아트지 250g');
+  assert.ok(stockA, 'A stock row should still exist');
+  assert.equal(stockA.qty, 60, 'A stock qty should drop to 60 after A1 delete');
+  assert.equal(purchase.find(p => p.incId === incA1Id), undefined, 'A1 purchase removed');
+  assert.equal(purchase.length, 2, 'remaining: A2 + B purchase rows');
+
+  // 자재 B 입고 삭제 → stock B는 0이 되어 행 자체는 남되 qty=0, purchase B 삭제
+  ctx.dIncome(incBId);
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  const stockB = stock.find(s => s.nm === 'SC마닐라 300g');
+  assert.ok(stockB, 'B stock row remains as zero (history kept)');
+  assert.equal(stockB.qty, 0, 'B stock qty drops to 0 after delete');
+  assert.equal(purchase.find(p => p.incId === incBId), undefined, 'B purchase removed');
+  assert.equal(purchase.length, 1, 'only A2 purchase remains');
+
+  // 자재 A의 2차 입고도 삭제 → A stock qty=0
+  ctx.dIncome(incA2.id);
+  income = getDB('income');
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  assert.equal(income.length, 0, 'all income rows removed');
+  const stockAFinal = stock.find(s => s.nm === '아트지 250g');
+  assert.equal(stockAFinal.qty, 0, 'A stock qty=0 after all incomes deleted');
+  assert.equal(purchase.length, 0, 'no purchase rows left');
+
+  return {
+    suite: 'income-delete-sync',
+    verified: [
+      'multiple incomes for same material accumulate stock',
+      'each income creates its own purchase row (incId-linked)',
+      'deleting one of multiple incomes for a material decrements stock by exactly that qty',
+      'deleting an income removes only its purchase row',
+      'sole income delete leaves stock row at qty=0 (history preserved)',
+    ],
+  };
+}
+
+function runMultiItemPartialShipSuite() {
+  /* 시나리오: 다품목 수주(2 품목) → WO 2개 → WO-1만 출고 → order.status='생산중' 유지
+     → WO-2도 출고 → order.status='출고완료' */
+  const { ctx, setVals, getDB, seed } = createHarness();
+  seed(['orders', 'wo', 'cli', 'prod', 'users', 'shipLog', 'sales', 'taxInvoice', 'etax', 'qcRecords']);
+  ctx.DB.s('users', [{ id: 'u1', nm: '관리자' }]);
+  ctx.DB.s('cli', [{ id: 'c1', nm: 'C사', bizNo: '333-33-33333', addr: '대전', ceo: 'C' }]);
+
+  ctx.saveOrders([{
+    id: 'ord_multi2',
+    no: 'SO-MULTI2',
+    dt: '2026-04-19',
+    cli: 'C사',
+    items: [
+      { nm: '품목X', spec: '100x100', qty: 50, price: 200 },
+      { nm: '품목Y', spec: '200x200', qty: 80, price: 300 },
+    ],
+    status: '수주확정',
+    woIds: ['wo_mp1', 'wo_mp2'],
+    woLinks: [
+      { woId: 'wo_mp1', itemIdx: 0, itemNm: '품목X', qty: 50 },
+      { woId: 'wo_mp2', itemIdx: 1, itemNm: '품목Y', qty: 80 },
+    ],
+  }]);
+
+  ctx.DB.s('wo', [
+    {
+      id: 'wo_mp1', wn: 'WO-MP-1', ordId: 'ord_multi2',
+      dt: '2026-04-19', cnm: 'C사', pnm: '품목X', spec: '100x100',
+      fq: 50, price: 200, amt: 10000, sd: '2026-04-22', dlv: '본사', mgr: '관리자',
+      status: '완료', procs: [{ nm: '인쇄', tp: 'n', st: '완료', qty: 50 }],
+    },
+    {
+      id: 'wo_mp2', wn: 'WO-MP-2', ordId: 'ord_multi2',
+      dt: '2026-04-19', cnm: 'C사', pnm: '품목Y', spec: '200x200',
+      fq: 80, price: 300, amt: 24000, sd: '2026-04-22', dlv: '본사', mgr: '관리자',
+      status: '완료', procs: [{ nm: '인쇄', tp: 'n', st: '완료', qty: 80 }],
+    },
+  ]);
+
+  // WO-1 전량 출고 → order.status는 '생산중' 또는 '출고대기' 유지 (전체 완료 아님)
+  setVals({
+    smWoId: 'wo_mp1', smQty: '50', smDefect: '0', smCliOverride: '',
+    smInspNote: 'X출고', smCar: '11가1111', smDriver: '기사', smDlv: '본사', smMemo: '',
+  });
+  ctx.doShip();
+  let orders = getDB('orders');
+  let wos = ctx.DB.g('wo');
+  const wo1 = wos.find(w => w.id === 'wo_mp1');
+  const wo2 = wos.find(w => w.id === 'wo_mp2');
+  assert.equal(wo1.status, '출고완료', 'WO-1 should be shipped complete');
+  assert.equal(wo2.status, '완료', 'WO-2 should still be production-complete waiting to ship');
+  assert.notEqual(orders[0].status, '출고완료', 'order should NOT be 출고완료 while one WO unshipped');
+  assert.equal(getDB('shipLog').length, 1, 'one shipLog after first WO ship');
+  assert.equal(getDB('sales').length, 1, 'one sales after first WO ship');
+
+  // WO-2도 출고 → 모두 완료 → order.status='출고완료'
+  setVals({
+    smWoId: 'wo_mp2', smQty: '80', smDefect: '0', smCliOverride: '',
+    smInspNote: 'Y출고', smCar: '22가2222', smDriver: '기사', smDlv: '본사', smMemo: '',
+  });
+  ctx.doShip();
+  orders = getDB('orders');
+  wos = ctx.DB.g('wo');
+  assert.equal(wos.find(w => w.id === 'wo_mp2').status, '출고완료', 'WO-2 should ship complete');
+  assert.equal(orders[0].status, '출고완료', 'order should be 출고완료 after both WOs ship');
+  assert.equal(getDB('shipLog').length, 2, 'two shipLog rows');
+  assert.equal(getDB('sales').length, 2, 'two sales rows');
+  assert.equal(getDB('taxInvoice').length, 2, 'two tax invoices');
+
+  // WO-1 출고만 취소 → order.status는 출고완료에서 다시 후퇴
+  const ship1Id = getDB('shipLog').find(s => s.woId === 'wo_mp1').id;
+  ctx.cancelShipById(ship1Id, true);
+  orders = getDB('orders');
+  wos = ctx.DB.g('wo');
+  assert.equal(wos.find(w => w.id === 'wo_mp1').status, '완료', 'WO-1 reverts to 완료 after cancel');
+  assert.equal(wos.find(w => w.id === 'wo_mp2').status, '출고완료', 'WO-2 stays shipped complete');
+  assert.notEqual(orders[0].status, '출고완료', 'order should NOT be 출고완료 after partial cancel');
+  assert.equal(getDB('shipLog').length, 1, 'only WO-2 shipLog remains');
+  assert.equal(getDB('sales').length, 1, 'only WO-2 sales remains');
+
+  // 다시 WO-1 재출고 → shipLog/sales/taxInvoice 정확히 2세트로 복귀, 중복 없음
+  setVals({
+    smWoId: 'wo_mp1', smQty: '50', smDefect: '0', smCliOverride: '',
+    smInspNote: 'X재출고', smCar: '11가1111', smDriver: '기사', smDlv: '본사', smMemo: '',
+  });
+  ctx.doShip();
+  orders = getDB('orders');
+  wos = ctx.DB.g('wo');
+  const ship2 = getDB('shipLog');
+  const sales2 = getDB('sales');
+  const tax2 = getDB('taxInvoice');
+  const etax2 = getDB('etax');
+  const qc2 = getDB('qcRecords');
+  assert.equal(ship2.length, 2, 're-ship should bring shipLog back to 2 (no duplicates)');
+  assert.equal(sales2.length, 2, 'sales should be 2 after re-ship');
+  assert.equal(tax2.length, 2, 'taxInvoice should be 2 after re-ship');
+  assert.equal(etax2.length, 2, 'etax should be 2 after re-ship');
+  // qcRecords는 defect>0일 때만 생성 — 본 시나리오는 defect=0이므로 항상 0
+  assert.equal(qc2.length, 0, 'qcRecords stays 0 when no defect (created only on defect>0)');
+  // 각 woId 당 정확히 1개씩
+  assert.equal(ship2.filter(s => s.woId === 'wo_mp1').length, 1, 'exactly one ship per WO-1');
+  assert.equal(ship2.filter(s => s.woId === 'wo_mp2').length, 1, 'exactly one ship per WO-2');
+  assert.equal(sales2.filter(s => s.woId === 'wo_mp1').length, 1, 'exactly one sales per WO-1');
+  assert.equal(sales2.filter(s => s.woId === 'wo_mp2').length, 1, 'exactly one sales per WO-2');
+  // 매출 합계가 두 WO 금액 합과 일치 (10000 + 24000)
+  const totalSales = sales2.reduce(function (s, r) { return s + (r.amt || 0); }, 0);
+  assert.equal(totalSales, 10000 + 24000, 'sum of sales should equal both WO amounts');
+  assert.equal(wos.find(w => w.id === 'wo_mp1').status, '출고완료', 'WO-1 ship complete after re-ship');
+  assert.equal(orders[0].status, '출고완료', 'order back to 출고완료 after re-ship');
+
+  return {
+    suite: 'multi-item-partial-ship',
+    verified: [
+      'multi-item order with 2 WOs: shipping only one keeps order out of 출고완료',
+      'order reaches 출고완료 only when all linked WOs ship',
+      'cancelling one WO ship from a fully-shipped order rolls order back from 출고완료',
+      '5 documents (shipLog/sales/taxInvoice/etax/qcRecords) tracked per WO ship',
+      're-shipping a cancelled WO restores documents to exactly one set (no duplicates)',
+      'sales sum after re-ship matches both WO amounts',
+    ],
+  };
+}
+
+function runIncomeNegativeStockSuite() {
+  /* 시나리오: 입고 1건(qty=10) → stock=10 → 출고 시뮬레이션으로 stock=2까지 차감
+     → 입고 수정(qty=5) → stock 음수 방지 (Math.max(0,…) 가드)
+     → 입고 삭제 → stock 음수 방지 + purchase 정리 */
+  const { ctx, setVals, getDB, seed } = createHarness();
+  seed(['income', 'stock', 'purchase', 'cli']);
+
+  // 입고 1건 qty=10
+  setVals({
+    incId: '', incDt: '2026-04-19', incCatSel: '원지', incVd: '원지상사',
+    incNm: '아트지 200g', incSpec: '788x1091', incUnit: '매',
+    incQty: '10', incPrice: '500', incNote: '초기',
+  });
+  ctx.saveIncome();
+  let income = getDB('income');
+  let stock = getDB('stock');
+  assert.equal(income.length, 1, 'income created');
+  assert.equal(stock.length, 1, 'stock created');
+  assert.equal(stock[0].qty, 10, 'stock qty=10 after first income');
+  const incId = income[0].id;
+
+  // BOM 자동 차감 시뮬레이션: 출고로 stock 8 차감 → stock=2
+  stock = ctx.DB.g('stock');
+  stock[0].qty = 2;
+  ctx.DB.s('stock', stock);
+  assert.equal(getDB('stock')[0].qty, 2, 'stock manually drops to 2 (simulated consumption)');
+
+  // 입고 수정: qty 10→5
+  // saveIncome 흐름: prev(qty=10) -1 적용 → 2-10 = -8 → guard → 0
+  //                  rec(qty=5)  +1 적용 → 0+5 = 5
+  // ⇒ 음수 가드가 중간에 작동해 최종 stock=5 (음수가 아니라 5로 회복)
+  setVals({
+    incId: incId, incDt: '2026-04-19', incCatSel: '원지', incVd: '원지상사',
+    incNm: '아트지 200g', incSpec: '788x1091', incUnit: '매',
+    incQty: '5', incPrice: '500', incNote: '수정',
+  });
+  ctx.saveIncome();
+  stock = getDB('stock');
+  let purchase = getDB('purchase');
+  assert.ok(stock[0].qty >= 0, 'stock qty must NOT be negative after destructive edit');
+  assert.equal(stock[0].qty, 5, 'stock recovers to 5 (prev -10 guarded to 0, then rec +5)');
+  assert.equal(purchase.length, 1, 'purchase row stays linked to income');
+  assert.equal(purchase[0].qty, 5, 'purchase qty refreshes to edited qty');
+  assert.equal(purchase[0].amt, 5 * 500, 'purchase amt refreshes to edited qty x price');
+
+  // 다시 시뮬레이션 stock=3으로 세팅 → 입고 삭제 시 -5 적용 → 음수 위험
+  stock = ctx.DB.g('stock');
+  stock[0].qty = 3;
+  ctx.DB.s('stock', stock);
+  ctx.dIncome(incId);
+  stock = getDB('stock');
+  purchase = getDB('purchase');
+  income = getDB('income');
+  assert.equal(income.length, 0, 'income deleted');
+  assert.equal(purchase.length, 0, 'purchase removed via removePurchaseFromIncome');
+  assert.ok(stock[0].qty >= 0, 'stock qty must NOT be negative after delete');
+  assert.equal(stock[0].qty, 0, 'stock guarded to 0 when delete would underflow (3 - 5 → 0)');
+
+  // 정상 케이스: 입고 후 부분 차감만 한 뒤 삭제 → 정확히 그 차이만 남아야 함
+  setVals({
+    incId: '', incDt: '2026-04-20', incCatSel: '원지', incVd: '원지상사',
+    incNm: 'SC마닐라 250g', incSpec: '788x1091', incUnit: '매',
+    incQty: '20', incPrice: '400', incNote: '두번째자재',
+  });
+  ctx.saveIncome();
+  let stock2 = getDB('stock');
+  const sB = stock2.find(s => s.nm === 'SC마닐라 250g');
+  // 외부에서 7매 차감
+  sB.qty = 13;
+  ctx.DB.s('stock', stock2);
+  const inc2 = getDB('income').find(r => r.nm === 'SC마닐라 250g');
+  ctx.dIncome(inc2.id);
+  stock2 = getDB('stock');
+  const sBAfter = stock2.find(s => s.nm === 'SC마닐라 250g');
+  // 13 - 20 = -7 → guard → 0
+  assert.equal(sBAfter.qty, 0, 'consumed-then-deleted material guards to 0 (no negative)');
+
+  return {
+    suite: 'income-negative-stock-guard',
+    verified: [
+      'saveIncome edit cannot drive stock negative (Math.max(0,…) guard at applyIncomeToStock)',
+      'dIncome cannot drive stock negative when material was already consumed',
+      'purchase row qty/amt refresh on edit, removed on delete',
+      'stock floor at 0 holds even when consumption exceeds remaining income',
+    ],
+  };
+}
+
 function main() {
   const results = [
     runCoreFlowSuite(),
     runProductionAccountingReportSuite(),
     runIntegritySuite(),
     runPartialShipCliChangeSuite(),
+    runIncomeDeleteSuite(),
+    runMultiItemPartialShipSuite(),
+    runIncomeNegativeStockSuite(),
   ];
   console.log(JSON.stringify({ ok: true, results }, null, 2));
 }

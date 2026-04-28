@@ -63,8 +63,7 @@ function getModuleMeta(mod){
     'qc-cert':       {l:'검사성적서',     i:''},
     'mes-defect':    {l:'불량등록',       i:''},
     'adm-audit':     {l:'감사로그',       i:''},
-    'adm-code':      {l:'공통코드',       i:''},
-    'mes-closing':   {l:'월말 마감',      i:''}
+    'adm-code':      {l:'공통코드',       i:''}
   };
   return map[mod] || {l:mod, i:'•'};
 }

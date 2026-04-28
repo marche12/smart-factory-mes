@@ -203,9 +203,9 @@ function upgradeField(el, kind){
       if(ds && ds.get) populateDatalist(dl, ds.get());
     }catch(e){}
   });
-  // placeholder 개선 — 기존 읽기만 안내 문구 대체
+  // placeholder 개선 — F3/F4 단축키 통일 안내
   if(!el.placeholder || /선택\s*$/.test(el.placeholder)){
-    var placeMap={cliSales:'매출처 입력 (F4 검색)',cliPurchase:'매입처 입력 (F4 검색)',cliTax:'거래처 입력 (F4 검색)',cliPay:'거래처 입력 (F4 검색)',prod:'품목 입력 (F4 검색)',vendor:'협력사 입력 (F4 검색)',dlv:'납품처/주소 입력 (F4 검색)'};
+    var placeMap={cliSales:'매출처 입력 (F3/F4 검색)',cliPurchase:'매입처 입력 (F3/F4 검색)',cliTax:'거래처 입력 (F3/F4 검색)',cliPay:'거래처 입력 (F3/F4 검색)',prod:'품목 입력 (F3/F4 검색)',vendor:'협력사 입력 (F3/F4 검색)',dlv:'납품처/주소 입력 (F3/F4 검색)'};
     el.placeholder = placeMap[kind] || el.placeholder;
   }
   bindSyncHandlers(el, kind);

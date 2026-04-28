@@ -16,7 +16,13 @@ var DBL_TABLE_EDIT = {
   'orderTbl':     'editOrder',
   'woTbl':        'editWO',
   'shipReadyTbl': 'openShipM',        // 출고 대기 → 출고 입력
-  'shipHistTbl':  'openShipHistLedgerPanel'
+  'shipHistTbl':  'openShipHistLedgerPanel',
+  'moldTbl':      'eMold',
+  'claimTbl':     'eClaim',
+  'qtTbl':        'eQt',
+  'slTbl':        'eSlr',             // 매출
+  'prTbl':        'ePrr',             // 매입
+  'txTbl':        'eTxr'              // 세금계산서
 };
 
 document.addEventListener('dblclick', function(e){

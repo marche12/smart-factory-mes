@@ -384,6 +384,35 @@ def get_data(key: str, user=Depends(get_current_user)):
     })
 
 
+# 빈 배열로 덮어쓰면 큰 손실 일어나는 마스터 데이터 키 (client GUARDED_KEYS 와 동기)
+GUARDED_KEYS = {
+    # 거래/품목/목형 마스터
+    "cli", "prod", "mold",
+    # 외주처·자재성 마스터
+    "vendors", "bom", "equip", "emp",
+    # 사용자/회사
+    "users", "co",
+    # 거래·이력
+    "wo", "sales", "purchase", "taxInvoice", "shipLog",
+    "hist", "income", "stock",
+    # 부가 마스터·이력 (실수로 비울 때 손실 큼)
+    "qcRecords", "incLog", "monthlyRpt", "logs",
+    "priceHistory", "cliFolders",
+    # 견적/발주 템플릿
+    "quotes", "po", "orderTemplates", "woTemplates",
+}
+
+
+def _is_empty_payload(value_str: str) -> bool:
+    """빈 배열·null·빈 객체로 마스터 키를 덮어쓰는지 검사."""
+    if value_str is None:
+        return True
+    s = (value_str or "").strip()
+    if not s or s == "null" or s == "[]" or s == "{}":
+        return True
+    return False
+
+
 @app.post("/api/data/{key:path}")
 async def set_data(key: str, request: Request, user=Depends(get_current_user)):
     import json as _json
@@ -391,8 +420,37 @@ async def set_data(key: str, request: Request, user=Depends(get_current_user)):
     body = await request.json()
     value = body.get("value", "")
     expected_updated_at = body.get("expected_updated_at")
+    force = bool(body.get("force"))
     if not isinstance(value, str):
         value = _json.dumps(value, ensure_ascii=False)
+
+    # 마스터 키 빈 배열 덮어쓰기 가드 (force=True 일 때만 통과 — 의도된 초기화 허용)
+    bare_key = key[4:] if key.startswith("ino_") else key
+    if not force and bare_key in GUARDED_KEYS and _is_empty_payload(value):
+        current = db.get_data(key)
+        try:
+            cur_list = json.loads(current) if current else []
+        except (json.JSONDecodeError, TypeError):
+            cur_list = current
+        cur_len = len(cur_list) if isinstance(cur_list, (list, dict)) else 0
+        if cur_len > 10:
+            db.add_audit_log(
+                user.get("sub"), user.get("name"),
+                "guard-block", extract_target(key), key,
+                f"empty payload rejected, existing {cur_len}",
+                get_client_ip(request),
+            )
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "ok": False,
+                    "error": "guarded-empty",
+                    "key": key,
+                    "existing": cur_len,
+                    "message": "Refused to overwrite master key with empty payload. Pass force=true to override.",
+                }
+            )
+
     ok, current_value, current_updated_at = db.compare_and_set_data(
         key, value, expected_updated_at
     )

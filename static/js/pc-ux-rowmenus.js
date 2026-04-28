@@ -165,6 +165,66 @@ function buildShipHistMenu(shipId){
   ];
 }
 
+function buildMoldMenu(id){
+  var m = (DB.g('mold')||[]).find(function(x){return x.id===id;});
+  if(!m) return [];
+  return [
+    {label:'수정',  action:function(){ safe('eMold',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dMold',[id]); }, danger:true}
+  ];
+}
+
+function buildClaimMenu(id){
+  var c = (DB.g('claims')||[]).find(function(x){return x.id===id;});
+  if(!c) return [];
+  return [
+    {label:'수정',  action:function(){ safe('eClaim',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dClaim',[id]); }, danger:true}
+  ];
+}
+
+function buildQtMenu(id){
+  var q = (DB.g('quotes')||DB.g('qt')||[]).find(function(x){return x.id===id;});
+  if(!q) return [];
+  return [
+    {label:'수정',  action:function(){ safe('eQt',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dQt',[id]); }, danger:true}
+  ];
+}
+
+function buildSaleMenu(id){
+  var s = (DB.g('sales')||[]).find(function(x){return x.id===id;});
+  if(!s) return [];
+  return [
+    {label:'수정',  action:function(){ safe('eSlr',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dSlr',[id]); }, danger:true}
+  ];
+}
+
+function buildPurchaseMenu(id){
+  var p = (DB.g('purchase')||[]).find(function(x){return x.id===id;});
+  if(!p) return [];
+  return [
+    {label:'수정',  action:function(){ safe('ePrr',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dPrr',[id]); }, danger:true}
+  ];
+}
+
+function buildTaxMenu(id){
+  var t = (DB.g('taxInvoice')||[]).find(function(x){return x.id===id;});
+  if(!t) return [];
+  return [
+    {label:'수정',  action:function(){ safe('eTxr',[id]); }},
+    {separator:true},
+    {label:'삭제',  action:function(){ safe('dTxr',[id]); }, danger:true}
+  ];
+}
+
 /* ============ 바인딩 — 테이블별 설정 ============ */
 var TABLES = [
   {
@@ -196,6 +256,36 @@ var TABLES = [
     id:'shipHistTbl', rowSelector:'tbody tr',
     hintFn:'openShipHistLedgerPanel',
     build:buildShipHistMenu
+  },
+  {
+    id:'moldTbl', rowSelector:'tbody tr',
+    hintFn:'eMold',
+    build:buildMoldMenu
+  },
+  {
+    id:'claimTbl', rowSelector:'tbody tr',
+    hintFn:'eClaim',
+    build:buildClaimMenu
+  },
+  {
+    id:'qtTbl', rowSelector:'tbody tr',
+    hintFn:'eQt',
+    build:buildQtMenu
+  },
+  {
+    id:'slTbl', rowSelector:'tbody tr',
+    hintFn:'eSlr',
+    build:buildSaleMenu
+  },
+  {
+    id:'prTbl', rowSelector:'tbody tr',
+    hintFn:'ePrr',
+    build:buildPurchaseMenu
+  },
+  {
+    id:'txTbl', rowSelector:'tbody tr',
+    hintFn:'eTxr',
+    build:buildTaxMenu
   }
 ];
 

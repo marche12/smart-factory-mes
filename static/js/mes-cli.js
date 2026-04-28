@@ -43,10 +43,14 @@ function _syncBulkBoxes(kind){
 }
 function renderBulkBar(kind){
   var ids=_bulkIds(kind);
-  /* 헤더 액션 영역의 "선택 삭제 (N)" 버튼 카운트·활성 동기화 */
+  /* 헤더 액션 영역의 "선택 삭제 (N)" 버튼 카운트·활성·표시 동기화
+     0건이면 버튼 자체를 숨겨 위험 액션 시각 노이즈 제거. 선택 시에만 노출. */
   var btn=$(kind+'BulkDelBtn'), cnt=$(kind+'BulkCount');
   if(cnt) cnt.textContent = ids.length;
-  if(btn) btn.disabled = !ids.length;
+  if(btn){
+    btn.disabled = !ids.length;
+    btn.style.display = ids.length ? '' : 'none';
+  }
   /* 인라인 BulkBar (테이블 위) */
   var el=$(kind+'BulkBar');
   if(el){
@@ -318,16 +322,32 @@ function rCli(page){
   var ff=$('cliFolderFilter')?$('cliFolderFilter').value:'';
   var df=$('cliDormantFilter')?$('cliDormantFilter').value:'active';
   var cs;
-  // 초성 검색 지원
+  // 초성 검색 + 다중 필드 (bizNo/biz/handphone 모두 지원)
   var matchFn = function(c){
     if(!s) return true;
+    var biz = (c.bizNo||c.biz||'');
+    var hp  = (c.telHandphone||c.handphone||'');
     if(typeof SearchUtil !== 'undefined'){
-      return SearchUtil.match(c.nm, s) || SearchUtil.match(c.biz||'', s) || SearchUtil.match(c.tel||'', s);
+      return SearchUtil.match(c.nm, s)
+        || SearchUtil.match(biz, s)
+        || SearchUtil.match(c.tel||'', s)
+        || SearchUtil.match(hp, s)
+        || SearchUtil.match(c.ceo||'', s);
     }
-    return c.nm.toLowerCase().includes(s) || ((c.biz||'').includes(s));
+    var lo = s;
+    return (c.nm||'').toLowerCase().includes(lo)
+      || biz.includes(lo)
+      || (c.tel||'').includes(lo)
+      || hp.includes(lo)
+      || (c.ceo||'').toLowerCase().includes(lo);
   };
   if(tf==='vendor'){
-    cs=DB.g('cli').filter(function(c){return c.isVendor && matchFn(c)});
+    /* 협력사(인쇄소): isVendor 표식 또는 cType=purchase/both — 검색어 있을 땐 cType 무시 */
+    cs=DB.g('cli').filter(function(c){
+      if(!matchFn(c)) return false;
+      if(s) return true;
+      return c.isVendor || c.cType==='purchase' || c.cType==='both';
+    });
   }else{
     cs=DB.g('cli').filter(matchFn);
     /* 검색어가 있으면 cType 필터 무시 — 매입처/매출처/협력사 전부 검색 */
@@ -361,7 +381,7 @@ function rCli(page){
   var pg=paginate(cs,_cliPage);var vis=pg.items;
   _bulkVisible.cli=vis.map(function(c){return c.id;});
   if(_cliView==='table'){
-    $('cliTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('cli')+'</th><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr>';
+    $('cliTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('cli')+'</th><th style="min-width:160px">거래처명</th><th style="width:90px">거래구분</th><th style="width:110px">담당자</th><th style="width:130px">연락처</th><th style="width:100px">최근거래</th><th style="width:80px">상태</th><th style="width:90px">관리</th></tr>';
     if(tf==='vendor'){
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
         var favBadge=_cliFavorite(c)?'<span class="bd bd-p">★</span> ':'';
@@ -447,7 +467,7 @@ function openCliM(){
 }
 function eCli(id){
   const c=DB.g('cli').find(x=>x.id===id);if(!c)return;
-  $('cmId').value=c.id;$('cmNm').value=c.nm;$('cmBiz').value=c.biz||'';$('cmCeo').value=c.ceo||'';
+  $('cmId').value=c.id;$('cmNm').value=c.nm;$('cmBiz').value=c.bizNo||c.biz||'';$('cmCeo').value=c.ceo||'';
   $('cmBizType').value=c.bizType||'';$('cmEmail').value=c.email||'';$('cmPs').value=c.ps||'';
   $('cmAd').value=c.addr||'';$('cmTl').value=c.tel||'';$('cmFx').value=c.fax||'';$('cmNt').value=c.nt||'';
   $('cmSales').checked=(c.cType==='sales'||c.cType==='both'||!c.cType);
@@ -651,7 +671,7 @@ function openCliLedgerPanel(cid,mode){
     +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">담당자</div><div class="ux-sp-field-v">'+(c.ps||c.ceo||'-')+'</div></div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">전화</div><div class="ux-sp-field-v">'+(c.tel||'-')+'</div></div>'
-    +'<div class="ux-sp-field"><div class="ux-sp-field-l">사업자번호</div><div class="ux-sp-field-v">'+(c.biz||'-')+'</div></div>'
+    +'<div class="ux-sp-field"><div class="ux-sp-field-l">사업자번호</div><div class="ux-sp-field-v">'+(c.bizNo||c.biz||'-')+'</div></div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">휴면 전환</div><div class="ux-sp-field-v">'+(c.dormantAt||'-')+'</div></div>'
     +'</div>'
     +'<div class="ux-sp-field"><div class="ux-sp-field-l">주소</div><div class="ux-sp-field-v">'+(c.addr||'-')+'</div></div>'
@@ -851,8 +871,8 @@ function rProd(page){
   _bulkVisible.prod=vis.map(function(p){return p.id;});
   if(_prodView==='table'){
     $('prodTbl').querySelector('thead').innerHTML=_prodDetailView==='detail'
-      ?'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>최근</th><th>관리</th></tr>'
-      :'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>최근 작업</th><th>관리</th></tr>';
+      ?'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th style="width:90px">코드</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:90px;text-align:right">단가</th><th style="width:90px">종이</th><th style="width:110px">규격</th><th style="min-width:120px">공정</th><th style="width:110px">최근</th><th style="width:90px">관리</th></tr>'
+      :'<tr><th style="width:36px;text-align:center">'+_bulkHead('prod')+'</th><th style="width:90px">코드</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:90px;text-align:right">단가</th><th style="width:130px">최근 작업</th><th style="width:90px">관리</th></tr>';
     $('prodTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(p){
       var st=_prodUsageStats(p);
       var nm='<span style="font-weight:700">'+p.nm+'</span>'+(_prodFavorite(p)?' <span class="bd bd-p">★</span>':'');
@@ -1032,7 +1052,7 @@ function rMold(page){
     `<div class="sb red"><div class="l">폐기</div><div class="v">${disposed}</div></div>`;
   var pg=paginate(ms,_moldPage);var vis=pg.items;
   _bulkVisible.mold=vis.map(function(m){return m.id;});
-  $('moldTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('mold')+'</th><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr>';
+  $('moldTbl').querySelector('thead').innerHTML='<tr><th style="width:36px;text-align:center">'+_bulkHead('mold')+'</th><th style="width:120px">목형번호</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:130px">보관위치</th><th style="width:80px">상태</th><th style="width:100px">관리</th></tr>';
   $('moldTbl').querySelector('tbody').innerHTML=vis.length?vis.map(m=>`<tr>${_bulkCell('mold',m.id)}<td style="font-weight:700">${m.no}</td><td>${m.pnm||'-'}</td><td>${m.cnm||'-'}</td><td>${m.loc||'-'}</td><td>${m.st}</td><td><button class="btn btn-sm btn-o" onclick="eMold('${m.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="dMold('${m.id}')">삭제</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-cell">목형 없음</td></tr>';
   renderBulkBar('mold');
   renderPager('moldPager',pg,function(p){_moldPage=p;rMold()});

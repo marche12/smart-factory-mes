@@ -406,117 +406,6 @@ function mRenderHome(){
   mq('mHomeDueList').innerHTML = dueHtml;
 }
 
-/* ===== 생산현황 렌더 ===== */
-function mRenderDash(){
-  var wo = DB.g('wo') || [];
-  var td = mTd();
-
-  // KPI (헬퍼 통일)
-  var progress = wo.filter(mIsWOInProgress);
-  var wait     = wo.filter(mIsWOWaiting);
-  var overdue  = wo.filter(function(r){
-    if(!mIsWOActive(r)) return false;
-    var due = mGetDue(r);
-    return due && due < td;
-  });
-  var done = wo.filter(function(r){
-    if(!mIsWODoneLike(r)) return false;
-    return (r.cat && r.cat.indexOf(td) === 0) || r.doneDt === td;
-  });
-
-  mq('mDashProgress').textContent = progress.length;
-  mq('mDashWait').textContent = wait.length;
-  mq('mDashOverdue').textContent = overdue.length;
-  mq('mDashDone').textContent = done.length;
-
-  // 공정별 현황
-  var procCounts = {};
-  var allProcs = ['인쇄','코팅','합지','톰슨','접착','검수'];
-  allProcs.forEach(function(p){procCounts[p] = {working:0, wait:0}});
-
-  wo.forEach(function(w){
-    if(!mIsWOActive(w) || mIsWOCompleteWait(w)) return;
-    if(!Array.isArray(w.procs) || !w.procs.length) return;
-    // 현재 진행 중인 공정 / 다음 대기 공정
-    var doing   = w.procs.find(mIsProcDoing);
-    var waiting = w.procs.find(function(p){return mNormProcState(p.st) === '대기';});
-    if(doing && procCounts[doing.nm]) procCounts[doing.nm].working++;
-    else if(waiting && procCounts[waiting.nm]) procCounts[waiting.nm].wait++;
-  });
-
-  var procHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  allProcs.forEach(function(p){
-    var c = procCounts[p];
-    var total = c.working + c.wait;
-    var color = c.working > 0 ? 'var(--m-blue)' : total > 0 ? 'var(--m-orange)' : 'var(--m-text3)';
-    procHtml += '<div style="padding:10px 12px;background:var(--m-bg);border-radius:10px">'
-      + '<div style="font-size:12px;color:var(--m-text3);margin-bottom:4px">'+p+'</div>'
-      + '<div style="font-size:18px;font-weight:700;color:'+color+'">'+total+'<span style="font-size:11px;font-weight:500;margin-left:4px">건</span></div>'
-      + (c.working > 0 ? '<div style="font-size:10px;color:var(--m-blue)">진행 '+c.working+'</div>' : '')
-      + '</div>';
-  });
-  procHtml += '</div>';
-  mq('mDashProcs').innerHTML = procHtml;
-
-  // 납기 임박 리스트
-  var dueList = wo.filter(function(r){
-    if(!mIsWOActive(r)) return false;
-    var due = mGetDue(r);
-    if(!due) return false;
-    var diff = (new Date(due) - new Date(td)) / 86400000;
-    return diff >= -30 && diff <= 7;
-  }).sort(function(a,b){
-    var da = mGetDue(a), db = mGetDue(b);
-    return da > db ? 1 : -1;
-  }).slice(0, 10);
-
-  if(dueList.length === 0){
-    mq('mDashDueList').innerHTML = '<div class="m-empty" style="padding:20px"><div class="m-empty-msg">납기 임박한 작업 없음</div></div>';
-  } else {
-    mq('mDashDueList').innerHTML = dueList.map(function(r){
-      var due = mGetDue(r);
-      var d = mDDayInfo(due);
-      var badge = '<span class="m-badge '+d.cls+'">'+d.label+'</span>';
-      return '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
-        + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'-')+'</div>'+badge+'</div>'
-        + '<div class="m-item-sub">'+(r.pnm||'')+' · '+mFmt(r.fq||0)+'개</div>'
-        + '</div>';
-    }).join('');
-  }
-
-  // 진행중 WO 리스트
-  if(progress.length === 0){
-    mq('mDashWOList').innerHTML = '<div class="m-empty" style="padding:20px"><div class="m-empty-msg">진행 중인 작업 없음</div></div>';
-  } else {
-    mq('mDashWOList').innerHTML = progress.slice(0, 15).map(function(r){
-      var pg = mCalcWOProgress(r);
-      var currentProc = (r.procs||[]).find(mIsProcDoing);
-      var procLabel = currentProc ? currentProc.nm : r.status;
-      return '<div class="m-item" onclick="mShowWODetail(\''+r.id+'\')">'
-        + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'-')+'</div>'
-        + '<span class="m-badge blue">'+procLabel+'</span></div>'
-        + '<div class="m-item-sub">'+(r.pnm||'')+' · '+mFmt(r.fq||0)+'개</div>'
-        + '<div class="m-progress"><div class="m-progress-bar '+pg.color+'" style="width:'+pg.pct+'%"></div></div>'
-        + '<div style="text-align:right;font-size:11px;color:var(--m-text3);margin-top:4px">'+pg.pct+'%</div>'
-        + '</div>';
-    }).join('');
-  }
-}
-
-/* ===== 더보기 탭 (deprecated — 헤더 메뉴로 이전) ===== */
-function mRenderMore(){
-  var clis = DB.g('cli') || [];
-  var prods = DB.g('prod') || [];
-  var molds = DB.g('mold') || [];
-
-  mq('mCntCli').textContent = '('+mFmt(clis.length)+')';
-  mq('mCntProd').textContent = '('+mFmt(prods.length)+')';
-  mq('mCntMold').textContent = '('+mFmt(molds.length)+')';
-
-  var cu = JSON.parse(localStorage.getItem('current_user')||'{}');
-  mq('mMoreUser').textContent = cu.name || '-';
-}
-
 /* ===== 검색 모달 ===== */
 function mOpenSearch(type){
   mState.searchType = type;
@@ -586,7 +475,6 @@ function mRefreshData(){
     mToast('데이터 새로고침 중...', '');
     DB.init().then(function(){
       mToast('새로고침 완료', 'ok');
-      if(mState.currentTab === 'more') mRenderMore();
     });
   }
 }
@@ -1270,7 +1158,6 @@ function mWOComplete(){
 
   if(mState.currentTab === 'order') mRenderOrders();
   else if(mState.currentTab === 'home') mRenderHome();
-  else if(mState.currentTab === 'dash') mRenderDash();
   else mRenderOrders();
 }
 
@@ -1441,234 +1328,6 @@ function mPickProd(prodId){
   mq('mOrderProdList').style.display = 'none';
   mCalcOrderAmt();
   mToast('품목 정보 불러옴 (공정 '+(p.procs||[]).length+'개)', 'ok');
-}
-
-/* ===== 출고 렌더 ===== */
-function mSwitchShipTab(btn, filter){
-  mState.shipFilter = filter;
-  document.querySelectorAll('#mPageShip .m-filter-btn').forEach(function(b){b.classList.remove('on')});
-  btn.classList.add('on');
-  mRenderShip();
-}
-
-function mRenderShip(){
-  var wo = DB.g('wo') || [];
-  var shipLog = DB.g('shipLog') || [];
-  var td = mTd();
-
-  // 오늘 완료
-  var todayDone = shipLog.filter(function(r){return r.dt === td});
-  mq('mShipDoneCnt').textContent = todayDone.length;
-
-  // 출고 대기
-  var waitList = wo.filter(function(r){
-    if(r.status === '출고완료' || r.status === '취소') return false;
-    // 생산 완료된 것 또는 출고 가능 상태
-    return ['출고대기','생산완료','완료','접착'].includes(r.status) || (mCalcWOProgress(r).pct >= 80);
-  });
-  mq('mShipWaitCnt').textContent = waitList.length;
-
-  var list = mState.shipFilter === 'wait' ? waitList : todayDone;
-  var html = '';
-
-  if(list.length === 0){
-    html = '<div class="m-empty"><div class="m-empty-ico"></div><div class="m-empty-msg">'+(mState.shipFilter==='wait'?'출고 대기 중인 작업이 없습니다':'오늘 출고 건이 없습니다')+'</div></div>';
-  } else if(mState.shipFilter === 'wait'){
-    list.forEach(function(r){
-      html += '<div class="m-item">'
-        + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'')+'</div>'
-        + '<span class="m-badge orange">대기</span></div>'
-        + '<div class="m-item-sub">'+(r.pnm||'')+'</div>'
-        + '<div class="m-item-meta">'
-        + '<span>'+mFmt(r.fq||0)+'개</span>'
-        + (r.amt?'<span>'+mFmt(r.amt)+'원</span>':'')
-        + '</div>'
-        + '<button class="m-btn green m-btn-sm" onclick="mOpenShip(\''+r.id+'\')" style="margin-top:10px">▶ 출고 확정</button>'
-        + '</div>';
-    });
-  } else {
-    // 오늘 완료 목록
-    list.forEach(function(r){
-      html += '<div class="m-item">'
-        + '<div class="m-item-hdr"><div class="m-item-title">'+(r.cnm||'')+'</div>'
-        + '<span class="m-badge green">완료</span></div>'
-        + '<div class="m-item-sub">'+(r.pnm||'')+'</div>'
-        + '<div class="m-item-meta">'
-        + '<span>출고 '+mFmt(r.qty||0)+'개</span>'
-        + (r.defect?'<span style="color:var(--m-red)">불량 '+r.defect+'</span>':'')
-        + (r.car?'<span>'+r.car+'</span>':'')
-        + '</div>'
-        + '</div>';
-    });
-  }
-  mq('mShipList').innerHTML = html;
-}
-
-function mOpenShip(woId){
-  /* 모바일은 현장 공정 중심 — 출고 확정은 PC 흐름 보호를 위해 차단 */
-  mToast('출고 확정은 PC에서 진행하세요','err');
-  return;
-  /* eslint-disable no-unreachable */
-  var wo = (DB.g('wo')||[]).find(function(x){return x.id===woId});
-  if(!wo){mToast('패키지 작업지시 없음','err');return}
-
-  mq('mShipWoId').value = woId;
-  mq('mShipInfo').innerHTML = '<b>'+(wo.cnm||'')+'</b><br>'
-    + (wo.pnm||'') + '<br>'
-    + '<span style="color:var(--m-text3)">수량: '+mFmt(wo.fq||0)+'개</span>';
-  mq('mShipQty').value = wo.fq || '';
-  mq('mShipDefect').value = 0;
-  mq('mShipGood').value = mFmt(wo.fq||0);
-  mq('mShipCar').value = '';
-  mq('mShipDriver').value = '';
-  mq('mShipDlv').value = '';
-  mq('mShipMemo').value = '';
-
-  mOpenModal('mModalShip');
-}
-
-function mCalcGood(){
-  var q = +mq('mShipQty').value || 0;
-  var d = +mq('mShipDefect').value || 0;
-  mq('mShipGood').value = mFmt(Math.max(0, q-d));
-}
-
-function mDoShip(){
-  /* 모바일에서 출고/매출/세금계산서 확정 흐름 우회 차단 — PC 전용 */
-  mToast('출고 확정은 PC에서 진행하세요','err');
-  return;
-  /* eslint-disable no-unreachable */
-  var woId = mq('mShipWoId').value;
-  var qty = +mq('mShipQty').value;
-  var defect = +mq('mShipDefect').value || 0;
-
-  if(!qty || qty <= 0){mToast('출고 수량을 입력하세요','err');return}
-
-  var wo = (DB.g('wo')||[]).find(function(x){return x.id===woId});
-  if(!wo){mToast('패키지 작업지시 없음','err');return}
-
-  var rec = {
-    id: mGid(),
-    woId: woId,
-    wn: wo.wn,
-    cnm: wo.cnm,
-    origCnm: wo.cnm,
-    pnm: wo.pnm,
-    qty: qty,
-    defect: defect,
-    good: qty-defect,
-    car: mq('mShipCar').value,
-    driver: mq('mShipDriver').value,
-    dlv: mq('mShipDlv').value,
-    memo: mq('mShipMemo').value,
-    dt: mTd(),
-    tm: mNw(),
-    mgr: (window.CU||{}).name || ''
-  };
-
-  var logs = DB.g('shipLog') || [];
-  logs.push(rec);
-  DB.s('shipLog', logs);
-
-  // WO 상태 업데이트
-  var allWO = DB.g('wo');
-  var idx = allWO.findIndex(function(x){return x.id===woId});
-  if(idx >= 0){
-    allWO[idx].status = '출고완료';
-    DB.s('wo', allWO);
-  }
-
-  // 매출 자동 등록
-  try {
-    var unitPrice = wo.price || (wo.amt && wo.fq ? Math.round(wo.amt/wo.fq) : 0);
-    var salesAmt = Math.round(unitPrice * qty);
-    var sb = DB.g('sales') || [];
-    sb.push({
-      id: mGid(),
-      dt: mTd(),
-      cli: wo.cnm,
-      prod: wo.pnm,
-      qty: qty,
-      price: unitPrice,
-      amt: salesAmt,
-      paid: 0,
-      payType: '미수',
-      note: '모바일 출고 ('+wo.wn+')',
-      woId: woId,
-      shipId: rec.id,
-      companyId: wo.companyId || 'A'
-    });
-    DB.s('sales', sb);
-  } catch(e){console.warn('매출 자동등록 실패',e)}
-
-  mToast('출고 확정 완료', 'ok');
-  mCloseModal('mModalShip');
-  mRenderShip();
-}
-
-/* ===== 매출 렌더 ===== */
-function mRenderSales(){
-  var sales = DB.g('sales') || [];
-  var td = mTd();
-  var month = td.slice(0,7);
-
-  // 이번 달 매출
-  var monthSales = sales.filter(function(r){return r.dt && r.dt.slice(0,7) === month});
-  var monthSum = monthSales.reduce(function(s,r){return s+(r.amt||0)},0);
-  mq('mSalesMonth').textContent = mFmt(monthSum)+'원';
-
-  // 미수금
-  var unpaid = sales.reduce(function(s,r){return s + Math.max(0, (r.amt||0)-(r.paid||0))}, 0);
-  mq('mSalesUnpaid').textContent = mFmt(unpaid)+'원';
-
-  // 필터
-  var filter = mState.salesFilter;
-  document.querySelectorAll('#mPageSales .m-filter-btn').forEach(function(b){
-    b.classList.toggle('on', b.dataset.f === filter);
-    if(!b.onclick) b.onclick = function(){mState.salesFilter=this.dataset.f; mRenderSales()};
-  });
-
-  var list = sales.filter(function(r){
-    if(filter === 'unpaid') return (r.amt||0)-(r.paid||0) > 0;
-    if(filter === 'today') return r.dt === td;
-    if(filter === 'week'){
-      var weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
-      return r.dt >= weekAgo;
-    }
-    return true;
-  }).sort(function(a,b){return b.dt > a.dt ? 1 : -1});
-
-  var html = '';
-  if(list.length === 0){
-    html = '<div class="m-empty"><div class="m-empty-ico"></div><div class="m-empty-msg">매출 내역이 없습니다</div></div>';
-  } else {
-    list.slice(0, 50).forEach(function(r){
-      var u = Math.max(0, (r.amt||0)-(r.paid||0));
-      var statusBadge = u <= 0 ? '<span class="m-badge green">완납</span>' :
-                         (r.paid||0) > 0 ? '<span class="m-badge orange">부분</span>' :
-                         '<span class="m-badge red">미수</span>';
-      var coBadge = r.companyId === 'B' ?
-        '<span class="m-badge purple">법인</span>' :
-        '<span class="m-badge blue">개인</span>';
-
-      html += '<div class="m-item">'
-        + '<div class="m-item-hdr">'
-        + '<div class="m-item-title">'+r.cli+'</div>'
-        + statusBadge
-        + '</div>'
-        + '<div class="m-item-sub">'+(r.prod||'-')+'</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
-        + '<div style="font-size:15px;font-weight:700">'+mFmt(r.amt||0)+'원</div>'
-        + '<div style="display:flex;gap:6px">'+coBadge+'<span style="font-size:12px;color:var(--m-text3)">'+r.dt+'</span></div>'
-        + '</div>'
-        + (u > 0 ? '<div style="font-size:12px;color:var(--m-red);margin-top:4px">미수금 '+mFmt(u)+'원</div>' : '')
-        + '</div>';
-    });
-    if(list.length > 50){
-      html += '<div class="m-empty-sub" style="text-align:center;padding:16px">최근 50건만 표시됩니다. 전체 내역은 PC에서 확인하세요.</div>';
-    }
-  }
-  mq('mSalesList').innerHTML = html;
 }
 
 /* ===== 새 수주/WO 등록 ===== */
@@ -1903,7 +1562,6 @@ function mSaveSale(){
 
   mToast('매출 등록 완료', 'ok');
   mCloseModal('mModalSale');
-  mRenderSales();
   if(mState.currentTab === 'home') mRenderHome();
 }
 
@@ -2043,4 +1701,24 @@ window.addEventListener('DOMContentLoaded', function(){
     } catch(e){}
   }
   mLoadLoginUsers();
+});
+
+/* ============================================
+   포그라운드 복귀 시 강제 동기화
+   - storage 이벤트는 다른 탭에서만 발생. 모바일을 백그라운드로 두고 PC에서
+     데이터 변경 후 모바일 복귀 시, 탭이 비활성이라 storage 이벤트가 누락될 수
+     있음. visibilitychange 로 보강.
+   - 모달 열려있으면 사용자 입력 보호를 위해 갱신 보류 (toast로만 안내)
+   ============================================ */
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState !== 'visible') return;
+  if(typeof mState === 'undefined' || !mState.currentTab) return;
+  var openMM = document.querySelector('.m-modal.on');
+  if(openMM){
+    if(typeof mToast === 'function') mToast('포그라운드 복귀 — 모달 닫고 갱신','');
+    return;
+  }
+  if(typeof mRefreshCurrentView === 'function'){
+    try{ mRefreshCurrentView(); }catch(e){ console.warn('[m-sync] visibilitychange re-render fail', e); }
+  }
 });

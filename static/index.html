@@ -166,7 +166,6 @@
 <button class="sb-item sb-sub" data-mod="acc-etax" title="전자세금계산서">전자세금계산서</button>
 <button class="sb-item" data-mod="acc-recv" title="미수금/미지급 관리">미수·미지급</button>
 <button class="sb-item" data-mod="acc-cashflow" title="입출금 이력">입출금</button>
-<button class="sb-item" data-mod="mes-closing" title="월말 마감 점검">월말 마감</button>
 </div>
 
 <!-- [접힘] 기초정보 -->
@@ -485,7 +484,6 @@
 </div></div>
 <div class="module-page" id="pg-mat-po"></div>
 <div class="module-page" id="pg-mat-bom"></div>
-<div class="module-page" id="pg-mes-closing"></div>
 <div class="module-page" id="pg-acc-sales"><div class="app">
 <div class="hd">
   <span class="hd-logo">팩플로우</span><span class="hd-title">매출/회계</span>
@@ -1201,7 +1199,7 @@
 </div>
 <div id="woCliQuickPicks" class="pack-chip-row" style="margin-bottom:8px"></div>
 <div class="wo-search-row" style="display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:flex-end">
-<div class="fg"><label class="req">품목</label><input id="woProd" placeholder="품목 입력 (F4 검색)" class="wo-select-input" onclick="if(this.readOnly)openProdSearch()"></div>
+<div class="fg"><label class="req">품목</label><input id="woProd" placeholder="품목 입력 (F3/F4 검색)" class="wo-select-input" onclick="if(this.readOnly)openProdSearch()"></div>
 <div class="fg"><label>정매</label><input type="number" id="woQM" min="0" placeholder="0" oninput="if(cPapers&&cPapers[0]){cPapers[0].qm=+this.value||0;}"></div>
 <button type="button" class="btn btn-o btn-sm" onclick="openProdSearch()" style="height:34px">검색</button>
 </div>
@@ -1388,16 +1386,16 @@
     <button class="btn btn-o btn-sm" onclick="openTradeDigestPanel()">거래 확인</button>
     <button class="btn btn-o btn-sm" onclick="reclassifyCliTypes()">매입/매출 자동분류</button>
     <button class="btn btn-o btn-sm" onclick="openFolderMgr()">폴더 관리</button>
-    <button class="btn btn-d btn-sm" id="cliBulkDelBtn" onclick="bulkDelete('cli')" disabled>선택 삭제 (<span id="cliBulkCount">0</span>)</button>
+    <button class="btn btn-d btn-sm" id="cliBulkDelBtn" onclick="bulkDelete('cli')" disabled style="display:none">선택 삭제 (<span id="cliBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openCliM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('cliXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="cliXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impCliXlsx(this)">
     <button class="btn btn-o btn-sm" onclick="dlCliXlsxTemplate()">양식 다운로드</button>
-    <span class="f4-hint">F4 <b>코드도움</b></span>
+    <span class="f4-hint">F3/F4 <b>코드도움</b></span>
   </div>
 </div>
 <div id="cliBulkBar" class="hidden"></div>
-<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th style="width:36px"></th><th>거래처명</th><th>거래구분</th><th>담당자</th><th>연락처</th><th>최근거래</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="cliTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="cliTbl"><thead><tr><th style="width:36px"></th><th style="min-width:160px">거래처명</th><th style="width:90px">거래구분</th><th style="width:110px">담당자</th><th style="width:130px">연락처</th><th style="width:100px">최근거래</th><th style="width:80px">상태</th><th style="width:90px">관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="cliGalleryView" style="display:none"><div id="cliGalleryArea"></div></div>
 <div id="cliPager"></div>
 </div>
@@ -1416,14 +1414,15 @@
       <button data-mode="summary" class="on" onclick="setProdDetailView('summary',this)">간략</button>
       <button data-mode="detail" onclick="setProdDetailView('detail',this)">상세</button>
     </div>
-    <button class="btn btn-d btn-sm" id="prodBulkDelBtn" onclick="bulkDelete('prod')" disabled>선택 삭제 (<span id="prodBulkCount">0</span>)</button>
+    <button class="btn btn-d btn-sm" id="prodBulkDelBtn" onclick="bulkDelete('prod')" disabled style="display:none">선택 삭제 (<span id="prodBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openProdM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('prodXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="prodXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impProdXlsx(this)">
+    <span class="f4-hint">F3/F4 <b>코드도움</b></span>
   </div>
 </div>
 <div id="prodBulkBar" class="hidden"></div>
-<div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th style="width:36px"></th><th>코드</th><th>제품명</th><th>거래처</th><th>단가</th><th>종이</th><th>규격</th><th>공정</th><th>관리</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="prodTableView"><div class="card"><div class="u-scroll-x"><table class="dt" id="prodTbl"><thead><tr><th style="width:36px"></th><th style="width:90px">코드</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:90px;text-align:right">단가</th><th style="width:90px">종이</th><th style="width:110px">규격</th><th style="min-width:120px">공정</th><th style="width:90px">관리</th></tr></thead><tbody></tbody></table></div></div></div>
 <div id="prodGalleryView" style="display:none"><div id="prodGalleryArea"></div></div>
 <div id="prodPager"></div>
 </div>
@@ -1434,14 +1433,15 @@
 <div class="fbar">
   <div class="fbar-row">
     <input type="text" id="moldSch" placeholder="목형번호, 제품명 또는 거래처로 검색" oninput="_dMold()" class="fbar-grow">
-    <button class="btn btn-d btn-sm" id="moldBulkDelBtn" onclick="bulkDelete('mold')" disabled>선택 삭제 (<span id="moldBulkCount">0</span>)</button>
+    <button class="btn btn-d btn-sm" id="moldBulkDelBtn" onclick="bulkDelete('mold')" disabled style="display:none">선택 삭제 (<span id="moldBulkCount">0</span>)</button>
     <button class="btn btn-p btn-sm" onclick="openMoldM()">+ 등록</button>
     <button class="btn btn-s btn-sm" onclick="document.getElementById('moldXlsxInp').click()">엑셀 업로드</button>
     <input type="file" id="moldXlsxInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="impMoldXlsx(this)">
+    <span class="f4-hint">F3/F4 <b>코드도움</b></span>
   </div>
 </div>
 <div id="moldBulkBar" class="hidden"></div>
-<div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th style="width:36px"></th><th>목형번호</th><th>제품명</th><th>거래처</th><th>보관위치</th><th>상태</th><th>관리</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><div class="u-scroll-x"><table class="dt" id="moldTbl"><thead><tr><th style="width:36px"></th><th style="width:120px">목형번호</th><th style="min-width:180px">제품명</th><th style="width:140px">거래처</th><th style="width:130px">보관위치</th><th style="width:80px">상태</th><th style="width:100px">관리</th></tr></thead><tbody></tbody></table></div></div>
 <div id="moldPager"></div>
 </div>
 
@@ -2537,10 +2537,16 @@
 <script src="/js/erp-biz.js?v=20"></script>
 <script src="/js/erp-quality.js?v=21"></script>
 <script src="/js/features-ext.js?v=21"></script>
-<script src="/js/mes-closing.js?v=1"></script>
-<!-- [테스트 모드] 자동 로그인 — 테스트 종료 후 이 스크립트 블록 삭제 -->
+<!-- [개발 전용] URL 에 ?dev=1 또는 localhost 접속 시에만 admin 자동 로그인.
+     운영 도메인(packflow.mckim.i234.me 등) 에서는 절대 자동 로그인되지 않음. -->
 <script>
 (function autoLoginForTesting(){
+  // 가드: URL 파라미터 ?dev=1 OR localhost/127.0.0.1 접속 시에만 활성화
+  var params = new URLSearchParams(window.location.search);
+  var isDev = params.get('dev') === '1';
+  var host = window.location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
+  if(!isDev && !isLocal) return; // 운영 환경에서는 자동 로그인 비활성
   window.PACKFLOW_AUTO_LOGIN = true;
   function tryAuto(){
     var sel = document.getElementById('loginUser');
@@ -2548,7 +2554,6 @@
     var ov  = document.getElementById('loginOverlay');
     if(!sel || !pw || !ov) return setTimeout(tryAuto, 100);
     if(ov.style.display === 'none') return; // 이미 로그인됨
-    // admin 옵션이 로드됐는지 확인
     var hasAdmin = Array.from(sel.options).some(function(o){
       return o.value === 'admin' || o.value === '관리자';
     });
@@ -2559,7 +2564,7 @@
     pw.value = '1234';
     if(typeof unifiedLogin === 'function'){
       unifiedLogin();
-      console.log('[AutoLogin] 테스트 모드: admin 자동 로그인');
+      console.log('[AutoLogin/dev] admin 자동 로그인 (host='+host+', dev='+isDev+')');
     }
   }
   if(document.readyState === 'loading'){

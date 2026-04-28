@@ -55,12 +55,23 @@ function renderBulkBar(kind){
       el.innerHTML='';
     } else {
       el.classList.remove('hidden');
+      var actions='';
+      if(kind==='cli'){
+        var mergeBtn='<button class="btn btn-sm btn-p" '+(ids.length===2?'':'disabled')+' onclick="cliBulkMerge()" title="2건 선택 시 활성">선택 → 병합</button>';
+        actions=
+          '<button class="btn btn-sm btn-o" onclick="cliBulkSetStatus(\'dormant\')">선택 → 휴면 처리</button>'+
+          '<button class="btn btn-sm btn-s" onclick="cliBulkSetStatus(\'archived\')">선택 → 보관 (잔액 0)</button>'+
+          mergeBtn+
+          '<button class="btn btn-sm btn-d" onclick="bulkDelete(\'cli\')" title="삭제는 보관보다 위험: 가능하면 보관을 사용하세요">선택 삭제 ⚠</button>'+
+          '<button class="btn btn-sm btn-o" onclick="clearBulk(\'cli\')">선택 해제</button>';
+      } else {
+        actions=
+          '<button class="btn btn-sm btn-d" onclick="bulkDelete(\''+kind+'\')">선택 삭제</button>'+
+          '<button class="btn btn-sm btn-o" onclick="clearBulk(\''+kind+'\')">선택 해제</button>';
+      }
       el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 12px;border:1px solid var(--bdr);border-radius:12px;background:var(--card);box-shadow:var(--shadow-sm)">'+
         '<div style="font-size:13px;font-weight:700;color:var(--txt)">'+_bulkLabel(kind)+' '+ids.length+'개 선택됨</div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        '<button class="btn btn-sm btn-d" onclick="bulkDelete(\''+kind+'\')">선택 삭제</button>'+
-        '<button class="btn btn-sm btn-o" onclick="clearBulk(\''+kind+'\')">선택 해제</button>'+
-        '</div></div>';
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+actions+'</div></div>';
     }
   }
   _syncBulkBoxes(kind);
@@ -165,6 +176,218 @@ function bulkDelete(kind){
 
 // CLIENT
 var _cliView='table';
+/* ============================================================
+   거래처 정리 — 상태(active/dormant/archived/dup) 필터 + 일괄 액션
+   - status 는 migrate/05_classify_cli.py 가 채워주는 값을 우선 신뢰
+   - 값이 없으면 isDormant 기준으로 active/dormant 추론
+   - dup(중복의심) 은 화면에서 사업자번호·정규화이름 기준 즉시 계산
+   ============================================================ */
+var _cliStatusFilter='default'; /* default = active+dormant 만 노출 */
+function _cliComputedStatus(c){
+  if(!c) return 'active';
+  if(c.status==='merged') return 'merged';
+  if(c.status==='archived') return 'archived';
+  if(c.status==='archive_candidate') return 'archive_candidate';
+  if(c.status==='dormant' || c.isDormant) return 'dormant';
+  if(c.status==='active') return 'active';
+  return c.isDormant?'dormant':'active';
+}
+function _cliStatusBadge2(c){
+  var s=_cliComputedStatus(c);
+  if(s==='merged') return '<span class="bd bd-w" title="병합됨">병합</span>';
+  if(s==='archived') return '<span class="bd bd-w" title="보관됨">보관</span>';
+  if(s==='archive_candidate') return '<span class="bd bd-w" title="보관 후보">보관후보</span>';
+  if(s==='dormant') return '<span class="bd bd-w">휴면</span>';
+  return '<span class="bd bd-s">사용중</span>';
+}
+function _cliNormForDup(nm){
+  var s=String(nm||'');
+  ['주식회사','(주)','㈜','유한회사','(유)','합자회사','합명회사'].forEach(function(t){s=s.split(t).join('');});
+  return s.replace(/[\s\(\)\[\]\.\-_\/·~・]/g,'').toLowerCase();
+}
+function _cliNormBiz(b){return String(b||'').replace(/\D/g,'');}
+var _cliDupCache={at:0, set:null};
+function cliComputeDupSet(){
+  if(_cliDupCache.set && (Date.now()-_cliDupCache.at)<3000) return _cliDupCache.set;
+  var cs=DB.g('cli')||[];
+  var byBiz={}, byNm={};
+  cs.forEach(function(c){
+    if(_cliComputedStatus(c)==='merged') return;
+    var b=_cliNormBiz(c.biz||c.bizNo);
+    if(b && b.length>=9){(byBiz[b]=byBiz[b]||[]).push(c.id);}
+    var n=_cliNormForDup(c.nm);
+    if(n){(byNm[n]=byNm[n]||[]).push(c.id);}
+  });
+  var out={};
+  Object.keys(byBiz).forEach(function(k){if(byBiz[k].length>1)byBiz[k].forEach(function(id){out[id]=true;});});
+  Object.keys(byNm).forEach(function(k){if(byNm[k].length>1)byNm[k].forEach(function(id){out[id]=true;});});
+  _cliDupCache={at:Date.now(), set:out};
+  return out;
+}
+function setCliStatusFilter(v,btn){
+  _cliStatusFilter=v;
+  _cliPage=0;
+  if(btn){
+    var bar=btn.parentElement;
+    if(bar) bar.querySelectorAll('button[data-cli-status]').forEach(function(b){b.classList.remove('on');});
+    btn.classList.add('on');
+  }
+  rCli();
+}
+function _cliRenderStatusBar(counts){
+  var el=$('cliStatusBar');if(!el)return;
+  var defs=[
+    {v:'default',  label:'활성+휴면', cnt:counts.active+counts.dormant},
+    {v:'all',      label:'전체',      cnt:counts.total},
+    {v:'active',   label:'활성',      cnt:counts.active},
+    {v:'dormant',  label:'휴면',      cnt:counts.dormant},
+    {v:'archive',  label:'보관',      cnt:counts.archive},
+    {v:'dup',      label:'중복의심',  cnt:counts.dup}
+  ];
+  el.innerHTML=defs.map(function(d){
+    var on=(_cliStatusFilter===d.v)?'on':'';
+    return '<button class="btn btn-sm btn-o '+on+'" data-cli-status="'+d.v+'" onclick="setCliStatusFilter(\''+d.v+'\',this)">'+
+      d.label+' <span style="opacity:.7">'+d.cnt+'</span></button>';
+  }).join('');
+}
+function _cliApplyStatusFilter(cs, dupSet){
+  var f=_cliStatusFilter||'default';
+  if(f==='all') return cs.filter(function(c){return _cliComputedStatus(c)!=='merged';});
+  if(f==='active') return cs.filter(function(c){return _cliComputedStatus(c)==='active';});
+  if(f==='dormant') return cs.filter(function(c){return _cliComputedStatus(c)==='dormant';});
+  if(f==='archive') return cs.filter(function(c){var s=_cliComputedStatus(c);return s==='archived'||s==='archive_candidate';});
+  if(f==='dup') return cs.filter(function(c){return dupSet[c.id];});
+  /* default: 활성+휴면. 보관/병합/보관후보 제외 */
+  return cs.filter(function(c){var s=_cliComputedStatus(c);return s==='active'||s==='dormant';});
+}
+function _cliBalanceZero(c){
+  var r=+c.receivable||0, p=+c.payable||0;
+  return r===0 && p===0;
+}
+function cliBulkSetStatus(targetStatus){
+  var ids=_bulkIds('cli');
+  if(!ids.length){toast('선택된 거래처가 없습니다','err');return}
+  var cs=DB.g('cli')||[];
+  var idMap=ids.reduce(function(m,id){m[id]=true;return m;},{});
+  var changed=0, blockedBalance=0;
+  var label = targetStatus==='dormant' ? '휴면' : targetStatus==='archived' ? '보관' : targetStatus;
+  var msg='선택한 거래처 '+ids.length+'건을 "'+label+'" 상태로 전환합니다.';
+  if(targetStatus==='archived') msg+='\n잔액(미수/미지급)이 있는 거래처는 안전을 위해 제외됩니다.';
+  if(!confirm(msg+'\n\n계속할까요?')) return;
+  cs.forEach(function(c){
+    if(!idMap[c.id]) return;
+    if(targetStatus==='archived' && !_cliBalanceZero(c)){blockedBalance++;return;}
+    c.status=targetStatus;
+    if(targetStatus==='dormant'){c.isDormant=true; c.dormantAt=c.dormantAt||td();}
+    if(targetStatus==='archived'){c.isDormant=true; c.archivedAt=nw();}
+    c.statusAt=nw();
+    changed++;
+  });
+  DB.s('cli',cs);
+  clearBulk('cli',true);
+  rCli();
+  var t='상태 변경: '+changed+'건';
+  if(blockedBalance) t+=' / 잔액 보유로 제외 '+blockedBalance+'건';
+  toast(t,'ok');
+}
+function _cliMergeRefs(losersNm, targetNm){
+  /* sales/purchase/wo/orders/quotes/shipLog/income/po/priceHistory 의 거래처명 갱신 */
+  var keysFields={
+    sales:['cli','cnm','customerNm','client'],
+    purchase:['cli','cnm','vendor','customerNm'],
+    wo:['cli','cnm','customerNm'],
+    orders:['cli','cnm','customerNm'],
+    quotes:['cli','cnm','customerNm'],
+    shipLog:['cnm','cli','customerNm'],
+    income:['cli','cnm','vendor'],
+    po:['vendor','cli','cnm'],
+    priceHistory:['cliNm','customerNm','cli']
+  };
+  var summary={};
+  var loserSet={}; losersNm.forEach(function(n){loserSet[String(n||'').trim()]=true;});
+  Object.keys(keysFields).forEach(function(k){
+    var rows=DB.g(k);
+    if(!Array.isArray(rows) || !rows.length){summary[k]=0;return;}
+    var touched=0;
+    rows.forEach(function(r){
+      for(var i=0;i<keysFields[k].length;i++){
+        var f=keysFields[k][i];
+        var v=r[f];
+        if(v && loserSet[String(v).trim()]){
+          if(v!==targetNm){r[f]=targetNm; touched++;}
+          break;
+        }
+      }
+    });
+    if(touched){DB.s(k,rows);}
+    summary[k]=touched;
+  });
+  return summary;
+}
+function cliBulkMerge(){
+  var ids=_bulkIds('cli');
+  if(ids.length!==2){toast('정확히 2건을 선택해야 병합할 수 있습니다','err');return}
+  var cs=DB.g('cli')||[];
+  var a=cs.find(function(x){return x.id===ids[0];});
+  var b=cs.find(function(x){return x.id===ids[1];});
+  if(!a||!b){toast('선택 거래처를 찾을 수 없습니다','err');return}
+  /* 기본 보존측 추천: 사업자번호 보유 → 거래이력 더 많은 쪽 → 더 오래된 cat */
+  function refCount(nm){
+    var n=0;
+    ['sales','purchase','wo','orders','quotes','shipLog','income','po'].forEach(function(k){
+      (DB.g(k)||[]).forEach(function(r){
+        if((r.cli||r.cnm||r.customerNm||r.vendor||r.client)===nm) n++;
+      });
+    });
+    return n;
+  }
+  function score(c){
+    var s=0;
+    if(_cliNormBiz(c.biz||c.bizNo)) s+=100;
+    s+=refCount(c.nm)*10;
+    return s;
+  }
+  var preferA = score(a) >= score(b);
+  var target = preferA ? a : b;
+  var loser  = preferA ? b : a;
+  /* 모달 대신 confirm 두 단계: 미리보기 + 최종 확인 */
+  var preview='병합 미리보기\n'
+    +'──────────────────\n'
+    +'보존측 (target):\n'
+    +'  '+target.nm+'  ['+(_cliNormBiz(target.biz||target.bizNo)||'사업자번호 없음')+']  참조 '+refCount(target.nm)+'건\n'
+    +'흡수측 (loser):\n'
+    +'  '+loser.nm+'  ['+(_cliNormBiz(loser.biz||loser.bizNo)||'사업자번호 없음')+']  참조 '+refCount(loser.nm)+'건\n'
+    +'──────────────────\n'
+    +'동작:\n'
+    +'  1) loser 의 빈 필드 → target 으로 보충 (기존값 유지)\n'
+    +'  2) sales/purchase/wo/orders/quotes/shipLog/income/po/priceHistory 의\n'
+    +'     "'+loser.nm+'" 참조를 "'+target.nm+'" 로 일괄 치환\n'
+    +'  3) loser 는 status="merged" 로 마킹 (삭제하지 않음)\n\n'
+    +'보존측을 바꾸려면 [취소] 후 다시 시도하세요. 진행할까요?';
+  if(!confirm(preview)) return;
+  if(!confirm('병합은 비가역적입니다. 정말 진행할까요?')) return;
+  /* 빈 필드 보충 */
+  Object.keys(loser).forEach(function(k){
+    if(['id','nm','cat','status','mergedTo','_src','isDormant','isFavorite'].indexOf(k)>=0) return;
+    var v=loser[k];
+    if(v==null||v==='') return;
+    if(!target[k]) target[k]=v;
+  });
+  ['receivable','payable'].forEach(function(k){
+    var tv=+target[k]||0, lv=+loser[k]||0;
+    if(tv||lv) target[k]=tv+lv;
+  });
+  loser.status='merged';
+  loser.mergedTo=target.id;
+  loser.mergedAt=nw();
+  DB.s('cli',cs);
+  var sum=_cliMergeRefs([loser.nm], target.nm);
+  _cliDupCache={at:0,set:null};
+  clearBulk('cli',true);
+  rCli();
+  var refTxt=Object.keys(sum).filter(function(k){return sum[k];}).map(function(k){return k+' '+sum[k];}).join(', ');
+  toast('병합 완료: target='+target.nm+(refTxt?' / 참조갱신 '+refTxt:''),'ok');
+}
 function setCliView(v,btn){_cliView=v;_cliPage=0;if(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}var t=$('cliTableView'),g=$('cliGalleryView');if(t)t.style.display=v==='table'?'':'none';if(g)g.style.display=v==='gallery'?'':'none';rCli()}
 function _cliDormant(c){return !!(c&&c.isDormant)}
 function _cliFavorite(c){return !!(c&&c.isFavorite)}
@@ -345,9 +568,23 @@ function rCli(page){
   // 폴더 필터
   if(ff === '__none__') cs = cs.filter(function(c){return !c.folderId});
   else if(ff) cs = cs.filter(function(c){return c.folderId === ff});
+  // 상태 필터 (active/dormant/archive/dup) + 상단 필터바 렌더
+  var dupSet=cliComputeDupSet();
+  var allCli=DB.g('cli')||[];
+  var counts={total:0,active:0,dormant:0,archive:0,dup:0};
+  allCli.forEach(function(c){
+    var s=_cliComputedStatus(c);
+    if(s==='merged') return;
+    counts.total++;
+    if(s==='active') counts.active++;
+    else if(s==='dormant') counts.dormant++;
+    else if(s==='archived'||s==='archive_candidate') counts.archive++;
+    if(dupSet[c.id]) counts.dup++;
+  });
+  _cliRenderStatusBar(counts);
+  cs=_cliApplyStatusFilter(cs, dupSet);
   cs=cs.slice().sort(_cliSort);
   // KPI
-  var allCli=DB.g('cli');
   var salesCnt=allCli.filter(c=>c.cType==='sales'||c.cType==='both'||!c.cType).length;
   var purchCnt=allCli.filter(c=>c.cType==='purchase'||c.cType==='both').length;
   var withSales=DB.g('sales').reduce((acc,r)=>{acc[r.cli]=true;return acc},{});
@@ -367,7 +604,7 @@ function rCli(page){
         var favBadge=_cliFavorite(c)?'<span class="bd bd-p">★</span> ':'';
         var last=_cliLastTrade(c);
         var recentCell=last.dt==='-'?'<span style="color:var(--txt3)">거래 없음</span>':('<b>'+last.dt+'</b>');
-        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.ps||c.ceo||'-'}</td><td>${c.tel||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm||'-'}</td><td><span class="bd bd-e">인쇄소</span></td><td>${c.ps||c.ceo||'-'}</td><td>${c.tel||'-'}</td><td>${recentCell}</td><td>${_cliStatusBadge2(c)}${dupSet[c.id]?' <span class="bd bd-w" title="중복 의심">중복</span>':''}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
       }).join(''):'<tr><td colspan="8" class="empty-cell">인쇄소 없음</td></tr>';
     }else{
       $('cliTbl').querySelector('tbody').innerHTML=vis.length?vis.map(function(c){
@@ -375,7 +612,7 @@ function rCli(page){
         var last=_cliLastTrade(c);
         var recentCell=last.dt==='-'?'<span style="color:var(--txt3)">거래 없음</span>':('<b>'+last.dt+'</b>'+(last.prod?'<div style="font-size:11px;color:var(--txt2);margin-top:2px">'+last.prod+'</div>':''));
         var contact=(c.tel||'')+(c.ps?'<div style="font-size:11px;color:var(--txt2);margin-top:2px">'+c.ps+'</div>':'');
-        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.ps||c.ceo||'-'}</td><td>${contact||'-'}</td><td>${recentCell}</td><td>${cliStatusBadge(c)}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="event.stopPropagation();openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
+        return `<tr class="${_cliDormant(c)?'cli-row-dormant':''}" onclick="openCliLedgerPanel('${c.id}')" oncontextmenu="return openCliContextMenu(event,'${c.id}')">${_bulkCell('cli',c.id)}<td style="font-weight:700">${favBadge}${c.nm}</td><td>${cTypeBadge(c)}</td><td>${c.ps||c.ceo||'-'}</td><td>${contact||'-'}</td><td>${recentCell}</td><td>${_cliStatusBadge2(c)}${dupSet[c.id]?' <span class="bd bd-w" title="중복 의심">중복</span>':''}</td><td><button class="btn btn-sm btn-o" onclick="event.stopPropagation();eCli('${c.id}')">수정</button> <button class="btn btn-sm btn-o" onclick="event.stopPropagation();showCliHist('${c.id}')">이력</button> <button class="btn btn-sm btn-s" onclick="event.stopPropagation();openProdMWithCli('${c.id}')">품목</button> <button class="btn btn-sm btn-d" onclick="event.stopPropagation();dCli('${c.id}')">삭제</button></td></tr>`;
       }).join(''):'<tr><td colspan="8" class="empty-cell">거래처 없음</td></tr>';
     }
   }else{

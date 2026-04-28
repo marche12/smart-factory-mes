@@ -2538,9 +2538,16 @@
 <script src="/js/erp-quality.js?v=21"></script>
 <script src="/js/features-ext.js?v=21"></script>
 <script src="/js/mes-closing.js?v=1"></script>
-<!-- [테스트 모드] 자동 로그인 — 테스트 종료 후 이 스크립트 블록 삭제 -->
+<!-- [개발 전용] URL 에 ?dev=1 또는 localhost 접속 시에만 admin 자동 로그인.
+     운영 도메인(packflow.mckim.i234.me 등) 에서는 절대 자동 로그인되지 않음. -->
 <script>
 (function autoLoginForTesting(){
+  // 가드: URL 파라미터 ?dev=1 OR localhost/127.0.0.1 접속 시에만 활성화
+  var params = new URLSearchParams(window.location.search);
+  var isDev = params.get('dev') === '1';
+  var host = window.location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
+  if(!isDev && !isLocal) return; // 운영 환경에서는 자동 로그인 비활성
   window.PACKFLOW_AUTO_LOGIN = true;
   function tryAuto(){
     var sel = document.getElementById('loginUser');
@@ -2548,7 +2555,6 @@
     var ov  = document.getElementById('loginOverlay');
     if(!sel || !pw || !ov) return setTimeout(tryAuto, 100);
     if(ov.style.display === 'none') return; // 이미 로그인됨
-    // admin 옵션이 로드됐는지 확인
     var hasAdmin = Array.from(sel.options).some(function(o){
       return o.value === 'admin' || o.value === '관리자';
     });
@@ -2559,7 +2565,7 @@
     pw.value = '1234';
     if(typeof unifiedLogin === 'function'){
       unifiedLogin();
-      console.log('[AutoLogin] 테스트 모드: admin 자동 로그인');
+      console.log('[AutoLogin/dev] admin 자동 로그인 (host='+host+', dev='+isDev+')');
     }
   }
   if(document.readyState === 'loading'){

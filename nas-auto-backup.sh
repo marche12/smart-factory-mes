@@ -1,7 +1,25 @@
 #!/bin/bash
 # 팩플로우 자동 백업 스크립트
-# DSM 작업 스케줄러에 등록: 매일 새벽 3시
-#   bash /volume1/homes/apps/packflow/nas-auto-backup.sh
+#
+# === DSM 작업 스케줄러 등록 (1회) ===
+#   1) DSM → 제어판 → 작업 스케줄러 → 생성 → 예약된 작업 → 사용자 정의 스크립트
+#   2) 일반 탭   : 작업명 'packflow-auto-backup', 사용자 'inno' (또는 root), 활성화 ✅
+#   3) 스케줄 탭 : 매일 / 첫 번째 실행 시간 03:00 / 빈도 매일
+#   4) 작업 설정 : 사용자 정의 스크립트 박스에 ↓
+#        bash /volume1/homes/apps/packflow/nas-auto-backup.sh
+#   5) 알림 설정(선택) : '출력에 ERR 포함 시 메일 보내기' 권장
+#
+# 등록 검증:
+#   ssh inno@100.74.217.19 'ls -lt /volume1/homes/apps/packflow-backups/ | head -5'
+#   ssh inno@100.74.217.19 'tail -10 /volume1/homes/apps/packflow-backups/backup.log'
+#
+# 정책:
+#   - 보관 30일 (RETENTION_DAYS) — 그 이후 자동 삭제
+#   - 대상 data/mes.db + data/backup/ 디렉토리만 압축
+#   - 위치 /volume1/homes/apps/packflow-backups/
+#   - 외부 보관 권장 : Hyper Backup 으로 packflow-backups/ 폴더 추가 백업
+#
+# 자세한 절차/롤백: docs/deploy-runbook.md §5
 
 SRC_DIR="/volume1/homes/apps/packflow"
 BACKUP_DIR="/volume1/homes/apps/packflow-backups"
@@ -23,7 +41,7 @@ if [ -f "$BACKUP_FILE" ]; then
     SIZE=$(du -h "$BACKUP_FILE" | awk '{print $1}')
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] 백업 성공: $BACKUP_FILE ($SIZE)" >> "$BACKUP_DIR/backup.log"
 else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] 백업 실패" >> "$BACKUP_DIR/backup.log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERR 백업 실패" >> "$BACKUP_DIR/backup.log"
     exit 1
 fi
 

@@ -1,301 +1,283 @@
 #!/usr/bin/env python3
 """
-KV 데이터 중복 정리 스크립트.
+data_store(KV) 중복키·충돌 정리 스크립트.
 
-현재 지원:
-  --merge-cli   거래처(cli) 중복 후보 탐지 및 병합
+검사 대상:
+  1. data_store 의 key 자체 중복 (이론상 PK 라 0이지만 ino_ 접두사 변종 검사)
+  2. cli/prod/mold/vendors 안의 id 중복 / 이름 중복 / 빈 이름
+  3. wo 의 wn(작업지시번호) 중복
+  4. 배열 안의 None/빈 객체
 
-거래처 중복 패턴:
-  1) 같은 사업자번호(bizNo) 다른 이름  → 사업자번호 기준 병합
-  2) 같은 정규화 이름 + 한쪽만 사업자번호 있음
-  3) 띄어쓰기·괄호·"주식회사" 접두사·"(주)" 차이만 있는 이름
-
-병합 방향:
-  - 보존측(target): 거래이력이 더 많거나, 사업자번호가 채워진 쪽,
-    동률이면 cat(생성일)이 더 오래된 쪽
-  - 흡수측(loser): nm/biz가 비어 있는 필드만 target으로 채움 (덮어쓰지 않음)
-  - 참조 갱신: sales/purchase/wo/orders/quotes/shipLog/income/po/priceHistory
-    의 cli/cnm/customerNm 필드를 target.nm 으로 일괄 교체
-  - loser 는 status='merged', mergedTo=target.id 로 마킹 (삭제하지 않음)
-
-기본 dry-run. --apply 옵션 시에만 DB 갱신.
+기본은 dry-run. --apply 줘야 실제 정리.
 
 사용법:
-  python3 migrate/04_dedupe_kv.py --merge-cli
-  python3 migrate/04_dedupe_kv.py --merge-cli --apply
-  python3 migrate/04_dedupe_kv.py --merge-cli --db /path/to/mes.db
-
-주의:
-  - NAS DB에 직접 쓰지 말 것. Mac 로컬 카피본만 사용.
-  - 병합은 비가역적이므로 --apply 전에 dry-run 출력을 반드시 검토.
+    python3 04_dedupe_kv.py                    # 검사만 (dry-run)
+    python3 04_dedupe_kv.py --apply            # 실제 정리 (정리 직전 자동 백업)
+    python3 04_dedupe_kv.py --keys cli,prod,wo # 특정 키만
+    python3 04_dedupe_kv.py --renumber-wo      # wo.wn 중복을 wn-2/wn-3 로 자동 재번호
+                                                  (--apply 없으면 dry-run, 변경 미반영)
 """
-import argparse
 import json
 import os
-import re
-import sqlite3
 import sys
-from collections import defaultdict
+import shutil
+import sqlite3
+from collections import Counter
 from datetime import datetime
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-DEFAULT_DB = os.path.join(PROJECT_DIR, "data", "mes.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mes.db")
 
-# 참조 키 → 후보 필드명 (있는 첫 필드를 거래처명으로 간주)
-CLI_REF_KEYS = {
-    "sales":        ["cli", "cnm", "customerNm", "client"],
-    "purchase":     ["cli", "cnm", "vendor", "customerNm"],
-    "wo":           ["cli", "cnm", "customerNm"],
-    "orders":       ["cli", "cnm", "customerNm"],
-    "quotes":       ["cli", "cnm", "customerNm"],
-    "shipLog":      ["cnm", "cli", "customerNm"],
-    "income":       ["cli", "cnm", "vendor"],
-    "po":           ["vendor", "cli", "cnm"],
-    "priceHistory": ["cliNm", "customerNm", "cli"],
-}
-
-NAME_NORM_RE = re.compile(r"[\s\(\)\[\]\.\-_/·~・]")
+# (key, identity_field, name_field, label)
+TARGETS = [
+    ("cli",     "id", "nm", "거래처"),
+    ("prod",    "id", "nm", "품목"),
+    ("mold",    "id", "no", "목형"),
+    ("vendors", "id", "nm", "외주처"),
+    ("users",   "id", "un", "사용자"),
+    ("wo",      "id", "wn", "작업지시"),
+]
 
 
-def normalize_name(nm):
-    s = str(nm or "")
-    # 흔한 회사 접두/접미사 제거
-    for token in ["주식회사", "(주)", "㈜", "유한회사", "(유)", "합자회사", "합명회사"]:
-        s = s.replace(token, "")
-    s = NAME_NORM_RE.sub("", s)
-    return s.lower()
-
-
-def normalize_biz(biz):
-    return re.sub(r"\D", "", str(biz or ""))
-
-
-def get_kv(db, key):
+def load(db, key):
     row = db.execute("SELECT value FROM data_store WHERE key=?", [key]).fetchone()
     if not row:
         return []
     try:
-        return json.loads(row[0]) or []
-    except Exception:
+        v = json.loads(row[0])
+    except (json.JSONDecodeError, TypeError):
         return []
+    return v if isinstance(v, list) else []
 
 
-def set_kv(db, key, data):
+def save(db, key, data):
     db.execute(
-        "INSERT OR REPLACE INTO data_store(key, value) VALUES(?, ?)",
-        [key, json.dumps(data, ensure_ascii=False)],
+        "INSERT OR REPLACE INTO data_store(key, value, updated_at) VALUES(?, ?, ?)",
+        [key, json.dumps(data, ensure_ascii=False), datetime.now().isoformat()],
     )
 
 
-def count_refs(name, cli_refs_cache):
-    """거래처 이름이 참조된 횟수 합계"""
-    total = 0
-    for rows, fields in cli_refs_cache:
-        for r in rows:
-            for f in fields:
-                v = r.get(f)
-                if v and str(v).strip() == name:
-                    total += 1
-                    break
-    return total
+def detect_conflicts(items, id_field, name_field):
+    issues = {
+        "none_or_garbage": 0,
+        "empty_name": 0,
+        "dup_ids": [],
+        "dup_names": [],
+    }
+    cleaned = []
+    seen_ids = {}
+    name_counter = Counter()
 
-
-def build_refs_cache(db):
-    cache = []
-    for key, fields in CLI_REF_KEYS.items():
-        rows = get_kv(db, key)
-        cache.append((rows, fields))
-    return cache
-
-
-def pick_target(group, refs_cache):
-    """병합 대상 그룹 중 보존할 항목 선택"""
-    def score(c):
-        s = 0
-        if normalize_biz(c.get("bizNo") or c.get("biz")):
-            s += 100
-        s += count_refs(c.get("nm") or "", refs_cache) * 10
-        cat = str(c.get("cat") or "")
-        if cat:
-            # 오래된 게 우선 → 음수로 비교
-            s += -ord(cat[0]) if cat else 0
-        return s
-    return sorted(group, key=score, reverse=True)[0]
-
-
-def merge_fields(target, loser):
-    """loser → target 으로 빈 필드만 보충"""
-    for k, v in loser.items():
-        if k in ("id", "nm", "cat", "status", "mergedTo", "_src"):
+    for it in items:
+        if not isinstance(it, dict):
+            issues["none_or_garbage"] += 1
             continue
-        if v in (None, "", 0):
+        nm = (str(it.get(name_field) or "")).strip()
+        if not nm:
+            issues["empty_name"] += 1
             continue
-        if not target.get(k):
-            target[k] = v
-    # receivable/payable 합산 (둘 다 잔액 있는 경우)
-    for k in ("receivable", "payable"):
-        try:
-            tv = float(target.get(k) or 0)
-            lv = float(loser.get(k) or 0)
-            if tv or lv:
-                target[k] = int(tv + lv)
-        except Exception:
-            pass
-
-
-def find_groups(cli):
-    """중복 후보 그룹 목록 반환. 각 그룹은 (reason, [c1, c2, ...])"""
-    by_biz = defaultdict(list)
-    by_norm = defaultdict(list)
-    for c in cli:
-        if c.get("status") == "merged":
-            continue
-        biz = normalize_biz(c.get("bizNo") or c.get("biz"))
-        if biz and len(biz) >= 9:
-            by_biz[biz].append(c)
-        nn = normalize_name(c.get("nm"))
-        if nn:
-            by_norm[nn].append(c)
-
-    groups = []
-    seen_ids = set()
-
-    # 1) 같은 사업자번호
-    for biz, items in by_biz.items():
-        if len(items) <= 1:
-            continue
-        ids = tuple(sorted(c.get("id") for c in items))
-        if ids in seen_ids:
-            continue
-        seen_ids.add(ids)
-        groups.append(("같은 사업자번호 " + biz, items))
-
-    # 2/3) 정규화 이름 동일
-    for nn, items in by_norm.items():
-        if len(items) <= 1:
-            continue
-        ids = tuple(sorted(c.get("id") for c in items))
-        if ids in seen_ids:
-            continue
-        seen_ids.add(ids)
-        # 사업자번호가 한쪽만 있으면 reason 강화
-        bizes = [normalize_biz(c.get("bizNo") or c.get("biz")) for c in items]
-        non_empty = [b for b in bizes if b]
-        if non_empty and len(non_empty) < len(items):
-            reason = "정규화이름동일 + 사업자번호 한쪽만"
+        ident = it.get(id_field) or ""
+        if ident in seen_ids:
+            seen_ids[ident] += 1
         else:
-            reason = "정규화이름동일"
-        groups.append((reason, items))
+            seen_ids[ident] = 1
+        name_counter[nm] += 1
+        cleaned.append(it)
 
-    return groups
-
-
-def update_refs(db, refs_cache, name_map, apply_changes):
-    """name_map: {old_name: new_name} 으로 모든 참조 갱신"""
-    summary = {}
-    for (rows, fields), key in zip(refs_cache, CLI_REF_KEYS.keys()):
-        touched = 0
-        for r in rows:
-            for f in fields:
-                v = r.get(f)
-                if v and str(v).strip() in name_map:
-                    new_v = name_map[str(v).strip()]
-                    if new_v != v:
-                        r[f] = new_v
-                        touched += 1
-                    break
-        summary[key] = touched
-        if apply_changes and touched:
-            set_kv(db, key, rows)
-    return summary
+    issues["dup_ids"] = [(k, v) for k, v in seen_ids.items() if v > 1 and k]
+    issues["dup_names"] = [(k, v) for k, v in name_counter.items() if v > 1]
+    return cleaned, issues
 
 
-def cmd_merge_cli(args, db):
-    cli = get_kv(db, "cli")
-    if not cli:
-        print("[ERROR] cli 비어있음 — 중단")
-        sys.exit(1)
+def merge_duplicates(items, id_field, name_field):
+    """중복 id 는 마지막 항목 유지, 중복 이름은 마지막 항목으로 병합 (필드는 union)."""
+    by_id = {}
+    by_name = {}
+    out_order = []
 
-    refs_cache = build_refs_cache(db)
-    groups = find_groups(cli)
-    print(f"[INFO] 거래처 {len(cli)}건, 중복 후보 그룹 {len(groups)}개")
-
-    if not groups:
-        print("[OK] 중복 후보 없음")
-        return
-
-    name_map = {}
-    cli_by_id = {c.get("id"): c for c in cli}
-    plans = []  # (reason, target_nm, [loser_nms])
-
-    for reason, items in groups:
-        target = pick_target(items, refs_cache)
-        losers = [c for c in items if c.get("id") != target.get("id")]
-        if not losers:
+    for it in items:
+        if not isinstance(it, dict):
             continue
-        plans.append((reason, target.get("nm"), [c.get("nm") for c in losers]))
-        for l in losers:
-            name_map[l.get("nm")] = target.get("nm")
-            if args.apply:
-                merge_fields(target, l)
-                l["status"] = "merged"
-                l["mergedTo"] = target.get("id")
-                l["mergedAt"] = datetime.now().isoformat()
+        nm = (str(it.get(name_field) or "")).strip()
+        if not nm:
+            continue
+        ident = it.get(id_field) or f"__no_id_{nm}__"
 
-    print(f"\n[PLAN] 병합 계획 {len(plans)}건:")
-    for reason, t, ls in plans[: args.show]:
-        print(f"  - [{reason}] target={t}  ← {', '.join(ls)}")
-    if len(plans) > args.show:
-        print(f"  ... ({len(plans) - args.show}건 더 있음, --show N 으로 늘리기)")
+        if ident in by_id:
+            existing = by_id[ident]
+            for k, v in it.items():
+                if v not in (None, "", 0) and not existing.get(k):
+                    existing[k] = v
+        elif nm in by_name:
+            existing = by_name[nm]
+            for k, v in it.items():
+                if v not in (None, "", 0) and not existing.get(k):
+                    existing[k] = v
+        else:
+            by_id[ident] = it
+            by_name[nm] = it
+            out_order.append(it)
 
-    if args.apply:
-        ref_summary = update_refs(db, refs_cache, name_map, apply_changes=True)
-        if not cli:
-            print("[ABORT] cli 비어있음 — 저장 차단")
-            sys.exit(2)
-        set_kv(db, "cli", cli)
-        db.commit()
-        print(f"\n[OK] 병합 적용 완료")
-        print(f"  cli       : {len(plans)}건 그룹 병합 (loser 는 status='merged' 마킹)")
-        for k, n in ref_summary.items():
-            if n:
-                print(f"  {k:<10}: {n}건 참조 갱신")
-    else:
-        # dry-run: 참조 갱신 영향 미리보기
-        ref_preview = update_refs(db, refs_cache, name_map, apply_changes=False)
-        print(f"\n[DRY-RUN] 참조 갱신 예상:")
-        for k, n in ref_preview.items():
-            if n:
-                print(f"  {k:<10}: {n}건")
-        print("\n실제 적용은 --apply 옵션을 추가하세요.")
+    return out_order
+
+
+def renumber_wo(items, dry_run=True):
+    """wo 배열 안에서 wn 중복을 첫 항목은 그대로, 두번째부터 wn-2/wn-3 으로 재번호.
+    Returns (new_items, change_log[]).
+    """
+    seen_count = {}
+    new_items = []
+    changes = []
+    for it in items:
+        if not isinstance(it, dict):
+            new_items.append(it)
+            continue
+        wn = (it.get("wn") or "").strip()
+        if not wn:
+            new_items.append(it)
+            continue
+        n = seen_count.get(wn, 0) + 1
+        seen_count[wn] = n
+        if n == 1:
+            new_items.append(it)
+            continue
+        new_wn = f"{wn}-{n}"
+        # 새로 부여한 번호도 충돌하면 -N+1, -N+2 로 끝까지 밀기
+        bump = n
+        while new_wn in seen_count and seen_count.get(new_wn, 0) > 0:
+            bump += 1
+            new_wn = f"{wn}-{bump}"
+        seen_count[new_wn] = 1
+        if dry_run:
+            cloned = dict(it)
+        else:
+            cloned = it
+            cloned["wn"] = new_wn
+            cloned["_renumberedFrom"] = wn
+            cloned["_renumberedAt"] = datetime.now().isoformat()
+        changes.append((wn, new_wn, it.get("id") or "", it.get("dt") or ""))
+        new_items.append(cloned)
+    return new_items, changes
+
+
+def _wo_keys_in_store(db):
+    """wo, ino_wo, wo_YYYY-MM 형태 모두 수집."""
+    rows = db.execute(
+        "SELECT key FROM data_store WHERE key='wo' OR key='ino_wo' OR key LIKE 'wo_%' OR key LIKE 'ino_wo_%'"
+    ).fetchall()
+    return [r[0] for r in rows]
 
 
 def main():
-    ap = argparse.ArgumentParser(description="KV 중복 정리")
-    ap.add_argument("--db", default=DEFAULT_DB)
-    ap.add_argument("--apply", action="store_true", help="DB에 반영 (기본 dry-run)")
-    ap.add_argument("--show", type=int, default=20, help="dry-run에서 출력할 그룹 수")
-    ap.add_argument("--merge-cli", action="store_true", help="거래처 중복 병합")
-    args = ap.parse_args()
+    apply_mode = "--apply" in sys.argv
+    renumber_wo_mode = "--renumber-wo" in sys.argv
+    keys_filter = None
+    if "--keys" in sys.argv:
+        idx = sys.argv.index("--keys")
+        if idx + 1 < len(sys.argv):
+            keys_filter = {k.strip() for k in sys.argv[idx + 1].split(",")}
 
-    if not os.path.exists(args.db):
-        print(f"[ERROR] DB 없음: {args.db}")
+    if not os.path.exists(DB_PATH):
+        print(f"DB 없음: {DB_PATH}")
         sys.exit(1)
 
-    if not args.merge_cli:
-        ap.print_help()
-        print("\n[INFO] 동작 옵션이 필요합니다. 예) --merge-cli")
-        sys.exit(0)
+    if apply_mode:
+        backup_path = f"{DB_PATH}.bak-dedupe-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        shutil.copy2(DB_PATH, backup_path)
+        print(f"[BACKUP] {backup_path}\n")
 
-    print(f"[INFO] DB: {args.db}")
-    print(f"[INFO] 모드: {'APPLY' if args.apply else 'DRY-RUN'}")
-    db = sqlite3.connect(args.db)
-    try:
-        if args.merge_cli:
-            cmd_merge_cli(args, db)
-    finally:
-        db.close()
+    db = sqlite3.connect(DB_PATH)
+
+    # 1. data_store 키 변종 (ino_ 접두사 충돌)
+    rows = db.execute("SELECT key FROM data_store").fetchall()
+    keys = {r[0] for r in rows}
+    conflicts_keys = []
+    for k in keys:
+        bare = k[4:] if k.startswith("ino_") else k
+        prefixed = f"ino_{bare}"
+        if k != prefixed and prefixed in keys and bare in keys:
+            conflicts_keys.append((bare, prefixed))
+    if conflicts_keys:
+        print(f"[KEY-CONFLICT] ino_ 접두사 양쪽 존재: {len(conflicts_keys)}쌍")
+        for a, b in conflicts_keys[:5]:
+            print(f"  · {a}  vs  {b}")
+    else:
+        print("[KEY-CONFLICT] ino_ 접두사 충돌 없음")
+    print()
+
+    # 2. 마스터/이력 키별 검사
+    total_issues = 0
+    for key, id_f, nm_f, label in TARGETS:
+        if keys_filter and key not in keys_filter:
+            continue
+        # 양쪽 키 모두 검사 (없으면 [])
+        for actual_key in [key, f"ino_{key}"]:
+            data = load(db, actual_key)
+            if not data:
+                continue
+            _, issues = detect_conflicts(data, id_f, nm_f)
+            problems = (
+                issues["none_or_garbage"]
+                + issues["empty_name"]
+                + len(issues["dup_ids"])
+                + len(issues["dup_names"])
+            )
+            if not problems:
+                print(f"[OK]   {actual_key} ({label}): {len(data)}건, 충돌 없음")
+                continue
+            total_issues += problems
+            print(f"[WARN] {actual_key} ({label}): {len(data)}건")
+            print(f"    · 손상 객체: {issues['none_or_garbage']}건")
+            print(f"    · 빈 이름: {issues['empty_name']}건")
+            print(f"    · 중복 id: {len(issues['dup_ids'])}종")
+            for k, c in issues["dup_ids"][:3]:
+                print(f"      - {k}: {c}회")
+            print(f"    · 중복 이름: {len(issues['dup_names'])}종")
+            for k, c in issues["dup_names"][:3]:
+                print(f"      - {k}: {c}회")
+
+            # wo + --renumber-wo 일 땐 merge 가 중복을 먼저 삼키지 않도록 스킵 (재번호가 처리)
+            if key == "wo" and renumber_wo_mode:
+                print(f"    (--renumber-wo 모드: wo merge 건너뜀, 재번호 단계가 처리)")
+                continue
+            if apply_mode:
+                merged = merge_duplicates(data, id_f, nm_f)
+                save(db, actual_key, merged)
+                print(f"    → 정리 후 {len(merged)}건 저장")
+
+    # wo.wn 재번호화 (모든 wo / ino_wo / 월별 wo_YYYY-MM 키)
+    if renumber_wo_mode:
+        wo_keys = _wo_keys_in_store(db)
+        print()
+        if not wo_keys:
+            print("[RENUMBER-WO] wo 키 없음")
+        for wk in wo_keys:
+            data = load(db, wk)
+            if not data:
+                continue
+            new_data, changes = renumber_wo(data, dry_run=not apply_mode)
+            if not changes:
+                print(f"[RENUMBER-WO] {wk}: {len(data)}건 — 중복 wn 없음")
+                continue
+            print(f"[RENUMBER-WO] {wk}: {len(data)}건 → {len(changes)}건 재번호")
+            for old_wn, new_wn, _id, dt in changes[:8]:
+                print(f"    · {old_wn} → {new_wn}  (id={_id} dt={dt})")
+            if len(changes) > 8:
+                print(f"    · … 외 {len(changes) - 8}건")
+            if apply_mode:
+                save(db, wk, new_data)
+                print(f"    → 재번호 결과 {wk} 저장")
+
+    if apply_mode:
+        db.commit()
+        print("\n[APPLY] 변경 커밋 완료")
+    else:
+        suffix = ""
+        if renumber_wo_mode:
+            suffix = " (wn 재번호도 미반영)"
+        print(f"\n[DRY-RUN] 실제 정리는 --apply 옵션 추가{suffix}")
+
+    db.close()
+    print(f"\n총 충돌 건수: {total_issues}")
 
 
 if __name__ == "__main__":

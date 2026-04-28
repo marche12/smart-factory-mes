@@ -107,8 +107,8 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
     <li><a href="#ch5">회계/인사</a>
       <div class="sub"><a href="#s-sales">매출/매입</a> · <a href="#s-tax">세금계산서</a> · <a href="#s-recv">채권/자금</a> · <a href="#s-hr">인사관리</a> · <a href="#s-pay">급여관리</a></div>
     </li>
-    <li><a href="#ch6">시스템</a>
-      <div class="sub"><a href="#s-master">마스터관리</a> · <a href="#s-approval">전자결재</a> · <a href="#s-perm">권한관리</a> · <a href="#s-admin">시스템관리</a> · <a href="#s-bi">경영분석</a></div>
+    <li><a href="#ch6">기초정보 / 환경설정</a>
+      <div class="sub"><a href="#s-master">기초정보(거래처·품목·목형)</a> · <a href="#s-approval">전자결재</a> · <a href="#s-perm">권한관리</a> · <a href="#s-admin">환경설정(시스템·백업)</a> · <a href="#s-bi">경영분석</a></div>
     </li>
     <li><a href="#ch7">인쇄 양식</a></li>
     <li><a href="#ch8">전체 업무 흐름도</a></li>
@@ -187,7 +187,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
   <div class="step-box">
     <div class="step-title">Step 1. 회사정보 설정</div>
     <ol>
-      <li>시스템 > 시스템관리 > <strong>설정</strong> 탭 이동</li>
+      <li>환경설정 > <strong>설정</strong> 탭 이동</li>
       <li>회사명, 대표자명, 사업자등록번호, 업태, 종목 입력</li>
       <li>세금계산서 발행에 필요한 정보이므로 정확하게 입력</li>
       <li><strong>저장</strong> 클릭</li>
@@ -207,7 +207,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
   <div class="step-box">
     <div class="step-title">Step 3. 거래처 등록</div>
     <ol>
-      <li>시스템 > 마스터관리 > <strong>거래처</strong> 탭</li>
+      <li>기초정보 > <strong>거래처</strong> 탭</li>
       <li><strong>+ 거래처</strong> 클릭</li>
       <li>거래처명, 사업자등록번호(조회 버튼으로 확인 가능), 연락처, 주소 입력</li>
       <li>거래 유형: 납품처(제품을 파는 곳) / 매입처(원자재 사는 곳) 선택</li>
@@ -217,7 +217,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
   <div class="step-box">
     <div class="step-title">Step 4. 품목 등록</div>
     <ol>
-      <li>시스템 > 마스터관리 > <strong>품목</strong> 탭</li>
+      <li>기초정보 > <strong>품목</strong> 탭</li>
       <li><strong>+ 품목</strong> 클릭</li>
       <li>품목명, 규격, 재질, 단가, 거래처 입력</li>
       <li>예: "A사 피자박스 / 400×300×50 / E골 / 350원"</li>
@@ -227,7 +227,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
   <div class="step-box">
     <div class="step-title">Step 5. 목형 등록</div>
     <ol>
-      <li>시스템 > 마스터관리 > <strong>목형</strong> 탭</li>
+      <li>기초정보 > <strong>목형</strong> 탭</li>
       <li><strong>+ 목형</strong> 클릭</li>
       <li>목형명, 거래처, 사이즈, 상태(사용중/보관/폐기) 입력</li>
       <li>목형 = 톰슨 공정에서 사용하는 금형 (박스 모양 찍는 틀)</li>
@@ -701,7 +701,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
     <ol>
       <li><a href="https://www.popbill.com" target="_blank">popbill.com</a>에서 사업자 회원가입</li>
       <li>연동 설정에서 LinkID, SecretKey 발급</li>
-      <li>시스템 > 시스템관리 > 설정 > <strong>팝빌 전자세금계산서 API 설정</strong></li>
+      <li>환경설정 > 설정 > <strong>팝빌 전자세금계산서 API 설정</strong></li>
       <li>LinkID, SecretKey, 사업자등록번호 입력</li>
       <li>테스트 모드 체크 (처음에는 테스트로 확인)</li>
       <li><strong>설정 저장</strong></li>
@@ -772,14 +772,15 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
   </table>
 </div>
 
-<!-- ===== 6. 시스템 ===== -->
+<!-- ===== 6. 기초정보 / 환경설정 ===== -->
 <div class="chapter" id="ch6">
-  <h2>6. 시스템</h2>
-  <p>기초 데이터, 사용자 권한, 백업, 경영 분석을 관리합니다.</p>
+  <h2>6. 기초정보 / 환경설정</h2>
+  <p>기초 데이터(거래처·품목·목형), 사용자 권한, 백업, 경영 분석을 관리합니다.</p>
+  <div class="tip">상단 업무영역은 <strong>기초정보</strong>(거래처·품목·목형·품질검사·설비)와 <strong>환경설정</strong>(권한·백업·시스템 큐) 두 개로 나뉘어 있습니다. 이 챕터는 두 영역을 함께 다룹니다.</div>
 
-  <!-- 마스터관리 -->
-  <h3 id="s-master">마스터관리</h3>
-  <p>시스템 전체에서 사용하는 기초 데이터를 등록하는 곳입니다.</p>
+  <!-- 기초정보 (구 마스터관리) -->
+  <h3 id="s-master">기초정보 — 거래처·품목·목형</h3>
+  <p>시스템 전체에서 사용하는 기초 데이터를 등록하는 곳입니다. (상단 업무영역 <strong>기초정보</strong>)</p>
 
   <h4>그룹탭</h4>
   <table class="field-table">
@@ -816,8 +817,9 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
 
   <hr>
 
-  <!-- 시스템관리 -->
-  <h3 id="s-admin">시스템관리</h3>
+  <!-- 환경설정 (구 시스템관리) -->
+  <h3 id="s-admin">환경설정 — 백업·감사·설정</h3>
+  <p>(상단 업무영역 <strong>환경설정</strong>)</p>
   <h4>그룹탭</h4>
   <table class="field-table">
     <tr><th>탭</th><th>설명</th></tr>
@@ -861,7 +863,7 @@ hr{border:none;border-top:1px solid #E2E8F0;margin:32px 0}
     <tr><td><strong>세금계산서</strong></td><td>세금계산서 > 종이 인쇄</td><td>공식 세금계산서 (공급자/공급받는자 정보 포함)</td></tr>
     <tr><td><strong>검사성적서</strong></td><td>검사관리 > 검사성적서 탭</td><td>거래처에 품질 증빙 제출</td></tr>
   </table>
-  <div class="tip">인쇄 양식에는 회사정보(회사명, 대표자명, 사업자번호)가 자동으로 들어갑니다. 시스템관리 > 설정에서 회사정보를 정확히 입력해두세요.</div>
+  <div class="tip">인쇄 양식에는 회사정보(회사명, 대표자명, 사업자번호)가 자동으로 들어갑니다. 환경설정 > 설정에서 회사정보를 정확히 입력해두세요.</div>
 </div>
 
 <!-- ===== 8. 전체 업무 흐름도 ===== -->

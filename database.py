@@ -27,6 +27,37 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    seed_guarded_keys()
+
+
+# GUARDED_KEYS 중 클라이언트가 한 번도 초기화하지 않으면 사라지듯 보이는 키.
+# 키 자체가 없으면 빈 배열로 seed → 이후 GUARDED_KEYS 가드와 호환되고
+# 클라이언트의 첫 DB.s([]) 가 가드에 막혀도 기존 0건은 정상 표시.
+SEED_EMPTY_KEYS = [
+    "equip", "emp", "bom",
+    "qcRecords", "incLog", "monthlyRpt", "logs",
+    "quotes", "po", "orderTemplates", "woTemplates",
+]
+
+
+def seed_guarded_keys():
+    """Insert empty arrays for guarded keys that don't exist yet. Never overwrite."""
+    conn = get_connection()
+    now = datetime.now().isoformat()
+    seeded = []
+    for key in SEED_EMPTY_KEYS:
+        row = conn.execute('SELECT 1 FROM data_store WHERE key = ?', (key,)).fetchone()
+        if row:
+            continue
+        conn.execute(
+            'INSERT INTO data_store (key, value, updated_at) VALUES (?, ?, ?)',
+            (key, '[]', now)
+        )
+        seeded.append(key)
+    if seeded:
+        conn.commit()
+        print(f"[Seed] empty arrays seeded for: {', '.join(seeded)}")
+    conn.close()
 
 
 def get_data(key: str):

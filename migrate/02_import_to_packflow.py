@@ -8,6 +8,7 @@
   2. python3 02_import_to_packflow.py 실행
 
   수동 입력: python3 02_import_to_packflow.py --manual
+  사전 점검(쓰기 안 함): python3 02_import_to_packflow.py --dry-run
 """
 import csv
 import json
@@ -163,8 +164,37 @@ def _find_val(vals_dict, keys):
     return ''
 
 
+# GUARDED_KEYS 중 클라이언트가 한 번도 초기화하지 않으면 사라지듯 보이는 키.
+# database.py SEED_EMPTY_KEYS 와 동기 — 마이그레이션 후 첫 진입 시에도 빈 배열로 보장.
+SEED_EMPTY_KEYS = [
+    "equip", "emp", "bom",
+    "qcRecords", "incLog", "monthlyRpt", "logs",
+    "quotes", "po", "orderTemplates", "woTemplates",
+]
+
+
+def seed_empty_keys(db, dry_run=False):
+    """없는 키만 빈 배열로 seed. 이미 있으면 절대 덮어쓰지 않음."""
+    if db is None:
+        return []
+    seeded = []
+    for key in SEED_EMPTY_KEYS:
+        row = db.execute("SELECT 1 FROM data_store WHERE key=?", [key]).fetchone()
+        if row:
+            continue
+        if not dry_run:
+            db.execute(
+                "INSERT INTO data_store(key, value) VALUES(?, ?)",
+                [key, "[]"]
+            )
+        seeded.append(key)
+    return seeded
+
+
 def get_db_data(db, key):
-    """팩플로우 DB에서 기존 데이터 읽기"""
+    """팩플로우 DB에서 기존 데이터 읽기 (db=None 일 땐 빈 배열)"""
+    if db is None:
+        return []
     row = db.execute("SELECT value FROM data_store WHERE key=?", [key]).fetchone()
     if row:
         return json.loads(row[0])
@@ -172,7 +202,9 @@ def get_db_data(db, key):
 
 
 def set_db_data(db, key, data):
-    """팩플로우 DB에 데이터 쓰기"""
+    """팩플로우 DB에 데이터 쓰기 (db=None 일 땐 no-op)"""
+    if db is None:
+        return
     db.execute(
         "INSERT OR REPLACE INTO data_store(key, value) VALUES(?, ?)",
         [key, json.dumps(data, ensure_ascii=False)]
@@ -429,13 +461,29 @@ def apply_recent_prices(rows, products):
 
 def main():
     manual_mode = "--manual" in sys.argv
+    dry_run = "--dry-run" in sys.argv or "-n" in sys.argv
+
+    if dry_run:
+        print("=" * 50)
+        print("  DRY-RUN 모드: DB에 쓰지 않고 변환 결과만 검증합니다")
+        print("=" * 50)
 
     if not os.path.exists(DB_PATH):
-        print(f"팩플로우 DB가 없습니다: {DB_PATH}")
-        print("서버를 먼저 한 번 실행하세요: python3 server.py")
-        sys.exit(1)
+        if dry_run:
+            print(f"[INFO] DB 없음 ({DB_PATH}) — dry-run 은 빈 기존 데이터로 진행")
+            db = None
+        else:
+            print(f"팩플로우 DB가 없습니다: {DB_PATH}")
+            print("서버를 먼저 한 번 실행하세요: python3 server.py")
+            sys.exit(1)
+    else:
+        db = sqlite3.connect(DB_PATH)
 
-    db = sqlite3.connect(DB_PATH)
+    # GUARDED_KEYS 누락 키 seed (절대 덮어쓰지 않음, 없으면 [] 만 추가)
+    seeded = seed_empty_keys(db, dry_run=dry_run)
+    if seeded:
+        tag = "[DRY-RUN] " if dry_run else ""
+        print(f"  {tag}빈 배열 seed: {', '.join(seeded)}")
 
     # 기존 데이터 확인
     existing_cli = get_db_data(db, "cli")
@@ -445,14 +493,19 @@ def main():
 
     if almayo_cli or almayo_prod:
         print(f"이미 이관된 데이터가 있습니다: 거래처 {len(almayo_cli)}건, 품목 {len(almayo_prod)}건")
-        ans = input("기존 이관 데이터를 삭제하고 다시 이관할까요? (y/N): ")
-        if ans.lower() != "y":
-            print("취소")
-            db.close()
-            return
-        # 기존 이관 데이터 제거
-        existing_cli = [c for c in existing_cli if c.get("_src") != "almayo"]
-        existing_prod = [p for p in existing_prod if p.get("_src") != "almayo"]
+        if dry_run:
+            print("[DRY-RUN] 재이관 가정으로 기존 _src=almayo 데이터를 가상 제거 후 검증")
+            existing_cli = [c for c in existing_cli if c.get("_src") != "almayo"]
+            existing_prod = [p for p in existing_prod if p.get("_src") != "almayo"]
+        else:
+            ans = input("기존 이관 데이터를 삭제하고 다시 이관할까요? (y/N): ")
+            if ans.lower() != "y":
+                print("취소")
+                db.close()
+                return
+            # 기존 이관 데이터 제거
+            existing_cli = [c for c in existing_cli if c.get("_src") != "almayo"]
+            existing_prod = [p for p in existing_prod if p.get("_src") != "almayo"]
 
     if manual_mode:
         print("\n=== 수동 입력 모드 ===")
@@ -501,11 +554,13 @@ def main():
 
             co = convert_company(comp_rows)
             if co:
-                db.execute(
-                    "INSERT OR REPLACE INTO data_store(key, value) VALUES('co', ?)",
-                    [json.dumps(co, ensure_ascii=False)]
-                )
-                print(f"  회사정보: {co['nm']}")
+                if db is not None and not dry_run:
+                    db.execute(
+                        "INSERT OR REPLACE INTO data_store(key, value) VALUES('co', ?)",
+                        [json.dumps(co, ensure_ascii=False)]
+                    )
+                tag = "[DRY-RUN] " if dry_run else ""
+                print(f"  {tag}회사정보: {co.get('nm','(이름 없음)')}")
 
             if bal_rows:
                 convert_balances(bal_rows, new_cli)
@@ -536,7 +591,7 @@ def main():
             existing_prod.append(p)
             existing_pnames.add(p["nm"])
 
-    # 저장
+    # 저장 (dry-run 일 땐 set_db_data 가 no-op)
     set_db_data(db, "cli", existing_cli)
     set_db_data(db, "prod", existing_prod)
 
@@ -554,23 +609,28 @@ def main():
         set_db_data(db, "priceHistory", merged_ph)
         added_history = len(new_price_history)
 
-    db.commit()
-    db.close()
+    if db is not None and not dry_run:
+        db.commit()
+    if db is not None:
+        db.close()
 
     added_cli = len([c for c in existing_cli if c.get("_src") == "almayo"])
     added_prod = len([p for p in existing_prod if p.get("_src") == "almayo"])
     last_priced = len([p for p in existing_prod if p.get("lastPrice")])
 
     print(f"\n{'='*50}")
-    print(f"  이관 완료!")
+    print(f"  {'DRY-RUN 검증 완료 (DB 변경 없음)' if dry_run else '이관 완료!'}")
     print(f"  거래처: {added_cli}건")
     print(f"  품목  : {added_prod}건 (최근 단가: {last_priced}건)")
     if added_history:
         print(f"  단가이력: {added_history}건")
     print(f"{'='*50}")
-    print(f"\n팩플로우(http://localhost:8080)에서 확인하세요.")
-    print("거래처 → 거래처 목록, 품목 → 품목 목록")
-    print("모바일 → 품목·단가 탭에서 '최근 적용 단가' 확인")
+    if dry_run:
+        print(f"\n실제 이관: --dry-run 옵션 없이 다시 실행")
+    else:
+        print(f"\n팩플로우(http://localhost:8080)에서 확인하세요.")
+        print("거래처 → 거래처 목록, 품목 → 품목 목록")
+        print("모바일 → 품목·단가 탭에서 '최근 적용 단가' 확인")
 
 
 def manual_input():

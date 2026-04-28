@@ -1,0 +1,334 @@
+{
+  "meta": {
+    "title": "팩플로우 세션 인계 — 2026-04-26 ~ 04-28",
+    "saved_at": "2026-04-28",
+    "purpose": "다음 세션에서 이어서 작업하기 위한 컨텍스트 스냅샷",
+    "project_root": "/Users/shoon/Documents/팩플로우",
+    "github": "git@github.com:marche12/smart-factory-mes.git",
+    "branch": "main"
+  },
+
+  "infrastructure": {
+    "nas": {
+      "model": "Synology DSM",
+      "lan_ip": "192.168.0.2",
+      "tailscale_ip": "100.74.217.19",
+      "ddns": "mckim.i234.me",
+      "public_ip": "175.193.38.236",
+      "ssh_user": "inno",
+      "ssh_password": "Wjdtmdgns12# (LAN/Tailscale SSH용 — DSM 웹 비번과 다름)",
+      "app_path": "/volume1/homes/apps/packflow",
+      "quickconnect": "https://innopackage.tw4.quickconnect.to (또는 inno.quickconnect.to)"
+    },
+    "mac": {
+      "tailscale_ip": "100.118.151.45",
+      "project_path": "/Users/shoon/Documents/팩플로우"
+    },
+    "access_urls": {
+      "tailscale_pc":  "http://100.74.217.19:8080/pc",
+      "tailscale_mob": "http://100.74.217.19:8080/m",
+      "lan_pc":        "http://192.168.0.2:8080/pc",
+      "external_https_pc":  "https://packflow.mckim.i234.me/pc",
+      "external_https_mob": "https://packflow.mckim.i234.me/m",
+      "dsm_external": "https://mckim.i234.me:5001",
+      "localhost_pc": "http://localhost:8080/pc"
+    },
+    "external_ssl": {
+      "status": "역방향 프록시 등록 완료, 그러나 SSL 인증서 미발급 상태",
+      "next": "DSM → 보안 → 인증서 → Let's Encrypt 발급 (도메인 packflow.mckim.i234.me)"
+    },
+    "auto_deployment": {
+      "script": "/volume1/homes/apps/packflow/scripts/nas-auto-deploy.sh",
+      "schedule": "DSM 작업 스케줄러 등록됨 (매일 00:00, 작업명 packflow-auto-deploy, 사용자 inno)",
+      "what_it_does": [
+        "git fetch origin main",
+        "static/, scripts/, requirements.txt 만 GitHub에서 덮어쓰기",
+        "server.py / database.py 는 NAS 로컬 보존",
+        "더블 fork + setsid + nohup 으로 서버 재시작 (DSM 환경 detach 보장)",
+        "5회 재시도 (3초 간격) 응답 검증",
+        "auto-deploy.log 기록"
+      ],
+      "manual_trigger_from_mac": "./update-nas.sh (Tailscale SSH 사용)",
+      "watchdog": {
+        "script": "/volume1/homes/apps/packflow/scripts/nas-watchdog.sh",
+        "registered": false,
+        "todo": "DSM 작업 스케줄러에 5분 간격 추가 권장"
+      }
+    }
+  },
+
+  "done_tasks": {
+    "2026-04-26": [
+      "모바일 4탭 재구성 — 현황/작업지시/거래처/품목·단가 (대표·영업 외부 조회용)",
+      "PC↔모바일 storage 이벤트 자동 동기화 (DB.s 래퍼)",
+      "월말 마감 점검 (mes-closing.js) — 6가지 자동 검출",
+      "공정 hist 이력 PC genRpt 호환 (mRecordProcHist)",
+      "이모지 전체 제거 (m.html, m-app.js, mobile.css, index.html, core.js, pc-top-modes.js, pc-sidebar-blocks.js)",
+      "PC 상단바 바로가기 — 생산현황 / 작업지시서",
+      "기준·설정 → 기초정보 / 환경설정 분리",
+      "패키지 운영판 → 생산현황 라벨 통일",
+      "DB 중복 키 제거 (prod, mold, purchase, sales — prefix 없는 4개)",
+      "DB.init() 5개 동시 제한 병렬 fetch",
+      "협력사 검색 cType 필터 제거 (전체 거래처 검색)"
+    ],
+    "2026-04-27": [
+      "Tailscale 직접 배포로 update-nas.sh 전환 (SMB 마운트·평문 비번 제거)",
+      "DSM 작업 스케줄러에 packflow-auto-deploy 등록 (매일 00:00)",
+      "역방향 프록시 등록 (https://packflow.mckim.i234.me → http://localhost:8080)",
+      "코덱스 라벨 일관성 작업 (외주처/미수·미지급/시스템 설정 등 19개 파일)",
+      "거래처/품목/목형 일괄 삭제 + 자동 분류 + 외주처별 단가 (코덱스)",
+      "기초정보 화면 fbar-row 헤더 줄바꿈 fix",
+      "거래처/품목/목형 헤더에 '선택 삭제 (N)' 버튼 추가",
+      "거래처 검색 cType 무시 (검색어 입력 시 매입+매출 모두)",
+      "기준정보 → 기초정보 일괄 변경"
+    ],
+    "2026-04-28": [
+      "🚨 데이터 사고 발견 + 복구: ino_cli/prod/mold가 빈 배열로 덮어씌어진 것 발견",
+      "어제 백업(mes.db.bak-dedupe-20260426-1413)에서 ATTACH 복원 → 1457/7459/659 정상",
+      "DB.s 래퍼에 GUARDED_KEYS 가드 추가 (cli/prod/mold/wo/sales 등 14개)",
+      "테이블 가로 스크롤 제거 (.u-scroll-x table {min-width:900px} override)",
+      "얼마에요 실제 스키마(InitialDeployment.sql) 분석 — Customer, Item, Slip, SlipDetail",
+      "migrate/01_export_from_almayo.sql 재작성 (실제 컬럼명 + 단가 이력 SQL 추가)",
+      "migrate/02_import_to_packflow.py 보강 (convert_price_history, apply_recent_prices)"
+    ]
+  },
+
+  "git_history_recent": {
+    "main_branch_recent_commits": [
+      "7c62dbc — feat(migrate): 얼마에요 실제 스키마(Slip/SlipDetail) 기반 추출+이관 보강",
+      "02f2569 — fix(critical): 마스터 데이터 빈 배열 덮어쓰기 가드 + 테이블 가로 스크롤 제거",
+      "d738b62 — fix(ui): 기초정보 화면 헤더 버튼 잘림 수정",
+      "307532c — refactor(deploy): update-nas.sh를 Tailscale 직접 배포로 전환",
+      "34c7151 — feat+ui: 거래처 검색은 cType 무시 + 기준정보 → 기초정보",
+      "e3ca5c8 — feat(bulk): 거래처/품목/목형 헤더에 '선택 삭제 (N)' 버튼 추가",
+      "e8ceb99 — feat+fix: 일괄삭제·외주처선택 + 자동배포 재시작 detach 보강",
+      "a9723e4 — fix(nas-deploy): 서버 재시작 detach 강화 (nohup+setsid)",
+      "bfcbf73 — perf+feat: DB 중복키 정리 + DB.init 병렬화 + NAS 자동배포 스크립트",
+      "607ae54 — feat: 모바일 대표·영업용 재구성 + PC↔모바일 동기화 + 이모지 전체 제거"
+    ]
+  },
+
+  "data_status": {
+    "nas_db_path": "/volume1/homes/apps/packflow/data/mes.db",
+    "current_data_counts": {
+      "ino_cli (거래처)": 1457,
+      "ino_prod (품목)": 7459,
+      "ino_mold (목형)": 659,
+      "wo_*": "다수 (월별)",
+      "hist": "약 700+",
+      "shipLog": "다수",
+      "sales": 0,
+      "purchase": 0,
+      "taxInvoice": 0
+    },
+    "data_quality_issues": {
+      "거래처 1457건 모두 이름만 있음": "사업자번호·전화·주소·대표자 빈 문자열",
+      "원인": "이전 마이그레이션이 잔액 추출용 SQL만 사용",
+      "해결책": "migrate/01_export_from_almayo.sql 재실행 필요 (얼마에요 실제 스키마 기반)"
+    },
+    "backups_on_nas": [
+      "mes.db.bak-dedupe-20260426-1413 (어제 데이터 복구에 실제 사용됨, 9.7MB)",
+      "mes.db.before-restore-20260428-XXXX (오늘 복구 직전 자동 백업)",
+      "database.py.bak-20260426-1427",
+      "server.py.bak-20260426-1427"
+    ]
+  },
+
+  "tomorrow_pending": {
+    "title": "얼마에요 데이터 본격 마이그레이션 (사용자 결정: 내일 진행)",
+    "data_inventory": {
+      "location": "/Users/shoon/Documents/팩플로우/얼마에요2E/database/Backup/",
+      "total_size": "48 GB",
+      "two_databases": {
+        "3XBPBL-CP0F5Z-KWDUKU_*.bak": "약 350MB × 31개 일별 백업 (회사 1, 추정 개인사업자)",
+        "7L39BU-BV2F3N-KUASK8_*.bak": "약 690MB × 31개 일별 백업 (회사 2, 추정 법인)"
+      },
+      "most_recent": [
+        "3XBPBL-CP0F5Z-KWDUKU_13.bak — 357MB — 4-13",
+        "7L39BU-BV2F3N-KUASK8_09.bak — 692MB — 4-9"
+      ]
+    },
+    "options": {
+      "A_mac_docker": {
+        "title": "Mac에서 Docker SQL Server 복원 + 추출",
+        "time": "30~60분",
+        "image": "mcr.microsoft.com/azure-sql-edge:latest (Apple Silicon ARM64 호환)",
+        "steps": [
+          "docker run -e ACCEPT_EULA=Y -e SA_PASSWORD='Strong!Pwd123' -p 1433:1433 -v $(pwd)/얼마에요2E/database/Backup:/var/opt/mssql/backup -d --name mssql mcr.microsoft.com/azure-sql-edge:latest",
+          "RESTORE DATABASE NeoHowMuch2 FROM DISK='/var/opt/mssql/backup/3XBPBL-CP0F5Z-KWDUKU_13.bak'",
+          "migrate/01_export_from_almayo.sql 의 7개 SELECT 실행 → CSV 7개 저장",
+          "migrate/exported/ 에 복사",
+          "python3 migrate/02_import_to_packflow.py"
+        ]
+      },
+      "B_office_pc": {
+        "title": "얼마에요 운영 PC에서 SSMS로 직접 추출 (가장 빠름·안전)",
+        "time": "10~20분",
+        "steps": [
+          "SSMS 실행 → 192.168.2.36,1511 / NeoHowMuch2 / sa / iqst63214",
+          "migrate/01_export_from_almayo.sql 의 7개 SELECT 실행",
+          "결과를 CSV 7개로 저장",
+          "Mac으로 복사 후 02_import_to_packflow.py 실행"
+        ]
+      },
+      "C_nas_docker": {
+        "title": "NAS Container Manager에서 Docker SQL Server",
+        "time": "60~90분",
+        "note": ".bak 파일 50MB+를 NAS로 먼저 동기화 필요. NAS는 ARM/x86 따라 이미지 다름"
+      }
+    },
+    "expected_output_csvs": [
+      "customers.csv — 사업자번호, 전화, 주소, 대표자, 업태, 업종, 휴대폰",
+      "items.csv — 코드, 이름, 기준단가, 재고",
+      "company.csv — 회사정보",
+      "balances.csv — 거래처 잔액",
+      "price_history.csv — 거래 단가 이력 (최근 2년)",
+      "recent_prices.csv — 품목별 최근 적용 단가",
+      "customer_history.csv — 거래처별 거래 이력"
+    ],
+    "expected_after_migration": [
+      "거래처 1457건 → 사업자번호·전화·주소·대표자·업태 모두 채워짐",
+      "품목 7459건 → 기준단가 + lastPrice/lastPriceDt/lastPriceCustomer",
+      "priceHistory 최대 2000건 → 견적/수주 작성 시 과거 단가 자동 추천",
+      "모바일 거래처 탭 → 📞 전화 클릭 즉시 통화",
+      "모바일 품목·단가 탭 → '최근(매출): 12500원 · 04-25 삼성패키지' 표시"
+    ]
+  },
+
+  "critical_files": {
+    "deployment": [
+      "update-nas.sh — Tailscale SSH 기반, 사용자 명령으로 즉시 NAS 배포",
+      "scripts/nas-auto-deploy.sh — DSM 작업 스케줄러용, 매일 자정 자동 실행",
+      "scripts/nas-watchdog.sh — 5분 헬스체크, 등록 미완"
+    ],
+    "migration": [
+      "migrate/01_export_from_almayo.sql — 얼마에요 실제 스키마 기반 7개 SQL",
+      "migrate/02_import_to_packflow.py — convert_price_history/apply_recent_prices 추가됨",
+      "migrate/exported/ — 비어있음 (사용자가 CSV 7개 넣어야 함)"
+    ],
+    "core_pc": [
+      "static/index.html — autoLoginForTesting 블록 끝에 있음 (테스트 끝나면 제거 필요)",
+      "static/js/core.js — DB.s 가드 (GUARDED_KEYS), storage 이벤트 sync, init 병렬화",
+      "static/js/mes-cli.js — bulkDelete, reclassifyCliTypes, 거래처 검색 cType 무시",
+      "static/js/mes-wo.js — openVendorSearch(target), 공정별 외주처",
+      "static/js/mes-closing.js — 월말 마감 점검 (미완성, 사용자 검수 안 됨)"
+    ],
+    "core_mobile": [
+      "static/m.html — 4탭 (생산 현황, 작업지시, 거래처, 품목·단가)",
+      "static/js/m-app.js — mRenderHome/Orders/Cli/Prod, 공정 시작/완료 버튼 숨김",
+      "static/css/mobile.css?v=8 — 다크 테마, 히어로 섹션"
+    ],
+    "config": [
+      ".claude/settings.local.json — Claude 권한 설정",
+      "Dockerfile, docker-compose.yml — 사용 안 함 (현재는 Tailscale + DSM 직접 배포)"
+    ]
+  },
+
+  "open_issues_pending": [
+    {
+      "title": "autoLoginForTesting 제거",
+      "severity": "보안",
+      "where": "static/index.html 끝 약 30줄",
+      "marker": "autoLoginForTesting 또는 PACKFLOW_AUTO_LOGIN",
+      "why": "현재 외부에서 접속하면 자동으로 admin 권한. 테스트 끝나면 제거"
+    },
+    {
+      "title": "Let's Encrypt 인증서 발급",
+      "severity": "보안",
+      "where": "DSM → 보안 → 인증서",
+      "domain": "packflow.mckim.i234.me",
+      "why": "현재 외부 HTTPS 접속 시 SSL 경고 페이지 뜸"
+    },
+    {
+      "title": "워치독 DSM 등록",
+      "severity": "안정성",
+      "where": "DSM 작업 스케줄러",
+      "script": "/volume1/homes/apps/packflow/scripts/nas-watchdog.sh",
+      "schedule": "5분 간격 반복",
+      "why": "자정 자동 배포가 만에 하나 실패할 때 자동 복구"
+    },
+    {
+      "title": "얼마에요 데이터 본격 마이그레이션",
+      "severity": "기능",
+      "ref": "tomorrow_pending 섹션 참조"
+    },
+    {
+      "title": "mes-closing.js 완성 또는 제거",
+      "severity": "정리",
+      "where": "static/js/mes-closing.js",
+      "why": "월말 마감 점검 — 작성됐으나 사용자 검수 안 됨"
+    },
+    {
+      "title": "사용 안 되는 모바일 함수 정리",
+      "severity": "정리",
+      "functions": ["mRenderDash", "mRenderMore", "mRenderShip", "mRenderSales", "mDoShip", "mOpenShip"],
+      "where": "static/js/m-app.js",
+      "why": "4탭 재구성으로 호출 경로 0. mDoShip/mOpenShip은 차단 후 unreachable 옛 코드"
+    },
+    {
+      "title": "큰 미사용 파일 삭제",
+      "severity": "정리",
+      "files": [
+        "cloudflared (36MB)",
+        "ngrok (29MB)",
+        "이노패키지MES_테스트.zip (350KB)",
+        "index.html (루트, 132KB) — server.py가 static/ 서빙",
+        "flow-diagram.html, 시뮬레이션_콘솔스크립트.js",
+        "static/index.html.bak, static/js/erp.js.bak, data/mes.db.bak",
+        "얼마에요2E/ 폴더 (얼마에요 마이그레이션 끝나면 NAS만 보관)"
+      ]
+    }
+  ],
+
+  "key_data_structures": {
+    "wo (작업지시서)": {
+      "fields": ["id", "wn (작업지시번호)", "dt", "cnm (거래처)", "pnm (품목)", "fq (수량)", "amt (금액)", "dueDt", "status", "procs[]", "img (도면)"],
+      "status_values": ["대기", "수주", "수주확정", "생산대기", "진행중", "완료대기", "출고완료", "취소"],
+      "procs_status": ["대기", "진행중", "완료", "외주완료", "스킵", "보류", "외주대기"],
+      "important": "PC 기준 진행중 (모바일도 통일됨). 절대 '진행' 사용 금지"
+    },
+    "cli (거래처)": {
+      "fields": ["id", "nm", "bizNo", "ceo", "addr", "tel", "telCompany", "telHandphone", "fax", "email", "cType", "isVendor", "receivable", "payable"],
+      "cType_values": ["sales (매출)", "purchase (매입)", "both (겸용)"]
+    },
+    "prod (품목)": {
+      "fields": ["id", "code", "nm", "spec", "price (기준단가)", "lastPrice (최근 적용)", "lastPriceDt", "lastPriceCustomer", "procs[]"]
+    },
+    "priceHistory": {
+      "key": "ino_priceHistory",
+      "max": 2000,
+      "fields": ["id", "dt", "tm", "refType", "refId", "refNo", "cliNm", "prodNm", "qty", "unitPrice", "amount", "source"],
+      "source": ["prod-base", "cli-override", "manual", "almayo (이관)"]
+    },
+    "hist (공정 이력)": {
+      "fields": ["id", "woId", "pnm", "cnm", "proc", "worker", "qty", "t1", "t2", "setupMin", "doneAt", "src"],
+      "compatibility": "PC genRpt 와 100% 호환. 모바일 mRecordProcHist 이 PC와 동일 필드로 저장"
+    }
+  },
+
+  "critical_guards_and_rules": {
+    "DB_s_guard": "core.js의 DB.s 래퍼가 cli/prod/mold/wo/sales 등 14개 키를 빈 배열로 덮어쓰는 시도 차단 (기존 10건 이상 있을 때)",
+    "mobile_state_rules": [
+      "모바일에서 wo.status = '완료' 직접 저장 금지 → 항상 '완료대기'",
+      "공정 상태는 p.status 가 아니라 p.st 기준",
+      "'진행' 입력 시 자동으로 '진행중' 정규화",
+      "출고/매출 확정은 PC 전용 (mDoShip/mOpenShip은 차단)"
+    ],
+    "deployment_rules": [
+      "main 직접 push 가능 (테스트 완료 후 PR 워크플로 추천)",
+      "NAS 매일 00:00 자동 git pull (DSM 작업 스케줄러)",
+      "즉시 반영은 ./update-nas.sh (Tailscale SSH)",
+      "server.py / database.py 는 NAS 로컬 보존 (auto-deploy 가 안 건드림)"
+    ]
+  },
+
+  "next_session_starting_prompt": "지난 세션 인계 파일: docs/session-handoff-2026-04-28.json 을 먼저 읽고 컨텍스트 파악. 오늘 할 일은 얼마에요 데이터 본격 마이그레이션 (tomorrow_pending 섹션 참조). 사용자에게 옵션 A(Mac Docker)/B(얼마에요 운영 PC SSMS)/C(NAS Docker) 중 어느 것으로 진행할지 확인부터.",
+
+  "useful_commands": {
+    "deploy_now": "cd /Users/shoon/Documents/팩플로우 && git push origin main && ./update-nas.sh",
+    "ssh_nas": "ssh inno@100.74.217.19",
+    "check_nas_data": "ssh inno@100.74.217.19 'sqlite3 /volume1/homes/apps/packflow/data/mes.db \"SELECT key, length(value) FROM data_store WHERE key LIKE \\\"ino_%\\\" ORDER BY length(value) DESC LIMIT 10;\"'",
+    "verify_flows": "node scripts/verify_packflow_flows.js",
+    "syntax_check": "node --check static/js/m-app.js && node --check static/js/core.js"
+  }
+}
